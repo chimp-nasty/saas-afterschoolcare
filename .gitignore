@@ -1,0 +1,112 @@
+# =========================
+# ENVIRONMENT / SECRETS
+# =========================
+
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+*.crt
+
+
+# =========================
+# PYTHON
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+env/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+*.egg-info/
+.eggs/
+dist/
+build/
+
+
+# =========================
+# SVELTEKIT / NODE
+# =========================
+
+node_modules/
+
+.svelte-kit/
+.vercel/
+
+build/
+dist/
+
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+
+# =========================
+# TESTING
+# =========================
+
+coverage/
+playwright-report/
+test-results/
+
+
+# =========================
+# IDE / EDITOR
+# =========================
+
+.vscode/
+.idea/
+
+*.swp
+*.swo
+
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# =========================
+# LOGS
+# =========================
+
+*.log
+logs/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# =========================
+# LOCAL / TEMPORARY FILES
+# =========================
+
+tmp/
+temp/
+*.tmp
+*.bak
+
+
+# =========================
+# CLOUD / LOCAL CREDENTIALS
+# =========================
+
+service-account*.json
+credentials*.json
