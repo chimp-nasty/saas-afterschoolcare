@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     COOKIE_NAME: str = "access_token"
     COOKIE_SECURE: bool = True
     COOKIE_HTTPONLY: bool = True
-    COOKIE_SAMESITE = "none"
+    COOKIE_SAMESITE: str = "none"
     COOKIE_PATH: str = "/"
 
     # JWT

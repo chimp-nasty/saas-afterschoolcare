@@ -4,7 +4,7 @@ from sqlalchemy.engine import Connection
 
 def up(conn: Connection) -> None:
     conn.execute(text("""
-        CREATE SCHEMA IF NOT EXISTS authorization;
+        CREATE SCHEMA IF NOT EXISTS auth;
     """))
 
     conn.execute(text("""
@@ -12,7 +12,7 @@ def up(conn: Connection) -> None:
         -- USERS
         -- =========================
 
-        CREATE TABLE IF NOT EXISTS authorization.users (
+        CREATE TABLE IF NOT EXISTS auth.users (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             email VARCHAR(255) NOT NULL UNIQUE,
@@ -35,11 +35,11 @@ def up(conn: Connection) -> None:
         -- PASSWORD RESET TOKENS
         -- =========================
 
-        CREATE TABLE IF NOT EXISTS authorization.password_reset_tokens (
+        CREATE TABLE IF NOT EXISTS auth.password_reset_tokens (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             user_id UUID NOT NULL
-                REFERENCES authorization.users(id)
+                REFERENCES auth.users(id)
                 ON DELETE CASCADE,
 
             token_hash TEXT NOT NULL UNIQUE,
@@ -55,7 +55,7 @@ def up(conn: Connection) -> None:
         -- ROLES
         -- =========================
 
-        CREATE TABLE IF NOT EXISTS authorization.roles (
+        CREATE TABLE IF NOT EXISTS auth.roles (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             code VARCHAR(100) NOT NULL UNIQUE,
@@ -76,7 +76,7 @@ def up(conn: Connection) -> None:
         -- PERMISSIONS
         -- =========================
 
-        CREATE TABLE IF NOT EXISTS authorization.permissions (
+        CREATE TABLE IF NOT EXISTS auth.permissions (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             resource VARCHAR(100) NOT NULL,
@@ -103,15 +103,15 @@ def up(conn: Connection) -> None:
         -- ROLE PERMISSIONS
         -- =========================
 
-        CREATE TABLE IF NOT EXISTS authorization.role_permissions (
+        CREATE TABLE IF NOT EXISTS auth.role_permissions (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             role_id UUID NOT NULL
-                REFERENCES authorization.roles(id)
+                REFERENCES auth.roles(id)
                 ON DELETE CASCADE,
 
             permission_id UUID NOT NULL
-                REFERENCES authorization.permissions(id)
+                REFERENCES auth.permissions(id)
                 ON DELETE CASCADE,
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -125,11 +125,11 @@ def up(conn: Connection) -> None:
         -- LOCATION USER ROLES
         -- =========================
 
-        CREATE TABLE IF NOT EXISTS authorization.location_user_roles (
+        CREATE TABLE IF NOT EXISTS auth.location_user_roles (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             user_id UUID NOT NULL
-                REFERENCES authorization.users(id)
+                REFERENCES auth.users(id)
                 ON DELETE CASCADE,
 
             location_id UUID NOT NULL
@@ -137,7 +137,7 @@ def up(conn: Connection) -> None:
                 ON DELETE CASCADE,
 
             role_id UUID NOT NULL
-                REFERENCES authorization.roles(id)
+                REFERENCES auth.roles(id)
                 ON DELETE CASCADE,
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

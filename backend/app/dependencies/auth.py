@@ -4,12 +4,12 @@ from uuid import UUID
 from fastapi import Cookie
 from fastapi import Depends
 
-from app.authorization.jwt.context import (
+from app.auth.jwt.context import (
     TokenContext,
     build_token_context,
 )
-from app.authorization.jwt.tokens import TokenService
-from app.authorization.scope import AuthorizationScope
+from app.auth.jwt.tokens import TokenService
+from app.auth.scope import AuthorizationScope
 from app.errors.auth import PermissionNotFoundError, JwtInvalidError
 
 

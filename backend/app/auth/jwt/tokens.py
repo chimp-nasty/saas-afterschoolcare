@@ -10,8 +10,8 @@ from jwt import (
     encode,
 )
 
-from app.authorization.jwt.context import PermissionMap
-from app.authorization.models.permission import Permission
+from app.auth.jwt.context import PermissionMap
+from app.auth.models.permission import Permission
 from app.core.config import settings
 from app.errors.auth import (
     JwtExpiredError,
