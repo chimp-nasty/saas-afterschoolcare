@@ -1,11 +1,9 @@
-from uuid import UUID
-
 from sqlalchemy.orm import Session
 
-from app.auth.models.role import Role
+from app.public.models.medical_review_status import MedicalReviewStatus
 
 
-class RoleRepository:
+class MedicalReviewStatusRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
@@ -16,8 +14,8 @@ class RoleRepository:
         label: str,
         description: str | None = None,
         is_active: bool = True,
-    ) -> Role:
-        record = Role(
+    ) -> MedicalReviewStatus:
+        record = MedicalReviewStatus(
             code=code,
             label=label,
             description=description,
@@ -32,10 +30,10 @@ class RoleRepository:
     def get_by_id(
         self,
         *,
-        id: UUID,
-    ) -> Role | None:
+        id: int,
+    ) -> MedicalReviewStatus | None:
         return (
-            self.db.query(Role)
-            .filter(Role.id == id)
+            self.db.query(MedicalReviewStatus)
+            .filter(MedicalReviewStatus.id == id)
             .first()
         )

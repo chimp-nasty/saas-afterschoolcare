@@ -1,11 +1,9 @@
-from uuid import UUID
-
 from sqlalchemy.orm import Session
 
-from app.auth.models.role import Role
+from app.public.models.service_type import ServiceType
 
 
-class RoleRepository:
+class ServiceTypeRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
@@ -14,13 +12,15 @@ class RoleRepository:
         *,
         code: str,
         label: str,
-        description: str | None = None,
+        stripe_product_id: str | None = None,
+        stripe_price_id: str | None = None,
         is_active: bool = True,
-    ) -> Role:
-        record = Role(
+    ) -> ServiceType:
+        record = ServiceType(
             code=code,
             label=label,
-            description=description,
+            stripe_product_id=stripe_product_id,
+            stripe_price_id=stripe_price_id,
             is_active=is_active,
         )
 
@@ -32,10 +32,10 @@ class RoleRepository:
     def get_by_id(
         self,
         *,
-        id: UUID,
-    ) -> Role | None:
+        id: int,
+    ) -> ServiceType | None:
         return (
-            self.db.query(Role)
-            .filter(Role.id == id)
+            self.db.query(ServiceType)
+            .filter(ServiceType.id == id)
             .first()
         )

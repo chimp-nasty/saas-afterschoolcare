@@ -2,22 +2,24 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.auth.models.role_permission import RolePermission
+from app.auth.models.location_user_role import LocationUserRole
 
 
-class RolePermissionRepository:
+class LocationUserRoleRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
     def create(
         self,
         *,
+        user_id: UUID,
+        location_id: UUID,
         role_id: UUID,
-        permission_id: UUID,
-    ) -> RolePermission:
-        record = RolePermission(
+    ) -> LocationUserRole:
+        record = LocationUserRole(
+            user_id=user_id,
+            location_id=location_id,
             role_id=role_id,
-            permission_id=permission_id,
         )
 
         self.db.add(record)
@@ -29,9 +31,9 @@ class RolePermissionRepository:
         self,
         *,
         id: UUID,
-    ) -> RolePermission | None:
+    ) -> LocationUserRole | None:
         return (
-            self.db.query(RolePermission)
-            .filter(RolePermission.id == id)
+            self.db.query(LocationUserRole)
+            .filter(LocationUserRole.id == id)
             .first()
         )

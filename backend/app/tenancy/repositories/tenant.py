@@ -3,34 +3,30 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.auth.models.user import User
+from app.tenancy.models.tenant import Tenant
 
 
-class UserRepository:
+class TenantRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
     def create(
         self,
         *,
-        email: str,
-        password_hash: str,
-        first_name: str,
-        last_name: str,
+        label: str,
+        code: str,
         terms_accepted_at: datetime,
+        email: str | None = None,
         terms_version: str = "v1",
-        is_active: bool = False,
-        last_login: datetime | None = None,
-    ) -> User:
-        record = User(
-            email=email,
-            password_hash=password_hash,
-            first_name=first_name,
-            last_name=last_name,
+        is_active: bool = True,
+    ) -> Tenant:
+        record = Tenant(
+            label=label,
+            code=code,
             terms_accepted_at=terms_accepted_at,
+            email=email,
             terms_version=terms_version,
             is_active=is_active,
-            last_login=last_login,
         )
 
         self.db.add(record)
@@ -42,9 +38,9 @@ class UserRepository:
         self,
         *,
         id: UUID,
-    ) -> User | None:
+    ) -> Tenant | None:
         return (
-            self.db.query(User)
-            .filter(User.id == id)
+            self.db.query(Tenant)
+            .filter(Tenant.id == id)
             .first()
         )
