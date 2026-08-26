@@ -1,2 +1,71 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
+
+
+html {
+	font-family: 'Inter', ui-sans-serif, system-ui;
+}
+
+:root {
+	--bg: #F9F8F8;
+	--surface: #FFFFFF;
+	--surface-muted: #FBFAFF;
+
+	--text: #0a2540;
+	--text-muted: #71717A;
+	--border: #E4E4E7;
+
+	--primary: #5E2BFF;
+	--primary-hover: #4C1EDB;
+	--primary-soft: #EEE9FF;
+
+	--secondary: #E8FFC2;
+	--secondary-strong: #548C0D;
+
+  	--success: #16a34a;
+	--success-soft: #dcfce7;
+	--success-text: #166534;
+
+	--danger: #e11d48;
+	--danger-soft: #ffe4e6;
+	--danger-text: #9f1239;
+}
+
+@layer base {
+	input:not([type='checkbox']):not([type='radio']),
+	textarea,
+	select {
+		@apply w-full rounded-2xl border px-3 py-2 text-base outline-none transition;
+
+		background-color: var(--surface);
+		border-color: var(--border);
+		color: var(--text);
+	}
+
+	input::placeholder,
+	textarea::placeholder {
+		color: var(--text-muted);
+		opacity: 0.65;
+	}
+
+	input:focus:not([type='checkbox']):not([type='radio']),
+	textarea:focus,
+	select:focus {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+	}
+
+	input:disabled,
+	textarea:disabled,
+	select:disabled {
+		opacity: 0.65;
+		cursor: not-allowed;
+		background-color: var(--surface-muted);
+		color: var(--text-muted);
+	}
+
+	label {
+		@apply mb-1 block text-base font-extrabold tracking-wide;
+		color: var(--text);
+	}
+}

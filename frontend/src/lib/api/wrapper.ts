@@ -1,3 +1,6 @@
+import { setResponse } from '$lib/toast/state.svelte';
+
+
 export type ApiResponse<T = unknown> = {
 	ok: boolean;
 	msg: string;
@@ -20,6 +23,7 @@ type ApiWrapperOptions = {
 	fetcher?: typeof fetch;
 };
 
+
 export async function apiWrapper<T = unknown>(
 	url: string,
 	options: ApiWrapperOptions = {}
@@ -32,10 +36,24 @@ export async function apiWrapper<T = unknown>(
 		fetcher = fetch
 	} = options;
 
+	function finalizeResponse(
+		response: ApiResponse<T>
+	): ApiResponse<T> {
+		if (method !== 'GET') {
+			setResponse(
+				response.ok,
+				response.msg
+			);
+		}
+
+		return response;
+	}
+
 	try {
 		const isFormData = body instanceof FormData;
 		const isUrlEncoded = body instanceof URLSearchParams;
 		const isStringBody = typeof body === 'string';
+
 		const isJsonBody =
 			body !== undefined &&
 			!isFormData &&
@@ -51,7 +69,8 @@ export async function apiWrapper<T = unknown>(
 		}
 
 		if (isUrlEncoded && !finalHeaders['Content-Type']) {
-			finalHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+			finalHeaders['Content-Type'] =
+				'application/x-www-form-urlencoded';
 		}
 
 		const response = await fetcher(url, {
@@ -67,18 +86,23 @@ export async function apiWrapper<T = unknown>(
 		});
 
 		const status = response.status;
-		const contentType = response.headers.get('content-type') ?? '';
+		const contentType =
+			response.headers.get('content-type') ?? '';
 
 		if (!contentType.includes('application/json')) {
-			return {
+			return finalizeResponse({
 				ok: response.ok,
-				msg: response.ok ? 'Success' : 'Something went wrong',
+				msg: response.ok
+					? 'Success'
+					: 'Something went wrong',
 				data: null,
 				status
-			};
+			});
 		}
 
-		const result = (await response.json()) as Omit<ApiResponse<T>, 'status'>;
+		const result = (
+			await response.json()
+		) as Omit<ApiResponse<T>, 'status'>;
 
 		const apiResponse: ApiResponse<T> = {
 			ok: result.ok,
@@ -91,13 +115,14 @@ export async function apiWrapper<T = unknown>(
 			await onSuccess();
 		}
 
-		return apiResponse;
+		return finalizeResponse(apiResponse);
+
 	} catch {
-		return {
+		return finalizeResponse({
 			ok: false,
 			msg: 'Network error',
 			data: null,
 			status: 0
-		};
+		});
 	}
 }
