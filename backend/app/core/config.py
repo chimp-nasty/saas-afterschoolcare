@@ -8,10 +8,10 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
 
-    # Frontend / CORS
-    FRONTEND_URLS: str
+    # Frontend
+    BASE_DOMAIN: str
 
-    # Cookie setiings
+    # Cookie settings
     COOKIE_NAME: str = "access_token"
     COOKIE_SECURE: bool = True
     COOKIE_HTTPONLY: bool = True
@@ -54,14 +54,6 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
-
-    @property
-    def allowed_origins(self) -> list[str]:
-        return [
-            origin.strip()
-            for origin in self.FRONTEND_URLS.split(",")
-            if origin.strip()
-        ]
 
 
 settings = Settings()

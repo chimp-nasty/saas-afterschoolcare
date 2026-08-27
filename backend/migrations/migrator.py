@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 from .scaffold_tables import up as scaffold_tables
 from .seed_data import up as seed_data
+from .dev_seed_data import up as dev_seed_data
 
 
 MIGRATION_SCHEMA = "migrations"
@@ -121,9 +122,19 @@ def run() -> dict[str, bool]:
                 migration=seed_data,
             )
 
+            dev_seed_applied = False
+
+            if settings.APP_ENV == "dev":
+                dev_seed_applied = run_migration(
+                    conn=conn,
+                    name="dev_seed_data",
+                    migration=dev_seed_data,
+                )
+
     return {
         "scaffold_tables": scaffold_applied,
         "seed_data": seed_applied,
+        "dev_seed_data": dev_seed_applied,
     }
 
 
@@ -142,7 +153,7 @@ def reset() -> None:
                 text(
                     """
                     DROP SCHEMA IF EXISTS
-                        authorization CASCADE;
+                        auth CASCADE;
 
                     DROP SCHEMA IF EXISTS
                         tenancy CASCADE;

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { page } from '$app/state';
+
     import Authorize from '$lib/auth/Authorize.svelte';
 	import Layout from '$lib/components/layout/Layout.svelte';
 
@@ -14,7 +16,7 @@
     ]
 </script>
 
-<Authorize {roles}>
+<Authorize locationCode={page.data.locationCode} {roles}>
     <Layout>
         {#snippet header()}
             <Header />

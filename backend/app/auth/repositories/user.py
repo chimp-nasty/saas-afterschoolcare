@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -48,3 +48,29 @@ class UserRepository:
             .filter(User.id == id)
             .first()
         )
+
+    def get_by_email(
+        self,
+        *,
+        email: str
+    ) -> User | None:
+        return (
+            self.db.query(User)
+            .filter(User.email == email)
+            .first()
+        )
+        
+    def update_last_login(
+        self,
+        *,
+        user: User
+    ) -> None:
+        user.last_login = datetime.now(timezone.utc)
+        
+    def update_password_hash(
+        self,
+        *,
+        user: User,
+        password_hash: str
+    ) -> None:
+        user.password_hash = password_hash

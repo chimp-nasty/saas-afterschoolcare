@@ -5,6 +5,7 @@
 	import { auth } from '$lib/auth/state.svelte';
 
 	type Props = {
+		locationCode: string;
 		roles: string[];
 		children: Snippet;
 		fallback?: Snippet;
@@ -12,6 +13,7 @@
 	};
 
 	let {
+		locationCode,
 		roles,
 		children,
 		fallback,
@@ -24,8 +26,8 @@
 	);
 
 	$effect(() => {
-		if (!authorized && redirect) {
-			void goto('/');
+		if ($auth.initialized && !authorized && redirect) {
+			void goto(`/${locationCode}`);
 		}
 	});
 </script>

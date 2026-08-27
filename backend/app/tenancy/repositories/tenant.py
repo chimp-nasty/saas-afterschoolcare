@@ -13,7 +13,7 @@ class TenantRepository:
     def create(
         self,
         *,
-        label: str,
+        name: str,
         code: str,
         terms_accepted_at: datetime,
         email: str | None = None,
@@ -21,7 +21,7 @@ class TenantRepository:
         is_active: bool = True,
     ) -> Tenant:
         record = Tenant(
-            label=label,
+            name=name,
             code=code,
             terms_accepted_at=terms_accepted_at,
             email=email,
@@ -42,5 +42,27 @@ class TenantRepository:
         return (
             self.db.query(Tenant)
             .filter(Tenant.id == id)
+            .first()
+        )
+
+    def get_by_code(
+        self,
+        *,
+        code: str
+    ) -> Tenant | None:
+        return (
+            self.db.query(Tenant)
+            .filter(Tenant.code == code)
+            .first()
+        )
+        
+    def get_by_custom_domain(
+        self,
+        *,
+        custom_domain: str
+    ) -> Tenant | None:
+        return (
+            self.db.query(Tenant)
+            .filter(Tenant.custom_domain == custom_domain)
             .first()
         )

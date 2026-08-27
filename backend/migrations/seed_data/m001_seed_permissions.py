@@ -5,7 +5,7 @@ from sqlalchemy.engine import Connection
 
 
 RESOURCES = [
-    "user_profile",
+    "customer_profile",
     "child_profile",
     "child_notes",
     "authorized_pickup_persons",

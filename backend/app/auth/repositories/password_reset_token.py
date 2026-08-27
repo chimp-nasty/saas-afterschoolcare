@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.auth.models.password_reset_token import PasswordResetToken
 
@@ -38,5 +39,18 @@ class PasswordResetTokenRepository:
         return (
             self.db.query(PasswordResetToken)
             .filter(PasswordResetToken.id == id)
+            .first()
+        )
+
+    def get_valid_by_token_hash(
+        self,
+        *,
+        token_hash
+    ) -> PasswordResetToken | None:
+        return (
+            self.db.query(PasswordResetToken)
+            .filter(PasswordResetToken.token_hash == token_hash)
+            .filter(PasswordResetToken.used_at.is_(None))
+            .filter(PasswordResetToken.expires_at > func.now())
             .first()
         )

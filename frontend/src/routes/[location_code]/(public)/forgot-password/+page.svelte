@@ -1,10 +1,15 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import ForgotPasswordForm from '$lib/features/auth/components/ForgotPasswordForm.svelte';
 
-	import { forgotPassword } from '$lib/api/auth/adapters/auth';
+	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 
 	let isLoading = $state(false);
 	let form: ForgotPasswordForm;
+
+	const authApi = $derived(
+		createAuthApi(page.data.locationCode)
+	);
 
 	async function handleSubmit(
 		body: {
@@ -14,7 +19,7 @@
 		try {
 			isLoading = true;
 
-			const response = await forgotPassword(body);
+			const response = await authApi.forgotPassword(body);
 
 			if (response.ok) {
 				form.reset();

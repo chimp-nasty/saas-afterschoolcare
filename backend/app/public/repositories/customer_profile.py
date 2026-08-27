@@ -2,10 +2,10 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.public.models.user_profile import UserProfile
+from app.public.models.customer_profile import CustomerProfile
 
 
-class UserProfileRepository:
+class CustomerProfileRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
@@ -19,8 +19,8 @@ class UserProfileRepository:
         suburb: str | None = None,
         state: str | None = None,
         postcode: str | None = None,
-    ) -> UserProfile:
-        record = UserProfile(
+    ) -> CustomerProfile:
+        record = CustomerProfile(
             user_id=user_id,
             phone=phone,
             address_line_1=address_line_1,
@@ -39,9 +39,9 @@ class UserProfileRepository:
         self,
         *,
         id: UUID,
-    ) -> UserProfile | None:
+    ) -> CustomerProfile | None:
         return (
-            self.db.query(UserProfile)
-            .filter(UserProfile.id == id)
+            self.db.query(CustomerProfile)
+            .filter(CustomerProfile.id == id)
             .first()
         )

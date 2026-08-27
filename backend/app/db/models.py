@@ -1,10 +1,10 @@
 # Authorization
-from app.authorization.models.location_user_role import LocationUserRole
-from app.authorization.models.password_reset_token import PasswordResetToken
-from app.authorization.models.permission import Permission
-from app.authorization.models.role import Role
-from app.authorization.models.role_permission import RolePermission
-from app.authorization.models.user import User
+from app.auth.models.location_user_role import LocationUserRole
+from app.auth.models.password_reset_token import PasswordResetToken
+from app.auth.models.permission import Permission
+from app.auth.models.role import Role
+from app.auth.models.role_permission import RolePermission
+from app.auth.models.user import User
 
 # Tenancy
 from app.tenancy.models.location import Location
@@ -31,4 +31,4 @@ from app.public.models.medical_review_status import MedicalReviewStatus
 from app.public.models.payment_status import PaymentStatus
 from app.public.models.service_type import ServiceType
 from app.public.models.user_kiosk_pin import UserKioskPin
-from app.public.models.user_profile import UserProfile
+from app.public.models.customer_profile import CustomerProfile

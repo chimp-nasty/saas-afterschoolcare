@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base
 
 
-class UserProfile(Base):
-    __tablename__ = "user_profile"
+class CustomerProfile(Base):
+    __tablename__ = "Customer_profile"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -28,6 +28,6 @@ class UserProfile(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__ = (
-        UniqueConstraint("user_id", name="uq_user_profile_user"),
+        UniqueConstraint("user_id", name="uq_customer_profile_user"),
         {"schema": "public"},
     )

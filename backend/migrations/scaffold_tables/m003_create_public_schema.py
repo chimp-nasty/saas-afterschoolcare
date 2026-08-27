@@ -77,10 +77,10 @@ def up(conn: Connection) -> None:
 
 
         -- =====================================================
-        -- USER PROFILE
+        -- CUSTOMER PROFILE
         -- =====================================================
 
-        CREATE TABLE IF NOT EXISTS public.user_profile (
+        CREATE TABLE IF NOT EXISTS public.customer_profile (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             user_id UUID NOT NULL
@@ -98,7 +98,7 @@ def up(conn: Connection) -> None:
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-            CONSTRAINT uq_user_profile_user
+            CONSTRAINT uq_customer_profile_user
                 UNIQUE (user_id)
         );
 

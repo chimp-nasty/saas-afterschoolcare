@@ -17,9 +17,10 @@ def up(conn: Connection) -> None:
         CREATE TABLE IF NOT EXISTS tenancy.tenants (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-            label VARCHAR(200) NOT NULL,
+            name VARCHAR(200) NOT NULL,
             code VARCHAR(50) NOT NULL UNIQUE,
 
+            custom_domain VARCHAR(255) UNIQUE,
             email VARCHAR(255),
 
             terms_accepted_at TIMESTAMPTZ NOT NULL,
@@ -27,7 +28,10 @@ def up(conn: Connection) -> None:
 
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
-            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            
+            CONSTRAINT tenants_code_format_check
+                CHECK (code ~ '^[a-z][a-z0-9-]*$')
         );
 
 
@@ -44,7 +48,7 @@ def up(conn: Connection) -> None:
 
             name VARCHAR(200) NOT NULL,
             code VARCHAR(50) NOT NULL,
-
+            
             address TEXT,
             phone VARCHAR(50),
             email VARCHAR(255),
@@ -54,7 +58,10 @@ def up(conn: Connection) -> None:
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
             CONSTRAINT uq_location_tenant_code
-                UNIQUE (tenant_id, code)
+                UNIQUE (tenant_id, code),
+            
+            CONSTRAINT locations_code_format_check
+                CHECK (code ~ '^[a-z][a-z0-9-]*$')
         );
 
 

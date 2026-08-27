@@ -2,50 +2,62 @@ import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import type { LoginRequest, ResetPasswordRequest, ForgotPasswordRequest } from '../types/types';
+import type {
+	LoginRequest,
+	ResetPasswordRequest,
+	ForgotPasswordRequest,
+	SessionResponse
+} from '../types/types';
 
 
-export const login = async (
-	body: LoginRequest,
+export function createAuthApi(
+	locationCode: string,
 	fetcher?: typeof fetch
-) => {
-	return apiWrapper<null>(
-		`${PUBLIC_API_URL}/auth/v1/login`,
-		{
-			method: 'POST',
-			body,
-			fetcher
+) {
+	const baseUrl =
+		`${PUBLIC_API_URL}/${locationCode}/auth/v1`;
+
+	return {
+		login(body: LoginRequest) {
+			return apiWrapper<null>(
+				`${baseUrl}/login`,
+				{
+					method: 'POST',
+					body,
+					fetcher
+				}
+			);
+		},
+
+		forgotPassword(body: ForgotPasswordRequest) {
+			return apiWrapper<null>(
+				`${baseUrl}/forgot-password`,
+				{
+					method: 'POST',
+					body,
+					fetcher
+				}
+			);
+		},
+
+		resetPassword(body: ResetPasswordRequest) {
+			return apiWrapper<null>(
+				`${baseUrl}/reset-password`,
+				{
+					method: 'POST',
+					body,
+					fetcher
+				}
+			);
+		},
+
+		getSession() {
+			return apiWrapper<SessionResponse>(
+				`${baseUrl}/session`,
+				{
+					fetcher
+				}
+			);
 		}
-	);
-};
-
-
-export const forgotPassword = async (
-	body: ForgotPasswordRequest,
-	fetcher?: typeof fetch
-) => {
-	return apiWrapper<null>(
-		`${PUBLIC_API_URL}/auth/v1/forgot-password`,
-		{
-			method: 'POST',
-			body,
-			fetcher
-		}
-	);
-};
-
-
-export const resetPassword = async (
-	body: ResetPasswordRequest,
-	fetcher?: typeof fetch
-) => {
-	return apiWrapper<null>(
-		`${PUBLIC_API_URL}/auth/v1/reset-password`,
-		{
-			method: 'POST',
-			body,
-			fetcher
-		}
-	);
-};
-
+	};
+}

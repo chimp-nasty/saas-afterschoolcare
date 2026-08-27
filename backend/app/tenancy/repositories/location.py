@@ -45,3 +45,18 @@ class LocationRepository:
             .filter(Location.id == id)
             .first()
         )
+
+    def get_by_tenant_and_code(
+        self,
+        *,
+        tenant_id: UUID,
+        code: str
+    ) -> Location:
+        return (
+            self.db.query(Location)
+            .filter(
+                Location.tenant_id == tenant_id,
+                Location.code == code,
+            )
+            .first()
+        )

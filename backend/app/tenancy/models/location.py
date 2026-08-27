@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, UniqueConstraint, CheckConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
@@ -66,6 +66,10 @@ class Location(Base):
             "tenant_id",
             "code",
             name="uq_location_tenant_code",
+        ),
+        CheckConstraint(
+            "code ~ '^[a-z][a-z0-9-]*$'",
+            name="locations_code_format_check",
         ),
         {"schema": "tenancy"},
     )

@@ -1,3 +1,4 @@
+import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,14 +18,10 @@ def configure_middleware(app: FastAPI) -> None:
         default_limit=180,
         default_window_seconds=60,
         route_limits={
-            "/api/v1/auth/login": (10, 60),
-            "/api/v1/auth/login/": (10, 60),
-            "/api/v1/auth/register": (5, 60),
-            "/api/v1/auth/register/": (5, 60),
-            "/api/v1/auth/request/password-reset": (5, 60),
-            "/api/v1/auth/request/password-reset/": (5, 60),
-            "/api/v1/auth/reset-password": (10, 60),
-            "/api/v1/auth/reset-password/": (10, 60),
+            r"/[^/]+/auth/v1/login/?": (10, 60),
+            r"/[^/]+/auth/v1/register/?": (5, 60),
+            r"/[^/]+/auth/v1/forgot-password/?": (5, 60),
+            r"/[^/]+/auth/v1/reset-password/?": (10, 60),
         },
         exempt_paths={
             "/api/v1/webhooks/stripe",
@@ -32,9 +29,21 @@ def configure_middleware(app: FastAPI) -> None:
         },
     )
 
+    if settings.APP_ENV == "dev":
+        origin_regex = (
+            rf"http://[a-z0-9-]+\."
+            rf"{re.escape(settings.BASE_DOMAIN)}"
+            rf"(:\d+)?"
+        )
+    else:
+        origin_regex = (
+            rf"https://[a-z0-9-]+\."
+            rf"{re.escape(settings.BASE_DOMAIN)}"
+        )
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.allowed_origins,
+        allow_origin_regex=origin_regex,
         allow_credentials=True,
         allow_methods=[
             "GET",

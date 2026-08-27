@@ -4,13 +4,17 @@
 
 	import ResetPasswordForm from '$lib/features/auth/components/ResetPasswordForm.svelte';
 
-	import { resetPassword } from '$lib/api/auth/adapters/auth';
+	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 
 	let isLoading = $state(false);
 	let form = $state<ResetPasswordForm | null>(null);
 
 	const token = $derived(
 		page.url.searchParams.get('token')
+	);
+
+	const authApi = $derived(
+		createAuthApi(page.data.locationCode)
 	);
 
 	async function handleSubmit(
@@ -23,7 +27,7 @@
 		try {
 			isLoading = true;
 
-			const response = await resetPassword({
+			const response = await authApi.resetPassword({
 				token,
 				password
 			});

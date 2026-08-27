@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
 	import Button from '$lib/components/actions/Button.svelte';
@@ -56,7 +57,7 @@
 			<Button
 				textSize="sm"
 				variant="ghost"
-				onclick={() => goto('/login')}
+				onclick={() => goto(`/${page.params.location_code}/login`)}
 			>
 				Login
 			</Button>

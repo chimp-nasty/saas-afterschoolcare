@@ -39,3 +39,16 @@ class RoleRepository:
             .filter(Role.id == id)
             .first()
         )
+
+    def list_by_ids(
+        self,
+        *,
+        role_ids: list[UUID],
+    ) -> list[Role]:
+        return (
+            self.db.query(Role)
+            .filter(
+                Role.id.in_(role_ids),
+            )
+            .all()
+        )

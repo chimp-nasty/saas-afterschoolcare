@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, String, func
+from sqlalchemy import Boolean, Column, DateTime, String, CheckConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
@@ -16,7 +16,7 @@ class Tenant(Base):
         default=uuid.uuid4,
     )
 
-    label = Column(
+    name = Column(
         String(200),
         nullable=False,
     )
@@ -27,6 +27,12 @@ class Tenant(Base):
         unique=True,
     )
 
+    custom_domain = Column(
+        String(255),
+        nullable=True,
+        unique=True,
+    )
+    
     email = Column(
         String(255),
         nullable=True,
@@ -53,4 +59,12 @@ class Tenant(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "code ~ '^[a-z][a-z0-9-]*$'",
+            name="tenants_code_format_check",
+        ),
+        {"schema": "tenancy"},
     )
