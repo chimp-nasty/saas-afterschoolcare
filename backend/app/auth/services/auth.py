@@ -102,7 +102,9 @@ class AuthService:
                 user_id=user.id,
                 location_id=location_id,
                 roles=roles,
-                permissions=permission_map
+                permissions=permission_map,
+                email=user.email,
+                first_name=user.first_name,
             )
             
             self.db.commit()

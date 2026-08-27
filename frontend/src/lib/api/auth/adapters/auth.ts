@@ -58,6 +58,16 @@ export function createAuthApi(
 					fetcher
 				}
 			);
+		},
+
+		logout() {
+			return apiWrapper<null>(
+				`${baseUrl}/logout`,
+				{
+					method: 'POST',
+					fetcher
+				}
+			);
 		}
 	};
 }

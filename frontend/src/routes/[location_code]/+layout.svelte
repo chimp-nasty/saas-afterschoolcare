@@ -14,9 +14,9 @@
 			setSession({
 				userId: response.data.user_id,
 				tenantId: response.data.location_id,
-				email: null,
-				firstName: null,
-				roles: []
+				email: response.data.email,
+				firstName: response.data.first_name,
+				roles: response.data.roles
 			});
 		} else {
 			clearSession();

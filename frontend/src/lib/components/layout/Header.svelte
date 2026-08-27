@@ -4,6 +4,7 @@
 
 	import Button from '$lib/components/actions/Button.svelte';
 	import { auth, clearSession } from '$lib/auth/state.svelte';
+	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 
 	const title = "App Name"
 
@@ -13,8 +14,11 @@
 		isLoading = true;
 
 		try {
+			const authApi = createAuthApi(page.params.location_code ?? '');
+			await authApi.logout();
+
 			clearSession();
-			await goto('/');
+			await goto(`/${page.params.location_code}/`);
 		} finally {
 			isLoading = false;
 		}

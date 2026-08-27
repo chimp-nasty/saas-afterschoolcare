@@ -56,6 +56,25 @@ def login(
     )
     
     
+@router.post("/logout")
+def logout(
+    response: Response,
+) -> ApiResponse[None]:
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
+        path="/",
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Logged out",
+        data=None,
+    )
+
+
 @router.post("/forgot-password")
 def forgot_password(
     body: ForgotPasswordRequest,
@@ -100,5 +119,8 @@ def get_session(
         data={
             "user_id": str(ctx.user_id),
             "location_id": str(ctx.location_id),
+            "email": ctx.email,
+            "first_name": ctx.first_name,
+            "roles": list(ctx.roles),
         },
     )

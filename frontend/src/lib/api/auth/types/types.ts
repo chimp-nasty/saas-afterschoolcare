@@ -19,4 +19,7 @@ export type ResetPasswordRequest = {
 export type SessionResponse = {
     user_id: string;
     location_id: string;
+    email: string | null;
+    first_name: string | null;
+    roles: string[];
 }
