@@ -5,6 +5,8 @@
 	import { setSession, clearSession, auth } from '$lib/auth/state.svelte';
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 
+	import ResponseToast from '$lib/toast/ResponseToast.svelte';
+
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Footer from '$lib/components/layout/tenant/Footer.svelte';
@@ -81,6 +83,8 @@
 		}
 	}
 </script>
+
+<ResponseToast/>
 
 {#snippet sidebar()}
 	<Sidebar {items} />

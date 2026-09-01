@@ -16,7 +16,7 @@ export function clearResponse() {
 export function setResponse(
 	ok: boolean,
 	message: string,
-	timeout = 10000
+	timeout = 2000
 ) {
 	response.ok = ok;
 	response.message = message;

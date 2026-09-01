@@ -19,7 +19,7 @@
 </script>
 
 <div
-	class="flex min-h-screen flex-col"
+	class="relative flex min-h-screen flex-col"
 	style:--primary={primaryColor ?? undefined}
 	style:--secondary={secondaryColor ?? undefined}
 >

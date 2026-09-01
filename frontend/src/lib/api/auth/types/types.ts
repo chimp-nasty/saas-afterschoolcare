@@ -23,3 +23,15 @@ export type SessionResponse = {
     first_name: string | null;
     roles: string[];
 }
+
+
+// Registration
+export type RegistrationRequest = {
+    email: string;
+    password: string;
+
+    first_name: string;
+    last_name: string;
+
+    terms_accepted: boolean;
+}

@@ -11,7 +11,7 @@
 
 	const authApi = createAuthApi();
 
-	async function handleLogin(body: LoginRequest) {
+	async function handleSubmit(body: LoginRequest) {
 		try {
 			isLoading = true;
 
@@ -33,6 +33,6 @@
 
 <LoginForm
 	bind:this={form}
-	handleSubmit={handleLogin}
+	{handleSubmit}
 	{isLoading}
 />

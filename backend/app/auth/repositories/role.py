@@ -40,6 +40,17 @@ class RoleRepository:
             .first()
         )
 
+    def get_by_code(
+        self,
+        *,
+        code: str
+    ) -> Role | None:
+        return (
+            self.db.query(Role)
+            .filter(Role.code == code)
+            .first()
+        )
+
     def list_by_ids(
         self,
         *,

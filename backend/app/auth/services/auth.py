@@ -125,34 +125,24 @@ class AuthService:
         Validates account uniqueness, hashes the supplied password,
         and creates the authentication user record.
         """
-        try:
-            existing_user = self.users.get_by_email(
-                email=body.email
-            )
-            
-            if existing_user:
-                raise UserCollisionError()
-            
-            password_hash = hash_password(
-                password=body.password
-            )
-            
-            user = self.users.create(
-                email=body.email,
-                password_hash=password_hash,
-                
-                first_name=body.first_name,
-                last_name=body.last_name,
-                
-                terms_accepted_at=datetime.now(timezone.utc)
-            )
-            
-            self.db.commit()
-            return user
-            
-        except Exception:
-            self.db.rollback()
-            raise
+        existing_user = self.users.get_by_email(
+            email=body.email
+        )
+
+        if existing_user:
+            raise UserCollisionError()
+
+        password_hash = hash_password(
+            password=body.password
+        )
+
+        return self.users.create(
+            email=body.email,
+            password_hash=password_hash,
+            first_name=body.first_name,
+            last_name=body.last_name,
+            terms_accepted_at=datetime.now(timezone.utc)
+        )
         
     def reset_password(
         self,
