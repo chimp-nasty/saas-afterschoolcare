@@ -1,34 +1,28 @@
 import { writable } from 'svelte/store';
 
-
 export type AuthState = {
 	authenticated: boolean;
 	initialized: boolean;
 	userId: string | null;
-	tenantId: string | null;
+	locationId: string | null;
 	email: string | null;
 	firstName: string | null;
 	roles: string[];
 };
-
 
 function emptyAuthState(): AuthState {
 	return {
 		authenticated: false,
 		initialized: false,
 		userId: null,
-		tenantId: null,
+		locationId: null,
 		email: null,
 		firstName: null,
 		roles: []
 	};
 }
 
-
-export const auth = writable<AuthState>(
-	emptyAuthState()
-);
-
+export const auth = writable<AuthState>(emptyAuthState());
 
 export function setSession(
 	session: Omit<AuthState, 'authenticated' | 'initialized'>
@@ -39,7 +33,6 @@ export function setSession(
 		...session
 	});
 }
-
 
 export function clearSession(): void {
 	auth.set({

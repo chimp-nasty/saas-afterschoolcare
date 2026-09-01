@@ -13,9 +13,7 @@
 		page.url.searchParams.get('token')
 	);
 
-	const authApi = $derived(
-		createAuthApi(page.data.locationCode)
-	);
+	const authApi = createAuthApi();
 
 	async function handleSubmit(
 		password: string

@@ -39,7 +39,13 @@
 	);
 
 	const baseClass =
-		'inline-flex min-h-12 items-center tracking-wider justify-center gap-2 rounded-lg px-4 font-extrabold transition outline-none disabled:cursor-not-allowed disabled:opacity-50';
+		'inline-flex items-center justify-center gap-2 transition outline-none disabled:cursor-not-allowed disabled:opacity-50';
+
+	const standardButtonClass = $derived(
+		variant === 'hyperlink'
+			? ''
+			: 'min-h-12 tracking-wider rounded-lg px-4 font-extrabold'
+	);
 
 	const widthClass = $derived(fullWidth ? 'w-full' : 'w-fit');
 
@@ -86,15 +92,20 @@
 		`,
 
 		hyperlink: `
+			inline
 			min-h-0
+			justify-start
+			gap-0
 			rounded-none
 			border-none
 			bg-transparent
-			px-0 py-0
-			text-sm font-medium
-			text-(--primary)
+			p-0
+			font-normal
+			tracking-normal
+			cursor-pointer
+			text-(--hyperlink)
 			shadow-none
-			hover:text-(--primary-hover)
+			hover:text-(--hyperlink-hover)
 			hover:underline
 			active:scale-100
 			focus-visible:ring-0
@@ -115,17 +126,18 @@
 			focus-visible:ring-0
 			focus-visible:bg-(--primary-soft)
 			focus-visible:text-(--primary)
-		`,
+		`
 	};
 </script>
 
 <button
-    {type}
-    class={`${baseClass} ${widthClass} ${textSizeClasses[textSize]} ${variantClasses[variant]} ${activeClass}`}
-    disabled={isLoading || isDisabled}
-    {...restProps}
+	{type}
+	class={`${baseClass} ${standardButtonClass} ${widthClass} ${textSizeClasses[textSize]} ${variantClasses[variant]} ${activeClass}`}
+	disabled={isLoading || isDisabled}
+	{...restProps}
 >
 	{@render children?.()}
+
 	{#if isLoading}
 		<Spinner isBouncy={false} />
 	{/if}

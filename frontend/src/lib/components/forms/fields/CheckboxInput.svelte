@@ -5,7 +5,6 @@
         value: boolean;
         label: string;
 
-        name?: string;
         isDisabled?: boolean;
 
         error?: string | null;
@@ -15,15 +14,18 @@
         value = $bindable(),
         label,
 
-        name,
         isDisabled = false,
 
         error,
     }: Props = $props();
 
+    const name = $derived(
+		label.trim().toLowerCase().replace(/\s+/g, '-')
+	);
+    
     const id = $derived(
-        name ?? `checkbox-input-${crypto.randomUUID()}`,
-    );
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
+	);
 </script>
 
 <div>
@@ -31,7 +33,7 @@
         <input
             bind:checked={value}
             {id}
-            name={name ?? id}
+            {name}
             type="checkbox"
             disabled={isDisabled}
         />

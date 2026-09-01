@@ -5,7 +5,6 @@
 		value: string;
 		label: string;
 
-		name?: string;
 		placeholder?: string;
 
 		readonly?: boolean;
@@ -19,7 +18,6 @@
 		value = $bindable(),
 		label,
 
-		name,
 		placeholder,
 
 		readonly = false,
@@ -29,8 +27,12 @@
 		error
 	}: Props = $props();
 
+	const name = $derived(
+		label.trim().toLowerCase().replace(/\s+/g, '-')
+	);
+	
 	const id = $derived(
-		name ?? `email-input-${crypto.randomUUID()}`
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
 	);
 </script>
 
@@ -42,9 +44,9 @@
 	<input
 		bind:value
 		{id}
-		name={name ?? id}
+		{name}
 		type="email"
-		autocomplete="email"
+		autocomplete="username"
 		inputmode="email"
 		{placeholder}
 		required={isRequired}

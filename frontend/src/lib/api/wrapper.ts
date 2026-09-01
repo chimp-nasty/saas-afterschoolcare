@@ -117,7 +117,13 @@ export async function apiWrapper<T = unknown>(
 
 		return finalizeResponse(apiResponse);
 
-	} catch {
+	} catch (error) {
+		console.error('API wrapper error', {
+			url,
+			method,
+			error
+		});
+
 		return finalizeResponse({
 			ok: false,
 			msg: 'Network error',

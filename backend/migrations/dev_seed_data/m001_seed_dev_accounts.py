@@ -408,3 +408,90 @@ def up(conn: Connection) -> None:
             "role_id": admin_role_id,
         },
     )
+
+    # =========================
+    # TENANT 1 - LOCATION 1 BRANDING
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO tenancy.location_branding (
+                location_id,
+                display_name,
+                primary_color,
+                secondary_color
+            )
+            VALUES (
+                :location_id,
+                'Tenant 1 - Location 1',
+                '#5E2BFF',
+                '#E8FFC2'
+            )
+            ON CONFLICT (location_id)
+            DO UPDATE SET
+                display_name = EXCLUDED.display_name,
+                primary_color = EXCLUDED.primary_color,
+                secondary_color = EXCLUDED.secondary_color;
+        """),
+        {
+            "location_id": tenant_1_location_1_id,
+        },
+    )
+
+    # =========================
+    # TENANT 1 - LOCATION 2 BRANDING
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO tenancy.location_branding (
+                location_id,
+                display_name,
+                primary_color,
+                secondary_color
+            )
+            VALUES (
+                :location_id,
+                'Tenant 1 - Location 2',
+                '#7C3AED',
+                '#D9F99D'
+            )
+            ON CONFLICT (location_id)
+            DO UPDATE SET
+                display_name = EXCLUDED.display_name,
+                primary_color = EXCLUDED.primary_color,
+                secondary_color = EXCLUDED.secondary_color;
+        """),
+        {
+            "location_id": tenant_1_location_2_id,
+        },
+    )
+
+    # =========================
+    # TENANT 2 - LOCATION 2 BRANDING
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO tenancy.location_branding (
+                location_id,
+                display_name,
+                primary_color,
+                secondary_color
+            )
+            VALUES (
+                :location_id,
+                'Tenant 2 - Location 2',
+                '#0369A1',
+                '#FDBA74'
+            )
+            ON CONFLICT (location_id)
+            DO UPDATE SET
+                display_name = EXCLUDED.display_name,
+                primary_color = EXCLUDED.primary_color,
+                secondary_color = EXCLUDED.secondary_color;
+        """),
+        {
+            "location_id": tenant_2_location_2_id,
+        },
+    )

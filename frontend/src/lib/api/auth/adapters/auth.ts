@@ -11,16 +11,15 @@ import type {
 
 
 export function createAuthApi(
-	locationCode: string,
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/${locationCode}/auth/v1`;
+		`${PUBLIC_API_URL}/auth/v1`;
 
 	return {
-		login(body: LoginRequest) {
+		login(locationCode: string, body: LoginRequest) {
 			return apiWrapper<null>(
-				`${baseUrl}/login`,
+				`${baseUrl}/login/${locationCode}`,
 				{
 					method: 'POST',
 					body,

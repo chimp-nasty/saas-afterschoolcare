@@ -1,8 +1,12 @@
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.engine import Row
 
 from app.tenancy.models.location_branding import LocationBranding
+from app.tenancy.models.location import Location
+from app.tenancy.models.tenant import Tenant
 
 
 class LocationBrandingRepository:
@@ -43,3 +47,30 @@ class LocationBrandingRepository:
             .filter(LocationBranding.id == id)
             .first()
         )
+
+    def get_location_with_branding_by_id(
+        self,
+        *,
+        location_id: UUID,
+    ):
+        stmt = (
+            select(
+                Location,
+                Tenant,
+                LocationBranding,
+            )
+            .join(
+                Tenant,
+                Tenant.id == Location.tenant_id,
+            )
+            .outerjoin(
+                LocationBranding,
+                LocationBranding.location_id == Location.id,
+            )
+            .where(
+                Location.id == location_id,
+                Location.is_active.is_(True),
+            )
+        )
+
+        return self.db.execute(stmt).first()

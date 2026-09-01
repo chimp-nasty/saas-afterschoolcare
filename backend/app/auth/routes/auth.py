@@ -22,7 +22,7 @@ router = APIRouter(
 )
 
 
-@router.post("/login")
+@router.post("/login/{location_code}")
 def login(
     body: LoginRequest,
     response: Response,

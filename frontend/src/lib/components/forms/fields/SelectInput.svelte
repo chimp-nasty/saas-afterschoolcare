@@ -14,7 +14,6 @@
 		label: string;
 		options: SelectOption[];
 
-		name?: string;
 		placeholder?: string;
 
 		isDisabled?: boolean;
@@ -28,7 +27,6 @@
 		label,
 		options,
 
-		name,
 		placeholder = 'Select an option',
 
 		isDisabled = false,
@@ -41,7 +39,7 @@
 	let isOpen = $state(false);
 
 	const id = $derived(
-		name ?? `select-${crypto.randomUUID()}`
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
 	);
 
 	const selectedOption = $derived(

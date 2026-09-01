@@ -99,17 +99,9 @@ def require_scope(
 
 def resolve_location_id(
     location_code: str,
-    origin: str | None = Header(
-        default=None,
-    ),
+    origin: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ) -> UUID:
-    """
-    Resolve public request context to a trusted location ID.
-
-    Resolves the tenant from the frontend origin, then resolves
-    the requested location code within that tenant.
-    """
     if not origin:
         raise LocationNotFoundError()
 

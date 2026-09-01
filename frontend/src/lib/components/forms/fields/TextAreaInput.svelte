@@ -5,7 +5,6 @@
         value: string;
         label: string;
 
-        name?: string;
         placeholder?: string;
         rows?: number;
 
@@ -19,7 +18,6 @@
         value = $bindable(),
         label,
 
-        name,
         placeholder,
         rows = 4,
 
@@ -29,9 +27,13 @@
         error,
     }: Props = $props();
 
-    const id = $derived(
-        name ?? `textarea-input-${crypto.randomUUID()}`,
-    );
+    const name = $derived(
+		label.trim().toLowerCase().replace(/\s+/g, '-')
+	);
+	
+	const id = $derived(
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
+	);
 </script>
 
 <div class="field">
@@ -42,7 +44,7 @@
     <textarea
         bind:value
         {id}
-        name={name ?? id}
+        {name}
         {placeholder}
         {rows}
         required={isRequired}

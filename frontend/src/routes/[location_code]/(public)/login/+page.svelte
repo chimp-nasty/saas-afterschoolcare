@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { goto, invalidate } from '$app/navigation';
 	import LoginForm from '$lib/features/auth/components/LoginForm.svelte';
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
@@ -8,19 +9,22 @@
 	let isLoading = $state(false);
 	let form: LoginForm;
 
-	const authApi = $derived(
-		createAuthApi(page.data.locationCode)
-	);
+	const authApi = createAuthApi();
 
 	async function handleLogin(body: LoginRequest) {
 		try {
 			isLoading = true;
 
-			const response = await authApi.login(body);
+			const response = await authApi.login(page.data.locationCode, body);
 
-			if (response.ok) {
-				form.reset();
+			if (!response.ok) {
+				return;
 			}
+
+			form.reset();
+
+			await invalidate('app:session');
+			await goto(`/${page.data.locationCode}/home`);
 		} finally {
 			isLoading = false;
 		}

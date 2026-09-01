@@ -2,20 +2,27 @@
 	import type { Snippet } from 'svelte';
 
 	let {
+		primaryColor,
+		secondaryColor,
 		header,
 		sidebar,
 		footer,
 		children
 	}: {
+		primaryColor?: string | null;
+		secondaryColor?: string | null;
 		header?: Snippet;
 		sidebar?: Snippet;
 		footer?: Snippet;
 		children: Snippet;
 	} = $props();
-
 </script>
 
-<div class="flex min-h-screen flex-col">
+<div
+	class="flex min-h-screen flex-col"
+	style:--primary={primaryColor ?? undefined}
+	style:--secondary={secondaryColor ?? undefined}
+>
 	{#if header}
 		<header class="relative">
 			{@render header()}
@@ -28,7 +35,7 @@
 				{@render sidebar()}
 			</aside>
 
-			<main class="w-full min-w-0 px-4">
+			<main class="w-full min-w-0 p-4">
 				{@render children()}
 			</main>
 		</div>

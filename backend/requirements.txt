@@ -13,3 +13,4 @@ stripe==9.7.0
 google-cloud-storage==3.4.1
 tzdata>=2025.2
 boto3==1.43.6
+cachetools==7.1.7

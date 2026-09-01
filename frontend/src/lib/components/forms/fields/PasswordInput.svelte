@@ -5,7 +5,6 @@
 		value: string;
 		label: string;
 
-		name?: string;
 		placeholder?: string;
 
 		isDisabled?: boolean;
@@ -18,7 +17,6 @@
 		value = $bindable(),
 		label,
 
-		name,
 		placeholder,
 
 		isDisabled = false,
@@ -29,8 +27,12 @@
 
 	let isVisible = $state(false);
 
+	const name = $derived(
+		label.trim().toLowerCase().replace(/\s+/g, '-')
+	);
+	
 	const id = $derived(
-		name ?? `password-input-${crypto.randomUUID()}`
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
 	);
 </script>
 
@@ -43,20 +45,12 @@
 		<input
 			bind:value
 			{id}
-			name={name ?? id}
+			{name}
 			type={isVisible ? 'text' : 'password'}
 			{placeholder}
 			required={isRequired}
 			disabled={isDisabled}
 		/>
-
-		<button
-			type="button"
-			aria-label={isVisible ? 'Hide password' : 'Show password'}
-			onclick={() => (isVisible = !isVisible)}
-		>
-			{isVisible ? 'Hide' : 'Show'}
-		</button>
 	</div>
 
 	<InlineError message={error} />

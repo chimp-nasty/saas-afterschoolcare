@@ -25,7 +25,6 @@
         value = $bindable(),
         label,
 
-        name,
         min,
         max,
 
@@ -37,9 +36,13 @@
         onchange,
     }: Props = $props();
 
-    const id = $derived(
-        name ?? `date-input-${crypto.randomUUID()}`,
-    );
+    const name = $derived(
+		label.trim().toLowerCase().replace(/\s+/g, '-')
+	);
+	
+	const id = $derived(
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
+	);
 </script>
 
 <div class="field">
@@ -50,7 +53,7 @@
     <input
         bind:value
         {id}
-        name={name ?? id}
+        {name}
         type="date"
         {min}
         {max}

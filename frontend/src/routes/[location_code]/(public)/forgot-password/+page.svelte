@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import ForgotPasswordForm from '$lib/features/auth/components/ForgotPasswordForm.svelte';
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
@@ -7,9 +6,7 @@
 	let isLoading = $state(false);
 	let form: ForgotPasswordForm;
 
-	const authApi = $derived(
-		createAuthApi(page.data.locationCode)
-	);
+	const authApi = createAuthApi();
 
 	async function handleSubmit(
 		body: {

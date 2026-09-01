@@ -14,7 +14,6 @@
 		label: string;
 		options: MultiSelectOption[];
 
-		name?: string;
 		placeholder?: string;
 
 		isDisabled?: boolean;
@@ -28,7 +27,6 @@
 		label,
 		options,
 
-		name,
 		placeholder = 'Select options',
 
 		isDisabled = false,
@@ -40,8 +38,12 @@
 	let containerElement: HTMLDivElement;
 	let isOpen = $state(false);
 
+	const name = $derived(
+		label.trim().toLowerCase().replace(/\s+/g, '-')
+	);
+	
 	const id = $derived(
-		name ?? `multi-select-${crypto.randomUUID()}`
+		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
 	);
 
 	const selectableOptions = $derived(
@@ -164,6 +166,7 @@
 					onclick={() => toggleOption(option.value)}
 				>
 					<input
+						{name}
 						type="checkbox"
 						checked={value.includes(option.value)}
 						disabled={option.disabled}
