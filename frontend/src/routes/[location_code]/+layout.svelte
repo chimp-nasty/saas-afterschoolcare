@@ -26,23 +26,56 @@
 		}
 	});
 
-	const adminItems: SidebarItem[] = [
+	const locationCode = $derived(
+		page.params.location_code
+	);
 
-	];
+	function route(path: string) {
+		return `/${locationCode}${path}`;
+	}
 
-	const staffItems: SidebarItem[] = [
+	function isActive(path: string) {
+		const pathname = route(path);
 
-	];
+		return (
+			page.url.pathname === pathname ||
+			page.url.pathname.startsWith(`${pathname}/`)
+		);
+	}
 
-	const customerItems: SidebarItem[] = [
+	function navigate(path: string) {
+		sidebarOpen = false;
 
-	];
+		void goto(route(path));
+	}
+
+	const adminItems = $derived.by((): SidebarItem[] => [
+		// admin items
+	]);
+
+	const staffItems = $derived.by((): SidebarItem[] => [
+		// staff items
+	]);
+
+	const customerItems = $derived.by((): SidebarItem[] => [
+		{
+			label: 'Account',
+			onclick: () => navigate('/account'),
+			isActive: isActive('/account')
+		},
+		{
+			label: 'Bookings',
+			onclick: () => navigate('/bookings'),
+			isActive: isActive('/bookings')
+		}
+	]);
 
 	const items = $derived.by(() => {
 		const result: SidebarItem[] = [
 			{
 				label: 'Home',
-				href: `/${page.params.location_code}/home`
+				onclick: () => navigate('/home'),
+				isActive: isActive('/home')
 			}
 		];
 
@@ -77,14 +110,14 @@
 			clearSession();
 			sidebarOpen = false;
 
-			await goto(`/${page.params.location_code}/`);
+			await goto(`/${locationCode}/`);
 		} finally {
 			isLoggingOut = false;
 		}
 	}
 </script>
 
-<ResponseToast/>
+<ResponseToast />
 
 {#snippet sidebar()}
 	<Sidebar {items} />
@@ -113,6 +146,9 @@
 		open={sidebarOpen}
 		onclose={() => sidebarOpen = false}
 	>
-		{@render sidebar()}
+		<Sidebar
+			{items}
+			drawer
+		/>
 	</Drawer>
 {/if}

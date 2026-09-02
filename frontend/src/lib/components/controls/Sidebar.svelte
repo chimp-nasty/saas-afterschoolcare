@@ -1,46 +1,75 @@
 <script lang="ts">
 	import Card from '$lib/components/layout/Card.svelte';
-	import HyperTextLink from '../actions/HyperTextLink.svelte';
 	import Button from '../actions/Button.svelte';
 
 	export type SidebarItem = {
 		label: string;
-		href?: string;
-		onclick?: () => void;
+		onclick: () => void;
+		isActive?: boolean;
 	};
 
 	let {
-		items
+		items,
+		drawer = false
 	}: {
 		items: SidebarItem[];
+		drawer?: boolean;
 	} = $props();
 </script>
 
-<div class="h-full border-r border-(--border)">
-	<Card>
-		<nav class="flex h-full flex-col px-5 py-1">
-			{#each items as item, index}
-				<div
-					class={`
-						border-y border-(--border)
-						px-1 py-4
-						${index > 0 ? '-mt-px' : ''}
-					`}
+<div
+	class={drawer
+		? 'h-full'
+		: 'h-full border-r border-(--border)'
+	}
+>
+	{#if drawer}
+		<nav class="flex h-full flex-col gap-2 p-4">
+			{#each items as item}
+				<Button
+					variant="menu"
+					fullWidth
+					isActive={item.isActive}
+					onclick={item.onclick}
 				>
-					{#if item.href}
-						<HyperTextLink href={item.href}>
+					<span class="flex w-full items-center justify-between">
+						<span>
 							{item.label}
-						</HyperTextLink>
-					{:else if item.onclick}
-						<Button
-							variant="hyperlink"
-							onclick={item.onclick}
-						>
-							{item.label}
-						</Button>
-					{/if}
-				</div>
+						</span>
+
+						{#if item.isActive}
+							<span class="text-xs text-(--primary)">
+								Selected
+							</span>
+						{/if}
+					</span>
+				</Button>
 			{/each}
 		</nav>
-	</Card>
+	{:else}
+		<Card>
+			<nav class="flex h-full flex-col gap-2 p-4">
+				{#each items as item}
+					<Button
+						variant="menu"
+						fullWidth
+						isActive={item.isActive}
+						onclick={item.onclick}
+					>
+						<span class="flex w-full items-center justify-between">
+							<span>
+								{item.label}
+							</span>
+
+							{#if item.isActive}
+								<span class="text-xs text-(--primary)">
+									Selected
+								</span>
+							{/if}
+						</span>
+					</Button>
+				{/each}
+			</nav>
+		</Card>
+	{/if}
 </div>

@@ -12,6 +12,7 @@
 		variant?: Variant;
 		fullWidth?: boolean;
 		textSize?: TextSize;
+		class?: string;
 		children?: () => any;
 		onclick?: (event: MouseEvent) => void;
 	};
@@ -24,6 +25,7 @@
 		variant = 'default',
 		fullWidth = false,
 		textSize = 'base',
+		class: className = '',
 		children,
 		...restProps
 	}: Props = $props();
@@ -132,7 +134,7 @@
 
 <button
 	{type}
-	class={`${baseClass} ${standardButtonClass} ${widthClass} ${textSizeClasses[textSize]} ${variantClasses[variant]} ${activeClass}`}
+	class={`${baseClass} ${standardButtonClass} ${widthClass} ${textSizeClasses[textSize]} ${variantClasses[variant]} ${activeClass} ${className}`}
 	disabled={isLoading || isDisabled}
 	{...restProps}
 >

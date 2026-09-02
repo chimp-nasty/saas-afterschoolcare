@@ -30,17 +30,17 @@
 	{/if}
 
 	{#if sidebar}
-		<div class="flex-1 md:grid md:grid-cols-[16rem_1fr]">
+		<div class="flex flex-1 flex-col md:grid md:grid-cols-[16rem_1fr]">
 			<aside class="hidden h-full md:block">
 				{@render sidebar()}
 			</aside>
 
-			<main class="w-full min-w-0 p-4">
+			<main class="flex w-full min-w-0 flex-1 flex-col p-4">
 				{@render children()}
 			</main>
 		</div>
 	{:else}
-		<main class="w-full min-w-0 flex-1 p-4">
+		<main class="flex w-full min-w-0 flex-1 flex-col p-4">
 			{@render children()}
 		</main>
 	{/if}

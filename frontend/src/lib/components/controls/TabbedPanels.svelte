@@ -3,9 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
+	import { ChevronRight } from 'lucide-svelte';
+
 	import Button from '$lib/components/actions/Button.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
-	import Modal from '$lib/components/overlays/Modal.svelte';
+	import Drawer from '$lib/components/overlays/Drawer.svelte';
 
 	export type TabConfig = {
 		id: string;
@@ -26,7 +28,7 @@
 		queryParam?: string;
 	} = $props();
 
-	let modal = $state<any>(null);
+	let drawerOpen = $state(false);
 
 	const defaultTabId = $derived(
 		initialTab ?? tabs[0]?.id
@@ -84,38 +86,49 @@
 
 	async function selectTab(tabId: string) {
 		activeTab = tabId;
-
-		modal?.close();
+		drawerOpen = false;
 
 		await updateUrl(tabId);
 	}
 </script>
 
 <div class="flex flex-col gap-4">
+	<!-- Mobile tab selector -->
 	<div class="md:hidden">
 		<Button
 			type="button"
 			variant="menu"
 			fullWidth
-			onclick={() => modal?.open()}
+			onclick={() => drawerOpen = true}
 		>
-			{activeTabLabel}
+			<span class="flex w-full items-center justify-between">
+				<span>
+					{activeTabLabel}
+				</span>
+
+				<ChevronRight size={18} />
+			</span>
 		</Button>
 	</div>
 
-	<div class="hidden flex-wrap md:flex">
+	<!-- Desktop tabs -->
+	<div class="hidden flex-wrap gap-2 md:flex">
 		{#each tabs as tab}
-			<Button
-				type="button"
-				variant="menu"
-				isActive={activeTab === tab.id}
-				onclick={() => selectTab(tab.id)}
-			>
-				{tab.label}
-			</Button>
+			<div class="w-40">
+				<Button
+					type="button"
+					variant="menu"
+					fullWidth
+					isActive={activeTab === tab.id}
+					onclick={() => selectTab(tab.id)}
+				>
+					{tab.label}
+				</Button>
+			</div>
 		{/each}
 	</div>
 
+	<!-- Active panel -->
 	{#if activePanel?.component}
 		{#key activePanel.id}
 			<activePanel.component
@@ -131,29 +144,29 @@
 	{/if}
 </div>
 
-<Modal bind:this={modal}>
-	<div class="w-[min(28rem,calc(100vw-2rem))]">
-		<div class="flex flex-col gap-4 p-4">
-			{#each tabs as tab}
-				<Button
-					type="button"
-					variant="menu"
-					fullWidth
-					isActive={activeTab === tab.id}
-					onclick={() => selectTab(tab.id)}
-				>
-					{tab.label}
-				</Button>
-			{/each}
-
+<Drawer
+	open={drawerOpen}
+	onclose={() => drawerOpen = false}
+>
+	<div class="flex flex-col gap-2 p-4">
+		{#each tabs as tab}
 			<Button
 				type="button"
-				variant="ghost"
+				variant="menu"
 				fullWidth
-				onclick={() => modal?.close()}
+				isActive={activeTab === tab.id}
+				onclick={() => selectTab(tab.id)}
 			>
-				Close
+				<span class="flex w-full items-center justify-between">
+					<span>{tab.label}</span>
+
+					{#if activeTab === tab.id}
+						<span class="text-xs text-(--primary)">
+							Selected
+						</span>
+					{/if}
+				</span>
 			</Button>
-		</div>
+		{/each}
 	</div>
-</Modal>
+</Drawer>

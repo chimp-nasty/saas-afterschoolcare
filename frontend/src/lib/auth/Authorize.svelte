@@ -7,6 +7,7 @@
 	type Props = {
 		locationCode: string;
 		roles: string[];
+		excludeRoles?: string[];
 		children: Snippet;
 		fallback?: Snippet;
 		redirect?: boolean;
@@ -15,6 +16,7 @@
 	let {
 		locationCode,
 		roles,
+		excludeRoles = [],
 		children,
 		fallback,
 		redirect = true
@@ -22,7 +24,8 @@
 
 	const authorized = $derived(
 		$auth.authenticated &&
-		roles.some((role) => $auth.roles.includes(role))
+		roles.some((role) => $auth.roles.includes(role)) &&
+		!excludeRoles.some((role) => $auth.roles.includes(role))
 	);
 
 	$effect(() => {
