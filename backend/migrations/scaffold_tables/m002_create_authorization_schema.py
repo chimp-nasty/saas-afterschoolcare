@@ -81,18 +81,14 @@ def up(conn: Connection) -> None:
 
             resource VARCHAR(100) NOT NULL,
             action VARCHAR(1) NOT NULL,
-            scope VARCHAR(1) NOT NULL,
 
             description TEXT,
 
-            CONSTRAINT uq_permission_resource_action_scope
-                UNIQUE (resource, action, scope),
+            CONSTRAINT uq_permission_resource_action
+                UNIQUE (resource, action),
 
             CONSTRAINT permissions_action_check
                 CHECK (action IN ('c', 'r', 'u', 'd')),
-
-            CONSTRAINT permissions_scope_check
-                CHECK (scope IN ('s', 'l')),
 
             CONSTRAINT permissions_resource_format_check
                 CHECK (resource ~ '^[a-z][a-z0-9_]*$')

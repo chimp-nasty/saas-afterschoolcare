@@ -115,12 +115,11 @@ def get_session(
 ) -> ApiResponse[dict]:
     return ApiResponse(
         ok=True,
-        msg="Authenticated",
+        msg="Session retrieved",
         data={
             "user_id": str(ctx.user_id),
-            "location_id": str(ctx.location_id),
             "email": ctx.email,
             "first_name": ctx.first_name,
-            "roles": list(ctx.roles),
-        },
+            "roles": ctx.roles,
+        }
     )

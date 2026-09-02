@@ -6,12 +6,11 @@ from app.errors.auth import JwtInvalidError
 
 
 VALID_PERMISSION_ACTIONS = {"c", "r", "u", "d"}
-VALID_PERMISSION_SCOPES = {"s", "l"}
 
 
 PermissionMap = dict[
     str,
-    dict[str, frozenset[str]],
+    frozenset[str],
 ]
 
 
@@ -110,33 +109,19 @@ def _parse_permissions(
         if not isinstance(resource, str) or not resource.strip():
             raise JwtInvalidError()
 
-        if not isinstance(raw_actions, dict):
+        if not isinstance(raw_actions, list):
             raise JwtInvalidError()
 
-        actions: dict[str, frozenset[str]] = {}
+        if not all(
+            isinstance(action, str)
+            and action in VALID_PERMISSION_ACTIONS
+            for action in raw_actions
+        ):
+            raise JwtInvalidError()
 
-        for action, raw_scopes in raw_actions.items():
-            if (
-                not isinstance(action, str)
-                or action not in VALID_PERMISSION_ACTIONS
-            ):
-                raise JwtInvalidError()
-
-            if not isinstance(raw_scopes, list):
-                raise JwtInvalidError()
-
-            if not all(
-                isinstance(scope, str)
-                and scope in VALID_PERMISSION_SCOPES
-                for scope in raw_scopes
-            ):
-                raise JwtInvalidError()
-
-            actions[action] = frozenset(
-                raw_scopes
-            )
-
-        permissions[resource.strip()] = actions
+        permissions[resource.strip()] = frozenset(
+            raw_actions,
+        )
 
     return permissions
 

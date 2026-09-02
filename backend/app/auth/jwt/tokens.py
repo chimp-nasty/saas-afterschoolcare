@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
@@ -11,7 +10,6 @@ from jwt import (
 )
 
 from app.auth.jwt.context import PermissionMap
-from app.auth.models.permission import Permission
 from app.core.config import settings
 from app.errors.auth import (
     JwtExpiredError,
@@ -41,10 +39,7 @@ class TokenService:
             "location_id": str(location_id),
             "roles": list(roles),
             "permissions": {
-                resource: {
-                    action: sorted(scopes)
-                    for action, scopes in actions.items()
-                }
+                resource: sorted(actions)
                 for resource, actions in permissions.items()
             },
             "iss": settings.JWT_ISSUER,
@@ -103,33 +98,3 @@ class TokenService:
 
         except InvalidTokenError as exc:
             raise JwtInvalidError() from exc
-
-    @staticmethod
-    def build_permission_map(
-        permissions: Iterable[Permission],
-    ) -> PermissionMap:
-        permission_map: dict[
-            str,
-            dict[str, set[str]],
-        ] = {}
-
-        for permission in permissions:
-            resource_actions = permission_map.setdefault(
-                permission.resource,
-                {},
-            )
-
-            resource_actions.setdefault(
-                permission.action,
-                set(),
-            ).add(
-                permission.scope,
-            )
-
-        return {
-            resource: {
-                action: frozenset(scopes)
-                for action, scopes in actions.items()
-            }
-            for resource, actions in permission_map.items()
-        }

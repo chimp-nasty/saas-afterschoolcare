@@ -52,3 +52,16 @@ class LocationUserRoleRepository:
             )
             .all()
         )
+
+    def list_by_user(
+        self,
+        *,
+        user_id: UUID
+    ) -> list[LocationUserRole]:
+        return (
+            self.db.query(LocationUserRole)
+            .filter(
+                LocationUserRole.user_id == user_id,
+            )
+            .all()
+        )

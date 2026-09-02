@@ -29,21 +29,14 @@ ACTIONS = {
     "d": "Delete",
 }
 
-SCOPES = {
-    "s": "self",
-    "l": "location",
-}
-
 
 def up(conn: Connection) -> None:
-    for resource, action, scope in product(
+    for resource, action in product(
         RESOURCES,
         ACTIONS,
-        SCOPES,
     ):
         description = (
-            f"{ACTIONS[action]} {resource.replace('_', ' ')} "
-            f"within {SCOPES[scope]} scope."
+            f"{ACTIONS[action]} {resource.replace('_', ' ')}"
         )
 
         conn.execute(
@@ -51,19 +44,16 @@ def up(conn: Connection) -> None:
                 INSERT INTO auth.permissions (
                     resource,
                     action,
-                    scope,
                     description
                 )
                 VALUES (
                     :resource,
                     :action,
-                    :scope,
                     :description
                 )
                 ON CONFLICT (
                     resource,
                     action,
-                    scope
                 )
                 DO UPDATE SET
                     description = EXCLUDED.description;
@@ -71,7 +61,6 @@ def up(conn: Connection) -> None:
             {
                 "resource": resource,
                 "action": action,
-                "scope": scope,
                 "description": description,
             },
         )

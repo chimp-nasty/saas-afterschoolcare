@@ -12,7 +12,6 @@ from app.auth.jwt.context import (
     build_token_context,
 )
 from app.auth.jwt.tokens import TokenService
-from app.auth.scope import AuthorizationScope
 from app.errors.auth import PermissionNotFoundError, JwtInvalidError
 from app.errors.tenancy import LocationNotFoundError
 from app.tenancy.repositories.location import LocationRepository
@@ -36,63 +35,27 @@ def get_current_token_context(
     )
     
 
-def resolve_scope(
-    *,
-    ctx: TokenContext,
-    resource: str,
-    action: str,
-    target_user_id: UUID | None = None,
-) -> AuthorizationScope:
-    required_scope = (
-        "l"
-        if target_user_id is not None
-        else "s"
-    )
-
-    actions = ctx.permissions.get(
-        resource,
-    )
-
-    if actions is None:
-        raise PermissionNotFoundError()
-
-    scopes = actions.get(
-        action,
-    )
-
-    if (
-        scopes is None
-        or required_scope not in scopes
-    ):
-        raise PermissionNotFoundError()
-
-    return AuthorizationScope(
-        location_id=ctx.location_id,
-        user_id=(
-            target_user_id
-            if target_user_id is not None
-            else ctx.user_id
-        ),
-    )
-
-
-def require_scope(
+def require_permission(
     *,
     resource: str,
     action: str,
-) -> Callable[..., AuthorizationScope]:
+) -> Callable[..., TokenContext]:
     def dependency(
-        user_id: UUID | None = None,
         ctx: TokenContext = Depends(
             get_current_token_context,
         ),
-    ) -> AuthorizationScope:
-        return resolve_scope(
-            ctx=ctx,
-            resource=resource,
-            action=action,
-            target_user_id=user_id,
+    ) -> TokenContext:
+        actions = ctx.permissions.get(
+            resource,
         )
+
+        if (
+            actions is None
+            or action not in actions
+        ):
+            raise PermissionNotFoundError()
+
+        return ctx
 
     return dependency
 

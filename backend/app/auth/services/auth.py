@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password, hash_token
 from app.auth.jwt.tokens import TokenService
+from app.auth.jwt.context import PermissionMap
 from app.auth.models.user import User
 from app.auth.repositories.user import UserRepository
 from app.auth.repositories.permission import PermissionRepository
@@ -43,61 +44,57 @@ class AuthService:
         """
         Authenticate a user for a location and issue an access token.
 
-        The token is scoped to the requested location and contains the
-        user's roles and effective permissions for that location.
+        The token contains the user's roles and effective permissions
+        for the requested location.
         """
         try:
             user = self.users.get_by_email(
-                email=body.email
-            )
-            
-            if not user:
-                raise AuthenticationFailedError()
-            
-            check_password = verify_password(
-                password=body.password,
-                hashed_password=user.password_hash
-            )
-            
-            if not check_password:
-                raise AuthenticationFailedError()
-            
-            # Resolve authorization for the requested location.
-            location_user_roles = self.location_user_roles.list_roles_by_user_and_location(
-                user_id=user.id,
-                location_id=location_id,
+                email=body.email,
             )
 
-            if not location_user_roles:
+            if not user:
+                raise AuthenticationFailedError()
+
+            if not verify_password(
+                password=body.password,
+                hashed_password=user.password_hash,
+            ):
+                raise AuthenticationFailedError()
+
+            location_roles = (
+                self.location_user_roles.list_roles_by_user_and_location(
+                    user_id=user.id,
+                    location_id=location_id,
+                )
+            )
+
+            if not location_roles:
                 raise AuthenticationFailedError()
 
             role_ids = [
-                location_user_role.role_id
-                for location_user_role in location_user_roles
+                location_role.role_id
+                for location_role in location_roles
             ]
-                        
+
             roles = [
                 role.code
                 for role in self.roles.list_by_ids(
                     role_ids=role_ids,
                 )
             ]
-            
+
             permissions = self.permissions.list_by_role_ids(
-                role_ids=[
-                    location_user_role.role_id
-                    for location_user_role in location_user_roles
-                ],
+                role_ids=role_ids,
             )
 
-            permission_map = TokenService.build_permission_map(
+            permission_map = self._build_permission_map(
                 permissions=permissions,
             )
-            
+
             self.users.update_last_login(
-                user=user
+                user=user,
             )
-            
+
             access_token = TokenService.create_access_token(
                 user_id=user.id,
                 location_id=location_id,
@@ -106,14 +103,35 @@ class AuthService:
                 email=user.email,
                 first_name=user.first_name,
             )
-            
+
             self.db.commit()
+
             return access_token
-            
+
         except Exception:
             self.db.rollback()
             raise
-        
+
+    def _build_permission_map(
+        self,
+        *,
+        permissions,
+    ) -> PermissionMap:
+        permission_map: dict[str, set[str]] = {}
+
+        for permission in permissions:
+            permission_map.setdefault(
+                permission.resource,
+                set(),
+            ).add(
+                permission.action,
+            )
+
+        return {
+            resource: frozenset(actions)
+            for resource, actions in permission_map.items()
+        }
+            
     def register_user(
         self,
         *,
@@ -228,3 +246,4 @@ class AuthService:
         except Exception:
             self.db.rollback()
             raise
+
