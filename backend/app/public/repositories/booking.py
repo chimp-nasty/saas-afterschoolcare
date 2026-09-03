@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -13,28 +12,26 @@ class BookingRepository:
     def create(
         self,
         *,
-        parent_id: UUID,
+        location_id: UUID,
+        user_id: UUID,
+        booking_group_id: UUID,
+        location_service_id: UUID,
         child_id: UUID,
-        location_service_day_id: UUID,
-        booking_status_id: int,
-        payment_status_id: int,
         price_snapshot_cents: int,
         currency: str,
-        booking_group_id: UUID | None = None,
-        cancelled_at: datetime | None = None,
-        cancellation_reason: str | None = None,
+        payment_status: str = "PENDING",
+        cancelled_at=None,
     ) -> Booking:
         record = Booking(
-            parent_id=parent_id,
+            location_id=location_id,
+            user_id=user_id,
+            booking_group_id=booking_group_id,
+            location_service_id=location_service_id,
             child_id=child_id,
-            location_service_day_id=location_service_day_id,
-            booking_status_id=booking_status_id,
-            payment_status_id=payment_status_id,
+            payment_status=payment_status,
+            cancelled_at=cancelled_at,
             price_snapshot_cents=price_snapshot_cents,
             currency=currency,
-            booking_group_id=booking_group_id,
-            cancelled_at=cancelled_at,
-            cancellation_reason=cancellation_reason,
         )
 
         self.db.add(record)

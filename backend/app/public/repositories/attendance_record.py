@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -14,8 +13,8 @@ class AttendanceRecordRepository:
         self,
         *,
         booking_id: UUID,
-        signed_in_at: datetime | None = None,
-        signed_out_at: datetime | None = None,
+        signed_in_at=None,
+        signed_out_at=None,
         signed_in_by_user_id: UUID | None = None,
         signed_out_by_user_id: UUID | None = None,
     ) -> AttendanceRecord:

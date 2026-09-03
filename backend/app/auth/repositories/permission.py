@@ -15,13 +15,11 @@ class PermissionRepository:
         *,
         resource: str,
         action: str,
-        scope: str,
         description: str | None = None,
     ) -> Permission:
         record = Permission(
             resource=resource,
             action=action,
-            scope=scope,
             description=description,
         )
 

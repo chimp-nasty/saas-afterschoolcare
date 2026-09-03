@@ -11,17 +11,11 @@ class ServiceTypeRepository:
         self,
         *,
         code: str,
-        label: str,
-        stripe_product_id: str | None = None,
-        stripe_price_id: str | None = None,
-        is_active: bool = True,
+        name: str,
     ) -> ServiceType:
         record = ServiceType(
             code=code,
-            label=label,
-            stripe_product_id=stripe_product_id,
-            stripe_price_id=stripe_price_id,
-            is_active=is_active,
+            name=name,
         )
 
         self.db.add(record)

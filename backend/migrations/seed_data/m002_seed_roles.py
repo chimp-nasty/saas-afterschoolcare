@@ -6,7 +6,7 @@ def up(conn: Connection) -> None:
     conn.execute(text("""
         INSERT INTO auth.roles (
             code,
-            label,
+            name,
             description
         )
         VALUES
@@ -27,6 +27,6 @@ def up(conn: Connection) -> None:
             )
         ON CONFLICT (code)
         DO UPDATE SET
-            label = EXCLUDED.label,
+            name = EXCLUDED.name,
             description = EXCLUDED.description;
     """))

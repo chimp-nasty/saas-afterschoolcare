@@ -1,4 +1,3 @@
-from datetime import date
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -13,16 +12,14 @@ class LocationServiceDayRepository:
     def create(
         self,
         *,
-        location_id: UUID,
-        service_date: date,
-        service_type_id: int,
+        location_service_id: UUID,
+        service_date,
         capacity: int,
         is_open: bool = True,
     ) -> LocationServiceDay:
         record = LocationServiceDay(
-            location_id=location_id,
+            location_service_id=location_service_id,
             service_date=service_date,
-            service_type_id=service_type_id,
             capacity=capacity,
             is_open=is_open,
         )

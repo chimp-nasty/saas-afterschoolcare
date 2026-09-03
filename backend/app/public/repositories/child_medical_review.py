@@ -2,10 +2,10 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.public.models.child_note import ChildNote
+from app.public.models.child_medical_review import ChildMedicalReview
 
 
-class ChildNoteRepository:
+class ChildMedicalReviewRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
@@ -13,13 +13,13 @@ class ChildNoteRepository:
         self,
         *,
         child_id: UUID,
-        note: str,
-        created_by_user_id: UUID,
-    ) -> ChildNote:
-        record = ChildNote(
+        reviewed_by_user_id: UUID,
+        note: str | None = None,
+    ) -> ChildMedicalReview:
+        record = ChildMedicalReview(
             child_id=child_id,
+            reviewed_by_user_id=reviewed_by_user_id,
             note=note,
-            created_by_user_id=created_by_user_id,
         )
 
         self.db.add(record)
@@ -31,9 +31,9 @@ class ChildNoteRepository:
         self,
         *,
         id: UUID,
-    ) -> ChildNote | None:
+    ) -> ChildMedicalReview | None:
         return (
-            self.db.query(ChildNote)
-            .filter(ChildNote.id == id)
+            self.db.query(ChildMedicalReview)
+            .filter(ChildMedicalReview.id == id)
             .first()
         )

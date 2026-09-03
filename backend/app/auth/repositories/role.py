@@ -13,13 +13,13 @@ class RoleRepository:
         self,
         *,
         code: str,
-        label: str,
+        name: str,
         description: str | None = None,
         is_active: bool = True,
     ) -> Role:
         record = Role(
             code=code,
-            label=label,
+            name=name,
             description=description,
             is_active=is_active,
         )

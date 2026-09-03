@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, SmallInteger, UniqueConstraint, func
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
@@ -11,19 +11,13 @@ class LocationServiceDay(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    location_id = Column(
+    location_service_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("tenancy.locations.id"),
+        ForeignKey("public.location_services.id"),
         nullable=False,
     )
 
     service_date = Column(Date, nullable=False)
-
-    service_type_id = Column(
-        SmallInteger,
-        ForeignKey("public.service_types.id"),
-        nullable=False,
-    )
 
     is_open = Column(Boolean, nullable=False, server_default="true")
     capacity = Column(Integer, nullable=False)
@@ -32,9 +26,8 @@ class LocationServiceDay(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "location_id",
+            "location_service_id",
             "service_date",
-            "service_type_id",
             name="uq_location_service_day",
         ),
         {"schema": "public"},

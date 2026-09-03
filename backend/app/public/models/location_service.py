@@ -1,13 +1,13 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, SmallInteger, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
 
 
-class ChildProfile(Base):
-    __tablename__ = "child_profile"
+class LocationService(Base):
+    __tablename__ = "location_services"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -17,19 +17,14 @@ class ChildProfile(Base):
         nullable=False,
     )
 
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("auth.users.id", ondelete="CASCADE"),
+    service_type_id = Column(
+        SmallInteger,
+        ForeignKey("public.service_types.id"),
         nullable=False,
     )
 
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    dob = Column(Date, nullable=False)
-
-    medical_info = Column(Text, nullable=True)
-    allergy_info = Column(Text, nullable=True)
-    medication_info = Column(Text, nullable=True)
+    stripe_product_id = Column(String(255), nullable=True, unique=True)
+    stripe_price_id = Column(String(255), nullable=True, unique=True)
 
     is_active = Column(Boolean, nullable=False, server_default="true")
 
@@ -37,5 +32,10 @@ class ChildProfile(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__ = (
+        UniqueConstraint(
+            "location_id",
+            "service_type_id",
+            name="uq_location_service_type",
+        ),
         {"schema": "public"},
     )

@@ -1,4 +1,3 @@
-from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -13,39 +12,25 @@ class ChildProfileRepository:
     def create(
         self,
         *,
-        user_id: UUID,
         location_id: UUID,
+        user_id: UUID,
         first_name: str,
         last_name: str,
-        dob: date,
-        has_medical_condition: bool = False,
+        dob,
         medical_info: str | None = None,
-        has_allergies: bool = False,
         allergy_info: str | None = None,
-        requires_medication: bool = False,
         medication_info: str | None = None,
-        medical_documentation_provided: bool = False,
-        medical_review_required: bool = False,
-        medical_review_status_id: int | None = None,
-        care_details_confirmed_at: datetime | None = None,
         is_active: bool = True,
     ) -> ChildProfile:
         record = ChildProfile(
-            user_id=user_id,
             location_id=location_id,
+            user_id=user_id,
             first_name=first_name,
             last_name=last_name,
             dob=dob,
-            has_medical_condition=has_medical_condition,
             medical_info=medical_info,
-            has_allergies=has_allergies,
             allergy_info=allergy_info,
-            requires_medication=requires_medication,
             medication_info=medication_info,
-            medical_documentation_provided=medical_documentation_provided,
-            medical_review_required=medical_review_required,
-            medical_review_status_id=medical_review_status_id,
-            care_details_confirmed_at=care_details_confirmed_at,
             is_active=is_active,
         )
 

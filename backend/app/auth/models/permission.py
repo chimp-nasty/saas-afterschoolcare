@@ -13,23 +13,17 @@ class Permission(Base):
 
     resource = Column(String(100), nullable=False)
     action = Column(String(1), nullable=False)
-    scope = Column(String(1), nullable=False)
     description = Column(Text, nullable=True)
 
     __table_args__ = (
         UniqueConstraint(
             "resource",
             "action",
-            "scope",
-            name="uq_permission_resource_action_scope",
+            name="uq_permission_resource_action",
         ),
         CheckConstraint(
             "action IN ('c', 'r', 'u', 'd')",
             name="permissions_action_check",
-        ),
-        CheckConstraint(
-            "scope IN ('s', 'l')",
-            name="permissions_scope_check",
         ),
         CheckConstraint(
             "resource ~ '^[a-z][a-z0-9_]*$'",

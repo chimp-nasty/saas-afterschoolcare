@@ -53,7 +53,7 @@ def up(conn: Connection) -> None:
                 )
                 ON CONFLICT (
                     resource,
-                    action,
+                    action
                 )
                 DO UPDATE SET
                     description = EXCLUDED.description;

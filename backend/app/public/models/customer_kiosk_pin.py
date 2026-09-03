@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base
 
 
-class UserKioskPin(Base):
-    __tablename__ = "user_kiosk_pins"
+class CustomerKioskPin(Base):
+    __tablename__ = "customer_kiosk_pins"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -24,6 +24,9 @@ class UserKioskPin(Base):
     last_used_at = Column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
-        UniqueConstraint("user_id", name="uq_user_kiosk_pin"),
+        UniqueConstraint(
+            "user_id",
+            name="uq_user_kiosk_pin",
+        ),
         {"schema": "public"},
     )

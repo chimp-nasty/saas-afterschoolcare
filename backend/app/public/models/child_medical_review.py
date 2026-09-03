@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base
 
 
-class ChildNote(Base):
-    __tablename__ = "child_notes"
+class ChildMedicalReview(Base):
+    __tablename__ = "child_medical_reviews"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -17,13 +17,13 @@ class ChildNote(Base):
         nullable=False,
     )
 
-    note = Column(Text, nullable=False)
-
-    created_by_user_id = Column(
+    reviewed_by_user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("auth.users.id"),
         nullable=False,
     )
+
+    note = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

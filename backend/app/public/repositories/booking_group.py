@@ -13,12 +13,12 @@ class BookingGroupRepository:
         self,
         *,
         idempotency_key: str,
-        parent_id: UUID,
+        user_id: UUID,
         source: str | None = None,
     ) -> BookingGroup:
         record = BookingGroup(
             idempotency_key=idempotency_key,
-            parent_id=parent_id,
+            user_id=user_id,
             source=source,
         )
 

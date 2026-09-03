@@ -13,7 +13,7 @@ class BookingGroup(Base):
 
     idempotency_key = Column(String(128), nullable=False)
 
-    parent_id = Column(
+    user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("auth.users.id"),
         nullable=False,
@@ -25,9 +25,9 @@ class BookingGroup(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "parent_id",
+            "user_id",
             "idempotency_key",
-            name="uq_booking_group_parent_idempotency",
+            name="uq_booking_group_user_idempotency",
         ),
         {"schema": "public"},
     )

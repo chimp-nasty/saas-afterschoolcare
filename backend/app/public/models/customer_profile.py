@@ -18,6 +18,7 @@ class CustomerProfile(Base):
     )
 
     phone = Column(String(30), nullable=True)
+
     address_line_1 = Column(String(255), nullable=True)
     address_line_2 = Column(String(255), nullable=True)
     suburb = Column(String(100), nullable=True)
@@ -28,6 +29,9 @@ class CustomerProfile(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__ = (
-        UniqueConstraint("user_id", name="uq_customer_profile_user"),
+        UniqueConstraint(
+            "user_id",
+            name="uq_customer_profile_user",
+        ),
         {"schema": "public"},
     )

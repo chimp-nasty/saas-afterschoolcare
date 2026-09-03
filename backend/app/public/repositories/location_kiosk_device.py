@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -18,8 +17,6 @@ class LocationKioskDeviceRepository:
         setup_secret_hash: str | None = None,
         token_version: int = 1,
         is_active: bool = True,
-        paired_at: datetime | None = None,
-        last_used: datetime | None = None,
     ) -> LocationKioskDevice:
         record = LocationKioskDevice(
             location_id=location_id,
@@ -27,8 +24,6 @@ class LocationKioskDeviceRepository:
             setup_secret_hash=setup_secret_hash,
             token_version=token_version,
             is_active=is_active,
-            paired_at=paired_at,
-            last_used=last_used,
         )
 
         self.db.add(record)

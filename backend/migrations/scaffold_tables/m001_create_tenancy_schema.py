@@ -72,7 +72,7 @@ def up(conn: Connection) -> None:
         CREATE TABLE IF NOT EXISTS tenancy.location_branding (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-            location_id UUID NOT NULL
+            location_id UUID NOT NULL UNIQUE
                 REFERENCES tenancy.locations(id)
                 ON DELETE CASCADE,
 
@@ -86,9 +86,6 @@ def up(conn: Connection) -> None:
             font_family VARCHAR(100),
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-            CONSTRAINT uq_location_branding_location
-                UNIQUE (location_id)
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
     """))

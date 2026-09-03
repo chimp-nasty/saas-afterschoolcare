@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, func
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
@@ -15,7 +15,6 @@ class AttendanceRecord(Base):
         UUID(as_uuid=True),
         ForeignKey("public.bookings.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
     )
 
     signed_in_at = Column(DateTime(timezone=True), nullable=True)
@@ -37,6 +36,10 @@ class AttendanceRecord(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__ = (
+        UniqueConstraint(
+            "booking_id",
+            name="uq_attendance_record_booking",
+        ),
         CheckConstraint(
             "signed_out_at IS NULL OR signed_in_at IS NOT NULL",
             name="attendance_signout_requires_signin",

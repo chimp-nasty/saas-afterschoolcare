@@ -1,4 +1,3 @@
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -19,9 +18,8 @@ class AuthorizedPickupPersonRepository:
         last_name: str,
         phone: str,
         relation: str,
-        consent_confirmed_at: datetime | None = None,
-        consent_version: str = "v1",
-        identity_verified_at: datetime | None = None,
+        consent_confirmed: bool | None = None,
+        identity_verified_at=None,
         identity_verified_by_user_id: UUID | None = None,
         is_active: bool = True,
     ) -> AuthorizedPickupPerson:
@@ -32,8 +30,7 @@ class AuthorizedPickupPersonRepository:
             last_name=last_name,
             phone=phone,
             relation=relation,
-            consent_confirmed_at=consent_confirmed_at,
-            consent_version=consent_version,
+            consent_confirmed=consent_confirmed,
             identity_verified_at=identity_verified_at,
             identity_verified_by_user_id=identity_verified_by_user_id,
             is_active=is_active,

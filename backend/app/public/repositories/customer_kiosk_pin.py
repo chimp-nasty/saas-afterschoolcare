@@ -1,12 +1,11 @@
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.public.models.user_kiosk_pin import UserKioskPin
+from app.public.models.customer_kiosk_pin import CustomerKioskPin
 
 
-class UserKioskPinRepository:
+class CustomerKioskPinRepository:
     def __init__(self, *, db: Session):
         self.db = db
 
@@ -15,12 +14,10 @@ class UserKioskPinRepository:
         *,
         user_id: UUID,
         pin_hash: str,
-        last_used_at: datetime | None = None,
-    ) -> UserKioskPin:
-        record = UserKioskPin(
+    ) -> CustomerKioskPin:
+        record = CustomerKioskPin(
             user_id=user_id,
             pin_hash=pin_hash,
-            last_used_at=last_used_at,
         )
 
         self.db.add(record)
@@ -32,9 +29,9 @@ class UserKioskPinRepository:
         self,
         *,
         id: UUID,
-    ) -> UserKioskPin | None:
+    ) -> CustomerKioskPin | None:
         return (
-            self.db.query(UserKioskPin)
-            .filter(UserKioskPin.id == id)
+            self.db.query(CustomerKioskPin)
+            .filter(CustomerKioskPin.id == id)
             .first()
         )

@@ -59,7 +59,7 @@ def up(conn: Connection) -> None:
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
             code VARCHAR(100) NOT NULL UNIQUE,
-            label VARCHAR(200) NOT NULL,
+            name VARCHAR(200) NOT NULL,
 
             description TEXT,
 
