@@ -1,9 +1,12 @@
 from uuid import UUID
+from datetime import date
 
+from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
 
 from app.public.models.location_service import LocationService
 from app.public.models.location_service_day import LocationServiceDay
+from app.public.models.service_type import ServiceType
 
 
 class LocationServiceRepository:
@@ -72,5 +75,59 @@ class LocationServiceRepository:
                 LocationServiceDay.id,
             )
             .with_for_update()
+            .all()
+        )
+
+    def list_context_with_filters(
+        self,
+        *,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        is_open: bool | None = None,
+    ) -> list[Row]:
+        query = (
+            self.db.query(
+                LocationServiceDay.id,
+                LocationServiceDay.location_service_id,
+                LocationService.service_type_id,
+
+                ServiceType.name.label("service_name"),
+
+                LocationServiceDay.service_date,
+                LocationServiceDay.is_open,
+                LocationServiceDay.capacity,
+            )
+            .join(
+                LocationService,
+                LocationService.id
+                == LocationServiceDay.location_service_id,
+            )
+            .join(
+                ServiceType,
+                ServiceType.id
+                == LocationService.service_type_id,
+            )
+        )
+
+        if date_from:
+            query = query.filter(
+                LocationServiceDay.service_date >= date_from
+            )
+
+        if date_to:
+            query = query.filter(
+                LocationServiceDay.service_date <= date_to
+            )
+
+        if is_open is not None:
+            query = query.filter(
+                LocationServiceDay.is_open == is_open
+            )
+
+        return (
+            query
+            .order_by(
+                LocationServiceDay.service_date.asc()
+            )
             .all()
         )

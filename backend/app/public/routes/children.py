@@ -11,6 +11,7 @@ from app.public.services.children_read import ReadChildService
 from app.public.schemas.children import (
     ChildResponse,
     ChildTableResponse,
+    ListChildrenFilterRequest,
 )
 
 
@@ -47,6 +48,7 @@ def get_child(
 
 @router.get("/list")
 def list_children(
+    filters: ListChildrenFilterRequest = Depends(),
     db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
@@ -58,7 +60,9 @@ def list_children(
     result = ReadChildService(
         db=db,
         ctx=ctx,
-    ).list_with_filters()
+    ).list_with_filters(
+        filters=filters,
+    )
 
     return ApiResponse(
         ok=True,

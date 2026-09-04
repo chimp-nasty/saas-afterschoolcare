@@ -15,3 +15,8 @@ class ChildTableResponse(BaseModel):
     user_id: UUID
     first_name: str
     last_name: str
+
+
+class ListChildrenFilterRequest(BaseModel):
+    is_active: bool | None = None
+    review_status: list[str] | None = None
