@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.public.models.location_service import LocationService
+from app.public.models.location_service_day import LocationServiceDay
 
 
 class LocationServiceRepository:
@@ -40,4 +41,36 @@ class LocationServiceRepository:
             self.db.query(LocationService)
             .filter(LocationService.id == id)
             .first()
+        )
+
+    def list_by_service_day_ids(
+        self,
+        *,
+        ids: list[UUID],
+    ):
+        return (
+            self.db.query(
+                LocationServiceDay.id.label(
+                    "location_service_day_id"
+                ),
+                LocationServiceDay.service_date,
+                LocationServiceDay.capacity,
+                LocationService.id.label(
+                    "location_service_id"
+                ),
+                LocationService.stripe_price_id,
+            )
+            .join(
+                LocationService,
+                LocationService.id
+                == LocationServiceDay.location_service_id,
+            )
+            .filter(
+                LocationServiceDay.id.in_(ids),
+            )
+            .order_by(
+                LocationServiceDay.id,
+            )
+            .with_for_update()
+            .all()
         )

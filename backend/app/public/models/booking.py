@@ -1,10 +1,20 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint, func
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, func, text
 from sqlalchemy.dialects.postgresql import ENUM, UUID
 
 from app.db.base import Base
 
+
+booking_status_enum = ENUM(
+    "PENDING",
+    "CONFIRMED",
+    "CANCELLED",
+    "EXPIRED",
+    name="booking_status_enum",
+    schema="public",
+    create_type=False,
+)
 
 payment_status_enum = ENUM(
     "PENDING",
@@ -49,7 +59,7 @@ class Booking(Base):
         nullable=False,
     )
 
-    location_service_id = Column(
+    location_service_day_id = Column(
         UUID(as_uuid=True),
         ForeignKey("public.location_service_days.id"),
         nullable=False,
@@ -59,6 +69,12 @@ class Booking(Base):
         UUID(as_uuid=True),
         ForeignKey("public.child_profile.id"),
         nullable=False,
+    )
+
+    booking_status = Column(
+        booking_status_enum,
+        nullable=False,
+        server_default="PENDING",
     )
 
     payment_status = Column(
@@ -73,14 +89,27 @@ class Booking(Base):
 
     currency = Column(currency_code_enum, nullable=False)
 
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
 
     __table_args__ = (
-        UniqueConstraint(
+        Index(
+            "uq_active_booking_child_location_service_day",
             "child_id",
-            "location_service_id",
-            name="uq_booking_child_location_service",
+            "location_service_day_id",
+            unique=True,
+            postgresql_where=text(
+                "booking_status IN ('PENDING', 'CONFIRMED')"
+            ),
         ),
         {"schema": "public"},
     )

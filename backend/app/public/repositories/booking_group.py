@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.public.models.booking_group import BookingGroup
+from app.public.models.booking import Booking
 
 
 class BookingGroupRepository:
@@ -35,5 +36,24 @@ class BookingGroupRepository:
         return (
             self.db.query(BookingGroup)
             .filter(BookingGroup.id == id)
+            .first()
+        )
+
+    def get_pending_by_idempotency_key(
+        self,
+        *,
+        idempotency_key: str,
+    ) -> BookingGroup | None:
+        return (
+            self.db.query(BookingGroup)
+            .filter(
+                BookingGroup.idempotency_key == idempotency_key,
+                ~self.db.query(Booking)
+                .filter(
+                    Booking.booking_group_id == BookingGroup.id,
+                    Booking.booking_status != "PENDING",
+                )
+                .exists(),
+            )
             .first()
         )

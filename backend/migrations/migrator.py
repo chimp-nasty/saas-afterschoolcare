@@ -153,6 +153,9 @@ def reset() -> None:
                 text(
                     """
                     DROP SCHEMA IF EXISTS
+                        public CASCADE;
+                    
+                    DROP SCHEMA IF EXISTS
                         auth CASCADE;
 
                     DROP SCHEMA IF EXISTS
@@ -160,6 +163,8 @@ def reset() -> None:
 
                     DROP SCHEMA IF EXISTS
                         migrations CASCADE;
+
+                    CREATE SCHEMA public;
                     """
                 )
             )

@@ -49,3 +49,17 @@ class PaymentAttemptRepository:
             .filter(PaymentAttempt.id == id)
             .first()
         )
+
+    def get_successful_by_booking_group_id(
+        self,
+        *,
+        booking_group_id: UUID
+    ) -> PaymentAttempt | None:
+        return (
+            self.db.query(PaymentAttempt)
+            .filter(
+                PaymentAttempt.booking_group_id == booking_group_id,
+                PaymentAttempt.stripe_status == "SUCCEEDED",
+            )
+            .first()
+        )

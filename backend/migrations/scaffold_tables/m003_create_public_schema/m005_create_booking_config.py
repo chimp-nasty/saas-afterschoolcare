@@ -12,7 +12,6 @@ def up(conn: Connection) -> None:
         -- ENUMS
         -- =====================================================
 
-        
         DO $$
         BEGIN
             IF NOT EXISTS (
@@ -42,7 +41,7 @@ def up(conn: Connection) -> None:
             IF NOT EXISTS (
                 SELECT 1
                 FROM pg_type
-                WHERE typname = 'payment_status_enum'                        
+                WHERE typname = 'payment_status_enum'
             ) THEN
                 CREATE TYPE payment_status_enum AS ENUM (
                     'PENDING',
@@ -51,8 +50,22 @@ def up(conn: Connection) -> None:
                     'FAILED'
                 );
             END IF;
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_type
+                WHERE typname = 'booking_status_enum'
+            ) THEN
+                CREATE TYPE booking_status_enum AS ENUM (
+                    'PENDING',
+                    'CONFIRMED',
+                    'CANCELLED',
+                    'EXPIRED'
+                );
+            END IF;
         END$$;
-        
+
+
         -- =====================================================
         -- BOOKING GROUPS
         -- =====================================================
@@ -93,11 +106,14 @@ def up(conn: Connection) -> None:
             booking_group_id UUID NOT NULL
                 REFERENCES public.booking_groups(id),
 
-            location_service_id UUID NOT NULL
+            location_service_day_id UUID NOT NULL
                 REFERENCES public.location_service_days(id),
 
             child_id UUID NOT NULL
                 REFERENCES public.child_profile(id),
+
+            booking_status booking_status_enum
+                NOT NULL DEFAULT 'PENDING',
 
             payment_status payment_status_enum
                 NOT NULL DEFAULT 'PENDING',
@@ -109,14 +125,18 @@ def up(conn: Connection) -> None:
             currency currency_code_enum NOT NULL,
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-            CONSTRAINT uq_booking_child_location_service
-                UNIQUE (
-                    child_id,
-                    location_service_id
-                )
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_active_booking_child_location_service_day
+            ON public.bookings (
+                child_id,
+                location_service_day_id
+            )
+            WHERE booking_status IN (
+                'PENDING',
+                'CONFIRMED'
+            );
 
 
         -- =====================================================
