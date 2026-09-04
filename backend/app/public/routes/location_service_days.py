@@ -5,7 +5,7 @@ from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
 from app.dependencies.auth import require_permission
 from app.dependencies.rls import get_rls_db
-from app.public.services.location_service import LocationServiceDayService
+from app.public.services.location_service_days import LocationServiceDayService
 from app.public.schemas.location_service_days import (
     ListLocationServiceDaysFilterRequest,
     LocationServiceDayTableResponse,
