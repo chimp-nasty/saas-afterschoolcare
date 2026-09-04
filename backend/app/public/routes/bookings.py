@@ -15,6 +15,7 @@ from app.public.schemas.booking import (
     BookingResponse,
     BookingTableResponse,
     ListBookingsFilterRequest,
+    BookingConflictRow,
 )
 
 
@@ -46,6 +47,31 @@ def create_booking(
         ok=True,
         msg="Created Pending Bookings",
         data=result
+    )
+
+
+@router.post("/conflicts")
+def find_conflicts(
+    body: CreateBookingRequest,
+    db: Session = Depends(get_rls_db),
+    ctx: TokenContext = Depends(
+        require_permission(
+            resource="bookings",
+            action="c",
+        )
+    ),
+) -> ApiResponse[list[BookingConflictRow]]:
+    result = CreateBookingService(
+        db=db,
+        ctx=ctx,
+    ).find_conflicts(
+        body=body,
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Checked Booking Conflicts",
+        data=result,
     )
 
 

@@ -8,9 +8,11 @@ class BookingSelection(BaseModel):
     child_id: UUID
     location_service_days: list[UUID]
 
+
 class CreateBookingRequest(BaseModel):
     idempotency_key: str
     bookings: list[BookingSelection]
+
 
 class CreateBookingResponse(BaseModel):
     idempotency_key: str
@@ -22,7 +24,7 @@ class BookingConflictRow(BaseModel):
     child_id: UUID
     child_name: str
 
-    location_service_day: UUID
+    location_service_day_id: UUID
     location_service_date: date
 
 

@@ -1,5 +1,4 @@
 from uuid import UUID
-from datetime import date
 
 from sqlalchemy.orm import Session
 
