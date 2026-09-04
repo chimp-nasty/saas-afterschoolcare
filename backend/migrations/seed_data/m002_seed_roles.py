@@ -11,6 +11,11 @@ def up(conn: Connection) -> None:
         )
         VALUES
             (
+                'superadmin',
+                'Super Administrator',
+                'Administrative user for all locations.'
+            ),
+            (
                 'admin',
                 'Administrator',
                 'Administrative user for a location.'

@@ -13,7 +13,7 @@ class LocationRepository:
         self,
         *,
         tenant_id: UUID,
-        name: str,
+        name: str | None = None,
         code: str,
         address: str | None = None,
         phone: str | None = None,

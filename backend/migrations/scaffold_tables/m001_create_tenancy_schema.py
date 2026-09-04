@@ -46,7 +46,7 @@ def up(conn: Connection) -> None:
                 REFERENCES tenancy.tenants(id)
                 ON DELETE CASCADE,
 
-            name VARCHAR(200) NOT NULL,
+            name VARCHAR(200),
             code VARCHAR(50) NOT NULL,
             
             address TEXT,

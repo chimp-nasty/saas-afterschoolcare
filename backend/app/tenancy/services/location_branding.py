@@ -30,7 +30,7 @@ class LocationBrandingService:
             tenant_code=tenant.code,
 
             location_code=location.code,
-            location_name=location.name,
+            location_name=location.name if location.name else None,
 
             display_name=branding.display_name if branding else None,
             logo_key=branding.logo_key if branding else None,

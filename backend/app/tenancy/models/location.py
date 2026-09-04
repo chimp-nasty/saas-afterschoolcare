@@ -26,7 +26,6 @@ class Location(Base):
 
     name = Column(
         String(200),
-        nullable=False,
     )
 
     code = Column(
