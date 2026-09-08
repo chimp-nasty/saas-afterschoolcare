@@ -2,21 +2,19 @@
 	import Form from '$lib/components/forms/Form.svelte';
 	import PasswordInput from '$lib/components/forms/fields/PasswordInput.svelte';
 
-	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState } from '$lib/utils/forms';
+	import {
+		resetPasswordFormSchema,
+		type ResetPasswordForm
+	} from '$lib/features/auth/types';
 
-	type ResetPasswordForm = {
-		password: string;
-		confirmPassword: string;
-	};
+	import type { FormErrors } from '$lib/types/forms';
+	import { createFormState, validateForm } from '$lib/utils/forms';
 
 	let {
 		handleSubmit,
 		isLoading
 	}: {
-		handleSubmit: (
-			password: string
-		) => void | Promise<void>;
+		handleSubmit: (password: string) => void | Promise<void>;
 		isLoading: boolean;
 	} = $props();
 
@@ -31,33 +29,11 @@
 
 	let errors = $state<FormErrors<ResetPasswordForm>>({});
 
-	function validate(): boolean {
-		errors = {};
-
-		if (!body.password) {
-			errors.password = 'Password is required';
-		}
-
-		if (!body.confirmPassword) {
-			errors.confirmPassword = 'Confirm your password';
-		}
-
-		if (
-			body.password &&
-			body.confirmPassword &&
-			body.password !== body.confirmPassword
-		) {
-			errors.confirmPassword = 'Passwords do not match';
-		}
-
-		return Object.keys(errors).length === 0;
-	}
-
 	async function submit() {
-		if (!validate()) {
-			return;
-		}
+		const validation = validateForm(resetPasswordFormSchema, body);
+		errors = validation.errors;
 
+		if (!validation.valid) return;
 		await handleSubmit(body.password);
 	}
 

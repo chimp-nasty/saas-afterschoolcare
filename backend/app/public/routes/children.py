@@ -27,7 +27,7 @@ def get_child(
     db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
-            resource="children",
+            resource="child_profile",
             action="r",
         )
     ),
@@ -49,7 +49,7 @@ def list_children(
     db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
-            resource="children",
+            resource="child_profile",
             action="r",
         )
     ),

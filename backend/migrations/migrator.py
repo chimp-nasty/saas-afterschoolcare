@@ -1,21 +1,37 @@
+import os
 import sys
 
-from sqlalchemy import text
-from sqlalchemy.engine import Connection
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Connection, Engine
 
 from app.core.config import settings
-from app.db.session import SessionLocal
 from .scaffold_tables import up as scaffold_tables
 from .seed_data import up as seed_data
 from .dev_seed_data import up as dev_seed_data
+
+
+load_dotenv()
 
 
 MIGRATION_SCHEMA = "migrations"
 MIGRATION_TABLE = f"{MIGRATION_SCHEMA}.migration_history"
 
 
-def get_engine():
-    return SessionLocal.kw["bind"]
+def get_engine() -> Engine:
+    database_admin_url = os.environ.get(
+        "DATABASE_ADMIN_URL"
+    )
+
+    if not database_admin_url:
+        raise RuntimeError(
+            "DATABASE_ADMIN_URL environment variable is required."
+        )
+
+    return create_engine(
+        database_admin_url,
+        pool_pre_ping=True,
+    )
 
 
 def ensure_migration_table(

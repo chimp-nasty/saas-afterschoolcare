@@ -1,0 +1,1 @@
+<!-- stubbed for stripe checkout success redirect, we will use ?id=booking_group_id and populate data accordingly -->

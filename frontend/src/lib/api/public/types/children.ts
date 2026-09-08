@@ -1,37 +1,62 @@
-export type ListChildrenFilterRequest = {
-	is_active?: boolean | null
-	review_status?: string[] | null
-}
+import { z } from 'zod';
 
-export type ChildResponse = {
-	id: string
-	location_id: string
-	user_id: string
+import { MedicalReviewStatus } from './enums';
 
-	first_name: string
-	last_name: string
-	dob: string
 
-	medical_info: string | null
-	allergy_info: string | null
-	medication_info: string | null
+// Children Filters
 
-	is_active: boolean
-	review_status: string
+export const listChildrenFilterRequestSchema = z.object({
+	is_active: z.boolean().nullable().optional(),
+	review_status: z
+		.array(z.enum(MedicalReviewStatus))
+		.nullable()
+		.optional()
+});
 
-	created_at: string
-	updated_at: string
-}
+export type ListChildrenFilterRequest =
+	z.infer<typeof listChildrenFilterRequestSchema>;
 
-export type ChildTableResponse = {
-	id: string
-	location_id: string
-	user_id: string
 
-	first_name: string
-	last_name: string
-	dob: string
+// Child Response
 
-	is_active: boolean
-	review_status: string
-}
+export const childResponseSchema = z.object({
+	id: z.uuid(),
+	location_id: z.uuid(),
+	user_id: z.uuid(),
+
+	first_name: z.string(),
+	last_name: z.string(),
+	dob: z.string(),
+
+	medical_info: z.string().nullable(),
+	allergy_info: z.string().nullable(),
+	medication_info: z.string().nullable(),
+
+	is_active: z.boolean(),
+	review_status: z.enum(MedicalReviewStatus),
+
+	created_at: z.string(),
+	updated_at: z.string()
+});
+
+export type ChildResponse =
+	z.infer<typeof childResponseSchema>;
+
+
+// Child Table Response
+
+export const childTableResponseSchema = z.object({
+	id: z.uuid(),
+	location_id: z.uuid(),
+	user_id: z.uuid(),
+
+	first_name: z.string(),
+	last_name: z.string(),
+	dob: z.string(),
+
+	is_active: z.boolean(),
+	review_status: z.enum(MedicalReviewStatus)
+});
+
+export type ChildTableResponse =
+	z.infer<typeof childTableResponseSchema>;

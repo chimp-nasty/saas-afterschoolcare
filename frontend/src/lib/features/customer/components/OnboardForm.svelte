@@ -5,75 +5,46 @@
     import TextInput from '$lib/components/forms/fields/TextInput.svelte';
     import CheckboxInput from '$lib/components/forms/fields/CheckboxInput.svelte';
 
-	import type { RegistrationRequest } from '$lib/api/auth/types/types';
+	import { 
+		registrationFormSchema,
+		type RegistrationForm
+	} from '$lib/features/customer/types';
 	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState } from '$lib/utils/forms';
+	import { createFormState, validateForm } from '$lib/utils/forms';
 
 	let {
 		handleSubmit,
 		isLoading
 	}: {
-		handleSubmit: (body: RegistrationRequest) => void | Promise<void>;
+		handleSubmit: (body: RegistrationForm) => void | Promise<void>;
 		isLoading: boolean;
 	} = $props();
 
-	const initialBody: RegistrationRequest = {
+	const initialBody: RegistrationForm = {
 		email: '',
 		password: '',
+		confirmPassword: '',
         first_name: '',
         last_name: '',
         terms_accepted: false,
 	};
 
-    let confirmPassword = $state('');
-
-	let body = $state<RegistrationRequest>(
+	let body = $state<RegistrationForm>(
 		createFormState(initialBody)
 	);
 
-	let errors = $state<FormErrors<RegistrationRequest>>({});
-
-	function validate(): boolean {
-		errors = {};
-
-		if (!body.email.trim()) {
-			errors.email = 'Email is required';
-		}
-
-		if (!body.password) {
-			errors.password = 'Password is required';
-		}
-
-        if (confirmPassword !== body.password) {
-            errors.password = 'Passwords do not match';
-        }
-
-        if (!body.first_name) {
-            errors.first_name = 'First name is required';
-        }
-
-        if (!body.last_name) {
-            errors.last_name = 'Last name is required';
-        }
-
-        if (body.terms_accepted === false) {
-            errors.terms_accepted = 'You must accept terms to continue';
-        }
-
-		return Object.keys(errors).length === 0;
-	}
+	let errors = $state<FormErrors<RegistrationForm>>({});
 
 	async function submit() {
-		if (!validate()) {
-			return;
-		}
+		const validation = validateForm(registrationFormSchema, body);
+		errors = validation.errors;
 
+		if (!validation.valid) return;
 		await handleSubmit(body);
 	}
 
 	export function reset() {
 		body = createFormState(initialBody);
-        confirmPassword = '';
 		errors = {};
 	}
 </script>
@@ -94,10 +65,10 @@
 		error={errors.password}
 	/>
 
-    <PasswordInput
-		bind:value={confirmPassword}
+	<PasswordInput
+		bind:value={body.confirmPassword}
 		label="Confirm Password"
-		error={errors.password}
+		error={errors.confirmPassword}
 	/>
 
     <TextInput

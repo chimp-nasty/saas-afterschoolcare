@@ -1,17 +1,31 @@
-export type ListLocationServiceDaysFilterRequest = {
-	date_from?: string | null
-	date_to?: string | null
-	is_open?: boolean | null
-}
+import { z } from 'zod';
 
-export type LocationServiceDayTableResponse = {
-	id: string
-	location_service_id: string
-	service_type_id: number
 
-	service_name: string
-	service_date: string
+// Location Service Day Filters
 
-	is_open: boolean
-	capacity: number
-}
+export const listLocationServiceDaysFilterRequestSchema = z.object({
+	date_from: z.string().nullable().optional(),
+	date_to: z.string().nullable().optional(),
+	is_open: z.boolean().nullable().optional()
+});
+
+export type ListLocationServiceDaysFilterRequest =
+	z.infer<typeof listLocationServiceDaysFilterRequestSchema>;
+
+
+// Location Service Day Table Response
+
+export const locationServiceDayTableResponseSchema = z.object({
+	id: z.uuid(),
+	location_service_id: z.uuid(),
+	service_type_id: z.number(),
+
+	service_name: z.string(),
+	service_date: z.string(),
+
+	is_open: z.boolean(),
+	capacity: z.number()
+});
+
+export type LocationServiceDayTableResponse =
+	z.infer<typeof locationServiceDayTableResponseSchema>;

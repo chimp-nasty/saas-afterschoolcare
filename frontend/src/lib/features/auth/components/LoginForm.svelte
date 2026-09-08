@@ -3,9 +3,13 @@
 	import EmailInput from '$lib/components/forms/fields/EmailInput.svelte';
 	import PasswordInput from '$lib/components/forms/fields/PasswordInput.svelte';
 
-	import type { LoginRequest } from '$lib/api/auth/types/types';
+	import {
+		loginRequestSchema,
+		type LoginRequest
+	} from '$lib/api/auth/types/types';
+
 	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState } from '$lib/utils/forms';
+	import { createFormState, validateForm } from '$lib/utils/forms';
 
 	let {
 		handleSubmit,
@@ -26,25 +30,11 @@
 
 	let errors = $state<FormErrors<LoginRequest>>({});
 
-	function validate(): boolean {
-		errors = {};
-
-		if (!body.email.trim()) {
-			errors.email = 'Email is required';
-		}
-
-		if (!body.password) {
-			errors.password = 'Password is required';
-		}
-
-		return Object.keys(errors).length === 0;
-	}
-
 	async function submit() {
-		if (!validate()) {
-			return;
-		}
+		const validation = validateForm(loginRequestSchema, body);
+		errors = validation.errors;
 
+		if (!validation.valid) return;
 		await handleSubmit(body);
 	}
 
