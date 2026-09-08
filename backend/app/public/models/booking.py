@@ -1,45 +1,21 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, func, text
-from sqlalchemy.dialects.postgresql import ENUM, UUID
+from sqlalchemy import Enum, Column, DateTime, ForeignKey, Index, Integer, func, text
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
 
-
-booking_status_enum = ENUM(
-    "PENDING",
-    "CONFIRMED",
-    "CANCELLED",
-    "EXPIRED",
-    name="booking_status_enum",
-    schema="public",
-    create_type=False,
-)
-
-payment_status_enum = ENUM(
-    "PENDING",
-    "PAID",
-    "REFUNDED",
-    "FAILED",
-    name="payment_status_enum",
-    schema="public",
-    create_type=False,
-)
-
-currency_code_enum = ENUM(
-    "AUD",
-    "NZD",
-    "USD",
-    name="currency_code_enum",
-    schema="public",
-    create_type=False,
-)
+from app.public.models.enums import enum_values, BookingStatus, PaymentStatus, CurrencyCode
 
 
 class Booking(Base):
     __tablename__ = "bookings"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
 
     location_id = Column(
         UUID(as_uuid=True),
@@ -72,22 +48,49 @@ class Booking(Base):
     )
 
     booking_status = Column(
-        booking_status_enum,
+        Enum(
+            BookingStatus,
+            name="booking_status_enum",
+            schema="public",
+            create_type=False,
+            values_callable=enum_values,
+        ),
         nullable=False,
         server_default="PENDING",
     )
 
     payment_status = Column(
-        payment_status_enum,
+        Enum(
+            PaymentStatus,
+            name="payment_status_enum",
+            schema="public",
+            create_type=False,
+            values_callable=enum_values,
+        ),
         nullable=False,
         server_default="PENDING",
     )
 
-    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
-    price_snapshot_cents = Column(Integer, nullable=False)
+    price_snapshot_cents = Column(
+        Integer,
+        nullable=False,
+    )
 
-    currency = Column(currency_code_enum, nullable=False)
+    currency = Column(
+        Enum(
+            CurrencyCode,
+            name="currency_code_enum",
+            schema="public",
+            create_type=False,
+            values_callable=enum_values,
+        ),
+        nullable=False,
+    )
 
     created_at = Column(
         DateTime(timezone=True),

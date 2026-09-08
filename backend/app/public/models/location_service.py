@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, SmallInteger, String, UniqueConstraint, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, SmallInteger, String, Integer, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
@@ -26,10 +26,21 @@ class LocationService(Base):
     stripe_product_id = Column(String(255), nullable=True, unique=True)
     stripe_price_id = Column(String(255), nullable=True, unique=True)
 
+    current_price_cents = Column(Integer, nullable=False)
+    currency = Column(String(3), nullable=False, server_default="AUD")
+
     is_active = Column(Boolean, nullable=False, server_default="true")
 
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
 
     __table_args__ = (
         UniqueConstraint(

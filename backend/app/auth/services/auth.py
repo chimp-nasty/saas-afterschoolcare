@@ -13,6 +13,7 @@ from app.auth.repositories.permission import PermissionRepository
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.auth.repositories.password_reset_token import PasswordResetTokenRepository
+from app.auth.repositories.rls_context import RlsContextRepository
 from app.auth.schemas.auth import (
     LoginRequest,
     RegistrationRequest,
@@ -34,6 +35,7 @@ class AuthService:
         self.roles = RoleRepository(db=db)
         self.location_user_roles = LocationUserRoleRepository(db=db)
         self.password_reset_tokens = PasswordResetTokenRepository(db=db)
+        self.rls_context = RlsContextRepository(db=db)
         
     def login(
         self,
@@ -48,6 +50,10 @@ class AuthService:
         for the requested location.
         """
         try:
+            self.rls_context.set_login_email(
+                email=body.email,
+            )
+            
             user = self.users.get_by_email(
                 email=body.email,
             )
@@ -61,6 +67,10 @@ class AuthService:
             ):
                 raise AuthenticationFailedError()
 
+            self.rls_context.set_user_id(
+                user_id=user.id,
+            )
+            
             location_roles = (
                 self.location_user_roles.list_roles_by_user_and_location(
                     user_id=user.id,
@@ -135,6 +145,7 @@ class AuthService:
     def register_user(
         self,
         *,
+        id: UUID,
         body: RegistrationRequest
     ) -> User:
         """
@@ -155,11 +166,12 @@ class AuthService:
         )
 
         return self.users.create(
+            id=id,
             email=body.email,
             password_hash=password_hash,
             first_name=body.first_name,
             last_name=body.last_name,
-            terms_accepted_at=datetime.now(timezone.utc)
+            terms_accepted_at=datetime.now(timezone.utc),
         )
         
     def reset_password(
@@ -246,4 +258,3 @@ class AuthService:
         except Exception:
             self.db.rollback()
             raise
-

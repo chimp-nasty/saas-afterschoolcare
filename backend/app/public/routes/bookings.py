@@ -25,7 +25,7 @@ router = APIRouter(
 )
 
 
-@router("/create", status_code=201)
+@router.post("/create", status_code=201)
 def create_booking(
     body: CreateBookingRequest,
     db: Session = Depends(get_rls_db),
@@ -36,11 +36,10 @@ def create_booking(
         )
     )
 ) -> ApiResponse[CreateBookingResponse]:
-    result = CreateBookingService(
-        db=db,
-        ctx=ctx
-    ).create(
-        body=body
+    result = CreateBookingService(db=db).create(
+        body=body,
+        user_id=ctx.user_id,
+        location_id=ctx.location_id
     )
 
     return ApiResponse(
@@ -61,10 +60,7 @@ def find_conflicts(
         )
     ),
 ) -> ApiResponse[list[BookingConflictRow]]:
-    result = CreateBookingService(
-        db=db,
-        ctx=ctx,
-    ).find_conflicts(
+    result = CreateBookingService(db=db).find_conflicts(
         body=body,
     )
 
@@ -86,10 +82,7 @@ def get_booking(
         )
     )
 ) -> ApiResponse[BookingResponse]:
-    result = ReadBookingService(
-        db=db,
-        ctx=ctx
-    ).get_by_id(
+    result = ReadBookingService(db=db).get_by_id(
         id=booking_id
     )
 
@@ -111,10 +104,7 @@ def list_bookings(
         )
     )
 ) -> ApiResponse[list[BookingTableResponse]]:
-    result = ReadBookingService(
-        db=db,
-        ctx=ctx
-    ).list_with_filters(
+    result = ReadBookingService(db=db).list_with_filters(
         filters=filters
     )
 

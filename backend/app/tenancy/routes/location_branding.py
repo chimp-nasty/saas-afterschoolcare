@@ -30,12 +30,12 @@ def get_public_branding(
     ),
     db: Session = Depends(get_db),
 ) -> ApiResponse[PublicLocationResponse]:
-    branding = LocationBrandingService(db=db).get_public_location(
+    result = LocationBrandingService(db=db).get_public_location(
         location_id=location_id,
     )
 
     return ApiResponse(
         ok=True,
         msg="Fetched public location data",
-        data=branding,
+        data=result,
     )

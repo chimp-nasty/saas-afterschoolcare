@@ -5,6 +5,7 @@ from . import (
     m002_create_authorization_schema,
     m003_create_public_schema,
     m004_create_rls_policies,
+    m005_create_runtime_role,
 )
 
 
@@ -13,3 +14,4 @@ def up(conn: Connection) -> None:
     m002_create_authorization_schema.up(conn)
     m003_create_public_schema.up(conn)
     m004_create_rls_policies.up(conn)
+    m005_create_runtime_role.up(conn)

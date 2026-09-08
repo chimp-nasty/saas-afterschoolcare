@@ -32,11 +32,8 @@ def get_child(
         )
     ),
 ) -> ApiResponse[ChildResponse]:
-    result = ReadChildService(
-        db=db,
-        ctx=ctx,
-    ).get_by_id(
-        id=child_id,
+    result = ReadChildService(db=db).get_by_id(
+        id=child_id
     )
 
     return ApiResponse(
@@ -57,10 +54,7 @@ def list_children(
         )
     ),
 ) -> ApiResponse[list[ChildTableResponse]]:
-    result = ReadChildService(
-        db=db,
-        ctx=ctx,
-    ).list_with_filters(
+    result = ReadChildService(db=db).list_with_filters(
         filters=filters,
     )
 

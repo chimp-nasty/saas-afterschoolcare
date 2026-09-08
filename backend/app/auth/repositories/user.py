@@ -13,6 +13,7 @@ class UserRepository:
     def create(
         self,
         *,
+        id: UUID,
         email: str,
         password_hash: str,
         first_name: str,
@@ -23,6 +24,7 @@ class UserRepository:
         last_login: datetime | None = None,
     ) -> User:
         record = User(
+            id=id,
             email=email,
             password_hash=password_hash,
             first_name=first_name,

@@ -1,10 +1,9 @@
+from uuid import UUID
 from collections import Counter
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
-from app.auth.jwt.context import TokenContext
-from app.integrations.payments.stripe.client import StripeClient
 from app.errors.bookings import (
     BookingCollisionError,
     MultipleBookingServicesError,
@@ -22,7 +21,7 @@ from app.public.models.booking_group import BookingGroup
 from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
-from app.public.repositories.location_service import LocationServiceRepository
+from app.public.repositories.location_service_day import LocationServiceDayRepository
 
 
 @dataclass
@@ -39,21 +38,20 @@ class ResolvedBookingPrice:
 
 
 class CreateBookingService:
-    def __init__(self, *, db: Session, ctx: TokenContext):
+    def __init__(self, *, db: Session):
         self.db = db
-        self.ctx = ctx
 
         self.booking_group_repository = BookingGroupRepository(db=db)
         self.booking_repository = BookingRepository(db=db)
         self.payment_attempt_repository = PaymentAttemptRepository(db=db)
-        self.location_service_repository = LocationServiceRepository(db=db)
-
-        self.stripe = StripeClient()
+        self.location_service_repository = LocationServiceDayRepository(db=db)
 
     def create(
         self,
         *,
         body: CreateBookingRequest,
+        user_id: UUID,
+        location_id: UUID
     ) -> CreateBookingResponse:
         try:
             # Resolve and lock requested service days
@@ -91,14 +89,12 @@ class CreateBookingService:
                 )
 
             # Resolve price only after local validation succeeds
-            pricing = self._resolve_booking_price(
-                resolved_service_day=resolved_service_days[0],
-            )
+            pricing = resolved_service_days[0]
 
             # Create booking group
             booking_group = self.booking_group_repository.create(
                 idempotency_key=body.idempotency_key,
-                user_id=self.ctx.user_id,
+                user_id=user_id,
                 source=None,
             )
 
@@ -109,12 +105,12 @@ class CreateBookingService:
                 for location_service_day_id in selection.location_service_days:
                     bookings.append(
                         self.booking_repository.create(
-                            location_id=self.ctx.location_id,
-                            user_id=self.ctx.user_id,
+                            location_id=location_id,
+                            user_id=user_id,
                             booking_group_id=booking_group.id,
                             location_service_day_id=location_service_day_id,
                             child_id=selection.child_id,
-                            price_snapshot_cents=pricing.price_cents,
+                            price_snapshot_cents=pricing.current_price_cents,
                             currency=pricing.currency,
                             booking_status="PENDING",
                         )
@@ -199,20 +195,6 @@ class CreateBookingService:
                 booking.price_snapshot_cents
                 for booking in bookings
             ),
-        )
-
-    def _resolve_booking_price(
-        self,
-        *,
-        resolved_service_day,
-    ) -> ResolvedBookingPrice:
-        stripe_price = self.stripe.get_price(
-            stripe_price_id=resolved_service_day.stripe_price_id,
-        )
-
-        return ResolvedBookingPrice(
-            price_cents=stripe_price.amount_cents,
-            currency=stripe_price.currency,
         )
 
     def _validate_capacity(

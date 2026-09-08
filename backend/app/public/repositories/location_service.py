@@ -1,11 +1,9 @@
 from uuid import UUID
-from datetime import date
 
-from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
+from sqlalchemy import Row
 
 from app.public.models.location_service import LocationService
-from app.public.models.location_service_day import LocationServiceDay
 from app.public.models.service_type import ServiceType
 
 
@@ -18,6 +16,8 @@ class LocationServiceRepository:
         *,
         location_id: UUID,
         service_type_id: int,
+        current_price_cents: int,
+        currency: str,
         stripe_product_id: str | None = None,
         stripe_price_id: str | None = None,
         is_active: bool = True,
@@ -25,6 +25,8 @@ class LocationServiceRepository:
         record = LocationService(
             location_id=location_id,
             service_type_id=service_type_id,
+            current_price_cents=current_price_cents,
+            currency=currency,
             stripe_product_id=stripe_product_id,
             stripe_price_id=stripe_price_id,
             is_active=is_active,
@@ -46,61 +48,41 @@ class LocationServiceRepository:
             .first()
         )
 
-    def list_by_service_day_ids(
+    def get_by_stripe_product_id(
         self,
         *,
-        ids: list[UUID],
-    ):
+        stripe_product_id: str
+    ) -> LocationService | None:
         return (
-            self.db.query(
-                LocationServiceDay.id.label(
-                    "location_service_day_id"
-                ),
-                LocationServiceDay.service_date,
-                LocationServiceDay.capacity,
-                LocationService.id.label(
-                    "location_service_id"
-                ),
-                LocationService.stripe_price_id,
-            )
-            .join(
-                LocationService,
-                LocationService.id
-                == LocationServiceDay.location_service_id,
-            )
-            .filter(
-                LocationServiceDay.id.in_(ids),
-            )
-            .order_by(
-                LocationServiceDay.id,
-            )
-            .with_for_update()
-            .all()
+            self.db.query(LocationService)
+            .filter(LocationService.stripe_product_id == stripe_product_id)
+            .first()
         )
 
-    def list_context_with_filters(
+    def update_current_price_cents(
         self,
         *,
-        date_from: date | None = None,
-        date_to: date | None = None,
-        is_open: bool | None = None,
+        location_service: LocationService,
+        amount_cents: int,
+        currency: str
+    ) -> None:
+        location_service.current_price_cents = amount_cents
+        location_service.currency = currency
+
+    def list_with_context(
+        self,
+        *,
+        is_active: bool | None = None,
     ) -> list[Row]:
         query = (
             self.db.query(
-                LocationServiceDay.id,
-                LocationServiceDay.location_service_id,
+                LocationService.id,
                 LocationService.service_type_id,
 
                 ServiceType.name.label("service_name"),
 
-                LocationServiceDay.service_date,
-                LocationServiceDay.is_open,
-                LocationServiceDay.capacity,
-            )
-            .join(
-                LocationService,
-                LocationService.id
-                == LocationServiceDay.location_service_id,
+                LocationService.current_price_cents,
+                LocationService.currency,
             )
             .join(
                 ServiceType,
@@ -109,25 +91,13 @@ class LocationServiceRepository:
             )
         )
 
-        if date_from:
+        if is_active is not None:
             query = query.filter(
-                LocationServiceDay.service_date >= date_from
-            )
-
-        if date_to:
-            query = query.filter(
-                LocationServiceDay.service_date <= date_to
-            )
-
-        if is_open is not None:
-            query = query.filter(
-                LocationServiceDay.is_open == is_open
+                LocationService.is_active == is_active
             )
 
         return (
             query
-            .order_by(
-                LocationServiceDay.service_date.asc()
-            )
+            .order_by(ServiceType.name.asc())
             .all()
         )

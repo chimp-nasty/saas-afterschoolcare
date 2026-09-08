@@ -2,7 +2,6 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.auth.jwt.context import TokenContext
 from app.public.repositories.booking import BookingRepository
 from app.public.schemas.booking import (
     BookingResponse,
@@ -12,10 +11,8 @@ from app.public.schemas.booking import (
 
 
 class ReadBookingService:
-    def __init__(self, *, db: Session, ctx: TokenContext):
+    def __init__(self, *, db: Session):
         self.db = db
-        self.ctx = ctx
-
         self.booking_repository = BookingRepository(db=db)
 
     def get_by_id(

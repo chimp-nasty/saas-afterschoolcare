@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.auth.jwt.context import TokenContext
-from app.public.repositories.location_service import LocationServiceRepository
+from app.public.repositories.location_service_day import LocationServiceDayRepository
 from app.public.schemas.location_service_days import (
     ListLocationServiceDaysFilterRequest,
     LocationServiceDayTableResponse,
@@ -13,13 +12,11 @@ class LocationServiceDayService:
         self,
         *,
         db: Session,
-        ctx: TokenContext,
     ):
         self.db = db
-        self.ctx = ctx
 
         self.location_service_repository = (
-            LocationServiceRepository(db=db)
+            LocationServiceDayRepository(db=db)
         )
 
     def list_with_filters(

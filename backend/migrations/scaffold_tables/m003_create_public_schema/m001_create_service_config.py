@@ -9,6 +9,25 @@ def up(conn: Connection) -> None:
 
     conn.execute(text("""
         -- =====================================================
+        -- ENUMS
+        -- =====================================================
+
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_type
+                WHERE typname = 'currency_code_enum'
+            ) THEN
+                CREATE TYPE currency_code_enum AS ENUM (
+                    'AUD',
+                    'NZD',
+                    'USD'
+                );
+            END IF;
+        END$$;
+        
+        -- =====================================================
         -- SERVICE TYPES
         -- =====================================================
 
@@ -32,7 +51,9 @@ def up(conn: Connection) -> None:
                 REFERENCES public.service_types(id),
 
             stripe_product_id VARCHAR(255) UNIQUE,
-            stripe_price_id VARCHAR(255) UNIQUE,
+            
+            current_price_cents INTEGER NOT NULL,
+            currency currency_code_enum NOT NULL,
 
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
 

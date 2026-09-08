@@ -1,18 +1,9 @@
-from sqlalchemy import Column, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import ENUM, UUID
+from sqlalchemy import Enum, Column, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
 
-
-medical_review_status_enum = ENUM(
-    "not_required",
-    "pending",
-    "documentation_requested",
-    "approved",
-    name="medical_review_status_enum",
-    schema="public",
-    create_type=False,
-)
+from app.public.models.enums import enum_values, MedicalReviewStatus
 
 
 class ChildMedicalState(Base):
@@ -20,17 +11,29 @@ class ChildMedicalState(Base):
 
     child_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("public.child_profile.id", ondelete="CASCADE"),
+        ForeignKey(
+            "public.child_profile.id",
+            ondelete="CASCADE",
+        ),
         primary_key=True,
     )
 
     review_status = Column(
-        medical_review_status_enum,
+        Enum(
+            MedicalReviewStatus,
+            name="medical_review_status_enum",
+            schema="public",
+            create_type=False,
+            values_callable=enum_values,
+        ),
         nullable=False,
         server_default="not_required",
     )
 
-    updated_at = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     updated_by_user_id = Column(
         UUID(as_uuid=True),

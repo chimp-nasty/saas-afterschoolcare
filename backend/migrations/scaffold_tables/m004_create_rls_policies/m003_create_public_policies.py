@@ -240,14 +240,14 @@ def _create_user_location_policy(
                   {table}.location_id
 
               AND (
-                  r.name IN (
+                  r.code IN (
                       'superadmin',
                       'admin',
                       'staff'
                   )
 
                   OR (
-                      r.name = 'customer'
+                      r.code = 'customer'
                       AND {table}.user_id =
                           current_setting(
                               'app.user_id',
@@ -313,15 +313,15 @@ def _create_customer_profile_policy(
 
               AND (
                   (
-                      cr.name = 'staff'
-                      AND tr.name = 'customer'
+                      cr.code = 'staff'
+                      AND tr.code = 'customer'
                   )
 
                   OR
 
                   (
-                      cr.name = 'admin'
-                      AND tr.name IN (
+                      cr.code = 'admin'
+                      AND tr.code IN (
                           'staff',
                           'customer'
                       )
@@ -330,8 +330,8 @@ def _create_customer_profile_policy(
                   OR
 
                   (
-                      cr.name = 'superadmin'
-                      AND tr.name IN (
+                      cr.code = 'superadmin'
+                      AND tr.code IN (
                           'admin',
                           'staff',
                           'customer'
@@ -400,14 +400,14 @@ def _create_child_inherited_policy(
                   )::uuid
 
               AND (
-                  r.name IN (
+                  r.code IN (
                       'superadmin',
                       'admin',
                       'staff'
                   )
 
                   OR (
-                      r.name = 'customer'
+                      r.code = 'customer'
                       AND cp.user_id =
                           current_setting(
                               'app.user_id',
@@ -458,14 +458,14 @@ def _create_booking_inherited_policies(
                   )::uuid
 
               AND (
-                  r.name IN (
+                  r.code IN (
                       'superadmin',
                       'admin',
                       'staff'
                   )
 
                   OR (
-                      r.name = 'customer'
+                      r.code = 'customer'
                       AND b.user_id =
                           current_setting(
                               'app.user_id',

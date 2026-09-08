@@ -5,7 +5,7 @@ from sqlalchemy.engine import Connection
 def up(conn: Connection) -> None:
     _enable_rls(conn)
     _create_global_policies(conn)
-    _create_tenant_policies(conn)
+    _create_tenant_write_policy(conn)
 
 
 def _enable_rls(conn: Connection) -> None:
@@ -41,25 +41,20 @@ def _create_global_policies(
     tables = (
         "locations",
         "location_branding",
+        "tenants",
     )
 
     for table in tables:
         conn.execute(
             text(f"""
-                CREATE POLICY {table}_scope_policy
+                CREATE POLICY {table}_read_policy
                 ON tenancy.{table}
-                FOR ALL
-                USING (true)
-                WITH CHECK (true);
+                FOR SELECT
+                USING (true);
             """)
         )
 
-
-# -------------------------------------------------------------------------
-# TENANT-SCOPED
-# -------------------------------------------------------------------------
-
-def _create_tenant_policies(
+def _create_tenant_write_policy(
     conn: Connection,
 ) -> None:
     predicate = """
@@ -78,13 +73,13 @@ def _create_tenant_policies(
 
               AND l.tenant_id = tenants.id
 
-              AND r.name = 'superadmin'
+              AND r.code = 'superadmin'
         )
     """
 
     conn.execute(
         text(f"""
-            CREATE POLICY tenants_scope_policy
+            CREATE POLICY tenants_write_policy
             ON tenancy.tenants
             FOR ALL
             USING (

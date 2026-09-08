@@ -65,9 +65,12 @@ def _create_users_policy(
     conn: Connection,
 ) -> None:
     predicate = """
-        id = current_setting(
-            'app.user_id',
-            true
+        id = NULLIF(
+            current_setting(
+                'app.user_id',
+                true
+            ),
+            ''
         )::uuid
 
         OR
@@ -87,9 +90,12 @@ def _create_users_policy(
                 ON tr.id = target_ulr.role_id
 
             WHERE current_ulr.user_id =
-                current_setting(
-                    'app.user_id',
-                    true
+                NULLIF(
+                    current_setting(
+                        'app.user_id',
+                        true
+                    ),
+                    ''
                 )::uuid
 
               AND target_ulr.user_id =
@@ -97,15 +103,15 @@ def _create_users_policy(
 
               AND (
                   (
-                      cr.name = 'staff'
-                      AND tr.name = 'customer'
+                      cr.code = 'staff'
+                      AND tr.code = 'customer'
                   )
 
                   OR
 
                   (
-                      cr.name = 'admin'
-                      AND tr.name IN (
+                      cr.code = 'admin'
+                      AND tr.code IN (
                           'staff',
                           'customer'
                       )
@@ -114,8 +120,8 @@ def _create_users_policy(
                   OR
 
                   (
-                      cr.name = 'superadmin'
-                      AND tr.name IN (
+                      cr.code = 'superadmin'
+                      AND tr.code IN (
                           'admin',
                           'staff',
                           'customer'
@@ -132,6 +138,23 @@ def _create_users_policy(
             FOR SELECT
             USING (
                 {predicate}
+            );
+        """)
+    )
+
+    conn.execute(
+        text("""
+            CREATE POLICY users_login_policy
+            ON auth.users
+            FOR SELECT
+            USING (
+                email = NULLIF(
+                    current_setting(
+                        'app.login_email',
+                        true
+                    ),
+                    ''
+                )
             );
         """)
     )

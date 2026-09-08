@@ -45,3 +45,28 @@ class StripeClient:
             amount_cents=price.unit_amount,
             currency=price.currency.upper(),
         )
+
+    def create_price(
+        self,
+        *,
+        stripe_product_id: str,
+        amount_cents: int,
+        currency: str,
+    ) -> StripePrice:
+        price = stripe.Price.create(
+            product=stripe_product_id,
+            unit_amount=amount_cents,
+            currency=currency.lower(),
+        )
+
+        if price.unit_amount is None:
+            raise ValueError(
+                "Stripe price does not have a fixed unit amount."
+            )
+
+        return StripePrice(
+            id=price.id,
+            amount_cents=price.unit_amount,
+            currency=price.currency.upper(),
+            active=price.active,
+        )

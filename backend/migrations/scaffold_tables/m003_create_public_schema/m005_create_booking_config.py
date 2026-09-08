@@ -17,18 +17,6 @@ def up(conn: Connection) -> None:
             IF NOT EXISTS (
                 SELECT 1
                 FROM pg_type
-                WHERE typname = 'currency_code_enum'
-            ) THEN
-                CREATE TYPE currency_code_enum AS ENUM (
-                    'AUD',
-                    'NZD',
-                    'USD'
-                );
-            END IF;
-
-            IF NOT EXISTS (
-                SELECT 1
-                FROM pg_type
                 WHERE typname = 'stripe_status_enum'
             ) THEN
                 CREATE TYPE stripe_status_enum AS ENUM (
@@ -64,7 +52,6 @@ def up(conn: Connection) -> None:
                 );
             END IF;
         END$$;
-
 
         -- =====================================================
         -- BOOKING GROUPS

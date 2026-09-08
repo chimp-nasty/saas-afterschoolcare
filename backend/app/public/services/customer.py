@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
@@ -7,6 +7,7 @@ from app.auth.services.auth import AuthService
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.public.repositories.customer_profile import CustomerProfileRepository
+from app.auth.repositories.rls_context import RlsContextRepository
 from app.auth.schemas.auth import RegistrationRequest
 
 class CustomerService:
@@ -17,6 +18,7 @@ class CustomerService:
         self.location_user_roles = LocationUserRoleRepository(db=db)
         self.roles = RoleRepository(db=db)
         self.customer_profiles = CustomerProfileRepository(db=db)
+        self.rls_context = RlsContextRepository(db=db)
 
     def onboard(
         self,
@@ -25,7 +27,14 @@ class CustomerService:
         location_id: UUID
     ) -> None:
         try:
+            user_id = uuid4()
+
+            self.rls_context.set_user_id(
+                user_id=user_id,
+            )
+
             user = self.auth.register_user(
+                id=user_id,
                 body=body
             )
 

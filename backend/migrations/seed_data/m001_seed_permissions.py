@@ -5,21 +5,23 @@ from sqlalchemy.engine import Connection
 
 
 RESOURCES = [
-    "customer_profile",
-    "child_profile",
-    "child_notes",
+    "attendance_records",
     "authorized_pickup_persons",
-    "child_documents",
-    "location_kiosk_devices",
-    "user_kiosk_pins",
-    "location_service_days",
     "booking_groups",
     "bookings",
-    "booking_status_history",
-    "invoices",
-    "invoice_booking_items",
-    "booking_refunds",
-    "attendance_records",
+    "child_documents",
+    "child_medical_reviews",
+    "child_medical_state",
+    "child_notes",
+    "child_profile",
+    "customer_kiosk_pins",
+    "customer_profile",
+    "location_kiosk_devices",
+    "location_service_days",
+    "location_services",
+    "payment_attempts",
+    "refunds",
+    "service_types",
 ]
 
 ACTIONS = {
