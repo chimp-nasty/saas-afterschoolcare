@@ -4,7 +4,6 @@ import { createLocationServiceDaysApi } from "$lib/api/public/adapters/location-
 
 import type { PageLoad } from "../$types";
 
-
 export const load: PageLoad = async ({
     depends,
     fetch,

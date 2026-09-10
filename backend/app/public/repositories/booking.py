@@ -10,6 +10,7 @@ from app.public.models.child_profile import ChildProfile
 from app.public.models.location_service_day import LocationServiceDay
 from app.public.models.location_service import LocationService
 from app.public.models.service_type import ServiceType
+from app.public.models.enums import BookingStatus, PaymentStatus
 
 
 class BookingRepository:
@@ -26,8 +27,8 @@ class BookingRepository:
         child_id: UUID,
         price_snapshot_cents: int,
         currency: str,
-        booking_status: str = "PENDING",
-        payment_status: str = "PENDING",
+        booking_status: BookingStatus = BookingStatus.PENDING,
+        payment_status: PaymentStatus = PaymentStatus.PENDING,
         cancelled_at=None,
     ) -> Booking:
         record = Booking(

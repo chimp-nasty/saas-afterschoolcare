@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 import {
-    BookingStatus,
-    CurrencyCode,
-    PaymentStatus
+    bookingStatusSchema,
+    currencyCodeSchema,
+    paymentStatusSchema,
 } from './enums';
 
 
@@ -55,13 +55,11 @@ export type BookingConflictRow =
 // Booking Filters
 
 export const listBookingsFilterRequestSchema = z.object({
-    booking_status: z
-        .array(z.enum(BookingStatus))
+    booking_status: bookingStatusSchema
         .nullable()
         .optional(),
 
-    payment_status: z
-        .array(z.enum(PaymentStatus))
+    payment_status: paymentStatusSchema
         .nullable()
         .optional(),
 
@@ -87,12 +85,12 @@ export const bookingResponseSchema = z.object({
     service_date: z.string(),
     service_name: z.string(),
 
-    booking_status: z.enum(BookingStatus),
-    payment_status: z.enum(PaymentStatus),
+    booking_status: bookingStatusSchema,
+    payment_status: paymentStatusSchema,
     cancelled_at: z.string().nullable(),
 
     price_snapshot_cents: z.number(),
-    currency: z.enum(CurrencyCode),
+    currency: currencyCodeSchema,
 
     created_at: z.string(),
     updated_at: z.string()
@@ -116,8 +114,8 @@ export const bookingTableResponseSchema = z.object({
     service_date: z.string(),
     service_name: z.string(),
 
-    booking_status: z.enum(BookingStatus),
-    payment_status: z.enum(PaymentStatus)
+    booking_status: bookingStatusSchema,
+    payment_status: paymentStatusSchema
 });
 
 export type BookingTableResponse =

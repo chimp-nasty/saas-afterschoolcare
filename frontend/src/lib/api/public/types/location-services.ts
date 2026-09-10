@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
-import { CurrencyCode } from './enums';
-
+import { currencyCodeSchema } from './enums';
 
 export const updateLocationServiceRequestSchema = z.object({
 	amount_cents: z
@@ -9,7 +8,7 @@ export const updateLocationServiceRequestSchema = z.object({
 		.int('Price must be a whole number of cents')
 		.positive('Price must be greater than zero'),
 
-	currency: z.enum(CurrencyCode)
+	currency: currencyCodeSchema
 });
 
 export type UpdateLocationServiceRequest =
@@ -21,7 +20,7 @@ export const locationServiceSelectionResponseSchema = z.object({
 	service_type_id: z.uuid(),
 	service_name: z.string(),
 	current_price_cents: z.int(),
-	currency: z.enum(CurrencyCode)
+	currency: currencyCodeSchema
 });
 
 export type LocationServiceSelectionResponse =

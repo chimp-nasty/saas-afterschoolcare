@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	import InlineError from './InlineError.svelte';
 
 	export type SelectOption = {
@@ -35,90 +33,56 @@
 		error
 	}: Props = $props();
 
-	let containerElement: HTMLDivElement;
-	let isOpen = $state(false);
-
 	const id = $derived(
 		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
 	);
-
-	const selectedOption = $derived(
-		options.find((option) => option.value === value)
-	);
-
-	function selectOption(option: SelectOption) {
-		if (option.disabled) return;
-
-		value = option.value;
-		isOpen = false;
-	}
-
-	onMount(() => {
-		function handleMouseDown(event: MouseEvent) {
-			if (
-				containerElement &&
-				!containerElement.contains(event.target as Node)
-			) {
-				isOpen = false;
-			}
-		}
-
-		function handleKeyDown(event: KeyboardEvent) {
-			if (event.key === 'Escape') {
-				isOpen = false;
-			}
-		}
-
-		document.addEventListener('mousedown', handleMouseDown);
-		document.addEventListener('keydown', handleKeyDown);
-
-		return () => {
-			document.removeEventListener('mousedown', handleMouseDown);
-			document.removeEventListener('keydown', handleKeyDown);
-		};
-	});
 </script>
 
-<div
-	class="field"
-	bind:this={containerElement}
->
-    <label for={id}>
-        {label}
-        {#if isRequired}
-            <span aria-hidden="true">*</span>
-        {/if}
-    </label>
+<div class="field">
+	<label for={id}>
+		{label}
+		{#if isRequired}
+			<span aria-hidden="true">*</span>
+		{/if}
+	</label>
 
-	<button
+	<select
 		{id}
-		type="button"
+		bind:value
 		disabled={isDisabled}
-		aria-expanded={isOpen}
-		aria-haspopup="listbox"
-		onclick={() => (isOpen = !isOpen)}
+		required={isRequired}
+		aria-invalid={error ? 'true' : undefined}
+		class="
+			w-full
+			rounded-2xl
+			border
+			px-3
+			py-2
+			text-base
+			outline-none
+			transition
+		"
+		style="
+			background-color: var(--surface);
+			border-color: var(--border);
+			color: var(--text);
+		"
 	>
-		{selectedOption?.label ?? placeholder}
-	</button>
+		{#if placeholder}
+			<option value="">
+				{placeholder}
+			</option>
+		{/if}
 
-	{#if isOpen}
-		<div
-			role="listbox"
-			class="absolute z-50"
-		>
-			{#each options as option (option.value)}
-				<button
-					type="button"
-					role="option"
-					disabled={option.disabled}
-					aria-selected={option.value === value}
-					onclick={() => selectOption(option)}
-				>
-					{option.label}
-				</button>
-			{/each}
-		</div>
-	{/if}
+		{#each options as option (option.value)}
+			<option
+				value={option.value}
+				disabled={option.disabled}
+			>
+				{option.label}
+			</option>
+		{/each}
+	</select>
 
 	<InlineError message={error} />
 </div>

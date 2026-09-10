@@ -8,10 +8,12 @@ from app.auth.jwt.context import TokenContext
 from app.dependencies.auth import require_permission
 from app.dependencies.rls import get_rls_db
 from app.public.services.children_read import ReadChildService
+from app.public.services.children_create import CreateChildService
 from app.public.schemas.children import (
     ChildResponse,
     ChildTableResponse,
     ListChildrenFilterRequest,
+    CreateChildRequest
 )
 
 
@@ -62,4 +64,28 @@ def list_children(
         ok=True,
         msg="Fetched Children",
         data=result,
+    )
+
+
+@router.post("/create", status_code=201)
+def create_child_profile(
+    body: CreateChildRequest,
+    db: Session = Depends(get_rls_db),
+    ctx: TokenContext = Depends(
+        require_permission(
+            resource="child_profile",
+            action="c",
+        )
+    ),
+) -> ApiResponse[ChildResponse]:
+    result = CreateChildService(db=db).create(
+        location_id=ctx.location_id,
+        user_id=ctx.user_id,
+        body=body
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Child profile created",
+        data=result
     )

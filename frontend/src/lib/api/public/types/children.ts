@@ -1,14 +1,13 @@
 import { z } from 'zod';
 
-import { MedicalReviewStatus } from './enums';
+import { medicalReviewStatusSchema } from './enums';
 
 
 // Children Filters
 
 export const listChildrenFilterRequestSchema = z.object({
 	is_active: z.boolean().nullable().optional(),
-	review_status: z
-		.array(z.enum(MedicalReviewStatus))
+	review_status: medicalReviewStatusSchema
 		.nullable()
 		.optional()
 });
@@ -33,7 +32,7 @@ export const childResponseSchema = z.object({
 	medication_info: z.string().nullable(),
 
 	is_active: z.boolean(),
-	review_status: z.enum(MedicalReviewStatus),
+	review_status: medicalReviewStatusSchema,
 
 	created_at: z.string(),
 	updated_at: z.string()
@@ -55,8 +54,23 @@ export const childTableResponseSchema = z.object({
 	dob: z.string(),
 
 	is_active: z.boolean(),
-	review_status: z.enum(MedicalReviewStatus)
+	review_status: medicalReviewStatusSchema
 });
 
 export type ChildTableResponse =
 	z.infer<typeof childTableResponseSchema>;
+
+
+// Child Create Request
+
+export const createChildRequestSchema = z.object({
+	first_name: z.string(),
+	last_name: z.string(),
+	dob: z.date(),
+	medical_info: z.string().nullable(),
+	allergy_info: z.string().nullable(),
+	medication_info: z.string().nullable()
+});
+
+export type CreateChildRequest =
+	z.infer<typeof createChildRequestSchema>;

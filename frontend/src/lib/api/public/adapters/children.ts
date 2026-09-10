@@ -5,7 +5,8 @@ import { apiWrapper } from '$lib/api/wrapper';
 import type {
 	ChildResponse,
 	ChildTableResponse,
-	ListChildrenFilterRequest
+	ListChildrenFilterRequest,
+	CreateChildRequest,
 } from '../types/children';
 
 
@@ -51,6 +52,18 @@ export function createChildrenApi(
 				`${baseUrl}/list${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
+					fetcher
+				}
+			);
+		},
+
+		create(
+			body: CreateChildRequest
+		) {
+			return apiWrapper<ChildResponse>(
+				`${baseUrl}/create`, {
+					method: 'POST',
+					body,
 					fetcher
 				}
 			);

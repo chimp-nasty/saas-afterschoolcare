@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.public.models.child_medical_state import ChildMedicalState
+from app.public.models.enums import MedicalReviewStatus
 
 
 class ChildMedicalStateRepository:
@@ -13,7 +14,7 @@ class ChildMedicalStateRepository:
         self,
         *,
         child_id: UUID,
-        review_status: str = "not_required",
+        review_status: MedicalReviewStatus = MedicalReviewStatus.NOT_REQUIRED,
         updated_at=None,
         updated_by_user_id: UUID | None = None,
     ) -> ChildMedicalState:

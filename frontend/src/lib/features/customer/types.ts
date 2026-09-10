@@ -1,5 +1,9 @@
 import z from "zod";
 
+import { australianStateSchema } from "$lib/api/public/types/customer";
+
+// Customer Registration form
+
 export const registrationFormSchema = z
 	.object({
 		email: z.email('Enter a valid email address'),
@@ -40,3 +44,21 @@ export const registrationFormSchema = z
 
 export type RegistrationForm =
 	z.infer<typeof registrationFormSchema>;
+
+
+// Customer profile form
+
+export const customerProfileFormSchema = z.object({
+	phone: z.string(),
+	address_line_1: z.string(),
+	address_line_2: z.string(),
+	suburb: z.string(),
+	state: z.union([
+		australianStateSchema,
+		z.literal('')
+	]),
+	postcode: z.string()
+});
+
+export type CustomerProfileForm = 
+	z.infer<typeof customerProfileFormSchema>;

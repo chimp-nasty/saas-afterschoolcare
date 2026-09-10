@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import date
 
 from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
@@ -52,6 +53,28 @@ class ChildProfileRepository:
             .first()
         )
 
+    def get_by_unique_contraint(
+        self,
+        *,
+        location_id: UUID,
+        user_id: UUID,
+        first_name: str,
+        last_name: str,
+        dob: date
+    ) -> ChildProfile | None:
+        return (
+            self.db.query(ChildProfile)
+            .filter(
+                ChildProfile.location_id == location_id,
+                ChildProfile.user_id == user_id,
+                ChildProfile.first_name == first_name,
+                ChildProfile.last_name == last_name,
+                ChildProfile.dob == dob,
+                ChildProfile.is_active == True
+            )
+            .first()
+        )
+    
     def get_with_context_by_id(
         self,
         *,

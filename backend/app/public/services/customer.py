@@ -3,12 +3,21 @@ from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
 
 from app.errors.auth import RoleNotFoundError
+from app.errors.customer import CustomerProfileNotFoundError
 from app.auth.services.auth import AuthService
+
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.public.repositories.customer_profile import CustomerProfileRepository
 from app.auth.repositories.rls_context import RlsContextRepository
+from app.public.repositories.customer_profile import CustomerProfileRepository
+
 from app.auth.schemas.auth import RegistrationRequest
+from app.public.schemas.customer import (
+    UpdateCustomerProfileRequest,
+    CustomerProfileResponse,
+)
+
 
 class CustomerService:
     def __init__(self, *, db: Session):
@@ -60,3 +69,50 @@ class CustomerService:
         except Exception:
             self.db.rollback()
             raise
+
+    def get(
+        self,
+        *,
+        user_id: UUID
+    ) -> CustomerProfileResponse:
+        profile = self.customer_profiles.get_by_user_id(
+            user_id=user_id
+        )
+
+        if not profile:
+            raise CustomerProfileNotFoundError()
+
+        return CustomerProfileResponse.model_validate(profile)
+
+    def update(
+        self,
+        *,
+        user_id: UUID,
+        body: UpdateCustomerProfileRequest,
+    ) -> CustomerProfileResponse:
+        try:
+            profile = self.customer_profiles.get_by_user_id(
+                user_id=user_id
+            )
+
+            if not profile:
+                raise CustomerProfileNotFoundError()
+
+            self.customer_profiles.update(
+                profile=profile,
+                fields=body.model_dump(exclude_unset=True)
+            )
+
+            self.db.flush()
+            self.db.refresh(profile)
+
+            result = CustomerProfileResponse.model_validate(profile)
+
+            self.db.commit()
+
+            return result
+
+        except Exception:
+            self.db.rollback()
+            raise
+

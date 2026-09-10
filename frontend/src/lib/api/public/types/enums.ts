@@ -1,53 +1,85 @@
-export enum StripeStatus {
-	PENDING = 'PENDING',
-	SUCCEEDED = 'SUCCEEDED',
-	FAILED = 'FAILED'
-}
+import { z } from "zod";
 
-export enum CurrencyCode {
-	AUD = 'AUD',
-	NZD = 'NZD',
-	USD = 'USD'
-}
+export const stripeStatusSchema = z.enum([
+  "PENDING",
+  "SUCCEEDED",
+  "FAILED",
+]);
 
-export enum BookingStatus {
-	PENDING = 'PENDING',
-	CONFIRMED = 'CONFIRMED',
-	CANCELLED = 'CANCELLED',
-	EXPIRED = 'EXPIRED'
-}
+export type StripeStatus = 
+	z.infer<typeof stripeStatusSchema>;
 
-export enum PaymentStatus {
-	PENDING = 'PENDING',
-	PAID = 'PAID',
-	REFUNDED = 'REFUNDED',
-	FAILED = 'FAILED'
-}
 
-export enum ChildDocumentType {
-	MEDICAL_ACTION_PLAN = 'medical_action_plan',
-	ASTHMA_ACTION_PLAN = 'asthma_action_plan',
-	ALLERGY_ANAPHYLAXIS_PLAN = 'allergy_anaphylaxis_plan',
-	OTHER = 'other'
-}
+export const currencyCodeSchema = z.enum([
+  "AUD",
+  "NZD",
+  "USD",
+]);
 
-export enum ChildDocumentUploadStatus {
-	PENDING = 'pending',
-	UPLOADED = 'uploaded',
-	FAILED = 'failed'
-}
+export type CurrencyCode = 
+	z.infer<typeof currencyCodeSchema>;
 
-export enum MedicalReviewStatus {
-	NOT_REQUIRED = 'not_required',
-	PENDING = 'pending',
-	DOCUMENTATION_REQUESTED = 'documentation_requested',
-	APPROVED = 'approved'
-}
 
-export enum ServiceDayStatus {
-    AVAILABLE = 'AVAILABLE',
-    CLOSED = 'CLOSED',
-    FULL = 'FULL',
-    BOOKED = 'BOOKED',
-    UNAVAILABLE = 'UNAVAILABLE'
-}
+export const bookingStatusSchema = z.enum([
+  "PENDING",
+  "CONFIRMED",
+  "CANCELLED",
+  "EXPIRED",
+]);
+
+export type BookingStatus = 
+	z.infer<typeof bookingStatusSchema>;
+
+
+export const paymentStatusSchema = z.enum([
+  "PENDING",
+  "PAID",
+  "REFUNDED",
+  "FAILED",
+]);
+
+export type PaymentStatus = 
+	z.infer<typeof paymentStatusSchema>;
+
+
+export const childDocumentTypeSchema = z.enum([
+  "medical_action_plan",
+  "asthma_action_plan",
+  "allergy_anaphylaxis_plan",
+  "other",
+]);
+
+export type ChildDocumentType = z.infer<typeof childDocumentTypeSchema>;
+
+
+export const childDocumentUploadStatusSchema = z.enum([
+  "pending",
+  "uploaded",
+  "failed",
+]);
+
+export type ChildDocumentUploadStatus = 
+	z.infer<typeof childDocumentUploadStatusSchema>;
+
+
+export const medicalReviewStatusSchema = z.enum([
+  "not_required",
+  "pending",
+  "documentation_requested",
+  "approved",
+]);
+
+export type MedicalReviewStatus = 
+	z.infer<typeof medicalReviewStatusSchema>;
+
+
+export const serviceDayStatusSchema = z.enum([
+  "AVAILABLE",
+  "CLOSED",
+  "FULL",
+  "BOOKED",
+  "UNAVAILABLE",
+]);
+
+export type ServiceDayStatus = 
+	z.infer<typeof serviceDayStatusSchema>;

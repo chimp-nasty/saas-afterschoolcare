@@ -78,7 +78,9 @@ def up(conn: Connection) -> None:
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+            UNIQUE (user_id, location_id, first_name, last_name, dob, is_active)
         );
 
 

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, String, Text, func, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.base import Base
@@ -37,5 +37,14 @@ class ChildProfile(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "location_id",
+            "first_name",
+            "last_name",
+            "dob",
+            "is_active",
+            name="uq_child_profiles_user_name_dob",
+        ),
         {"schema": "public"},
     )
