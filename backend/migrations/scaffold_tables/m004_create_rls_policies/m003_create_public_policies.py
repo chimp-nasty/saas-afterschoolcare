@@ -11,6 +11,7 @@ def up(conn: Connection) -> None:
     _create_user_location_scoped_policies(conn)
 
     _create_customer_profile_policy(conn)
+    _create_actions_policy(conn)
 
     _create_child_inherited_policies(conn)
     _create_booking_inherited_policies(conn)
@@ -30,7 +31,7 @@ def _enable_rls(conn: Connection) -> None:
         "payment_attempts",
         "refunds",
         "child_medical_state",
-        "child_medical_reviews",
+        "actions",
         "child_notes",
         "child_documents",
         "authorized_pickup_persons",
@@ -356,6 +357,85 @@ def _create_customer_profile_policy(
     )
 
 
+def _create_actions_policy(
+    conn: Connection,
+) -> None:
+    predicate = """
+        actions.user_id = current_setting(
+            'app.user_id',
+            true
+        )::uuid
+
+        OR
+
+        EXISTS (
+            SELECT 1
+            FROM auth.location_user_roles current_lur
+
+            JOIN auth.roles cr
+                ON cr.id = current_lur.role_id
+
+            JOIN auth.location_user_roles target_lur
+                ON target_lur.location_id =
+                   current_lur.location_id
+
+            JOIN auth.roles tr
+                ON tr.id = target_lur.role_id
+
+            WHERE current_lur.user_id =
+                current_setting(
+                    'app.user_id',
+                    true
+                )::uuid
+
+              AND target_lur.user_id =
+                  actions.user_id
+
+              AND (
+                  (
+                      cr.code = 'staff'
+                      AND tr.code = 'customer'
+                  )
+
+                  OR
+
+                  (
+                      cr.code = 'admin'
+                      AND tr.code IN (
+                          'staff',
+                          'customer'
+                      )
+                  )
+
+                  OR
+
+                  (
+                      cr.code = 'superadmin'
+                      AND tr.code IN (
+                          'admin',
+                          'staff',
+                          'customer'
+                      )
+                  )
+              )
+        )
+    """
+
+    conn.execute(
+        text(f"""
+            CREATE POLICY actions_scope_policy
+            ON public.actions
+            FOR ALL
+            USING (
+                {predicate}
+            )
+            WITH CHECK (
+                {predicate}
+            );
+        """)
+    )
+
+
 # -------------------------------------------------------------------------
 # INHERITED FROM CHILD_PROFILE
 # -------------------------------------------------------------------------
@@ -365,7 +445,6 @@ def _create_child_inherited_policies(
 ) -> None:
     tables = (
         "child_medical_state",
-        "child_medical_reviews",
         "child_notes",
         "child_documents",
         "authorized_pickup_persons",

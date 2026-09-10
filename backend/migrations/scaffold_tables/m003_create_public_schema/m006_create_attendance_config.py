@@ -43,4 +43,32 @@ def up(conn: Connection) -> None:
                     OR signed_out_at >= signed_in_at
                 )
         );
+
+        
+        -- =====================================================
+        -- ACTIONS
+        -- =====================================================
+
+        CREATE TABLE IF NOT EXISTS public.actions (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+            user_id UUID NOT NULL
+                REFERENCES auth.users(id)
+                ON DELETE CASCADE,
+                
+            child_id UUID
+                REFERENCES public.child_profile(id)
+                ON DELETE CASCADE,
+
+            target TEXT NOT NULL,
+            
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+
+            created_by_user_id UUID NOT NULL
+                REFERENCES auth.users(id),
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            cited_at TIMESTAMPTZ
+        );
     """))

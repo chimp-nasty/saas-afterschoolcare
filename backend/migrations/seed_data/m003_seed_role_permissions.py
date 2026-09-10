@@ -4,6 +4,11 @@ from sqlalchemy.engine import Connection
 
 ROLE_PERMISSIONS = {
     "superadmin": [
+        ("actions", "c"),
+        ("actions", "r"),
+        ("actions", "u"),
+        ("actions", "d"),        
+
         ("customer_profile", "r"),
         ("customer_profile", "u"),
 
@@ -65,6 +70,11 @@ ROLE_PERMISSIONS = {
     ],
 
     "admin": [
+        ("actions", "c"),
+        ("actions", "r"),
+        ("actions", "u"),
+        ("actions", "d"),        
+
         ("customer_profile", "r"),
         ("customer_profile", "u"),
 
@@ -126,6 +136,10 @@ ROLE_PERMISSIONS = {
     ],
 
     "staff": [
+        ("actions", "c"),
+        ("actions", "r"),
+        ("actions", "u"),
+
         ("customer_profile", "r"),
         ("child_profile", "r"),
 
@@ -160,6 +174,9 @@ ROLE_PERMISSIONS = {
     ],
 
     "customer": [
+        ("actions", "r"),
+        ("actions", "u"),
+
         ("customer_profile", "r"),
         ("customer_profile", "u"),
 

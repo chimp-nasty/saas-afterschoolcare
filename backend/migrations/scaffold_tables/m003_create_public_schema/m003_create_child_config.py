@@ -102,27 +102,7 @@ def up(conn: Connection) -> None:
                 REFERENCES auth.users(id)
         );
 
-
-        -- =====================================================
-        -- CHILD MEDICAL REVIEWS
-        -- =====================================================
-
-        CREATE TABLE IF NOT EXISTS public.child_medical_reviews (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-            child_id UUID NOT NULL
-                REFERENCES public.child_profile(id)
-                ON DELETE CASCADE,
-
-            reviewed_by_user_id UUID NOT NULL
-                REFERENCES auth.users(id),
-
-            note TEXT,
-
-            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        );
-
-
+        
         -- =====================================================
         -- CHILD NOTES
         -- =====================================================

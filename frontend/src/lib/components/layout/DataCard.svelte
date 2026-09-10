@@ -2,25 +2,52 @@
 	import Card from './Card.svelte';
 	import TitleCard from './TitleCard.svelte';
 
+	import { 
+		formatDateDDMMYYYY,
+		formatEnum,
+	} from '$lib/utils/helpers';
+
 	export type DataCardItem = {
 		label: string;
 		value: string | number | null | undefined;
+		format?: 'date' | 'enum';
 	};
 
 	type Props = {
 		title: string;
 		description?: string;
 		data: DataCardItem[];
+		href?: string;
 	};
 
 	let {
 		title,
 		description,
-		data
+		data,
+		href
 	}: Props = $props();
+
+	function formatValue(item: DataCardItem): string | number {
+		if (item.value === null || item.value === undefined) {
+			return '—';
+		}
+
+		if (item.format === 'date' && typeof item.value === 'string') {
+			return formatDateDDMMYYYY(item.value);
+		}
+
+		if (item.format === 'enum' && typeof item.value === 'string') {
+			return formatEnum(item.value);
+		}
+
+		return item.value;
+	}
 </script>
 
-<Card border>
+<Card 
+	border={true}
+	href={href}
+>
 	<TitleCard
 		{title}
 		{description}
@@ -42,7 +69,8 @@
 						items-center
 						border-r border-(--border)
 						py-3 pr-4
-						text-sm font-semibold
+						text-xs font-extrabold
+						uppercase tracking-wide
 						text-(--text-muted)
 					"
 				>
@@ -60,7 +88,7 @@
 						wrap-break-word
 					"
 				>
-					{item.value ?? '—'}
+					{formatValue(item)}
 				</div>
 			</div>
 		{/each}

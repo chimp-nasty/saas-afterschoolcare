@@ -4,6 +4,7 @@
     import ParentProfileForm from "$lib/features/customer/components/ParentProfileForm.svelte";
     import ChildAccountData from "$lib/features/customer/components/ChildAccountData.svelte";
 
+    import { accountTabs } from "$lib/navigation/tabs.js";
 	import { createCustomerApi } from "$lib/api/public/adapters/customer";
 	import type { UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/public/types/customer";
     import type { ChildTableResponse } from "$lib/api/public/types/children.js";
@@ -18,14 +19,14 @@
         data.childProfiles
     );
 
-    let activeTab = $state("parent-details");
+    let activeTab = $state("profile");
 
     let isLoading: boolean = $state(false);
 
     const tabs = $derived<TabConfig[]>([
         {
-            id: "parent-details",
-            label: "Parent",
+            id: accountTabs.PROFILE,
+            label: "Parent Profile",
             component: ParentProfileForm,
             props: {
                 profile: customerProfile,
@@ -34,10 +35,11 @@
             }
         },
         {
-            id: "children",
+            id: accountTabs.CHILDREN,
             label: "Children",
             component: ChildAccountData,
             props: {
+                locationCode: data.locationCode,
                 childProfiles
             }
         }

@@ -52,21 +52,6 @@
 		disabled={isDisabled}
 		required={isRequired}
 		aria-invalid={error ? 'true' : undefined}
-		class="
-			w-full
-			rounded-2xl
-			border
-			px-3
-			py-2
-			text-base
-			outline-none
-			transition
-		"
-		style="
-			background-color: var(--surface);
-			border-color: var(--border);
-			color: var(--text);
-		"
 	>
 		{#if placeholder}
 			<option value="">

@@ -5,12 +5,12 @@ from sqlalchemy.engine import Connection
 
 
 RESOURCES = [
+    "actions",
     "attendance_records",
     "authorized_pickup_persons",
     "booking_groups",
     "bookings",
     "child_documents",
-    "child_medical_reviews",
     "child_medical_state",
     "child_notes",
     "child_profile",

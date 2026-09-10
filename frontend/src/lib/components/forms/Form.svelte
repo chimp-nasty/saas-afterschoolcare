@@ -29,7 +29,7 @@
 				void handleSubmit();
 			}}
 		>
-			<div class="flex flex-col gap-2">
+			<div class="flex flex-col gap-4 px-4">
 				{@render children()}
 
 				<div class="mt-2">
