@@ -50,6 +50,6 @@ export const load: LayoutLoad = async ({
 						firstName: sessionResponse.data.first_name,
 						roles: sessionResponse.data.roles
 					}
-				: null
+				: null,
 	};
 };
