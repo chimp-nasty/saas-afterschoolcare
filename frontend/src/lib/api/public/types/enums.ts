@@ -74,12 +74,15 @@ export type MedicalReviewStatus =
 
 
 export const serviceDayStatusSchema = z.enum([
-  "AVAILABLE",
-  "CLOSED",
-  "FULL",
-  "BOOKED",
-  "UNAVAILABLE",
+    "AVAILABLE",
+    "CLOSED",
+    "FULL",
+    "BOOKED",
+    "UNAVAILABLE",
 ]);
 
-export type ServiceDayStatus = 
-	z.infer<typeof serviceDayStatusSchema>;
+export const ServiceDayStatus =
+    serviceDayStatusSchema.enum;
+
+export type ServiceDayStatus =
+    z.infer<typeof serviceDayStatusSchema>;

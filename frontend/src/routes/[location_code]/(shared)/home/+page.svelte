@@ -8,6 +8,8 @@
 	import StaffHome from '$lib/features/home/components/StaffHome.svelte';
 	import CustomerHome from '$lib/features/home/components/CustomerHome.svelte';
 
+	let { data } = $props();
+
 	function getWeekDate(dayIndex: number): string {
 		const date = new Date();
 		const day = date.getDay();
@@ -148,6 +150,6 @@
         excludeRoles={['admin', 'staff']}
         redirect={false}
     >
-        <CustomerHome {bookings}/>
+        <CustomerHome {bookings} locationCode={data.locationCode}/>
     </Authorize>
 </div>

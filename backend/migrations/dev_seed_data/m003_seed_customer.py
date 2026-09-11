@@ -312,114 +312,167 @@ def up(conn: Connection) -> None:
         created_by_user_id = user_id
 
     # =========================
-    # ACTION 1 - CHILD PROFILE
+    # ACTIONS
     # =========================
 
-    conn.execute(
-        text("""
-            INSERT INTO public.actions (
-                user_id,
-                child_id,
-                target,
-                title,
-                message,
-                created_by_user_id
-            )
-            SELECT
-                :user_id,
-                :child_id,
-                'profile',
-                'Review Emma''s profile',
-                'Please review Emma''s profile information and make sure it is up to date.',
-                :created_by_user_id
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM public.actions
-                WHERE
-                    user_id = :user_id
-                    AND child_id = :child_id
-                    AND target = 'profile'
-                    AND title = 'Review Emma''s profile'
-            );
-        """),
-        {
-            "user_id": user_id,
-            "child_id": emma_id,
-            "created_by_user_id": created_by_user_id,
-        },
+    actions = (
+        (
+            emma_id,
+            "profile",
+            "Review Emma's profile",
+            "Please review Emma's profile information and make sure it is up to date.",
+        ),
+        (
+            emma_id,
+            "manage-documents",
+            "Upload medical documentation",
+            "Please upload the requested medical documentation for Emma.",
+        ),
+        (
+            None,
+            "profile",
+            "Review your account details",
+            "Please review your contact and address details and update anything that has changed.",
+        ),
+        (
+            noah_id,
+            "profile",
+            "Review Noah's profile",
+            "Please check Noah's profile information and confirm the details are correct.",
+        ),
+        (
+            noah_id,
+            "manage-documents",
+            "Upload documentation for Noah",
+            "Please upload the requested documentation for Noah.",
+        ),
+        (
+            emma_id,
+            "authorized-pickups",
+            "Review Emma's pickup contacts",
+            "Please review the authorized pickup contacts listed for Emma.",
+        ),
+        (
+            noah_id,
+            "authorized-pickups",
+            "Review Noah's pickup contacts",
+            "Please review the authorized pickup contacts listed for Noah.",
+        ),
+        (
+            emma_id,
+            "manage-documents",
+            "Additional document required",
+            "Please upload the additional document requested by staff for Emma.",
+        ),
+        (
+            emma_id,
+            "profile",
+            "Confirm Emma's details",
+            "Please confirm Emma's personal details are still current.",
+        ),
+        (
+            noah_id,
+            "profile",
+            "Confirm Noah's details",
+            "Please confirm Noah's personal details are still current.",
+        ),
+        (
+            None,
+            "profile",
+            "Check your phone number",
+            "Please confirm that the phone number on your account is current.",
+        ),
+        (
+            None,
+            "profile",
+            "Check your address",
+            "Please review the address saved against your account.",
+        ),
+        (
+            emma_id,
+            "authorized-pickups",
+            "Confirm pickup arrangements",
+            "Please confirm Emma's current authorized pickup arrangements.",
+        ),
+        (
+            noah_id,
+            "authorized-pickups",
+            "Confirm pickup arrangements for Noah",
+            "Please confirm Noah's current authorized pickup arrangements.",
+        ),
+        (
+            emma_id,
+            "manage-documents",
+            "Review requested documents",
+            "Staff have requested that you review Emma's uploaded documents.",
+        ),
+        (
+            noah_id,
+            "manage-documents",
+            "Review requested documents for Noah",
+            "Staff have requested that you review Noah's uploaded documents.",
+        ),
+        (
+            emma_id,
+            "profile",
+            "Profile information requires attention",
+            "A staff member has asked you to review Emma's profile.",
+        ),
+        (
+            noah_id,
+            "profile",
+            "Profile information requires attention",
+            "A staff member has asked you to review Noah's profile.",
+        ),
+        (
+            None,
+            "profile",
+            "Review contact information",
+            "Please check that your contact information is complete and current.",
+        ),
+        (
+            emma_id,
+            "manage-documents",
+            "Medical documentation follow-up",
+            "Please review the latest documentation request for Emma.",
+        ),
     )
 
-    # =========================
-    # ACTION 2 - CHILD DOCUMENTS
-    # =========================
-
-    conn.execute(
-        text("""
-            INSERT INTO public.actions (
-                user_id,
-                child_id,
-                target,
-                title,
-                message,
-                created_by_user_id
-            )
-            SELECT
-                :user_id,
-                :child_id,
-                'manage-documents',
-                'Upload medical documentation',
-                'Please upload the requested medical documentation for Emma.',
-                :created_by_user_id
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM public.actions
-                WHERE
-                    user_id = :user_id
-                    AND child_id = :child_id
-                    AND target = 'manage-documents'
-                    AND title = 'Upload medical documentation'
-            );
-        """),
-        {
-            "user_id": user_id,
-            "child_id": emma_id,
-            "created_by_user_id": created_by_user_id,
-        },
-    )
-
-    # =========================
-    # ACTION 3 - ACCOUNT PROFILE
-    # =========================
-
-    conn.execute(
-        text("""
-            INSERT INTO public.actions (
-                user_id,
-                child_id,
-                target,
-                title,
-                message,
-                created_by_user_id
-            )
-            SELECT
-                :user_id,
-                NULL,
-                'profile',
-                'Review your account details',
-                'Please review your contact and address details and update anything that has changed.',
-                :created_by_user_id
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM public.actions
-                WHERE
-                    user_id = :user_id
-                    AND child_id IS NULL
-                    AND target = 'profile'
-                    AND title = 'Review your account details'
-            );
-        """),
-        {
-            "user_id": user_id,
-            "created_by_user_id": created_by_user_id,
-        },
-    )
+    for child_id, target, title, message in actions:
+        conn.execute(
+            text("""
+                INSERT INTO public.actions (
+                    user_id,
+                    child_id,
+                    target,
+                    title,
+                    message,
+                    created_by_user_id
+                )
+                SELECT
+                    :user_id,
+                    :child_id,
+                    :target,
+                    :title,
+                    :message,
+                    :created_by_user_id
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM public.actions
+                    WHERE
+                        user_id = :user_id
+                        AND child_id IS NOT DISTINCT FROM :child_id
+                        AND target = :target
+                        AND title = :title
+                        AND message = :message
+                );
+            """),
+            {
+                "user_id": user_id,
+                "child_id": child_id,
+                "target": target,
+                "title": title,
+                "message": message,
+                "created_by_user_id": created_by_user_id,
+            },
+        )

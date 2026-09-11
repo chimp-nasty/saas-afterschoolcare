@@ -7,4 +7,7 @@ export const paginationSchema = z.object({
 
 export type Pagination =
     z.infer<typeof paginationSchema>;
-    
+
+export type PaginationLoadMode =
+    | 'replace'
+    | 'append';

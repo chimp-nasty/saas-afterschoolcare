@@ -23,7 +23,9 @@
 
         for (const serviceDay of serviceDays) {
             map.set(
-                serviceDay.service_date,
+                serviceDay.service_date
+                    .toISOString()
+                    .slice(0, 10),
                 serviceDay
             );
         }

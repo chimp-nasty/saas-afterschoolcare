@@ -19,13 +19,15 @@
 		description?: string;
 		data: DataCardItem[];
 		href?: string;
+		onclick?: (event: MouseEvent) => void;
 	};
 
 	let {
 		title,
 		description,
 		data,
-		href
+		href,
+		onclick
 	}: Props = $props();
 
 	function formatValue(item: DataCardItem): string | number {
@@ -48,6 +50,7 @@
 <Card 
 	border={true}
 	href={href}
+	onclick={onclick}
 >
 	<TitleCard
 		{title}
