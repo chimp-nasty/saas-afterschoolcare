@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.child_note import ChildNote
 
 
-class ChildNoteRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class ChildNoteRepository(Repository):
     def create(
         self,
         *,

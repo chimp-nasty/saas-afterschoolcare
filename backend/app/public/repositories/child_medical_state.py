@@ -1,15 +1,11 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.child_medical_state import ChildMedicalState
 from app.public.models.enums import MedicalReviewStatus
 
 
-class ChildMedicalStateRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class ChildMedicalStateRepository(Repository):
     def create(
         self,
         *,

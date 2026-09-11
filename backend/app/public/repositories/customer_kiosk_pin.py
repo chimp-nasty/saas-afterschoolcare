@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.customer_kiosk_pin import CustomerKioskPin
 
 
-class CustomerKioskPinRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class CustomerKioskPinRepository(Repository):
     def create(
         self,
         *,

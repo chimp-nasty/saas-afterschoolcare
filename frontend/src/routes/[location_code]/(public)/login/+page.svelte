@@ -24,6 +24,8 @@
 			form.reset();
 
 			await invalidate('app:session');
+			await invalidate('app:actions-count');
+
 			await goto(`/${page.data.locationCode}/home`);
 		} finally {
 			isLoading = false;

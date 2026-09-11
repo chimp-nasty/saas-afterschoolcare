@@ -1,12 +1,18 @@
+import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
+import { buildQueryParams } from '$lib/api/param';
 
-import type {
-	ChildResponse,
-	ChildTableResponse,
-	ListChildrenFilterRequest,
-	CreateChildRequest,
+import type { Pagination } from '$lib/types/pagination';
+
+import {
+	childResponseSchema,
+	childTableResponseSchema,
+	type ChildResponse,
+	type ChildTableResponse,
+	type ListChildrenFilterRequest,
+	type CreateChildRequest,
 } from '../types/children';
 
 
@@ -19,40 +25,30 @@ export function createChildrenApi(
 	return {
 		getById(childId: string) {
 			return apiWrapper<ChildResponse>(
-				`${baseUrl}/read/${childId}`,
+				`${baseUrl}/${childId}`,
 				{
 					method: 'GET',
-					fetcher
+					fetcher,
+					schema: childResponseSchema
 				}
 			);
 		},
 
 		list(
-			filters: ListChildrenFilterRequest = {}
+			filters: ListChildrenFilterRequest = {},
+			pagination: Pagination = {}
 		) {
-			const params = new URLSearchParams();
-
-			if (filters.is_active !== undefined && filters.is_active !== null) {
-				params.set(
-					'is_active',
-					String(filters.is_active)
-				);
-			}
-
-			for (const status of filters.review_status ?? []) {
-				params.append(
-					'review_status',
-					status
-				);
-			}
-
-			const query = params.toString();
+			const query = buildQueryParams(
+				filters,
+				pagination
+			);
 
 			return apiWrapper<ChildTableResponse[]>(
-				`${baseUrl}/list${query ? `?${query}` : ''}`,
+				`${baseUrl}/${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
-					fetcher
+					fetcher,
+					schema: z.array(childTableResponseSchema)
 				}
 			);
 		},
@@ -61,10 +57,12 @@ export function createChildrenApi(
 			body: CreateChildRequest
 		) {
 			return apiWrapper<ChildResponse>(
-				`${baseUrl}/create`, {
+				`${baseUrl}/`,
+				{
 					method: 'POST',
 					body,
-					fetcher
+					fetcher,
+					schema: childResponseSchema
 				}
 			);
 		}

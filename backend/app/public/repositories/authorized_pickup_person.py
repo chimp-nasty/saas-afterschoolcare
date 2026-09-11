@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.authorized_pickup_person import AuthorizedPickupPerson
 
 
-class AuthorizedPickupPersonRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class AuthorizedPickupPersonRepository(Repository):
     def create(
         self,
         *,

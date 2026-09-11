@@ -11,9 +11,14 @@ from app.public.schemas.booking import (
 
 
 class ReadBookingService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        booking_repository: BookingRepository,
+    ):
         self.db = db
-        self.booking_repository = BookingRepository(db=db)
+        self.booking_repository = booking_repository
 
     def get_by_id(
         self,

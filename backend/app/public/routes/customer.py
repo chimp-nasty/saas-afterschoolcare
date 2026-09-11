@@ -1,12 +1,12 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 from app.api.response import ApiResponse
 from app.dependencies.db import get_db
 from app.dependencies.rls import get_rls_db
 from app.dependencies.auth import resolve_location_id, require_permission
+from app.dependencies.service import get_service
 from app.auth.jwt.context import TokenContext
 from app.public.services.customer import CustomerService
 from app.auth.schemas.auth import RegistrationRequest
@@ -25,9 +25,14 @@ def onboard(
     location_id: UUID = Depends(
         resolve_location_id,
     ),
-    db: Session = Depends(get_db),
+    service: CustomerService = Depends(
+        get_service(
+            CustomerService,
+            db_dependency=get_db,
+        )
+    ),
 ) -> ApiResponse[None]:
-    CustomerService(db=db).onboard(
+    service.onboard(
         body=body,
         location_id=location_id
     )
@@ -42,15 +47,20 @@ def onboard(
 @router.patch("/profile")
 def update_profile(
     body: UpdateCustomerProfileRequest,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="customer_profile",
             action="u",
         )
     ),
+    service: CustomerService = Depends(
+        get_service(
+            CustomerService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[CustomerProfileResponse]:
-    result = CustomerService(db=db).update(
+    result = service.update(
         user_id=ctx.user_id,
         body=body
     )
@@ -64,15 +74,20 @@ def update_profile(
 
 @router.get("/profile")
 def get_profile(
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="customer_profile",
             action="r",
         )
     ),
+    service: CustomerService = Depends(
+        get_service(
+            CustomerService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[CustomerProfileResponse]:
-    result = CustomerService(db=db).get(
+    result = service.get(
         user_id=ctx.user_id
     )
 

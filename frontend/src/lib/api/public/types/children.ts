@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { dateSchema, dateTimeSchema } from '$lib/types/dates';
 import { medicalReviewStatusSchema } from './enums';
 
 
@@ -25,7 +26,7 @@ export const childResponseSchema = z.object({
 
 	first_name: z.string(),
 	last_name: z.string(),
-	dob: z.string(),
+	dob: dateSchema,
 
 	medical_info: z.string().nullable(),
 	allergy_info: z.string().nullable(),
@@ -34,8 +35,8 @@ export const childResponseSchema = z.object({
 	is_active: z.boolean(),
 	review_status: medicalReviewStatusSchema,
 
-	created_at: z.string(),
-	updated_at: z.string()
+	created_at: dateTimeSchema,
+	updated_at: dateTimeSchema
 });
 
 export type ChildResponse =
@@ -51,7 +52,7 @@ export const childTableResponseSchema = z.object({
 
 	first_name: z.string(),
 	last_name: z.string(),
-	dob: z.string(),
+	dob: dateSchema,
 
 	is_active: z.boolean(),
 	review_status: medicalReviewStatusSchema

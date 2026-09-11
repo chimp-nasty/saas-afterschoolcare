@@ -1,18 +1,15 @@
 from uuid import UUID
 from datetime import date
 
-from sqlalchemy.orm import Session
 from sqlalchemy.engine import Row
 
+from app.db.repository import Repository
 from app.public.models.location_service import LocationService
 from app.public.models.location_service_day import LocationServiceDay
 from app.public.models.service_type import ServiceType
 
 
-class LocationServiceDayRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class LocationServiceDayRepository(Repository):
     def create(
         self,
         *,
@@ -131,10 +128,9 @@ class LocationServiceDayRepository:
                 LocationServiceDay.is_open == is_open
             )
 
-        return (
-            query
-            .order_by(
-                LocationServiceDay.service_date.asc()
+        return self._all(
+            query.order_by(
+                LocationServiceDay.service_date.asc(),
+                LocationServiceDay.id.asc(),
             )
-            .all()
         )

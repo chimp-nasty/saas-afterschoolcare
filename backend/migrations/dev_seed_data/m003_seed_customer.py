@@ -276,3 +276,150 @@ def up(conn: Connection) -> None:
             "child_id": noah_id,
         },
     )
+
+    # =========================
+    # ACTION CREATOR
+    # =========================
+
+    created_by_user_id = conn.execute(
+        text("""
+            SELECT lur.user_id
+            FROM auth.location_user_roles lur
+            JOIN auth.roles r
+                ON r.id = lur.role_id
+            WHERE
+                lur.location_id = :location_id
+                AND r.code IN (
+                    'staff',
+                    'admin',
+                    'superadmin'
+                )
+            ORDER BY
+                CASE r.code
+                    WHEN 'staff' THEN 1
+                    WHEN 'admin' THEN 2
+                    WHEN 'superadmin' THEN 3
+                END
+            LIMIT 1;
+        """),
+        {
+            "location_id": location_id,
+        },
+    ).scalar_one_or_none()
+
+    # Development fallback if this seed runs before a staff user exists.
+    if created_by_user_id is None:
+        created_by_user_id = user_id
+
+    # =========================
+    # ACTION 1 - CHILD PROFILE
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO public.actions (
+                user_id,
+                child_id,
+                target,
+                title,
+                message,
+                created_by_user_id
+            )
+            SELECT
+                :user_id,
+                :child_id,
+                'profile',
+                'Review Emma''s profile',
+                'Please review Emma''s profile information and make sure it is up to date.',
+                :created_by_user_id
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM public.actions
+                WHERE
+                    user_id = :user_id
+                    AND child_id = :child_id
+                    AND target = 'profile'
+                    AND title = 'Review Emma''s profile'
+            );
+        """),
+        {
+            "user_id": user_id,
+            "child_id": emma_id,
+            "created_by_user_id": created_by_user_id,
+        },
+    )
+
+    # =========================
+    # ACTION 2 - CHILD DOCUMENTS
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO public.actions (
+                user_id,
+                child_id,
+                target,
+                title,
+                message,
+                created_by_user_id
+            )
+            SELECT
+                :user_id,
+                :child_id,
+                'manage-documents',
+                'Upload medical documentation',
+                'Please upload the requested medical documentation for Emma.',
+                :created_by_user_id
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM public.actions
+                WHERE
+                    user_id = :user_id
+                    AND child_id = :child_id
+                    AND target = 'manage-documents'
+                    AND title = 'Upload medical documentation'
+            );
+        """),
+        {
+            "user_id": user_id,
+            "child_id": emma_id,
+            "created_by_user_id": created_by_user_id,
+        },
+    )
+
+    # =========================
+    # ACTION 3 - ACCOUNT PROFILE
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO public.actions (
+                user_id,
+                child_id,
+                target,
+                title,
+                message,
+                created_by_user_id
+            )
+            SELECT
+                :user_id,
+                NULL,
+                'profile',
+                'Review your account details',
+                'Please review your contact and address details and update anything that has changed.',
+                :created_by_user_id
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM public.actions
+                WHERE
+                    user_id = :user_id
+                    AND child_id IS NULL
+                    AND target = 'profile'
+                    AND title = 'Review your account details'
+            );
+        """),
+        {
+            "user_id": user_id,
+            "created_by_user_id": created_by_user_id,
+        },
+    )

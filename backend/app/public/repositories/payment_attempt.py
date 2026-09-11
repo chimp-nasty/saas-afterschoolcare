@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.payment_attempt import PaymentAttempt
 
 
-class PaymentAttemptRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class PaymentAttemptRepository(Repository):
     def create(
         self,
         *,

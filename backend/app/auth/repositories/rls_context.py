@@ -1,13 +1,11 @@
 from uuid import UUID
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+
+from app.db.repository import Repository
 
 
-class RlsContextRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class RlsContextRepository(Repository):
     def set_user_id(
         self,
         *,

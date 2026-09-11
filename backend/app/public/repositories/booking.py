@@ -2,9 +2,9 @@ from uuid import UUID
 from datetime import date
 
 from sqlalchemy import tuple_
-from sqlalchemy.orm import Session
 from sqlalchemy.engine import Row
 
+from app.db.repository import Repository
 from app.public.models.booking import Booking
 from app.public.models.child_profile import ChildProfile
 from app.public.models.location_service_day import LocationServiceDay
@@ -13,10 +13,7 @@ from app.public.models.service_type import ServiceType
 from app.public.models.enums import BookingStatus, PaymentStatus
 
 
-class BookingRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class BookingRepository(Repository):
     def create(
         self,
         *,
@@ -239,10 +236,8 @@ class BookingRepository:
                 LocationServiceDay.service_date <= date_to
             )
 
-        return (
-            query
-            .order_by(
+        return self._all(
+            query.order_by(
                 LocationServiceDay.service_date.asc()
             )
-            .all()
         )

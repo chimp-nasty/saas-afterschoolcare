@@ -1,11 +1,13 @@
 from uuid import UUID, uuid4
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.errors.auth import RoleNotFoundError
+from app.core.security import hash_password
+from app.errors.auth import RoleNotFoundError, UserCollisionError
 from app.errors.customer import CustomerProfileNotFoundError
-from app.auth.services.auth import AuthService
 
+from app.auth.repositories.user import UserRepository
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.public.repositories.customer_profile import CustomerProfileRepository
@@ -20,14 +22,23 @@ from app.public.schemas.customer import (
 
 
 class CustomerService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        users: UserRepository,
+        location_user_roles: LocationUserRoleRepository,
+        roles: RoleRepository,
+        customer_profiles: CustomerProfileRepository,
+        rls_context: RlsContextRepository,
+    ):
         self.db = db
 
-        self.auth = AuthService(db=db)
-        self.location_user_roles = LocationUserRoleRepository(db=db)
-        self.roles = RoleRepository(db=db)
-        self.customer_profiles = CustomerProfileRepository(db=db)
-        self.rls_context = RlsContextRepository(db=db)
+        self.users = users
+        self.location_user_roles = location_user_roles
+        self.roles = roles
+        self.customer_profiles = customer_profiles
+        self.rls_context = rls_context
 
     def onboard(
         self,
@@ -36,15 +47,30 @@ class CustomerService:
         location_id: UUID
     ) -> None:
         try:
+            existing_user = self.users.get_by_email(
+                email=body.email
+            )
+
+            if existing_user:
+                raise UserCollisionError()
+
             user_id = uuid4()
 
             self.rls_context.set_user_id(
                 user_id=user_id,
             )
 
-            user = self.auth.register_user(
+            password_hash = hash_password(
+                password=body.password
+            )
+
+            user = self.users.create(
                 id=user_id,
-                body=body
+                email=body.email,
+                password_hash=password_hash,
+                first_name=body.first_name,
+                last_name=body.last_name,
+                terms_accepted_at=datetime.now(timezone.utc),
             )
 
             customer_role = self.roles.get_by_code(

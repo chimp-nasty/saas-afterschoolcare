@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
+import { dateSchema } from '$lib/types/dates';
 
 // Location Service Day Filters
 
 export const listLocationServiceDaysFilterRequestSchema = z.object({
-	date_from: z.string().nullable().optional(),
-	date_to: z.string().nullable().optional(),
+	date_from: z.iso.date().nullable().optional(),
+	date_to: z.iso.date().nullable().optional(),
 	is_open: z.boolean().nullable().optional()
 });
 
@@ -21,7 +22,7 @@ export const locationServiceDayTableResponseSchema = z.object({
 	service_type_id: z.number(),
 
 	service_name: z.string(),
-	service_date: z.string(),
+	service_date: dateSchema,
 
 	is_open: z.boolean(),
 	capacity: z.number()

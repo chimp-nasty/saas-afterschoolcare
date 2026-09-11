@@ -2,16 +2,13 @@ from uuid import UUID
 from datetime import date
 
 from sqlalchemy.engine import Row
-from sqlalchemy.orm import Session
 
+from app.db.repository import Repository
 from app.public.models.child_profile import ChildProfile
 from app.public.models.child_medical_state import ChildMedicalState
 
 
-class ChildProfileRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class ChildProfileRepository(Repository):
     def create(
         self,
         *,

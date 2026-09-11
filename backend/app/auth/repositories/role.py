@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.auth.models.role import Role
 
 
-class RoleRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class RoleRepository(Repository):
     def create(
         self,
         *,

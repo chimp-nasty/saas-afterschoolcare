@@ -40,7 +40,8 @@
 
 			<Button
 				variant="ghost"
-				class="group"
+				class="group relative"
+				onclick={() => goto(`/${page.params.location_code}/actions`)}
 			>
 				<span
 					class="
@@ -51,6 +52,32 @@
 				>
 					<Bell size={20} />
 				</span>
+
+				{#if page.data.uncitedActionCount > 0}
+					<span
+						class="
+							absolute
+							right-0.5
+							bottom-0.5
+							flex
+							min-h-4
+							min-w-4
+							items-center
+							justify-center
+							rounded-full
+							bg-(--danger)
+							px-1
+							text-[10px]
+							font-extrabold
+							leading-none
+							text-white
+						"
+					>
+						{page.data.uncitedActionCount > 99
+							? '99+'
+							: page.data.uncitedActionCount}
+					</span>
+				{/if}
 			</Button>
 
 			<div class="md:hidden">

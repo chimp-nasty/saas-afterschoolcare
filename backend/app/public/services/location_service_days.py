@@ -12,11 +12,12 @@ class LocationServiceDayService:
         self,
         *,
         db: Session,
+        location_service_repository: LocationServiceDayRepository,
     ):
         self.db = db
 
         self.location_service_repository = (
-            LocationServiceDayRepository(db=db)
+            location_service_repository
         )
 
     def list_with_filters(

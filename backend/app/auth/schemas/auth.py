@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
@@ -26,4 +27,8 @@ class RegistrationRequest(BaseModel):
     
     terms_accepted: Literal[True]
     
-
+class SessionResponse(BaseModel):
+    user_id: UUID
+    email: EmailStr
+    first_name: str
+    roles: list[str]

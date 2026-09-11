@@ -1,12 +1,12 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
 from app.dependencies.auth import require_permission
 from app.dependencies.rls import get_rls_db
+from app.dependencies.service import get_service
 from app.public.services.children_read import ReadChildService
 from app.public.services.children_create import CreateChildService
 from app.public.schemas.children import (
@@ -23,18 +23,23 @@ router = APIRouter(
 )
 
 
-@router.get("/read/{child_id}")
+@router.get("/{child_id}")
 def get_child(
     child_id: UUID,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="child_profile",
             action="r",
         )
     ),
+    service: ReadChildService = Depends(
+        get_service(
+            ReadChildService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[ChildResponse]:
-    result = ReadChildService(db=db).get_by_id(
+    result = service.get_by_id(
         id=child_id
     )
 
@@ -45,18 +50,23 @@ def get_child(
     )
 
 
-@router.get("/list")
+@router.get("/")
 def list_children(
     filters: ListChildrenFilterRequest = Depends(),
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="child_profile",
             action="r",
         )
     ),
+    service: ReadChildService = Depends(
+        get_service(
+            ReadChildService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[list[ChildTableResponse]]:
-    result = ReadChildService(db=db).list_with_filters(
+    result = service.list_with_filters(
         filters=filters,
     )
 
@@ -67,18 +77,23 @@ def list_children(
     )
 
 
-@router.post("/create", status_code=201)
+@router.post("/", status_code=201)
 def create_child_profile(
     body: CreateChildRequest,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="child_profile",
             action="c",
         )
     ),
+    service: CreateChildService = Depends(
+        get_service(
+            CreateChildService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[ChildResponse]:
-    result = CreateChildService(db=db).create(
+    result = service.create(
         location_id=ctx.location_id,
         user_id=ctx.user_id,
         body=body

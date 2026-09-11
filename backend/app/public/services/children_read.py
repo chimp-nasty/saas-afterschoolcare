@@ -11,9 +11,14 @@ from app.public.schemas.children import (
 
 
 class ReadChildService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        child_repository: ChildProfileRepository,
+    ):
         self.db = db
-        self.child_repository = ChildProfileRepository(db=db)
+        self.child_repository = child_repository
 
     def get_by_id(
         self,

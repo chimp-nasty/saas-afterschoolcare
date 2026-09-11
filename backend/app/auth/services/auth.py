@@ -16,26 +16,34 @@ from app.auth.repositories.password_reset_token import PasswordResetTokenReposit
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.auth.schemas.auth import (
     LoginRequest,
-    RegistrationRequest,
     ResetPasswordRequest,
     ForgotPasswordRequest,
 )
 from app.errors.auth import (
     AuthenticationFailedError,
-    UserCollisionError,
     InvalidPasswordResetError
 )
 
 
 class AuthService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        users: UserRepository,
+        permissions: PermissionRepository,
+        roles: RoleRepository,
+        location_user_roles: LocationUserRoleRepository,
+        password_reset_tokens: PasswordResetTokenRepository,
+        rls_context: RlsContextRepository,
+    ):
         self.db = db
-        self.users = UserRepository(db=db)
-        self.permissions = PermissionRepository(db=db)
-        self.roles = RoleRepository(db=db)
-        self.location_user_roles = LocationUserRoleRepository(db=db)
-        self.password_reset_tokens = PasswordResetTokenRepository(db=db)
-        self.rls_context = RlsContextRepository(db=db)
+        self.users = users
+        self.permissions = permissions
+        self.roles = roles
+        self.location_user_roles = location_user_roles
+        self.password_reset_tokens = password_reset_tokens
+        self.rls_context = rls_context
         
     def login(
         self,
@@ -142,38 +150,6 @@ class AuthService:
             for resource, actions in permission_map.items()
         }
             
-    def register_user(
-        self,
-        *,
-        id: UUID,
-        body: RegistrationRequest
-    ) -> User:
-        """
-        Register a new user account.
-
-        Validates account uniqueness, hashes the supplied password,
-        and creates the authentication user record.
-        """
-        existing_user = self.users.get_by_email(
-            email=body.email
-        )
-
-        if existing_user:
-            raise UserCollisionError()
-
-        password_hash = hash_password(
-            password=body.password
-        )
-
-        return self.users.create(
-            id=id,
-            email=body.email,
-            password_hash=password_hash,
-            first_name=body.first_name,
-            last_name=body.last_name,
-            terms_accepted_at=datetime.now(timezone.utc),
-        )
-        
     def reset_password(
         self,
         *,

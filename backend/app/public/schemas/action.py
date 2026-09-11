@@ -21,3 +21,9 @@ class ActionResponse(BaseModel):
     cited_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ActionFilters(BaseModel):
+    cited: bool | None = None
+    user_id: UUID | None = None
+    target: str | None = None

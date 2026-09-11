@@ -1,12 +1,8 @@
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.service_type import ServiceType
 
 
-class ServiceTypeRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class ServiceTypeRepository(Repository):
     def create(
         self,
         *,

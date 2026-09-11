@@ -1,18 +1,14 @@
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
-from sqlalchemy.engine import Row
 
+from app.db.repository import Repository
 from app.tenancy.models.location_branding import LocationBranding
 from app.tenancy.models.location import Location
 from app.tenancy.models.tenant import Tenant
 
 
-class LocationBrandingRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class LocationBrandingRepository(Repository):
     def create(
         self,
         *,

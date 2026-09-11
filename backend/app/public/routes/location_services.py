@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
 from app.dependencies.auth import require_permission
 from app.dependencies.rls import get_rls_db
+from app.dependencies.service import get_service
 from app.public.services.location_service import LocationServiceService
 from app.public.schemas.location_service import (
     UpdateLoctionServiceRequest,
@@ -18,19 +18,24 @@ router = APIRouter(
 )
 
 
-@router.post("/update-price/{location_service_id}")
+@router.patch("/{location_service_id}/price")
 def update_price(
     stripe_product_id: str,
     body: UpdateLoctionServiceRequest,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="location_services",
             action="u",
         )
-    )
+    ),
+    service: LocationServiceService = Depends(
+        get_service(
+            LocationServiceService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[None]:
-    LocationServiceService(db=db).update_price(
+    service.update_price(
         stripe_product_id=stripe_product_id,
         body=body
     )
@@ -42,17 +47,22 @@ def update_price(
     )
 
 
-@router.get("/list")
+@router.get("/")
 def list_location_services(
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="location_services",
             action="r",
         )
-    )
+    ),
+    service: LocationServiceService = Depends(
+        get_service(
+            LocationServiceService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[list[LocationServiceSelectionResponse]]:
-    result = LocationServiceService(db=db).list_all()
+    result = service.list_all()
 
     return ApiResponse(
         ok=True,

@@ -1,11 +1,14 @@
+import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
+import { buildQueryParams } from '$lib/api/param';
 
-import type {
-	ListLocationServiceDaysFilterRequest,
-	LocationServiceDayTableResponse
-} from '../types/location-service-days'
+import {
+	locationServiceDayTableResponseSchema,
+	type ListLocationServiceDaysFilterRequest,
+	type LocationServiceDayTableResponse
+} from '../types/location-service-days';
 
 
 export function createLocationServiceDaysApi(
@@ -16,41 +19,18 @@ export function createLocationServiceDaysApi(
 
 	return {
 		list(
-			filters: ListLocationServiceDaysFilterRequest = {}
+			filters: ListLocationServiceDaysFilterRequest = {},
 		) {
-			const params = new URLSearchParams();
-
-			if (filters.date_from) {
-				params.set(
-					'date_from',
-					filters.date_from
-				);
-			}
-
-			if (filters.date_to) {
-				params.set(
-					'date_to',
-					filters.date_to
-				);
-			}
-
-			if (
-				filters.is_open !== undefined &&
-				filters.is_open !== null
-			) {
-				params.set(
-					'is_open',
-					String(filters.is_open)
-				);
-			}
-
-			const query = params.toString();
+			const query = buildQueryParams(
+				filters,
+			);
 
 			return apiWrapper<LocationServiceDayTableResponse[]>(
-				`${baseUrl}/list${query ? `?${query}` : ''}`,
+				`${baseUrl}/${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
-					fetcher
+					fetcher,
+					schema: z.array(locationServiceDayTableResponseSchema)
 				}
 			);
 		}

@@ -1,14 +1,19 @@
-export type PublicLocationResponse = {
-    tenant_name: string;
-    tenant_code: string;
+import { z } from 'zod';
 
-    location_code: string;
-    location_name: string;
+export const publicLocationResponseSchema = z.object({
+    tenant_name: z.string(),
+    tenant_code: z.string(),
 
-    display_name?: string;
-    logo_key?: string;
+    location_code: z.string(),
+    location_name: z.string(),
 
-    primary_color?: string;
-    secondary_color?: string;
-    font_family?: string;
-}
+    display_name: z.string().nullable(),
+    logo_key: z.string().nullable(),
+
+    primary_color: z.string().nullable(),
+    secondary_color: z.string().nullable(),
+    font_family: z.string().nullable()
+});
+
+export type PublicLocationResponse =
+    z.infer<typeof publicLocationResponseSchema>;

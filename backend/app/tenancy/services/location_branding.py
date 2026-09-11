@@ -7,17 +7,24 @@ from app.tenancy.repositories.location_branding import LocationBrandingRepositor
 
 
 class LocationBrandingService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        location_branding_repo: LocationBrandingRepository,
+    ):
         self.db = db
-        self.repo = LocationBrandingRepository(db=db)
+        self.location_branding_repo = location_branding_repo
 
     def get_public_location(
         self,
         *,
         location_id: UUID
     ) -> PublicLocationResponse:
-        result = self.repo.get_location_with_branding_by_id(
-            location_id=location_id
+        result = (
+            self.location_branding_repo.get_location_with_branding_by_id(
+                location_id=location_id
+            )
         )
 
         if result is None:

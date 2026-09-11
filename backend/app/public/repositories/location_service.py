@@ -1,16 +1,13 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
 from sqlalchemy import Row
 
+from app.db.repository import Repository
 from app.public.models.location_service import LocationService
 from app.public.models.service_type import ServiceType
 
 
-class LocationServiceRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class LocationServiceRepository(Repository):
     def create(
         self,
         *,
@@ -96,8 +93,6 @@ class LocationServiceRepository:
                 LocationService.is_active == is_active
             )
 
-        return (
-            query
-            .order_by(ServiceType.name.asc())
-            .all()
+        return self._all(
+            query.order_by(ServiceType.name.asc())
         )

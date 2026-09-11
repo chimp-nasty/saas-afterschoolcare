@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.tenancy.models.location import Location
 
 
-class LocationRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class LocationRepository(Repository):
     def create(
         self,
         *,

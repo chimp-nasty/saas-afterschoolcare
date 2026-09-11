@@ -1,15 +1,11 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.booking_group import BookingGroup
 from app.public.models.booking import Booking
 
 
-class BookingGroupRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class BookingGroupRepository(Repository):
     def create(
         self,
         *,

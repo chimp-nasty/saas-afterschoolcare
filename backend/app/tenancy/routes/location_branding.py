@@ -1,11 +1,11 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 from app.api.response import ApiResponse
 from app.dependencies.auth import resolve_location_id
 from app.dependencies.db import get_db
+from app.dependencies.service import get_service
 from app.core.cache.cache import cached
 from app.core.cache.stores import cache_stores
 
@@ -28,9 +28,14 @@ def get_public_branding(
     location_id: UUID = Depends(
         resolve_location_id,
     ),
-    db: Session = Depends(get_db),
+    service: LocationBrandingService = Depends(
+        get_service(
+            LocationBrandingService,
+            db_dependency=get_db,
+        )
+    ),
 ) -> ApiResponse[PublicLocationResponse]:
-    result = LocationBrandingService(db=db).get_public_location(
+    result = service.get_public_location(
         location_id=location_id,
     )
 

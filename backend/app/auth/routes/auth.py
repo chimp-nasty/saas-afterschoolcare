@@ -1,18 +1,22 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response
-from sqlalchemy.orm import Session
 
 from app.api.response import ApiResponse
 from app.dependencies.db import get_db
-from app.dependencies.auth import resolve_location_id, get_current_token_context
+from app.dependencies.auth import (
+    resolve_location_id,
+    get_current_token_context,
+)
+from app.dependencies.service import get_service
 from app.auth.jwt.context import TokenContext
 from app.core.config import settings
 from app.auth.services.auth import AuthService
 from app.auth.schemas.auth import (
     LoginRequest,
     ResetPasswordRequest,
-    ForgotPasswordRequest
+    ForgotPasswordRequest,
+    SessionResponse,
 )
 
 
@@ -29,11 +33,16 @@ def login(
     location_id: UUID = Depends(
         resolve_location_id,
     ),
-    db: Session = Depends(get_db),
+    service: AuthService = Depends(
+        get_service(
+            AuthService,
+            db_dependency=get_db,
+        )
+    ),
 ) -> ApiResponse[None]:
-    access_token = AuthService(db=db).login(
+    access_token = service.login(
         body=body,
-        location_id=location_id
+        location_id=location_id,
     )
 
     response.set_cookie(
@@ -54,8 +63,8 @@ def login(
         msg="Login successful",
         data=None,
     )
-    
-    
+
+
 @router.post("/logout")
 def logout(
     response: Response,
@@ -78,48 +87,58 @@ def logout(
 @router.post("/forgot-password")
 def forgot_password(
     body: ForgotPasswordRequest,
-    db: Session = Depends(get_db),
+    service: AuthService = Depends(
+        get_service(
+            AuthService,
+            db_dependency=get_db,
+        )
+    ),
 ) -> ApiResponse[None]:
-    AuthService(db=db).request_password_reset(
+    service.request_password_reset(
         body=body
     )
-    
+
     return ApiResponse(
         ok=True,
         msg="Please check your email",
-        data=None
+        data=None,
     )
-    
-    
+
+
 @router.post("/reset-password")
 def reset_password(
     body: ResetPasswordRequest,
-    db: Session = Depends(get_db),
+    service: AuthService = Depends(
+        get_service(
+            AuthService,
+            db_dependency=get_db,
+        )
+    ),
 ) -> ApiResponse[None]:
-    AuthService(db=db).reset_password(
+    service.reset_password(
         body=body
     )
-    
+
     return ApiResponse(
         ok=True,
         msg="Password reset",
-        data=None
+        data=None,
     )
-    
-    
+
+
 @router.get("/session")
 def get_session(
     ctx: TokenContext = Depends(
         get_current_token_context,
     ),
-) -> ApiResponse[dict]:
+) -> ApiResponse[SessionResponse]:
     return ApiResponse(
         ok=True,
         msg="Session retrieved",
-        data={
-            "user_id": str(ctx.user_id),
-            "email": ctx.email,
-            "first_name": ctx.first_name,
-            "roles": ctx.roles,
-        }
+        data=SessionResponse(
+            user_id=ctx.user_id,
+            email=ctx.email,
+            first_name=ctx.first_name,
+            roles=ctx.roles,
+        )
     )

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateSchema, dateTimeSchema } from '$lib/types/dates';
 
 import {
     bookingStatusSchema,
@@ -45,7 +46,7 @@ export const bookingConflictRowSchema = z.object({
     child_id: z.uuid(),
     child_name: z.string(),
     location_service_day_id: z.uuid(),
-    location_service_date: z.string()
+    location_service_date: dateSchema
 });
 
 export type BookingConflictRow =
@@ -63,8 +64,8 @@ export const listBookingsFilterRequestSchema = z.object({
         .nullable()
         .optional(),
 
-    date_from: z.string().nullable().optional(),
-    date_to: z.string().nullable().optional()
+    date_from: z.iso.date().nullable().optional(),
+    date_to: z.iso.date().nullable().optional()
 });
 
 export type ListBookingsFilterRequest =
@@ -82,18 +83,18 @@ export const bookingResponseSchema = z.object({
     child_id: z.uuid(),
 
     child_name: z.string(),
-    service_date: z.string(),
+    service_date: dateSchema,
     service_name: z.string(),
 
     booking_status: bookingStatusSchema,
     payment_status: paymentStatusSchema,
-    cancelled_at: z.string().nullable(),
+    cancelled_at: dateTimeSchema.nullable(),
 
     price_snapshot_cents: z.number(),
     currency: currencyCodeSchema,
 
-    created_at: z.string(),
-    updated_at: z.string()
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
 });
 
 export type BookingResponse =
@@ -111,7 +112,7 @@ export const bookingTableResponseSchema = z.object({
     child_id: z.uuid(),
 
     child_name: z.string(),
-    service_date: z.string(),
+    service_date: dateSchema,
     service_name: z.string(),
 
     booking_status: bookingStatusSchema,

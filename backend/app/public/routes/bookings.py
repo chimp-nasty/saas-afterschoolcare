@@ -1,12 +1,12 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
 from app.dependencies.auth import require_permission
 from app.dependencies.rls import get_rls_db
+from app.dependencies.service import get_service
 from app.public.services.bookings_create import CreateBookingService
 from app.public.services.bookings_read import ReadBookingService
 from app.public.schemas.booking import (
@@ -25,18 +25,23 @@ router = APIRouter(
 )
 
 
-@router.post("/create", status_code=201)
+@router.post("/", status_code=201)
 def create_booking(
     body: CreateBookingRequest,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
             action="c"
         )
-    )
+    ),
+    service: CreateBookingService = Depends(
+        get_service(
+            CreateBookingService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[CreateBookingResponse]:
-    result = CreateBookingService(db=db).create(
+    result = service.create(
         body=body,
         user_id=ctx.user_id,
         location_id=ctx.location_id
@@ -52,15 +57,20 @@ def create_booking(
 @router.post("/conflicts")
 def find_conflicts(
     body: CreateBookingRequest,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
             action="c",
         )
     ),
+    service: CreateBookingService = Depends(
+        get_service(
+            CreateBookingService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[list[BookingConflictRow]]:
-    result = CreateBookingService(db=db).find_conflicts(
+    result = service.find_conflicts(
         body=body,
     )
 
@@ -71,18 +81,23 @@ def find_conflicts(
     )
 
 
-@router.get("/read/{booking_id}")
+@router.get("/{booking_id}")
 def get_booking(
     booking_id: UUID,
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
             action="r"
         )
-    )
+    ),
+    service: ReadBookingService = Depends(
+        get_service(
+            ReadBookingService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[BookingResponse]:
-    result = ReadBookingService(db=db).get_by_id(
+    result = service.get_by_id(
         id=booking_id
     )
 
@@ -93,18 +108,23 @@ def get_booking(
     )
 
 
-@router.get("/list")
+@router.get("/")
 def list_bookings(
     filters: ListBookingsFilterRequest = Depends(),
-    db: Session = Depends(get_rls_db),
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
             action="r"
         )
-    )
+    ),
+    service: ReadBookingService = Depends(
+        get_service(
+            ReadBookingService,
+            db_dependency=get_rls_db,
+        )
+    ),
 ) -> ApiResponse[list[BookingTableResponse]]:
-    result = ReadBookingService(db=db).list_with_filters(
+    result = service.list_with_filters(
         filters=filters
     )
 

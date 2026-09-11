@@ -7,24 +7,40 @@ from app.errors.action import (
 )
 from app.public.schemas.action import (
     ActionResponse,
+    ActionFilters,
 )
 
 from app.public.repositories.action import ActionRepository
 
 
 class ReadActionService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        action_repository: ActionRepository
+    ):
         self.db = db
+        self.action_repository = action_repository
 
-        self.action_repository = ActionRepository(db=db)
-
-    def list(self,) -> list[ActionResponse]:
-        actions = self.action_repository.list()
+    def list(
+        self,
+        *,
+        filters: ActionFilters
+    ) -> list[ActionResponse]:
+        actions = self.action_repository.list(
+            cited=filters.cited,
+            user_id=filters.user_id,
+            target=filters.target
+        )
 
         return [
             ActionResponse.model_validate(action)
             for action in actions
         ]
+
+    def count_uncited(self,) -> int:
+        return self.action_repository.count_uncited()
 
     def update_cited_at(
         self,

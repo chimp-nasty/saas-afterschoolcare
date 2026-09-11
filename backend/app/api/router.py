@@ -12,6 +12,7 @@ from app.public.routes.bookings import router as booking_router
 from app.public.routes.children import router as children_router
 from app.public.routes.location_service_days import router as location_service_day_router
 from app.public.routes.location_services import router as location_service_router
+from app.public.routes.actions import router as actions_router
 
 
 api_router = APIRouter()
@@ -28,3 +29,4 @@ api_router.include_router(booking_router)
 api_router.include_router(children_router)
 api_router.include_router(location_service_day_router)
 api_router.include_router(location_service_router)
+api_router.include_router(actions_router)

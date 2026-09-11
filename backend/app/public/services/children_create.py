@@ -26,13 +26,22 @@ from app.public.schemas.children import (
 
 
 class CreateChildService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        child_repository: ChildProfileRepository,
+        child_medical_state_repository: ChildMedicalStateRepository,
+        authorized_pickup_repository: AuthorizedPickupPersonRepository,
+        customer_profile_repository: CustomerProfileRepository,
+        user_repository: UserRepository,
+    ):
         self.db = db
-        self.child_repository = ChildProfileRepository(db=db)
-        self.child_medical_state_repository = ChildMedicalStateRepository(db=db)
-        self.authorized_pickup_repository = AuthorizedPickupPersonRepository(db=db)
-        self.customer_profile_repository = CustomerProfileRepository(db=db)
-        self.user_repository = UserRepository(db=db)
+        self.child_repository = child_repository
+        self.child_medical_state_repository = child_medical_state_repository
+        self.authorized_pickup_repository = authorized_pickup_repository
+        self.customer_profile_repository = customer_profile_repository
+        self.user_repository = user_repository
 
     def create(
         self,

@@ -1,16 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy.orm import Session
 from sqlalchemy import func
 
+from app.db.repository import Repository
 from app.auth.models.password_reset_token import PasswordResetToken
 
 
-class PasswordResetTokenRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class PasswordResetTokenRepository(Repository):
     def create(
         self,
         *,

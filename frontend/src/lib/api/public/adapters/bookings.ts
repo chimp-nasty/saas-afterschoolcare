@@ -1,14 +1,22 @@
+import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
+import { buildQueryParams } from '$lib/api/param';
 
-import type {
-	CreateBookingRequest,
-	CreateBookingResponse,
-	BookingConflictRow,
-	BookingResponse,
-	BookingTableResponse,
-	ListBookingsFilterRequest
+import type { Pagination } from '$lib/types/pagination';
+
+import {
+	createBookingResponseSchema,
+	bookingConflictRowSchema,
+	bookingResponseSchema,
+	bookingTableResponseSchema,
+	type CreateBookingRequest,
+	type CreateBookingResponse,
+	type BookingConflictRow,
+	type BookingResponse,
+	type BookingTableResponse,
+	type ListBookingsFilterRequest
 } from '../types/bookings';
 
 
@@ -21,11 +29,12 @@ export function createBookingApi(
 	return {
 		create(body: CreateBookingRequest) {
 			return apiWrapper<CreateBookingResponse>(
-				`${baseUrl}/create`,
+				`${baseUrl}/`,
 				{
 					method: 'POST',
 					body,
-					fetcher
+					fetcher,
+					schema: createBookingResponseSchema
 				}
 			);
 		},
@@ -36,61 +45,38 @@ export function createBookingApi(
 				{
 					method: 'POST',
 					body,
-					fetcher
+					fetcher,
+					schema: z.array(bookingConflictRowSchema)
 				}
 			);
 		},
 
 		getById(bookingId: string) {
 			return apiWrapper<BookingResponse>(
-				`${baseUrl}/read/${bookingId}`,
+				`${baseUrl}/${bookingId}`,
 				{
 					method: 'GET',
-					fetcher
+					fetcher,
+					schema: bookingResponseSchema
 				}
 			);
 		},
 
 		list(
-			filters: ListBookingsFilterRequest = {}
+			filters: ListBookingsFilterRequest = {},
+			pagination: Pagination = {}
 		) {
-			const params = new URLSearchParams();
-
-			for (const status of filters.booking_status ?? []) {
-				params.append(
-					'booking_status',
-					status
-				);
-			}
-
-			for (const status of filters.payment_status ?? []) {
-				params.append(
-					'payment_status',
-					status
-				);
-			}
-
-			if (filters.date_from) {
-				params.set(
-					'date_from',
-					filters.date_from
-				);
-			}
-
-			if (filters.date_to) {
-				params.set(
-					'date_to',
-					filters.date_to
-				);
-			}
-
-			const query = params.toString();
+			const query = buildQueryParams(
+				filters,
+				pagination
+			);
 
 			return apiWrapper<BookingTableResponse[]>(
-				`${baseUrl}/list${query ? `?${query}` : ''}`,
+				`${baseUrl}/${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
-					fetcher
+					fetcher,
+					schema: z.array(bookingTableResponseSchema)
 				}
 			);
 		}

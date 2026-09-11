@@ -1,15 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.tenancy.models.tenant import Tenant
 
 
-class TenantRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class TenantRepository(Repository):
     def create(
         self,
         *,

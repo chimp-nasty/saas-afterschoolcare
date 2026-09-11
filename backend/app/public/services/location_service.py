@@ -11,9 +11,14 @@ from app.public.schemas.location_service import (
 
 
 class LocationServiceService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        location_service_repository: LocationServiceRepository,
+    ):
         self.db = db
-        self.location_service_repository = LocationServiceRepository(db=db)
+        self.location_service_repository = location_service_repository
         self.stripe = StripeClient()
 
     def update_price(

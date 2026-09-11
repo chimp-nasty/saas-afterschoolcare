@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { setResponse } from '$lib/toast/state.svelte';
 
 
@@ -15,25 +16,27 @@ type ApiBody =
 	| string
 	| undefined;
 
-type ApiWrapperOptions = {
+type ApiWrapperOptions<T> = {
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 	body?: ApiBody;
 	headers?: Record<string, string>;
 	onSuccess?: () => void | Promise<void>;
 	fetcher?: typeof fetch;
+	schema: z.ZodType<T>;
 };
 
 
-export async function apiWrapper<T = unknown>(
+export async function apiWrapper<T>(
 	url: string,
-	options: ApiWrapperOptions = {}
+	options: ApiWrapperOptions<T>
 ): Promise<ApiResponse<T>> {
 	const {
 		method = 'GET',
 		body,
 		headers = {},
 		onSuccess,
-		fetcher = fetch
+		fetcher = fetch,
+		schema
 	} = options;
 
 	function finalizeResponse(
@@ -102,12 +105,18 @@ export async function apiWrapper<T = unknown>(
 
 		const result = (
 			await response.json()
-		) as Omit<ApiResponse<T>, 'status'>;
+		) as Omit<ApiResponse<unknown>, 'status'>;
+
+		const data =
+			result.data === null ||
+			result.data === undefined
+				? null
+				: schema.parse(result.data);
 
 		const apiResponse: ApiResponse<T> = {
 			ok: result.ok,
 			msg: result.msg,
-			data: result.data ?? null,
+			data,
 			status
 		};
 

@@ -38,13 +38,21 @@ class ResolvedBookingPrice:
 
 
 class CreateBookingService:
-    def __init__(self, *, db: Session):
+    def __init__(
+        self,
+        *,
+        db: Session,
+        booking_group_repository: BookingGroupRepository,
+        booking_repository: BookingRepository,
+        payment_attempt_repository: PaymentAttemptRepository,
+        location_service_repository: LocationServiceDayRepository,
+    ):
         self.db = db
 
-        self.booking_group_repository = BookingGroupRepository(db=db)
-        self.booking_repository = BookingRepository(db=db)
-        self.payment_attempt_repository = PaymentAttemptRepository(db=db)
-        self.location_service_repository = LocationServiceDayRepository(db=db)
+        self.booking_group_repository = booking_group_repository
+        self.booking_repository = booking_repository
+        self.payment_attempt_repository = payment_attempt_repository
+        self.location_service_repository = location_service_repository
 
     def create(
         self,

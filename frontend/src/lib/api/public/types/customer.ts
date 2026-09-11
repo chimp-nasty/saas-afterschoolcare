@@ -44,7 +44,7 @@ export const customerProfileResponseSchema = z.object({
     state: australianStateSchema.nullable(),
     postcode: z.string().nullable(),
     
-    updated_at: z.iso.datetime({ offset: true })
+    updated_at: z.iso.datetime()
 });
 
 export type CustomerProfileResponse =

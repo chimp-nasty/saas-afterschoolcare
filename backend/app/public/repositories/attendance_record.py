@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session
-
+from app.db.repository import Repository
 from app.public.models.attendance_record import AttendanceRecord
 
 
-class AttendanceRecordRepository:
-    def __init__(self, *, db: Session):
-        self.db = db
-
+class AttendanceRecordRepository(Repository):
     def create(
         self,
         *,

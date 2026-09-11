@@ -2,7 +2,7 @@
     import TabbedPanels, { type TabConfig } from "$lib/components/controls/TabbedPanels.svelte";
 
     import ParentProfileForm from "$lib/features/customer/components/ParentProfileForm.svelte";
-    import ChildAccountData from "$lib/features/customer/components/ChildAccountData.svelte";
+    import ChildAccountData from "$lib/features/children/components/ChildAccountData.svelte";
 
     import { accountTabs } from "$lib/navigation/tabs.js";
 	import { createCustomerApi } from "$lib/api/public/adapters/customer";
@@ -19,7 +19,7 @@
         data.childProfiles
     );
 
-    let activeTab = $state("profile");
+    let activeTab = $state(accountTabs.PROFILE);
 
     let isLoading: boolean = $state(false);
 
@@ -66,7 +66,6 @@
 <div class="flex w-full max-w-xl flex-1 flex-col">
     <TabbedPanels
         {tabs}
-        initialTab="parent-details"
         bind:activeTab
         queryParam="state"
     />

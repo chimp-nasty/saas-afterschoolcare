@@ -4,12 +4,13 @@
 
 	import { 
 		formatDateDDMMYYYY,
+		formatTimestampDDMMYYYY,
 		formatEnum,
 	} from '$lib/utils/helpers';
 
 	export type DataCardItem = {
 		label: string;
-		value: string | number | null | undefined;
+		value: string | number | Date | null | undefined;
 		format?: 'date' | 'enum';
 	};
 
@@ -32,8 +33,8 @@
 			return '—';
 		}
 
-		if (item.format === 'date' && typeof item.value === 'string') {
-			return formatDateDDMMYYYY(item.value);
+		if (item.value instanceof Date) {
+			return formatTimestampDDMMYYYY(item.value);
 		}
 
 		if (item.format === 'enum' && typeof item.value === 'string') {
@@ -58,7 +59,7 @@
 			<div
 				class="
 					grid
-					grid-cols-[10rem_1fr]
+					grid-cols-[3fr_7fr]
 					items-stretch
 					{index < data.length - 1 ? 'border-b border-(--border)' : ''}
 				"

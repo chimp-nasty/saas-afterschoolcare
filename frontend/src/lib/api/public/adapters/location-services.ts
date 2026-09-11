@@ -1,10 +1,12 @@
+import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import type {
-    UpdateLocationServiceRequest,
-    LocationServiceSelectionResponse,
+import {
+    locationServiceSelectionResponseSchema,
+    type UpdateLocationServiceRequest,
+    type LocationServiceSelectionResponse,
 } from "$lib/api/public/types/location-services"
 
 
@@ -17,10 +19,11 @@ export function createLocationServicesApi(
     return {
         list() {
             return apiWrapper<LocationServiceSelectionResponse[]>(
-                `${baseUrl}/list`,
+                `${baseUrl}/`,
                 {
                     method: 'GET',
-                    fetcher
+                    fetcher,
+                    schema: z.array(locationServiceSelectionResponseSchema)
                 }
             );
         },
@@ -30,11 +33,12 @@ export function createLocationServicesApi(
             body: UpdateLocationServiceRequest
         ) {
             return apiWrapper<null>(
-                `${baseUrl}/update-price/${location_service_id}`,
+                `${baseUrl}/${location_service_id}/price`,
                 {
-                    method: 'POST',
+                    method: 'PATCH',
                     body,
-                    fetcher
+                    fetcher,
+                    schema: z.null()
                 }
             );
         }
