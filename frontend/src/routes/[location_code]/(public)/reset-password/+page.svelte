@@ -6,47 +6,28 @@
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 
-	let isLoading = $state(false);
-	let form = $state<ResetPasswordForm | null>(null);
-
 	const token = $derived(
 		page.url.searchParams.get('token')
 	);
 
 	const authApi = createAuthApi();
 
-	async function handleSubmit(
-		password: string
-	) {
-		if (!token) {
-			return;
+	async function resetPassword(password: string) {
+		const response = await authApi.resetPassword({
+			token: token ?? '',
+			password
+		});
+
+		if (response.ok) {
+			await goto(`/${page.data.locationCode}/login`);
 		}
 
-		try {
-			isLoading = true;
-
-			const response = await authApi.resetPassword({
-				token,
-				password
-			});
-
-			if (response.ok && form) {
-				form.reset();
-
-				await goto('/login');
-			}
-		} finally {
-			isLoading = false;
-		}
+		return response;
 	}
 </script>
 
 {#if token}
-	<ResetPasswordForm
-		bind:this={form}
-		{handleSubmit}
-		{isLoading}
-	/>
+	<ResetPasswordForm onsubmit={resetPassword} />
 {:else}
 	<p class="text-sm text-(--danger-text)">
 		Invalid password reset link.

@@ -1,15 +1,12 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import type { RegistrationRequest } from '$lib/api/auth/types/types';
-
-import {
-	customerProfileResponseSchema,
-	type UpdateCustomerProfileRequest,
-	type CustomerProfileResponse,
-} from '../types/customer';
+import type {
+	RegistrationRequest,
+	UpdateCustomerProfileRequest,
+	CustomerProfileResponse
+} from '$lib/api/schema';
 
 
 export function createCustomerApi(
@@ -25,10 +22,9 @@ export function createCustomerApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: z.null()
+					fetcher
 				}
-			); 
+			);
         },
 
 		updateProfile(
@@ -39,19 +35,17 @@ export function createCustomerApi(
 				{
 					method: 'PATCH',
 					body,
-					fetcher,
-					schema: customerProfileResponseSchema
+					fetcher
 				}
 			);
 		},
 
 		getProfile() {
 			return apiWrapper<CustomerProfileResponse>(
-				`${baseUrl}/profile`, 
+				`${baseUrl}/profile`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: customerProfileResponseSchema
+					fetcher
 				}
 			);
 		}

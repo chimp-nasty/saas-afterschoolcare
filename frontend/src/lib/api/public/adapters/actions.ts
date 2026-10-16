@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
@@ -6,11 +5,16 @@ import { buildQueryParams } from '$lib/api/param';
 
 import type { Pagination } from '$lib/types/pagination';
 
-import {
-    actionResponseSchema,
-    type ActionResponse,
-    type ActionFilter
-} from '../types/actions';
+import type {
+    operations,
+    ActionResponse
+} from '$lib/api/schema';
+
+
+export type ActionFilter = Omit<
+    NonNullable<operations['list_actions_action_v1__get']['parameters']['query']>,
+    keyof Pagination
+>;
 
 
 export function createActionsApi(
@@ -33,8 +37,7 @@ export function createActionsApi(
                 `${baseUrl}/${query ? `?${query}` : ''}`,
                 {
                     method: 'GET',
-                    fetcher,
-                    schema: z.array(actionResponseSchema)
+                    fetcher
                 }
             );
         },
@@ -44,8 +47,7 @@ export function createActionsApi(
                 `${baseUrl}/count/uncited`,
                 {
                     method: 'GET',
-                    fetcher,
-                    schema: z.number()
+                    fetcher
                 }
             );
         },
@@ -55,8 +57,7 @@ export function createActionsApi(
                 `${baseUrl}/${actionId}`,
                 {
                     method: 'PATCH',
-                    fetcher,
-                    schema: actionResponseSchema
+                    fetcher
                 }
             );
         },

@@ -1,7 +1,9 @@
 <script lang="ts">
-	import type { ChildTableResponse } from "$lib/api/public/types/children";
+	import type { ChildTableResponse } from "$lib/api/schema";
     import Card from "$lib/components/layout/Card.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
+    import Button from "$lib/components/actions/Button.svelte";
+	import { goto } from "$app/navigation";
 
     let { 
         childProfiles,
@@ -32,5 +34,12 @@
                 ]}
             />
         {/each}
+
+        <Button
+            fullWidth
+            onclick={() => goto(`/${locationCode}/account/children/new`)}
+        >
+            Add New
+        </Button>
     </div>
 </Card>

@@ -4,7 +4,6 @@ export type AuthState = {
 	authenticated: boolean;
 	initialized: boolean;
 	userId: string | null;
-	locationId: string | null;
 	email: string | null;
 	firstName: string | null;
 	roles: string[];
@@ -15,7 +14,6 @@ function emptyAuthState(): AuthState {
 		authenticated: false,
 		initialized: false,
 		userId: null,
-		locationId: null,
 		email: null,
 		firstName: null,
 		roles: []

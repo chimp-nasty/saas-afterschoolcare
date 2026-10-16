@@ -1,22 +1,14 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
-	import EmailInput from '$lib/components/forms/fields/EmailInput.svelte';
-	import PasswordInput from '$lib/components/forms/fields/PasswordInput.svelte';
+	import Field from '$lib/components/forms/Field.svelte';
 
-	import {
-		loginRequestSchema,
-		type LoginRequest
-	} from '$lib/api/auth/types/types';
-
-	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState, validateForm } from '$lib/utils/forms';
+	import type { LoginRequest } from '$lib/api/schema';
+	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
 
 	let {
-		handleSubmit,
-		isLoading
+		onsubmit
 	}: {
-		handleSubmit: (body: LoginRequest) => void | Promise<void>;
-		isLoading: boolean;
+		onsubmit: SubmitHandler<LoginRequest>;
 	} = $props();
 
 	const initialBody: LoginRequest = {
@@ -24,23 +16,25 @@
 		password: ''
 	};
 
-	let body = $state<LoginRequest>(
-		createFormState(initialBody)
-	);
-
+	let body = $state<LoginRequest>({ ...initialBody });
 	let errors = $state<FormErrors<LoginRequest>>({});
+	let isLoading = $state(false);
 
 	async function submit() {
-		const validation = validateForm(loginRequestSchema, body);
-		errors = validation.errors;
-
-		if (!validation.valid) return;
-		await handleSubmit(body);
-	}
-
-	export function reset() {
-		body = createFormState(initialBody);
 		errors = {};
+		isLoading = true;
+
+		try {
+			const response = await onsubmit(body);
+
+			errors = response.fieldErrors;
+
+			if (response.ok) {
+				body = { ...initialBody };
+			}
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 
@@ -48,15 +42,15 @@
 	{isLoading}
 	handleSubmit={submit}
 >
-	<EmailInput
-		bind:value={body.email}
-		label="Email"
-		error={errors.email}
-	/>
+	<Field label="Email" error={errors.email}>
+		{#snippet children(id)}
+			<input {id} type="email" inputmode="email" autocomplete="username" maxlength="255" bind:value={body.email} required />
+		{/snippet}
+	</Field>
 
-	<PasswordInput
-		bind:value={body.password}
-		label="Password"
-		error={errors.password}
-	/>
+	<Field label="Password" error={errors.password}>
+		{#snippet children(id)}
+			<input {id} type="password" autocomplete="current-password" bind:value={body.password} required />
+		{/snippet}
+	</Field>
 </Form>

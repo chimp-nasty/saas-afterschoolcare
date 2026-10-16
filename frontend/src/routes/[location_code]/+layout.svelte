@@ -5,7 +5,7 @@
 	import { setSession, clearSession, auth } from '$lib/auth/state.svelte';
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 
-	import ResponseToast from '$lib/toast/ResponseToast.svelte';
+	import { Toaster } from 'svelte-sonner';
 
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Header from '$lib/components/layout/tenant/Header.svelte';
@@ -117,7 +117,17 @@
 	}
 </script>
 
-<ResponseToast />
+<Toaster
+	position="top-center"
+	duration={3000}
+	toastOptions={{
+		classes: {
+			toast: 'rounded-2xl! border! border-(--border)! text-sm! font-bold!',
+			success: 'bg-(--success-soft)! text-(--success-text)!',
+			error: 'bg-(--danger-soft)! text-(--danger-text)!'
+		}
+	}}
+/>
 
 {#snippet sidebar()}
 	<Sidebar {items} />

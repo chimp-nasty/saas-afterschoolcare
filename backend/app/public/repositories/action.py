@@ -1,6 +1,8 @@
 from uuid import UUID
 from datetime import datetime, timezone
 
+from sqlalchemy import update
+
 from app.db.repository import Repository
 from app.public.models.action import Action
 
@@ -44,9 +46,18 @@ class ActionRepository(Repository):
     def update_cited_at(
         self,
         *,
-        action: Action
-    ) -> None:
-        action.cited_at = datetime.now(timezone.utc)
+        id: UUID,
+    ) -> Action | None:
+        stmt = (
+            update(Action)
+            .where(Action.id == id)
+            .values(cited_at=datetime.now(timezone.utc))
+            .returning(Action)
+        )
+
+        result = self.db.execute(stmt)
+
+        return result.scalar_one_or_none()
 
     def count_uncited(self,) -> int:
         return (

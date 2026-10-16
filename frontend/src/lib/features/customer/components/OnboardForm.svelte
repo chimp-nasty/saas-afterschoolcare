@@ -1,51 +1,62 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
-	import EmailInput from '$lib/components/forms/fields/EmailInput.svelte';
-	import PasswordInput from '$lib/components/forms/fields/PasswordInput.svelte';
-    import TextInput from '$lib/components/forms/fields/TextInput.svelte';
-    import CheckboxInput from '$lib/components/forms/fields/CheckboxInput.svelte';
+	import Field from '$lib/components/forms/Field.svelte';
 
-	import { 
-		registrationFormSchema,
-		type RegistrationForm
-	} from '$lib/features/customer/types';
-	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState, validateForm } from '$lib/utils/forms';
+	import type { RegistrationRequest } from '$lib/api/schema';
+	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
+
+	type RegistrationForm = Omit<RegistrationRequest, 'terms_accepted'> & {
+		confirmPassword: string;
+		terms_accepted: boolean;
+	};
 
 	let {
-		handleSubmit,
-		isLoading
+		onsubmit
 	}: {
-		handleSubmit: (body: RegistrationForm) => void | Promise<void>;
-		isLoading: boolean;
+		onsubmit: SubmitHandler<RegistrationRequest>;
 	} = $props();
 
 	const initialBody: RegistrationForm = {
 		email: '',
 		password: '',
 		confirmPassword: '',
-        first_name: '',
-        last_name: '',
-        terms_accepted: false,
+		first_name: '',
+		last_name: '',
+		terms_accepted: false
 	};
 
-	let body = $state<RegistrationForm>(
-		createFormState(initialBody)
-	);
-
+	let body = $state<RegistrationForm>({ ...initialBody });
 	let errors = $state<FormErrors<RegistrationForm>>({});
+	let isLoading = $state(false);
 
 	async function submit() {
-		const validation = validateForm(registrationFormSchema, body);
-		errors = validation.errors;
-
-		if (!validation.valid) return;
-		await handleSubmit(body);
-	}
-
-	export function reset() {
-		body = createFormState(initialBody);
 		errors = {};
+
+		if (body.password !== body.confirmPassword) {
+			errors.confirmPassword = 'Passwords do not match';
+			return;
+		}
+
+		isLoading = true;
+
+		try {
+			// The checkbox is `required`, so it's always ticked by the time we get here.
+			const response = await onsubmit({
+				email: body.email,
+				password: body.password,
+				first_name: body.first_name,
+				last_name: body.last_name,
+				terms_accepted: true
+			});
+
+			errors = response.fieldErrors;
+
+			if (response.ok) {
+				body = { ...initialBody };
+			}
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 
@@ -53,39 +64,39 @@
 	{isLoading}
 	handleSubmit={submit}
 >
-	<EmailInput
-		bind:value={body.email}
-		label="Email"
-		error={errors.email}
-	/>
+	<Field label="Email" error={errors.email}>
+		{#snippet children(id)}
+			<input {id} type="email" inputmode="email" autocomplete="username" maxlength="255" bind:value={body.email} required />
+		{/snippet}
+	</Field>
 
-	<PasswordInput
-		bind:value={body.password}
-		label="Password"
-		error={errors.password}
-	/>
+	<Field label="Password" error={errors.password}>
+		{#snippet children(id)}
+			<input {id} type="password" autocomplete="new-password" minlength="8" maxlength="128" bind:value={body.password} required />
+		{/snippet}
+	</Field>
 
-	<PasswordInput
-		bind:value={body.confirmPassword}
-		label="Confirm Password"
-		error={errors.confirmPassword}
-	/>
+	<Field label="Confirm Password" error={errors.confirmPassword}>
+		{#snippet children(id)}
+			<input {id} type="password" autocomplete="new-password" bind:value={body.confirmPassword} required />
+		{/snippet}
+	</Field>
 
-    <TextInput
-        bind:value={body.first_name}
-        label="First Name"
-        error={errors.first_name}
-    />
+	<Field label="First Name" error={errors.first_name}>
+		{#snippet children(id)}
+			<input {id} type="text" autocomplete="given-name" maxlength="255" bind:value={body.first_name} required />
+		{/snippet}
+	</Field>
 
-    <TextInput
-        bind:value={body.last_name}
-        label="Last Name"
-        error={errors.last_name}
-    />
+	<Field label="Last Name" error={errors.last_name}>
+		{#snippet children(id)}
+			<input {id} type="text" autocomplete="family-name" maxlength="255" bind:value={body.last_name} required />
+		{/snippet}
+	</Field>
 
-    <CheckboxInput
-        bind:value={body.terms_accepted}
-        label="Accept Terms and Conditions"
-        error={errors.terms_accepted}
-    />
+	<Field label="Accept Terms and Conditions" error={errors.terms_accepted} inline>
+		{#snippet children(id)}
+			<input {id} type="checkbox" bind:checked={body.terms_accepted} required />
+		{/snippet}
+	</Field>
 </Form>

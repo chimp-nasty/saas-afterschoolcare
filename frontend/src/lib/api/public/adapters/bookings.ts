@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
@@ -6,18 +5,20 @@ import { buildQueryParams } from '$lib/api/param';
 
 import type { Pagination } from '$lib/types/pagination';
 
-import {
-	createBookingResponseSchema,
-	bookingConflictRowSchema,
-	bookingResponseSchema,
-	bookingTableResponseSchema,
-	type CreateBookingRequest,
-	type CreateBookingResponse,
-	type BookingConflictRow,
-	type BookingResponse,
-	type BookingTableResponse,
-	type ListBookingsFilterRequest
-} from '../types/bookings';
+import type {
+	operations,
+	CreateBookingRequest,
+	CreateBookingResponse,
+	BookingConflictRow,
+	BookingResponse,
+	BookingTableResponse
+} from '$lib/api/schema';
+
+
+export type ListBookingsFilter = Omit<
+	NonNullable<operations['list_bookings_booking_v1__get']['parameters']['query']>,
+	keyof Pagination
+>;
 
 
 export function createBookingApi(
@@ -33,8 +34,7 @@ export function createBookingApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: createBookingResponseSchema
+					fetcher
 				}
 			);
 		},
@@ -45,8 +45,7 @@ export function createBookingApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: z.array(bookingConflictRowSchema)
+					fetcher
 				}
 			);
 		},
@@ -56,14 +55,13 @@ export function createBookingApi(
 				`${baseUrl}/${bookingId}`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: bookingResponseSchema
+					fetcher
 				}
 			);
 		},
 
 		list(
-			filters: ListBookingsFilterRequest = {},
+			filters: ListBookingsFilter = {},
 			pagination: Pagination = {}
 		) {
 			const query = buildQueryParams(
@@ -75,8 +73,7 @@ export function createBookingApi(
 				`${baseUrl}/${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: z.array(bookingTableResponseSchema)
+					fetcher
 				}
 			);
 		}

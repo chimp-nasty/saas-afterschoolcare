@@ -14,7 +14,8 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright install && playwright test"
+		"test:e2e": "playwright install && playwright test",
+		"gen:api": "npx -y openapi-typescript@7.13.0 http://localhost:8000/openapi.json -o src/lib/api/schema.ts --root-types --root-types-no-schema-prefix --enum-values"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -46,6 +47,6 @@
 	"dependencies": {
 		"bits-ui": "^2.19.0",
 		"lucide-svelte": "^1.0.1",
-		"zod": "^4.5.4"
+		"svelte-sonner": "^1.2.1"
 	}
 }

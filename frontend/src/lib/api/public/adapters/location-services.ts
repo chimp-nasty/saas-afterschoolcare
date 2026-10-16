@@ -1,13 +1,11 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import {
-    locationServiceSelectionResponseSchema,
-    type UpdateLocationServiceRequest,
-    type LocationServiceSelectionResponse,
-} from "$lib/api/public/types/location-services"
+import type {
+    UpdateLocationServiceRequest,
+    LocationServiceSelectionResponse,
+} from '$lib/api/schema';
 
 
 export function createLocationServicesApi(
@@ -22,8 +20,7 @@ export function createLocationServicesApi(
                 `${baseUrl}/`,
                 {
                     method: 'GET',
-                    fetcher,
-                    schema: z.array(locationServiceSelectionResponseSchema)
+                    fetcher
                 }
             );
         },
@@ -37,8 +34,7 @@ export function createLocationServicesApi(
                 {
                     method: 'PATCH',
                     body,
-                    fetcher,
-                    schema: z.null()
+                    fetcher
                 }
             );
         }

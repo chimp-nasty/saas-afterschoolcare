@@ -4,8 +4,8 @@ export function formatDateDDMMYYYY(value: string): string {
     return `${day}/${month}/${year}`;
 }
 
-export function formatTimestampDDMMYYYY(value: Date): string {
-    return value.toLocaleString('en-AU', {
+export function formatTimestampDDMMYYYY(value: string): string {
+    return new Date(value).toLocaleString('en-AU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',

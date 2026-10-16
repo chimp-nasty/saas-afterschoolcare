@@ -2,8 +2,8 @@
     import { Calendar } from "bits-ui";
     import type { DateValue } from "@internationalized/date";
 
-    import type { LocationServiceDayTableResponse } from "$lib/api/public/types/location-service-days";
-    import { ServiceDayStatus } from "$lib/api/public/types/enums";
+    import type { LocationServiceDayTableResponse } from "$lib/api/schema";
+    import { ServiceDayStatus } from "../types";
 
     let {
         serviceDays,
@@ -23,9 +23,7 @@
 
         for (const serviceDay of serviceDays) {
             map.set(
-                serviceDay.service_date
-                    .toISOString()
-                    .slice(0, 10),
+                serviceDay.service_date,
                 serviceDay
             );
         }

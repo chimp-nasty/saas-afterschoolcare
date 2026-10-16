@@ -22,7 +22,7 @@
     };
 
     let {
-        value = $bindable(),
+        value = $bindable(""),
         label,
 
         min,

@@ -3,9 +3,9 @@
     import SelectChildDates from "./SelectChildDates.svelte";
     import ReviewBooking from "./ReviewBooking.svelte";
 
-    import type { LocationServiceSelectionResponse } from "$lib/api/public/types/location-services";
-    import type { ChildTableResponse } from "$lib/api/public/types/children";
-    import type { LocationServiceDayTableResponse } from "$lib/api/public/types/location-service-days";
+    import type { LocationServiceSelectionResponse } from "$lib/api/schema";
+    import type { ChildTableResponse } from "$lib/api/schema";
+    import type { LocationServiceDayTableResponse } from "$lib/api/schema";
 
     let {
         locationServices,

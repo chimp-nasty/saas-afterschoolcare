@@ -3,29 +3,30 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
+	import type { Snippet } from 'svelte';
 	import { ChevronRight } from 'lucide-svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
-	import Card from '$lib/components/layout/Card.svelte';
 	import Drawer from '$lib/components/overlays/Drawer.svelte';
 
-	export type TabConfig = {
+	export type Tab = {
 		id: string;
 		label: string;
-		component: any | null;
-		props?: Record<string, unknown>;
 	};
 
 	let {
 		tabs,
 		initialTab,
 		activeTab = $bindable(),
-		queryParam
+		queryParam,
+		panel
 	}: {
-		tabs: TabConfig[];
+		tabs: Tab[];
 		initialTab?: string;
 		activeTab?: string;
 		queryParam?: string;
+		// Rendered with the active tab id; remounts when the tab changes.
+		panel: Snippet<[string]>;
 	} = $props();
 
 	let drawerOpen = $state(false);
@@ -129,18 +130,10 @@
 	</div>
 
 	<!-- Active panel -->
-	{#if activePanel?.component}
+	{#if activePanel}
 		{#key activePanel.id}
-			<activePanel.component
-				{...(activePanel.props ?? {})}
-			/>
+			{@render panel(activePanel.id)}
 		{/key}
-	{:else}
-		<Card>
-			<p class="p-4 text-sm text-(--text-muted)">
-				This panel is not ready yet.
-			</p>
-		</Card>
 	{/if}
 </div>
 

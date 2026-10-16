@@ -41,7 +41,6 @@ export const load: LayoutLoad = async ({
 		sessionResponse.ok && sessionResponse.data
 			? {
 					userId: sessionResponse.data.user_id,
-					locationId: sessionResponse.data.location_id,
 					email: sessionResponse.data.email,
 					firstName: sessionResponse.data.first_name,
 					roles: sessionResponse.data.roles

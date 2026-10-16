@@ -1,45 +1,39 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
-	import EmailInput from '$lib/components/forms/fields/EmailInput.svelte';
+	import Field from '$lib/components/forms/Field.svelte';
 
-	import { 
-		forgotPasswordRequestSchema,
-		type ForgotPasswordRequest
-	} from '$lib/api/auth/types/types';
-	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState, validateForm } from '$lib/utils/forms';
+	import type { ForgotPasswordRequest } from '$lib/api/schema';
+	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
 
 	let {
-		handleSubmit,
-		isLoading
+		onsubmit
 	}: {
-		handleSubmit: (
-			body: ForgotPasswordRequest
-		) => void | Promise<void>;
-		isLoading: boolean;
+		onsubmit: SubmitHandler<ForgotPasswordRequest>;
 	} = $props();
 
 	const initialBody: ForgotPasswordRequest = {
 		email: ''
 	};
 
-	let body = $state<ForgotPasswordRequest>(
-		createFormState(initialBody)
-	);
-
+	let body = $state<ForgotPasswordRequest>({ ...initialBody });
 	let errors = $state<FormErrors<ForgotPasswordRequest>>({});
+	let isLoading = $state(false);
 
 	async function submit() {
-		const validation = validateForm(forgotPasswordRequestSchema, body);
-		errors = validation.errors;
-		
-		if (!validation.valid) return;
-		await handleSubmit(body);
-	}
-
-	export function reset() {
-		body = createFormState(initialBody);
 		errors = {};
+		isLoading = true;
+
+		try {
+			const response = await onsubmit(body);
+
+			errors = response.fieldErrors;
+
+			if (response.ok) {
+				body = { ...initialBody };
+			}
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 
@@ -48,9 +42,9 @@
 	{isLoading}
 	submitLabel="Send reset link"
 >
-	<EmailInput
-		bind:value={body.email}
-		label="Email"
-		error={errors.email}
-	/>
+	<Field label="Email" error={errors.email}>
+		{#snippet children(id)}
+			<input {id} type="email" inputmode="email" autocomplete="username" maxlength="255" bind:value={body.email} required />
+		{/snippet}
+	</Field>
 </Form>

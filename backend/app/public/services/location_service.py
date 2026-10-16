@@ -5,7 +5,7 @@ from app.errors.services import LocationServiceNotFoundError
 from app.integrations.payments.stripe.client import StripeClient
 from app.public.repositories.location_service import LocationServiceRepository
 from app.public.schemas.location_service import (
-    UpdateLoctionServiceRequest,
+    UpdateLocationServiceRequest,
     LocationServiceSelectionResponse,
 )
 
@@ -25,7 +25,7 @@ class LocationServiceService:
         self,
         *,
         location_service_id: UUID,
-        body: UpdateLoctionServiceRequest
+        body: UpdateLocationServiceRequest
     ) -> None:
         try:
             # Find valid service

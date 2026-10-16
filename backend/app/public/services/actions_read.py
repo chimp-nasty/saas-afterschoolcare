@@ -48,26 +48,18 @@ class ReadActionService:
         id: UUID
     ) -> ActionResponse:
         try:
-            action = self.action_repository.get_by_id(
+            action = self.action_repository.update_cited_at(
                 id=id
             )
 
             if not action:
                 raise ActionNotFoundError()
 
-            self.action_repository.update_cited_at(
-                action=action
-            )
-
-            self.db.flush()
-            self.db.refresh(action)
-
-            result = ActionResponse.model_validate(action)
+            response = ActionResponse.model_validate(action)
 
             self.db.commit()
 
-            return result
+            return response
 
         except Exception:
             self.db.rollback()
-            raise

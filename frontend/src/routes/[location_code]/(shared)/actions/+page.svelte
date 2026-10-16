@@ -1,17 +1,16 @@
 <script lang="ts">
     import NewActions from "$lib/features/actions/components/NewActions.svelte";
 
-    import TabbedPanels, {
-        type TabConfig
-    } from "$lib/components/controls/TabbedPanels.svelte";
+    import TabbedPanels from "$lib/components/controls/TabbedPanels.svelte";
+    import Card from "$lib/components/layout/Card.svelte";
 
     import { actionTabs } from "$lib/navigation/tabs";
-    import { createActionsApi } from "$lib/api/public/adapters/actions";
+    import {
+        createActionsApi,
+        type ActionFilter
+    } from "$lib/api/public/adapters/actions";
 
-    import type {
-        ActionFilter,
-        ActionResponse
-    } from "$lib/api/public/types/actions";
+    import type { ActionResponse } from "$lib/api/schema";
 
     import type {
         Pagination,
@@ -20,7 +19,7 @@
 
     let { data } = $props();
 
-    let activeTab = $state(actionTabs.NEW);
+    let activeTab = $state<string>(actionTabs.NEW);
     let isLoading = $state(false);
 
     let uncitedActions: ActionResponse[] = $state([]);
@@ -28,26 +27,10 @@
 
     const actionsApi = createActionsApi();
 
-    const tabs = $derived<TabConfig[]>([
-        {
-            id: actionTabs.NEW,
-            label: "New",
-            component: NewActions,
-            props: {
-                actions: uncitedActions,
-                locationCode: data.locationCode,
-                loader: loadActions,
-                update: updateCited,
-                isLoading
-            }
-        },
-        {
-            id: actionTabs.OLDER,
-            label: "Older",
-            component: null,
-            props: {}
-        }
-    ]);
+    const tabs = [
+        { id: actionTabs.NEW, label: "New" },
+        { id: actionTabs.OLDER, label: "Older" }
+    ];
 
     async function loadActions(
         filters: ActionFilter,
@@ -105,5 +88,23 @@
         {tabs}
         bind:activeTab
         queryParam="state"
-    />
+    >
+        {#snippet panel(id)}
+            {#if id === actionTabs.NEW}
+                <NewActions
+                    actions={uncitedActions}
+                    locationCode={data.locationCode}
+                    loader={loadActions}
+                    update={updateCited}
+                    {isLoading}
+                />
+            {:else}
+                <Card>
+                    <p class="p-4 text-sm text-(--text-muted)">
+                        This panel is not ready yet.
+                    </p>
+                </Card>
+            {/if}
+        {/snippet}
+    </TabbedPanels>
 </div>

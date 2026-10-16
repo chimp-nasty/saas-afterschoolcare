@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { LocationServiceSelectionResponse } from "$lib/api/public/types/location-services";
+    import type { LocationServiceSelectionResponse } from "$lib/api/schema";
 
     let {
         locationServices,

@@ -10,8 +10,8 @@
 
 	export type DataCardItem = {
 		label: string;
-		value: string | number | Date | null | undefined;
-		format?: 'date' | 'enum';
+		value: string | number | null | undefined;
+		format?: 'date' | 'datetime' | 'enum';
 	};
 
 	type Props = {
@@ -35,15 +35,20 @@
 			return '—';
 		}
 
-		if (item.value instanceof Date) {
-			return formatTimestampDDMMYYYY(item.value);
+		if (typeof item.value === 'number') {
+			return item.value;
 		}
 
-		if (item.format === 'enum' && typeof item.value === 'string') {
-			return formatEnum(item.value);
+		switch (item.format) {
+			case 'date':
+				return formatDateDDMMYYYY(item.value);
+			case 'datetime':
+				return formatTimestampDDMMYYYY(item.value);
+			case 'enum':
+				return formatEnum(item.value);
+			default:
+				return item.value;
 		}
-
-		return item.value;
 	}
 </script>
 

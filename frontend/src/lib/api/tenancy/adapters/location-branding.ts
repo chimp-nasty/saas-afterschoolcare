@@ -2,10 +2,7 @@ import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import {
-	publicLocationResponseSchema,
-	type PublicLocationResponse
-} from '../types/location-branding';
+import type { PublicLocationResponse } from '$lib/api/schema';
 
 
 export function createLocationBrandingApi(
@@ -20,8 +17,7 @@ export function createLocationBrandingApi(
 				`${baseUrl}/public/${locationCode}`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: publicLocationResponseSchema
+					fetcher
 				}
 			);
 		},

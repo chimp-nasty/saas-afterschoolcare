@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { setResponse } from '$lib/toast/state.svelte';
+import { toast } from 'svelte-sonner';
 
 
 export type ApiResponse<T = unknown> = {
@@ -7,6 +6,12 @@ export type ApiResponse<T = unknown> = {
 	msg: string;
 	data: T | null;
 	status: number;
+	fieldErrors: Record<string, string>;
+};
+
+type FieldError = {
+	field: string;
+	message: string;
 };
 
 type ApiBody =
@@ -16,37 +21,51 @@ type ApiBody =
 	| string
 	| undefined;
 
-type ApiWrapperOptions<T> = {
+type ApiWrapperOptions = {
 	method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 	body?: ApiBody;
 	headers?: Record<string, string>;
 	onSuccess?: () => void | Promise<void>;
 	fetcher?: typeof fetch;
-	schema: z.ZodType<T>;
 };
+
+// The backend returns 422s as { data: [{ field, message }] }; key them by field.
+function toFieldErrors(data: unknown): Record<string, string> {
+	if (!Array.isArray(data)) return {};
+
+	const errors: Record<string, string> = {};
+
+	for (const error of data as FieldError[]) {
+		if (error.field && !errors[error.field]) {
+			errors[error.field] = error.message;
+		}
+	}
+
+	return errors;
+}
 
 
 export async function apiWrapper<T>(
 	url: string,
-	options: ApiWrapperOptions<T>
+	options: ApiWrapperOptions = {}
 ): Promise<ApiResponse<T>> {
 	const {
 		method = 'GET',
 		body,
 		headers = {},
 		onSuccess,
-		fetcher = fetch,
-		schema
+		fetcher = fetch
 	} = options;
 
 	function finalizeResponse(
 		response: ApiResponse<T>
 	): ApiResponse<T> {
 		if (method !== 'GET') {
-			setResponse(
-				response.ok,
-				response.msg
-			);
+			if (response.ok) {
+				toast.success(response.msg);
+			} else {
+				toast.error(response.msg);
+			}
 		}
 
 		return response;
@@ -99,25 +118,27 @@ export async function apiWrapper<T>(
 					? 'Success'
 					: 'Something went wrong',
 				data: null,
-				status
+				status,
+				fieldErrors: {}
 			});
 		}
 
 		const result = (
 			await response.json()
-		) as Omit<ApiResponse<unknown>, 'status'>;
+		) as { ok: boolean; msg: string; data?: unknown };
 
-		const data =
-			result.data === null ||
-			result.data === undefined
-				? null
-				: schema.parse(result.data);
+		const isValidationError = status === 422;
 
 		const apiResponse: ApiResponse<T> = {
 			ok: result.ok,
 			msg: result.msg,
-			data,
-			status
+			data: isValidationError
+				? null
+				: ((result.data ?? null) as T | null),
+			status,
+			fieldErrors: isValidationError
+				? toFieldErrors(result.data)
+				: {}
 		};
 
 		if (apiResponse.ok && onSuccess) {
@@ -137,7 +158,8 @@ export async function apiWrapper<T>(
 			ok: false,
 			msg: 'Network error',
 			data: null,
-			status: 0
+			status: 0,
+			fieldErrors: {}
 		});
 	}
 }

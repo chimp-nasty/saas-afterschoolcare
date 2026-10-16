@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
@@ -6,14 +5,18 @@ import { buildQueryParams } from '$lib/api/param';
 
 import type { Pagination } from '$lib/types/pagination';
 
-import {
-	childResponseSchema,
-	childTableResponseSchema,
-	type ChildResponse,
-	type ChildTableResponse,
-	type ListChildrenFilterRequest,
-	type CreateChildRequest,
-} from '../types/children';
+import type {
+	operations,
+	ChildResponse,
+	ChildTableResponse,
+	CreateChildRequest
+} from '$lib/api/schema';
+
+
+export type ListChildrenFilter = Omit<
+	NonNullable<operations['list_children_children_v1__get']['parameters']['query']>,
+	keyof Pagination
+>;
 
 
 export function createChildrenApi(
@@ -28,14 +31,13 @@ export function createChildrenApi(
 				`${baseUrl}/${childId}`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: childResponseSchema
+					fetcher
 				}
 			);
 		},
 
 		list(
-			filters: ListChildrenFilterRequest = {},
+			filters: ListChildrenFilter = {},
 			pagination: Pagination = {}
 		) {
 			const query = buildQueryParams(
@@ -47,8 +49,7 @@ export function createChildrenApi(
 				`${baseUrl}/${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: z.array(childTableResponseSchema)
+					fetcher
 				}
 			);
 		},
@@ -61,8 +62,7 @@ export function createChildrenApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: childResponseSchema
+					fetcher
 				}
 			);
 		}

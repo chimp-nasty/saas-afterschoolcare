@@ -1,14 +1,20 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
 
-import {
-	locationServiceDayTableResponseSchema,
-	type ListLocationServiceDaysFilterRequest,
-	type LocationServiceDayTableResponse
-} from '../types/location-service-days';
+import type { Pagination } from '$lib/types/pagination';
+
+import type {
+	operations,
+	LocationServiceDayTableResponse
+} from '$lib/api/schema';
+
+
+export type ListLocationServiceDaysFilter = Omit<
+	NonNullable<operations['list_location_service_days_location_service_days_v1__get']['parameters']['query']>,
+	keyof Pagination
+>;
 
 
 export function createLocationServiceDaysApi(
@@ -19,7 +25,7 @@ export function createLocationServiceDaysApi(
 
 	return {
 		list(
-			filters: ListLocationServiceDaysFilterRequest = {},
+			filters: ListLocationServiceDaysFilter = {},
 		) {
 			const query = buildQueryParams(
 				filters,
@@ -29,8 +35,7 @@ export function createLocationServiceDaysApi(
 				`${baseUrl}/${query ? `?${query}` : ''}`,
 				{
 					method: 'GET',
-					fetcher,
-					schema: z.array(locationServiceDayTableResponseSchema)
+					fetcher
 				}
 			);
 		}

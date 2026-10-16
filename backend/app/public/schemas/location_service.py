@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from app.public.models.enums import CurrencyCode
 
 
-class UpdateLoctionServiceRequest(BaseModel):
+class UpdateLocationServiceRequest(BaseModel):
     amount_cents: int = Field(ge=0)
     currency: CurrencyCode
 

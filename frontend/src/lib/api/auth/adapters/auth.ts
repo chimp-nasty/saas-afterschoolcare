@@ -1,15 +1,13 @@
-import { z } from 'zod';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import {
-	sessionResponseSchema,
-	type LoginRequest,
-	type ResetPasswordRequest,
-	type ForgotPasswordRequest,
-	type SessionResponse
-} from '../types/types';
+import type {
+	LoginRequest,
+	ResetPasswordRequest,
+	ForgotPasswordRequest,
+	SessionResponse
+} from '$lib/api/schema';
 
 
 export function createAuthApi(
@@ -25,8 +23,7 @@ export function createAuthApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: z.null()
+					fetcher
 				}
 			);
 		},
@@ -37,8 +34,7 @@ export function createAuthApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: z.null()
+					fetcher
 				}
 			);
 		},
@@ -49,8 +45,7 @@ export function createAuthApi(
 				{
 					method: 'POST',
 					body,
-					fetcher,
-					schema: z.null()
+					fetcher
 				}
 			);
 		},
@@ -59,8 +54,7 @@ export function createAuthApi(
 			return apiWrapper<SessionResponse>(
 				`${baseUrl}/session`,
 				{
-					fetcher,
-					schema: sessionResponseSchema
+					fetcher
 				}
 			);
 		},
@@ -70,8 +64,7 @@ export function createAuthApi(
 				`${baseUrl}/logout`,
 				{
 					method: 'POST',
-					fetcher,
-					schema: z.null()
+					fetcher
 				}
 			);
 		}

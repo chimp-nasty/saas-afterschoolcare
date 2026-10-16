@@ -4,37 +4,22 @@
 	import LoginForm from '$lib/features/auth/components/LoginForm.svelte';
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
-    import type { LoginRequest } from '$lib/api/auth/types/types';
-
-	let isLoading = $state(false);
-	let form: LoginForm;
+	import type { LoginRequest } from '$lib/api/schema';
 
 	const authApi = createAuthApi();
 
-	async function handleSubmit(body: LoginRequest) {
-		try {
-			isLoading = true;
+	async function login(body: LoginRequest) {
+		const response = await authApi.login(page.data.locationCode, body);
 
-			const response = await authApi.login(page.data.locationCode, body);
-
-			if (!response.ok) {
-				return;
-			}
-
-			form.reset();
-
+		if (response.ok) {
 			await invalidate('app:session');
 			await invalidate('app:actions-count');
 
 			await goto(`/${page.data.locationCode}/home`);
-		} finally {
-			isLoading = false;
 		}
+
+		return response;
 	}
 </script>
 
-<LoginForm
-	bind:this={form}
-	{handleSubmit}
-	{isLoading}
-/>
+<LoginForm onsubmit={login} />

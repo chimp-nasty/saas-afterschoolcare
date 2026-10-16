@@ -1,8 +1,8 @@
 <script lang="ts">
     import ServiceDayCalendar from "./ServiceDayCalendar.svelte";
 
-    import type { ChildTableResponse } from "$lib/api/public/types/children";
-    import type { LocationServiceDayTableResponse } from "$lib/api/public/types/location-service-days";
+    import type { ChildTableResponse } from "$lib/api/schema";
+    import type { LocationServiceDayTableResponse } from "$lib/api/schema";
 
     let {
         children,

@@ -7,7 +7,7 @@ from app.dependencies.rls import get_rls_db
 from app.dependencies.service import get_service
 from app.public.services.location_service import LocationServiceService
 from app.public.schemas.location_service import (
-    UpdateLoctionServiceRequest,
+    UpdateLocationServiceRequest,
     LocationServiceSelectionResponse
 )
 
@@ -21,7 +21,7 @@ router = APIRouter(
 @router.patch("/{location_service_id}/price")
 def update_price(
     stripe_product_id: str,
-    body: UpdateLoctionServiceRequest,
+    body: UpdateLocationServiceRequest,
     ctx: TokenContext = Depends(
         require_permission(
             resource="location_services",

@@ -1,21 +1,18 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
-	import PasswordInput from '$lib/components/forms/fields/PasswordInput.svelte';
+	import Field from '$lib/components/forms/Field.svelte';
 
-	import {
-		resetPasswordFormSchema,
-		type ResetPasswordForm
-	} from '$lib/features/auth/types';
+	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
 
-	import type { FormErrors } from '$lib/types/forms';
-	import { createFormState, validateForm } from '$lib/utils/forms';
+	type ResetPasswordForm = {
+		password: string;
+		confirmPassword: string;
+	};
 
 	let {
-		handleSubmit,
-		isLoading
+		onsubmit
 	}: {
-		handleSubmit: (password: string) => void | Promise<void>;
-		isLoading: boolean;
+		onsubmit: SubmitHandler<string>;
 	} = $props();
 
 	const initialBody: ResetPasswordForm = {
@@ -23,23 +20,31 @@
 		confirmPassword: ''
 	};
 
-	let body = $state<ResetPasswordForm>(
-		createFormState(initialBody)
-	);
-
+	let body = $state<ResetPasswordForm>({ ...initialBody });
 	let errors = $state<FormErrors<ResetPasswordForm>>({});
+	let isLoading = $state(false);
 
 	async function submit() {
-		const validation = validateForm(resetPasswordFormSchema, body);
-		errors = validation.errors;
-
-		if (!validation.valid) return;
-		await handleSubmit(body.password);
-	}
-
-	export function reset() {
-		body = createFormState(initialBody);
 		errors = {};
+
+		if (body.password !== body.confirmPassword) {
+			errors.confirmPassword = 'Passwords do not match';
+			return;
+		}
+
+		isLoading = true;
+
+		try {
+			const response = await onsubmit(body.password);
+
+			errors = response.fieldErrors;
+
+			if (response.ok) {
+				body = { ...initialBody };
+			}
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 
@@ -48,15 +53,15 @@
 	{isLoading}
 	submitLabel="Reset password"
 >
-	<PasswordInput
-		bind:value={body.password}
-		label="New password"
-		error={errors.password}
-	/>
+	<Field label="New password" error={errors.password}>
+		{#snippet children(id)}
+			<input {id} type="password" autocomplete="new-password" minlength="8" maxlength="128" bind:value={body.password} required />
+		{/snippet}
+	</Field>
 
-	<PasswordInput
-		bind:value={body.confirmPassword}
-		label="Confirm password"
-		error={errors.confirmPassword}
-	/>
+	<Field label="Confirm password" error={errors.confirmPassword}>
+		{#snippet children(id)}
+			<input {id} type="password" autocomplete="new-password" bind:value={body.confirmPassword} required />
+		{/snippet}
+	</Field>
 </Form>

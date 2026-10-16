@@ -1,10 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import type {
-        ActionFilter,
-        ActionResponse
-    } from "$lib/api/public/types/actions";
+    import type { ActionResponse } from "$lib/api/schema";
+    import type { ActionFilter } from "$lib/api/public/adapters/actions";
 
     import type {
         Pagination,
@@ -199,7 +197,8 @@
                     },
                     {
                         label: "Created",
-                        value: action.created_at
+                        value: action.created_at,
+                        format: 'datetime'
                     },
                 ]}
             />

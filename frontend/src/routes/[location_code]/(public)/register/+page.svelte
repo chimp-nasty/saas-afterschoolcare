@@ -5,48 +5,27 @@
 	import OnboardForm from '$lib/features/customer/components/OnboardForm.svelte';
 
 	import { createCustomerApi } from '$lib/api/public/adapters/customer';
-	import type { RegistrationRequest } from '$lib/api/auth/types/types';
-	import type { RegistrationForm } from '$lib/features/customer/types';
-
-	let isLoading = $state(false);
-	let form: OnboardForm;
+	import type { RegistrationRequest } from '$lib/api/schema';
 
 	const customerApi = createCustomerApi();
 
-	async function handleSubmit(body: RegistrationForm) {
-		const request: RegistrationRequest = {
-			email: body.email,
-			password: body.password,
-			first_name: body.first_name,
-			last_name: body.last_name,
-			terms_accepted: true
-		};
+	async function register(body: RegistrationRequest) {
+		const response = await customerApi.onboard(
+			page.data.locationCode,
+			body
+		);
 
-		try {
-			isLoading = true;
-
-			const response = await customerApi.onboard(
-				page.data.locationCode,
-				request
-			);
-
-			if (!response.ok) return;
-
-			form.reset();
-
+		if (response.ok) {
+			// Give the success toast time to be read before redirecting.
 			await new Promise((resolve) =>
 				setTimeout(resolve, 2500)
 			);
 
 			await goto(`/${page.data.locationCode}/login`);
-		} finally {
-			isLoading = false;
 		}
+
+		return response;
 	}
 </script>
 
-<OnboardForm
-	bind:this={form}
-	{handleSubmit}
-	{isLoading}
-/>
+<OnboardForm onsubmit={register} />

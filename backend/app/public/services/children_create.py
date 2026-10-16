@@ -3,7 +3,6 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.errors.auth import UserNotFoundError
-from app.errors.children import ChildProfileCollisionError
 from app.errors.customer import (
     CustomerProfileIncompleteError,
     CustomerProfileNotFoundError,
@@ -54,18 +53,6 @@ class CreateChildService:
             # Validate Profile completeness
             user, profile = self._validate_customer(user_id=user_id)
 
-            # Check unique constraint
-            existing = self.child_repository.get_by_unique_contraint(
-                location_id=location_id,
-                user_id=user_id,
-                first_name=body.first_name,
-                last_name=body.last_name,
-                dob=body.dob
-            )
-
-            if existing:
-                raise ChildProfileCollisionError()
-
             # Create profile
             child = self.child_repository.create(
                 location_id=location_id,
@@ -100,19 +87,37 @@ class CreateChildService:
                 phone=profile.phone,
                 relation="Guardian",
             )
-               
+
+            self.db.flush()
+            self.db.refresh(child)
+
+            result = ChildResponse(
+                id=child.id,
+                location_id=child.location_id,
+                user_id=child.user_id,
+
+                first_name=child.first_name,
+                last_name=child.last_name,
+                dob=child.dob,
+
+                medical_info=child.medical_info,
+                allergy_info=child.allergy_info,
+                medication_info=child.medication_info,
+
+                is_active=child.is_active,
+                review_status=review_status,
+
+                created_at=child.created_at,
+                updated_at=child.updated_at,
+            )
+
             self.db.commit()
+
+            return result
 
         except Exception:
             self.db.rollback()
             raise
-
-        return ChildResponse(
-            id=child.id,
-            user_id=child.user_id,
-            first_name=child.first_name,
-            last_name=child.last_name
-        )
 
     def _validate_customer(
         self,
