@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.tenancy.models.tenant import Tenant
+from app.db.models import Tenant
 
 
 class TenantRepository(Repository):

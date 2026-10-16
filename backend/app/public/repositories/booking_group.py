@@ -1,8 +1,8 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.booking_group import BookingGroup
-from app.public.models.booking import Booking
+from app.db.models import BookingGroup
+from app.db.models import Booking
 
 
 class BookingGroupRepository(Repository):
@@ -11,11 +11,13 @@ class BookingGroupRepository(Repository):
         *,
         idempotency_key: str,
         user_id: UUID,
+        location_id: UUID,
         source: str | None = None,
     ) -> BookingGroup:
         record = BookingGroup(
             idempotency_key=idempotency_key,
             user_id=user_id,
+            location_id=location_id,
             source=source,
         )
 

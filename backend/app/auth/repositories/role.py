@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.auth.models.role import Role
+from app.db.models import Role
 
 
 class RoleRepository(Repository):

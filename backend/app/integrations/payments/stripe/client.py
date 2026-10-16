@@ -65,8 +65,6 @@ class StripeClient:
             )
 
         return StripePrice(
-            id=price.id,
             amount_cents=price.unit_amount,
             currency=price.currency.upper(),
-            active=price.active,
         )

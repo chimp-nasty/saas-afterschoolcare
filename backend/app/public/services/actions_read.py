@@ -63,3 +63,4 @@ class ReadActionService:
 
         except Exception:
             self.db.rollback()
+            raise

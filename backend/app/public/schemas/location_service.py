@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.public.models.enums import CurrencyCode
+from app.public.schemas.enums import CurrencyCode
 
 
 class UpdateLocationServiceRequest(BaseModel):

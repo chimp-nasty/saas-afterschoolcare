@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.attendance_record import AttendanceRecord
+from app.db.models import AttendanceRecord
 
 
 class AttendanceRecordRepository(Repository):

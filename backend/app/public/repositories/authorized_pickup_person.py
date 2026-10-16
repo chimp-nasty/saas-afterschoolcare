@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.authorized_pickup_person import AuthorizedPickupPerson
+from app.db.models import AuthorizedPickupPerson
 
 
 class AuthorizedPickupPersonRepository(Repository):

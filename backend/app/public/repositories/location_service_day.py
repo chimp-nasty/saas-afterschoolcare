@@ -4,9 +4,9 @@ from datetime import date
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
-from app.public.models.location_service import LocationService
-from app.public.models.location_service_day import LocationServiceDay
-from app.public.models.service_type import ServiceType
+from app.db.models import LocationService
+from app.db.models import LocationServiceDay
+from app.db.models import ServiceType
 
 
 class LocationServiceDayRepository(Repository):
@@ -14,12 +14,14 @@ class LocationServiceDayRepository(Repository):
         self,
         *,
         location_service_id: UUID,
+        location_id: UUID,
         service_date,
         capacity: int,
         is_open: bool = True,
     ) -> LocationServiceDay:
         record = LocationServiceDay(
             location_service_id=location_service_id,
+            location_id=location_id,
             service_date=service_date,
             capacity=capacity,
             is_open=is_open,
@@ -62,7 +64,6 @@ class LocationServiceDayRepository(Repository):
                 LocationService.currency,
 
                 LocationService.stripe_product_id,
-                LocationService.stripe_price_id,
             )
             .join(
                 LocationService,

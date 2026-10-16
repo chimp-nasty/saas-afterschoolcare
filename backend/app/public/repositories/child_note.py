@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.child_note import ChildNote
+from app.db.models import ChildNote
 
 
 class ChildNoteRepository(Repository):

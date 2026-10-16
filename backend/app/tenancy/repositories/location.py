@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.tenancy.models.location import Location
+from app.db.models import Location
 
 
 class LocationRepository(Repository):

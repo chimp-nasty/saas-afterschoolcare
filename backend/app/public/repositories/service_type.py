@@ -1,5 +1,5 @@
 from app.db.repository import Repository
-from app.public.models.service_type import ServiceType
+from app.db.models import ServiceType
 
 
 class ServiceTypeRepository(Repository):

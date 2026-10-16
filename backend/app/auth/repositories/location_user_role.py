@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.auth.models.location_user_role import LocationUserRole
+from app.db.models import LocationUserRole
 
 
 class LocationUserRoleRepository(Repository):

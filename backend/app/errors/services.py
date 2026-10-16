@@ -7,5 +7,11 @@ from app.errors.base import ApplicationError
 
 class LocationServiceNotFoundError(ApplicationError):
     status_code = status.HTTP_404_NOT_FOUND
-    msg = "Location Service not found"
+    message = "Location Service not found"
+    result = "failed"
+
+
+class LocationServiceNotLinkedError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "This service is not linked to a Stripe product"
     result = "failed"

@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import func
 
 from app.db.repository import Repository
-from app.auth.models.password_reset_token import PasswordResetToken
+from app.db.models import PasswordResetToken
 
 
 class PasswordResetTokenRepository(Repository):

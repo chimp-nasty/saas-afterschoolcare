@@ -3,8 +3,8 @@ from uuid import UUID
 from sqlalchemy import Row
 
 from app.db.repository import Repository
-from app.public.models.location_service import LocationService
-from app.public.models.service_type import ServiceType
+from app.db.models import LocationService
+from app.db.models import ServiceType
 
 
 class LocationServiceRepository(Repository):
@@ -16,7 +16,6 @@ class LocationServiceRepository(Repository):
         current_price_cents: int,
         currency: str,
         stripe_product_id: str | None = None,
-        stripe_price_id: str | None = None,
         is_active: bool = True,
     ) -> LocationService:
         record = LocationService(
@@ -25,7 +24,6 @@ class LocationServiceRepository(Repository):
             current_price_cents=current_price_cents,
             currency=currency,
             stripe_product_id=stripe_product_id,
-            stripe_price_id=stripe_price_id,
             is_active=is_active,
         )
 

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.customer_kiosk_pin import CustomerKioskPin
+from app.db.models import CustomerKioskPin
 
 
 class CustomerKioskPinRepository(Repository):

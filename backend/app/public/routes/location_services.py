@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 
 from app.api.response import ApiResponse
@@ -20,7 +22,7 @@ router = APIRouter(
 
 @router.patch("/{location_service_id}/price")
 def update_price(
-    stripe_product_id: str,
+    location_service_id: UUID,
     body: UpdateLocationServiceRequest,
     ctx: TokenContext = Depends(
         require_permission(
@@ -36,7 +38,7 @@ def update_price(
     ),
 ) -> ApiResponse[None]:
     service.update_price(
-        stripe_product_id=stripe_product_id,
+        location_service_id=location_service_id,
         body=body
     )
 

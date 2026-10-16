@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.errors.children import ChildProfileNotFoundError
 from app.public.repositories.child_profile import ChildProfileRepository
 from app.public.schemas.children import (
     ChildResponse,
@@ -28,6 +29,9 @@ class ReadChildService:
         row = self.child_repository.get_with_context_by_id(
             id=id,
         )
+
+        if not row:
+            raise ChildProfileNotFoundError()
 
         return ChildResponse(
             id=row.id,

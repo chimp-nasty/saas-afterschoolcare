@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.errors.bookings import BookingNotFoundError
 from app.public.repositories.booking import BookingRepository
 from app.public.schemas.booking import (
     BookingResponse,
@@ -28,6 +29,9 @@ class ReadBookingService:
         row = self.booking_repository.get_with_context_by_id(
             id=id
         )
+
+        if not row:
+            raise BookingNotFoundError()
 
         return BookingResponse(
             id=row.id,

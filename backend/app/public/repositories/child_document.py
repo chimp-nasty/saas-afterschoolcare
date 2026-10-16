@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.child_document import ChildDocument
+from app.db.models import ChildDocument
 
 
 class ChildDocumentRepository(Repository):

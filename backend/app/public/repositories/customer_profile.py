@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.customer_profile import CustomerProfile
+from app.db.models import CustomerProfile
 from app.public.schemas.enums import AustralianState
 
 class CustomerProfileRepository(Repository):

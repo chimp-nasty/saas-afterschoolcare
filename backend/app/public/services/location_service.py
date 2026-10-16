@@ -1,7 +1,10 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
 
-from app.errors.services import LocationServiceNotFoundError
+from app.errors.services import (
+    LocationServiceNotFoundError,
+    LocationServiceNotLinkedError,
+)
 from app.integrations.payments.stripe.client import StripeClient
 from app.public.repositories.location_service import LocationServiceRepository
 from app.public.schemas.location_service import (
@@ -38,9 +41,12 @@ class LocationServiceService:
             if not location_service:
                 raise LocationServiceNotFoundError()
 
+            if not location_service.stripe_product_id:
+                raise LocationServiceNotLinkedError()
+
             # Create new stripe price
             stripe_price = self.stripe.create_price(
-                stripe_product_id=body.stripe_product_id,
+                stripe_product_id=location_service.stripe_product_id,
                 amount_cents=body.amount_cents,
                 currency=body.currency
             )

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.auth.models.user import User
+from app.db.models import User
 
 
 class UserRepository(Repository):

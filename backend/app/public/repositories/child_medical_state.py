@@ -1,8 +1,8 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.child_medical_state import ChildMedicalState
-from app.public.models.enums import MedicalReviewStatus
+from app.db.models import ChildMedicalState
+from app.public.schemas.enums import MedicalReviewStatus
 
 
 class ChildMedicalStateRepository(Repository):

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password, verify_password, hash_token
 from app.auth.jwt.tokens import TokenService
 from app.auth.jwt.context import PermissionMap
-from app.auth.models.user import User
+from app.db.models import User
 from app.auth.repositories.user import UserRepository
 from app.auth.repositories.permission import PermissionRepository
 from app.auth.repositories.location_user_role import LocationUserRoleRepository

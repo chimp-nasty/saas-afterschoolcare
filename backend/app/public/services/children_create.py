@@ -1,16 +1,19 @@
 from uuid import UUID
 
+from psycopg2.errors import UniqueViolation
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.errors.auth import UserNotFoundError
+from app.errors.children import ChildProfileCollisionError
 from app.errors.customer import (
     CustomerProfileIncompleteError,
     CustomerProfileNotFoundError,
 )
 
-from app.auth.models.user import User
-from app.public.models.customer_profile import CustomerProfile
-from app.public.models.enums import MedicalReviewStatus
+from app.db.models import User
+from app.db.models import CustomerProfile
+from app.public.schemas.enums import MedicalReviewStatus
 
 from app.public.repositories.child_profile import ChildProfileRepository
 from app.public.repositories.child_medical_state import ChildMedicalStateRepository
@@ -114,6 +117,15 @@ class CreateChildService:
             self.db.commit()
 
             return result
+
+        except IntegrityError as exc:
+            self.db.rollback()
+
+            # child_profile's only unique constraint is the duplicate-child one.
+            if isinstance(exc.orig, UniqueViolation):
+                raise ChildProfileCollisionError() from exc
+
+            raise
 
         except Exception:
             self.db.rollback()

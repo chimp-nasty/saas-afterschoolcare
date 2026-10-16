@@ -3,9 +3,9 @@ from uuid import UUID
 from sqlalchemy import select
 
 from app.db.repository import Repository
-from app.tenancy.models.location_branding import LocationBranding
-from app.tenancy.models.location import Location
-from app.tenancy.models.tenant import Tenant
+from app.db.models import LocationBranding
+from app.db.models import Location
+from app.db.models import Tenant
 
 
 class LocationBrandingRepository(Repository):

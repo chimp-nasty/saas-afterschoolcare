@@ -16,8 +16,8 @@ from app.public.schemas.booking import (
     CreateBookingResponse,
     BookingConflictRow,
 )
-from app.public.models.booking import Booking
-from app.public.models.booking_group import BookingGroup
+from app.db.models import Booking
+from app.db.models import BookingGroup
 from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
@@ -103,6 +103,7 @@ class CreateBookingService:
             booking_group = self.booking_group_repository.create(
                 idempotency_key=body.idempotency_key,
                 user_id=user_id,
+                location_id=location_id,
                 source=None,
             )
 

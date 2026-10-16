@@ -1,0 +1,424 @@
+-- Row level security.
+--
+-- The app sets app.user_id (and app.location_id) per transaction; see
+-- app/dependencies/rls.py. The helper functions below hold the shared
+-- predicates so each policy reads as a single rule.
+
+
+-- =====================================================
+-- HELPERS
+-- =====================================================
+
+-- The current user, or NULL when unset (unset means no access rather
+-- than a cast error).
+CREATE FUNCTION auth.current_user_id()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT NULLIF(current_setting('app.user_id', true), '')::uuid;
+$$;
+
+-- The current user holds any role at the location.
+CREATE FUNCTION auth.has_location_role(p_location_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        WHERE lur.user_id = auth.current_user_id()
+          AND lur.location_id = p_location_id
+    );
+$$;
+
+-- Staff and above at the row's location see every row there; customers
+-- at that location see only rows they own.
+CREATE FUNCTION auth.can_access_location_row(
+    p_location_id uuid,
+    p_owner_user_id uuid
+)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        WHERE lur.user_id = auth.current_user_id()
+          AND lur.location_id = p_location_id
+          AND (
+              r.code IN ('superadmin', 'admin', 'staff')
+              OR (
+                  r.code = 'customer'
+                  AND p_owner_user_id = auth.current_user_id()
+              )
+          )
+    );
+$$;
+
+-- The current user outranks the target user at a shared location
+-- (optionally a specific one): staff > customer, admin > staff/customer,
+-- superadmin > admin/staff/customer.
+CREATE FUNCTION auth.can_manage_user(
+    p_target_user_id uuid,
+    p_location_id uuid DEFAULT NULL
+)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles current_lur
+        JOIN auth.roles cr
+            ON cr.id = current_lur.role_id
+        JOIN auth.location_user_roles target_lur
+            ON target_lur.location_id = current_lur.location_id
+        JOIN auth.roles tr
+            ON tr.id = target_lur.role_id
+        WHERE current_lur.user_id = auth.current_user_id()
+          AND target_lur.user_id = p_target_user_id
+          AND (
+              p_location_id IS NULL
+              OR current_lur.location_id = p_location_id
+          )
+          AND (
+              (cr.code = 'staff' AND tr.code = 'customer')
+              OR (cr.code = 'admin' AND tr.code IN ('staff', 'customer'))
+              OR (cr.code = 'superadmin' AND tr.code IN ('admin', 'staff', 'customer'))
+          )
+    );
+$$;
+
+
+-- =====================================================
+-- TENANCY
+-- =====================================================
+
+ALTER TABLE tenancy.tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenants FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.locations FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.location_branding ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.location_branding FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY tenants_read_policy
+    ON tenancy.tenants FOR SELECT
+    USING (true);
+
+CREATE POLICY locations_read_policy
+    ON tenancy.locations FOR SELECT
+    USING (true);
+
+CREATE POLICY location_branding_read_policy
+    ON tenancy.location_branding FOR SELECT
+    USING (true);
+
+-- Superadmins of a tenant can manage it.
+CREATE POLICY tenants_write_policy
+    ON tenancy.tenants FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1
+            FROM auth.location_user_roles lur
+            JOIN auth.roles r
+                ON r.id = lur.role_id
+            JOIN tenancy.locations l
+                ON l.id = lur.location_id
+            WHERE lur.user_id = auth.current_user_id()
+              AND l.tenant_id = tenants.id
+              AND r.code = 'superadmin'
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1
+            FROM auth.location_user_roles lur
+            JOIN auth.roles r
+                ON r.id = lur.role_id
+            JOIN tenancy.locations l
+                ON l.id = lur.location_id
+            WHERE lur.user_id = auth.current_user_id()
+              AND l.tenant_id = tenants.id
+              AND r.code = 'superadmin'
+        )
+    );
+
+
+-- =====================================================
+-- AUTH
+-- =====================================================
+
+ALTER TABLE auth.roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.roles FORCE ROW LEVEL SECURITY;
+ALTER TABLE auth.permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.permissions FORCE ROW LEVEL SECURITY;
+ALTER TABLE auth.role_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.role_permissions FORCE ROW LEVEL SECURITY;
+ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.users FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY roles_scope_policy
+    ON auth.roles FOR ALL
+    USING (true) WITH CHECK (true);
+
+CREATE POLICY permissions_scope_policy
+    ON auth.permissions FOR ALL
+    USING (true) WITH CHECK (true);
+
+CREATE POLICY role_permissions_scope_policy
+    ON auth.role_permissions FOR ALL
+    USING (true) WITH CHECK (true);
+
+-- Users see themselves and the users they outrank.
+CREATE POLICY users_scope_policy
+    ON auth.users FOR SELECT
+    USING (
+        id = auth.current_user_id()
+        OR auth.can_manage_user(users.id)
+    );
+
+-- Login looks a user up by email before app.user_id is known.
+CREATE POLICY users_login_policy
+    ON auth.users FOR SELECT
+    USING (
+        email = NULLIF(current_setting('app.login_email', true), '')
+    );
+
+CREATE POLICY users_update_policy
+    ON auth.users FOR UPDATE
+    USING (
+        id = auth.current_user_id()
+        OR auth.can_manage_user(users.id)
+    )
+    WITH CHECK (
+        id = auth.current_user_id()
+        OR auth.can_manage_user(users.id)
+    );
+
+CREATE POLICY users_delete_policy
+    ON auth.users FOR DELETE
+    USING (
+        id = auth.current_user_id()
+        OR auth.can_manage_user(users.id)
+    );
+
+-- Registration.
+CREATE POLICY users_insert_scope_policy
+    ON auth.users FOR INSERT
+    WITH CHECK (true);
+
+
+-- =====================================================
+-- PUBLIC
+-- =====================================================
+
+ALTER TABLE public.service_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.service_types FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_profile FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_kiosk_pins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customer_kiosk_pins FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_groups FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.location_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.location_services FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.location_service_days ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.location_service_days FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.location_kiosk_devices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.location_kiosk_devices FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.child_profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.child_profile FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_attempts FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.refunds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.refunds FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.child_medical_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.child_medical_state FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.actions FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.child_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.child_notes FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.child_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.child_documents FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.authorized_pickup_persons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.authorized_pickup_persons FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_records FORCE ROW LEVEL SECURITY;
+
+-- Global
+CREATE POLICY service_types_scope_policy
+    ON public.service_types FOR ALL
+    USING (true) WITH CHECK (true);
+
+-- User-owned
+CREATE POLICY customer_kiosk_pins_scope_policy
+    ON public.customer_kiosk_pins FOR ALL
+    USING (user_id = auth.current_user_id())
+    WITH CHECK (user_id = auth.current_user_id());
+
+CREATE POLICY booking_groups_scope_policy
+    ON public.booking_groups FOR ALL
+    USING (user_id = auth.current_user_id())
+    WITH CHECK (user_id = auth.current_user_id());
+
+-- Location-scoped: anyone with a role at the location
+CREATE POLICY location_services_scope_policy
+    ON public.location_services FOR ALL
+    USING (auth.has_location_role(location_id))
+    WITH CHECK (auth.has_location_role(location_id));
+
+CREATE POLICY location_kiosk_devices_scope_policy
+    ON public.location_kiosk_devices FOR ALL
+    USING (auth.has_location_role(location_id))
+    WITH CHECK (auth.has_location_role(location_id));
+
+CREATE POLICY location_service_days_scope_policy
+    ON public.location_service_days FOR ALL
+    USING (auth.has_location_role(location_id))
+    WITH CHECK (auth.has_location_role(location_id));
+
+-- User + location scoped
+CREATE POLICY child_profile_scope_policy
+    ON public.child_profile FOR ALL
+    USING (auth.can_access_location_row(location_id, user_id))
+    WITH CHECK (auth.can_access_location_row(location_id, user_id));
+
+CREATE POLICY bookings_scope_policy
+    ON public.bookings FOR ALL
+    USING (auth.can_access_location_row(location_id, user_id))
+    WITH CHECK (auth.can_access_location_row(location_id, user_id));
+
+CREATE POLICY payment_attempts_scope_policy
+    ON public.payment_attempts FOR ALL
+    USING (auth.can_access_location_row(location_id, user_id))
+    WITH CHECK (auth.can_access_location_row(location_id, user_id));
+
+CREATE POLICY refunds_scope_policy
+    ON public.refunds FOR ALL
+    USING (auth.can_access_location_row(location_id, user_id))
+    WITH CHECK (auth.can_access_location_row(location_id, user_id));
+
+-- Inherited from users
+CREATE POLICY customer_profile_scope_policy
+    ON public.customer_profile FOR ALL
+    USING (
+        user_id = auth.current_user_id()
+        OR auth.can_manage_user(user_id)
+    )
+    WITH CHECK (
+        user_id = auth.current_user_id()
+        OR auth.can_manage_user(user_id)
+    );
+
+-- Own actions at locations you belong to, plus actions of users you
+-- outrank at the action's location.
+CREATE POLICY actions_scope_policy
+    ON public.actions FOR ALL
+    USING (
+        (
+            user_id = auth.current_user_id()
+            AND auth.has_location_role(location_id)
+        )
+        OR auth.can_manage_user(user_id, location_id)
+    )
+    WITH CHECK (
+        (
+            user_id = auth.current_user_id()
+            AND auth.has_location_role(location_id)
+        )
+        OR auth.can_manage_user(user_id, location_id)
+    );
+
+-- Inherited from child_profile
+CREATE POLICY child_medical_state_scope_policy
+    ON public.child_medical_state FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_medical_state.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_medical_state.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    );
+
+CREATE POLICY child_notes_scope_policy
+    ON public.child_notes FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_notes.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_notes.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    );
+
+CREATE POLICY child_documents_scope_policy
+    ON public.child_documents FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_documents.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_documents.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    );
+
+CREATE POLICY authorized_pickup_persons_scope_policy
+    ON public.authorized_pickup_persons FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = authorized_pickup_persons.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = authorized_pickup_persons.child_id
+              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+        )
+    );
+
+-- Inherited from bookings
+CREATE POLICY attendance_records_scope_policy
+    ON public.attendance_records FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.bookings b
+            WHERE b.id = attendance_records.booking_id
+              AND auth.can_access_location_row(b.location_id, b.user_id)
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.bookings b
+            WHERE b.id = attendance_records.booking_id
+              AND auth.can_access_location_row(b.location_id, b.user_id)
+        )
+    );

@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.refund import Refund
+from app.db.models import Refund
 
 
 class RefundRepository(Repository):

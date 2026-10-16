@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Regenerates app/db/models.py from the database (migrations/migrator.py).
+sqlacodegen==4.0.4

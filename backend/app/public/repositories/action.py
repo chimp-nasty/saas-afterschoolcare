@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import update
 
 from app.db.repository import Repository
-from app.public.models.action import Action
+from app.db.models import Action
 
 
 class ActionRepository(Repository):
@@ -12,6 +12,7 @@ class ActionRepository(Repository):
         self,
         *,
         user_id: UUID,
+        location_id: UUID,
         created_by_user_id: UUID,
         target: str,
         title: str,
@@ -20,6 +21,7 @@ class ActionRepository(Repository):
     ) -> Action:
         action = Action(
             user_id=user_id,
+            location_id=location_id,
             child_id=child_id,
             target=target,
             title=title,

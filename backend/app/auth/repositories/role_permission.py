@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.auth.models.role_permission import RolePermission
+from app.db.models import RolePermission
 
 
 class RolePermissionRepository(Repository):

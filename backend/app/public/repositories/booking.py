@@ -5,12 +5,12 @@ from sqlalchemy import tuple_
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
-from app.public.models.booking import Booking
-from app.public.models.child_profile import ChildProfile
-from app.public.models.location_service_day import LocationServiceDay
-from app.public.models.location_service import LocationService
-from app.public.models.service_type import ServiceType
-from app.public.models.enums import BookingStatus, PaymentStatus
+from app.db.models import Booking
+from app.db.models import ChildProfile
+from app.db.models import LocationServiceDay
+from app.db.models import LocationService
+from app.db.models import ServiceType
+from app.public.schemas.enums import BookingStatus, PaymentStatus
 
 
 class BookingRepository(Repository):

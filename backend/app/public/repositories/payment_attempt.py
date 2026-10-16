@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.payment_attempt import PaymentAttempt
+from app.db.models import PaymentAttempt
 
 
 class PaymentAttemptRepository(Repository):

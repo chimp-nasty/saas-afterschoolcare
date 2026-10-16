@@ -66,3 +66,9 @@ class BookingGroupAlreadyPaidError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "Booking group is already marked as paid"
     result = "denied"
+
+
+class BookingNotFoundError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Booking not found"
+    result = "failed"

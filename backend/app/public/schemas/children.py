@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.public.models.enums import MedicalReviewStatus
+from app.public.schemas.enums import MedicalReviewStatus
 
 
 class ChildResponse(BaseModel):

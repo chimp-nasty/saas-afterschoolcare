@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.public.models.location_kiosk_device import LocationKioskDevice
+from app.db.models import LocationKioskDevice
 
 
 class LocationKioskDeviceRepository(Repository):
