@@ -19,21 +19,23 @@ class Repository:
         self,
         *,
         db: Session,
-        pagination: Pagination | None = None,
     ):
         self.db = db
-        self.pagination = pagination
 
-    def _all(self, query):
-        if self.pagination is None:
+    def _all(
+        self,
+        query,
+        pagination: Pagination | None = None,
+    ):
+        if pagination is None:
             return query.all()
 
         return (
             query
             .offset(
-                (self.pagination.page - 1)
-                * self.pagination.limit
+                (pagination.page - 1)
+                * pagination.limit
             )
-            .limit(self.pagination.limit)
+            .limit(pagination.limit)
             .all()
         )

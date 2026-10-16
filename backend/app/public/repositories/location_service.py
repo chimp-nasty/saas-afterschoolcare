@@ -3,8 +3,7 @@ from uuid import UUID
 from sqlalchemy import Row
 
 from app.db.repository import Repository
-from app.db.models import LocationService
-from app.db.models import ServiceType
+from app.db.models import LocationService, ServiceType
 
 
 class LocationServiceRepository(Repository):

@@ -3,6 +3,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
+from app.db.repository import Pagination
+
 
 class BookingSelection(BaseModel):
     child_id: UUID
@@ -28,7 +30,9 @@ class BookingConflictRow(BaseModel):
     location_service_date: date
 
 
-class ListBookingsFilterRequest(BaseModel):
+# Inherits page/limit: FastAPI only expands a query model when it's the
+# route's only query parameter.
+class ListBookingsFilterRequest(Pagination):
     booking_status: list[str] | None = None
     payment_status: list[str] | None = None
     date_from: date | None = None

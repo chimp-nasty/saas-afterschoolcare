@@ -4,8 +4,7 @@ from datetime import date
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
-from app.db.models import ChildProfile
-from app.db.models import ChildMedicalState
+from app.db.models import ChildMedicalState, ChildProfile
 
 
 class ChildProfileRepository(Repository):

@@ -4,11 +4,7 @@ from typing import Callable, TypeVar
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.db.repository import (
-    Pagination,
-    Repository,
-)
-from app.dependencies.pg import get_pagination
+from app.db.repository import Repository
 
 
 ServiceT = TypeVar("ServiceT")
@@ -21,9 +17,6 @@ def get_service(
 ):
     def dependency(
         db: Session = Depends(db_dependency),
-        pagination: Pagination = Depends(
-            get_pagination
-        ),
     ) -> ServiceT:
         kwargs = {
             "db": db,
@@ -48,7 +41,6 @@ def get_service(
             ):
                 kwargs[name] = dependency_type(
                     db=db,
-                    pagination=pagination,
                 )
 
         return service(**kwargs)

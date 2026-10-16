@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
+from app.db.transaction import transactional
 from app.errors.bookings import (
-    BookingCollisionError,
     MultipleBookingServicesError,
     BookingGroupAlreadyPaidError,
     BookingCapacityCollisionError,
@@ -16,8 +16,7 @@ from app.public.schemas.booking import (
     CreateBookingResponse,
     BookingConflictRow,
 )
-from app.db.models import Booking
-from app.db.models import BookingGroup
+from app.db.models import Booking, BookingGroup
 from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
@@ -54,6 +53,7 @@ class CreateBookingService:
         self.payment_attempt_repository = payment_attempt_repository
         self.location_service_repository = location_service_repository
 
+    @transactional
     def create(
         self,
         *,
@@ -61,84 +61,69 @@ class CreateBookingService:
         user_id: UUID,
         location_id: UUID
     ) -> CreateBookingResponse:
-        try:
-            # Resolve and lock requested service days
-            resolved_service_days = self._resolve_service_days(
-                body=body,
-            )
+        # Resolve and lock requested service days
+        resolved_service_days = self._resolve_service_days(
+            body=body,
+        )
 
-            # Resume existing booking group
-            pending_booking_group = self._resolve_pending_booking(
-                idempotency_key=body.idempotency_key,
-            )
+        # Resume existing booking group
+        pending_booking_group = self._resolve_pending_booking(
+            idempotency_key=body.idempotency_key,
+        )
 
-            if pending_booking_group:
-                return CreateBookingResponse(
-                    idempotency_key=(
-                        pending_booking_group.booking_group.idempotency_key
-                    ),
-                    booking_group_id=pending_booking_group.booking_group.id,
-                    amount=pending_booking_group.amount,
-                )
-
-            # Validate booking availability
-            self._validate_capacity(
-                body=body,
-                resolved_service_days=resolved_service_days,
-            )
-
-            booking_conflicts = self.find_conflicts(
-                body=body,
-            )
-
-            if booking_conflicts:
-                raise BookingCollisionError(
-                    conflicts=booking_conflicts,
-                )
-
-            # Resolve price only after local validation succeeds
-            pricing = resolved_service_days[0]
-
-            # Create booking group
-            booking_group = self.booking_group_repository.create(
-                idempotency_key=body.idempotency_key,
-                user_id=user_id,
-                location_id=location_id,
-                source=None,
-            )
-
-            # Create bookings
-            bookings: list[Booking] = []
-
-            for selection in body.bookings:
-                for location_service_day_id in selection.location_service_days:
-                    bookings.append(
-                        self.booking_repository.create(
-                            location_id=location_id,
-                            user_id=user_id,
-                            booking_group_id=booking_group.id,
-                            location_service_day_id=location_service_day_id,
-                            child_id=selection.child_id,
-                            price_snapshot_cents=pricing.current_price_cents,
-                            currency=pricing.currency,
-                            booking_status="PENDING",
-                        )
-                    )
-
-            self.db.commit()
-
+        if pending_booking_group:
             return CreateBookingResponse(
-                idempotency_key=booking_group.idempotency_key,
-                booking_group_id=booking_group.id,
-                amount=sum(
-                    booking.price_snapshot_cents
-                    for booking in bookings
+                idempotency_key=(
+                    pending_booking_group.booking_group.idempotency_key
                 ),
+                booking_group_id=pending_booking_group.booking_group.id,
+                amount=pending_booking_group.amount,
             )
 
-        except Exception:
-            self.db.rollback()
-            raise
+        # Validate booking availability. Duplicate bookings, and children
+        # or days that don't belong to this user/location, are rejected by
+        # the database (app/errors/database.py).
+        self._validate_capacity(
+            body=body,
+            resolved_service_days=resolved_service_days,
+        )
+
+        pricing = resolved_service_days[0]
+
+        # Create booking group
+        booking_group = self.booking_group_repository.create(
+            idempotency_key=body.idempotency_key,
+            user_id=user_id,
+            location_id=location_id,
+            source=None,
+        )
+
+        # Create bookings
+        bookings: list[Booking] = []
+
+        for selection in body.bookings:
+            for location_service_day_id in selection.location_service_days:
+                bookings.append(
+                    self.booking_repository.create(
+                        location_id=location_id,
+                        user_id=user_id,
+                        booking_group_id=booking_group.id,
+                        location_service_day_id=location_service_day_id,
+                        child_id=selection.child_id,
+                        price_snapshot_cents=pricing.current_price_cents,
+                        currency=pricing.currency,
+                        booking_status="PENDING",
+                    )
+                )
+
+        return CreateBookingResponse(
+            idempotency_key=booking_group.idempotency_key,
+            booking_group_id=booking_group.id,
+            amount=sum(
+                booking.price_snapshot_cents
+                for booking in bookings
+            ),
+        )
 
     def find_conflicts(
         self,
@@ -159,11 +144,9 @@ class CreateBookingService:
         )
 
         return [
-            BookingConflictRow(
-                child_id=conflict.child_id,
-                child_name=f"{conflict.first_name} {conflict.last_name}",
-                location_service_day_id=conflict.location_service_day_id,
-                service_date=conflict.service_date,
+            BookingConflictRow.model_validate(
+                conflict,
+                from_attributes=True,
             )
             for conflict in conflicts
         ]

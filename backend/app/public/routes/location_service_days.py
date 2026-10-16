@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
@@ -20,7 +22,7 @@ router = APIRouter(
 
 @router.get("/")
 def list_location_service_days(
-    filters: ListLocationServiceDaysFilterRequest = Depends(),
+    filters: Annotated[ListLocationServiceDaysFilterRequest, Query()],
     ctx: TokenContext = Depends(
         require_permission(
             resource="location_service_days",

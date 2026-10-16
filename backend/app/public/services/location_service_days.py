@@ -35,14 +35,9 @@ class LocationServiceDayService:
         )
 
         return [
-            LocationServiceDayTableResponse(
-                id=row.id,
-                location_service_id=row.location_service_id,
-                service_type_id=row.service_type_id,
-                service_name=row.service_name,
-                service_date=row.service_date,
-                is_open=row.is_open,
-                capacity=row.capacity,
+            LocationServiceDayTableResponse.model_validate(
+                row,
+                from_attributes=True,
             )
             for row in rows
         ]

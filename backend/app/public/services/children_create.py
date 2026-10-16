@@ -1,18 +1,15 @@
 from uuid import UUID
 
-from psycopg2.errors import UniqueViolation
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.db.transaction import transactional
 from app.errors.auth import UserNotFoundError
-from app.errors.children import ChildProfileCollisionError
 from app.errors.customer import (
     CustomerProfileIncompleteError,
     CustomerProfileNotFoundError,
 )
 
-from app.db.models import User
-from app.db.models import CustomerProfile
+from app.db.models import CustomerProfile, User
 from app.public.schemas.enums import MedicalReviewStatus
 
 from app.public.repositories.child_profile import ChildProfileRepository
@@ -45,6 +42,7 @@ class CreateChildService:
         self.customer_profile_repository = customer_profile_repository
         self.user_repository = user_repository
 
+    @transactional
     def create(
         self,
         *,
@@ -52,84 +50,51 @@ class CreateChildService:
         user_id: UUID,
         body: CreateChildRequest
     ) -> ChildResponse:
-        try:
-            # Validate Profile completeness
-            user, profile = self._validate_customer(user_id=user_id)
+        # Validate Profile completeness
+        user, profile = self._validate_customer(user_id=user_id)
 
-            # Create profile
-            child = self.child_repository.create(
-                location_id=location_id,
-                user_id=user_id,
+        # Create profile. A duplicate active child is rejected by the
+        # database (uq_child_profile_active_identity).
+        child = self.child_repository.create(
+            location_id=location_id,
+            user_id=user_id,
 
-                first_name=body.first_name,
-                last_name=body.last_name,
-                dob=body.dob,
-                medical_info=body.medical_info,
-                allergy_info=body.allergy_info,
-                medication_info=body.medication_info
-            )
+            first_name=body.first_name,
+            last_name=body.last_name,
+            dob=body.dob,
+            medical_info=body.medical_info,
+            allergy_info=body.allergy_info,
+            medication_info=body.medication_info
+        )
 
-            # Create medical state
-            review_status = (
-                MedicalReviewStatus.PENDING
-                if child.medical_info or child.allergy_info or child.medication_info
-                else MedicalReviewStatus.NOT_REQUIRED
-            )
+        # Create medical state
+        review_status = (
+            MedicalReviewStatus.PENDING
+            if child.medical_info or child.allergy_info or child.medication_info
+            else MedicalReviewStatus.NOT_REQUIRED
+        )
 
-            self.child_medical_state_repository.create(
-                child_id=child.id,
-                review_status=review_status
-            )
+        self.child_medical_state_repository.create(
+            child_id=child.id,
+            review_status=review_status
+        )
 
-            # Create auth pickup for user
-            self.authorized_pickup_repository.create(
-                child_id=child.id,
-                user_id=user_id,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                phone=profile.phone,
-                relation="Guardian",
-            )
+        # Create auth pickup for user
+        self.authorized_pickup_repository.create(
+            child_id=child.id,
+            user_id=user_id,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            phone=profile.phone,
+            relation="Guardian",
+        )
 
-            self.db.flush()
-            self.db.refresh(child)
+        self.db.flush()
 
-            result = ChildResponse(
-                id=child.id,
-                location_id=child.location_id,
-                user_id=child.user_id,
-
-                first_name=child.first_name,
-                last_name=child.last_name,
-                dob=child.dob,
-
-                medical_info=child.medical_info,
-                allergy_info=child.allergy_info,
-                medication_info=child.medication_info,
-
-                is_active=child.is_active,
-                review_status=review_status,
-
-                created_at=child.created_at,
-                updated_at=child.updated_at,
-            )
-
-            self.db.commit()
-
-            return result
-
-        except IntegrityError as exc:
-            self.db.rollback()
-
-            # child_profile's only unique constraint is the duplicate-child one.
-            if isinstance(exc.orig, UniqueViolation):
-                raise ChildProfileCollisionError() from exc
-
-            raise
-
-        except Exception:
-            self.db.rollback()
-            raise
+        return ChildResponse.model_validate(
+            self.child_repository.get_with_context_by_id(id=child.id),
+            from_attributes=True,
+        )
 
     def _validate_customer(
         self,

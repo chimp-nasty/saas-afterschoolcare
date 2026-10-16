@@ -1,6 +1,7 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
 
+from app.db.transaction import transactional
 from app.errors.services import (
     LocationServiceNotFoundError,
     LocationServiceNotLinkedError,
@@ -24,45 +25,39 @@ class LocationServiceService:
         self.location_service_repository = location_service_repository
         self.stripe = StripeClient()
 
+    @transactional
     def update_price(
         self,
         *,
         location_service_id: UUID,
         body: UpdateLocationServiceRequest
     ) -> None:
-        try:
-            # Find valid service
-            location_service = (
-                self.location_service_repository.get_by_id(
-                    id=location_service_id
-                )
+        # Find valid service
+        location_service = (
+            self.location_service_repository.get_by_id(
+                id=location_service_id
             )
+        )
 
-            if not location_service:
-                raise LocationServiceNotFoundError()
+        if not location_service:
+            raise LocationServiceNotFoundError()
 
-            if not location_service.stripe_product_id:
-                raise LocationServiceNotLinkedError()
+        if not location_service.stripe_product_id:
+            raise LocationServiceNotLinkedError()
 
-            # Create new stripe price
-            stripe_price = self.stripe.create_price(
-                stripe_product_id=location_service.stripe_product_id,
-                amount_cents=body.amount_cents,
-                currency=body.currency
-            )
+        # Create new stripe price
+        stripe_price = self.stripe.create_price(
+            stripe_product_id=location_service.stripe_product_id,
+            amount_cents=body.amount_cents,
+            currency=body.currency
+        )
 
-            # Update DB
-            self.location_service_repository.update_current_price_cents(
-                location_service=location_service,
-                amount_cents=stripe_price.amount_cents,
-                currency=stripe_price.currency
-            )
-
-            self.db.commit()
-        
-        except Exception:
-            self.db.rollback()
-            raise
+        # Update DB
+        self.location_service_repository.update_current_price_cents(
+            location_service=location_service,
+            amount_cents=stripe_price.amount_cents,
+            currency=stripe_price.currency
+        )
 
     def list_all(
         self,
@@ -72,12 +67,9 @@ class LocationServiceService:
         )
 
         return [
-            LocationServiceSelectionResponse(
-                id=row.id,
-                service_type_id=row.service_type_id,
-                service_name=row.service_name,
-                current_price_cents=row.current_price_cents,
-                currency=row.currency,
+            LocationServiceSelectionResponse.model_validate(
+                row,
+                from_attributes=True,
             )
             for row in rows
         ]

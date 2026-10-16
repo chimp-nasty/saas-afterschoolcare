@@ -1,6 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
@@ -52,7 +54,7 @@ def get_child(
 
 @router.get("/")
 def list_children(
-    filters: ListChildrenFilterRequest = Depends(),
+    filters: Annotated[ListChildrenFilterRequest, Query()],
     ctx: TokenContext = Depends(
         require_permission(
             resource="child_profile",

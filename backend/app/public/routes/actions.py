@@ -1,6 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
@@ -19,7 +21,7 @@ router = APIRouter(
 
 @router.get("/")
 def list_actions(
-    filters: ActionFilters = Depends(),
+    filters: Annotated[ActionFilters, Query()],
     ctx: TokenContext = Depends(
         require_permission(
             resource="actions",
@@ -34,7 +36,8 @@ def list_actions(
     ),
 ) -> ApiResponse[list[ActionResponse]]:
     result = service.list(
-        filters=filters
+        filters=filters,
+        pagination=filters,
     )
 
     return ApiResponse(

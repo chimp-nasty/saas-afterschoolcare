@@ -18,9 +18,10 @@ class CustomerProfileIncompleteError(ApplicationError):
         *,
         missing_fields: list[str],
     ):
-        self.message = self._build_message(missing_fields)
         self.missing_fields = missing_fields
-        super().__init__()
+        super().__init__(
+            message=self._build_message(missing_fields)
+        )
 
     @staticmethod
     def _build_message(

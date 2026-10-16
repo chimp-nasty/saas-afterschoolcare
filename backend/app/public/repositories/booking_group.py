@@ -1,8 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.db.models import BookingGroup
-from app.db.models import Booking
+from app.db.models import Booking, BookingGroup
 
 
 class BookingGroupRepository(Repository):

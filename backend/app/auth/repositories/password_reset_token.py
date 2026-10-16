@@ -51,3 +51,10 @@ class PasswordResetTokenRepository(Repository):
             .filter(PasswordResetToken.expires_at > func.now())
             .first()
         )
+
+    def mark_used(
+        self,
+        *,
+        token: PasswordResetToken,
+    ) -> None:
+        token.used_at = func.now()

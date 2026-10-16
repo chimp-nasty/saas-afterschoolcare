@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password, verify_password, hash_token
 from app.auth.jwt.tokens import TokenService
 from app.auth.jwt.context import PermissionMap
-from app.db.models import User
+from app.db.transaction import transactional
 from app.auth.repositories.user import UserRepository
 from app.auth.repositories.permission import PermissionRepository
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
@@ -44,7 +44,8 @@ class AuthService:
         self.location_user_roles = location_user_roles
         self.password_reset_tokens = password_reset_tokens
         self.rls_context = rls_context
-        
+
+    @transactional
     def login(
         self,
         *,
@@ -57,78 +58,69 @@ class AuthService:
         The token contains the user's roles and effective permissions
         for the requested location.
         """
-        try:
-            self.rls_context.set_login_email(
-                email=body.email,
-            )
-            
-            user = self.users.get_by_email(
-                email=body.email,
-            )
+        self.rls_context.set_login_email(
+            email=body.email,
+        )
 
-            if not user:
-                raise AuthenticationFailedError()
+        user = self.users.get_by_email(
+            email=body.email,
+        )
 
-            if not verify_password(
-                password=body.password,
-                hashed_password=user.password_hash,
-            ):
-                raise AuthenticationFailedError()
+        if not user:
+            raise AuthenticationFailedError()
 
-            self.rls_context.set_user_id(
-                user_id=user.id,
-            )
-            
-            location_roles = (
-                self.location_user_roles.list_roles_by_user_and_location(
-                    user_id=user.id,
-                    location_id=location_id,
-                )
-            )
+        if not verify_password(
+            password=body.password,
+            hashed_password=user.password_hash,
+        ):
+            raise AuthenticationFailedError()
 
-            if not location_roles:
-                raise AuthenticationFailedError()
+        self.rls_context.set_user_id(
+            user_id=user.id,
+        )
 
-            role_ids = [
-                location_role.role_id
-                for location_role in location_roles
-            ]
-
-            roles = [
-                role.code
-                for role in self.roles.list_by_ids(
-                    role_ids=role_ids,
-                )
-            ]
-
-            permissions = self.permissions.list_by_role_ids(
-                role_ids=role_ids,
-            )
-
-            permission_map = self._build_permission_map(
-                permissions=permissions,
-            )
-
-            self.users.update_last_login(
-                user=user,
-            )
-
-            access_token = TokenService.create_access_token(
+        location_roles = (
+            self.location_user_roles.list_roles_by_user_and_location(
                 user_id=user.id,
                 location_id=location_id,
-                roles=roles,
-                permissions=permission_map,
-                email=user.email,
-                first_name=user.first_name,
             )
+        )
 
-            self.db.commit()
+        if not location_roles:
+            raise AuthenticationFailedError()
 
-            return access_token
+        role_ids = [
+            location_role.role_id
+            for location_role in location_roles
+        ]
 
-        except Exception:
-            self.db.rollback()
-            raise
+        roles = [
+            role.code
+            for role in self.roles.list_by_ids(
+                role_ids=role_ids,
+            )
+        ]
+
+        permissions = self.permissions.list_by_role_ids(
+            role_ids=role_ids,
+        )
+
+        permission_map = self._build_permission_map(
+            permissions=permissions,
+        )
+
+        self.users.update_last_login(
+            user=user,
+        )
+
+        return TokenService.create_access_token(
+            user_id=user.id,
+            location_id=location_id,
+            roles=roles,
+            permissions=permission_map,
+            email=user.email,
+            first_name=user.first_name,
+        )
 
     def _build_permission_map(
         self,
@@ -149,7 +141,8 @@ class AuthService:
             resource: frozenset(actions)
             for resource, actions in permission_map.items()
         }
-            
+
+    @transactional
     def reset_password(
         self,
         *,
@@ -161,40 +154,41 @@ class AuthService:
         Validates the reset token, resolves the associated user,
         updates the password, and marks the token as used.
         """
-        try:
-            token_hash = hash_token(
-                token=body.token
-            )
-            
-            reset_token = self.password_reset_tokens.get_valid_by_token_hash(
-                token_hash=token_hash,
-            )
+        token_hash = hash_token(
+            token=body.token
+        )
 
-            if not reset_token:
-                raise InvalidPasswordResetError()
-            
-            user = self.users.get_by_id(
-                id=reset_token.user_id,
-            )
+        reset_token = self.password_reset_tokens.get_valid_by_token_hash(
+            token_hash=token_hash,
+        )
 
-            if not user:
-                raise InvalidPasswordResetError()
-        
-            password_hash = hash_password(
-                password=body.password
-            )
-            
-            self.users.update_password_hash(
-                user=user,
-                password_hash=password_hash
-            )
-            
-            self.db.commit()
-            
-        except Exception:
-            self.db.rollback()
-            raise
-        
+        if not reset_token:
+            raise InvalidPasswordResetError()
+
+        # RLS only shows a user their own row, so act as the token's user.
+        # The token's foreign key guarantees the user exists.
+        self.rls_context.set_user_id(
+            user_id=reset_token.user_id,
+        )
+
+        user = self.users.get_by_id(
+            id=reset_token.user_id,
+        )
+
+        password_hash = hash_password(
+            password=body.password
+        )
+
+        self.users.update_password_hash(
+            user=user,
+            password_hash=password_hash
+        )
+
+        self.password_reset_tokens.mark_used(
+            token=reset_token,
+        )
+
+    @transactional
     def request_password_reset(
         self,
         *,
@@ -206,31 +200,29 @@ class AuthService:
         Stores only the hashed token and leaves delivery of the raw
         token to the email integration.
         """
-        try:
-            user = self.users.get_by_email(
-                email=body.email
-            )
-            
-            if not user:
-                return
-            
-            raw_token = token_urlsafe(32)
-            
-            token_hash = hash_token(
-                token=raw_token,
-            )
-            
-            self.password_reset_tokens.create(
-                user_id=user.id,
-                token_hash=token_hash,
-                expires_at=(
-                    datetime.now(timezone.utc)
-                    + timedelta(minutes=30)
-                ),
-            )
-            
-            self.db.commit()
-        
-        except Exception:
-            self.db.rollback()
-            raise
+        # RLS hides users until the lookup email is set (see login).
+        self.rls_context.set_login_email(
+            email=body.email,
+        )
+
+        user = self.users.get_by_email(
+            email=body.email
+        )
+
+        if not user:
+            return
+
+        raw_token = token_urlsafe(32)
+
+        token_hash = hash_token(
+            token=raw_token,
+        )
+
+        self.password_reset_tokens.create(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=(
+                datetime.now(timezone.utc)
+                + timedelta(minutes=30)
+            ),
+        )

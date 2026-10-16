@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.db.repository import Pagination
+
 
 class ActionResponse(BaseModel):
     id: UUID
@@ -23,7 +25,9 @@ class ActionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ActionFilters(BaseModel):
+# Inherits page/limit: FastAPI only expands a query model when it's the
+# route's only query parameter.
+class ActionFilters(Pagination):
     cited: bool | None = None
     user_id: UUID | None = None
     target: str | None = None

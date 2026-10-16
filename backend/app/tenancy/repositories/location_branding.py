@@ -3,9 +3,11 @@ from uuid import UUID
 from sqlalchemy import select
 
 from app.db.repository import Repository
-from app.db.models import LocationBranding
-from app.db.models import Location
-from app.db.models import Tenant
+from app.db.models import (
+    Location,
+    LocationBranding,
+    Tenant,
+)
 
 
 class LocationBrandingRepository(Repository):

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import update
 
-from app.db.repository import Repository
+from app.db.repository import Pagination, Repository
 from app.db.models import Action
 
 
@@ -74,6 +74,7 @@ class ActionRepository(Repository):
         cited: bool | None = None,
         user_id: UUID | None = None,
         target: str | None = None,
+        pagination: Pagination | None = None,
     ) -> list[Action]:
         query = self.db.query(Action)
 
@@ -101,4 +102,4 @@ class ActionRepository(Repository):
             Action.id.desc(),
         )
 
-        return self._all(query)
+        return self._all(query, pagination)

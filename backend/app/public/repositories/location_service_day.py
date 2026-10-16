@@ -4,9 +4,11 @@ from datetime import date
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
-from app.db.models import LocationService
-from app.db.models import LocationServiceDay
-from app.db.models import ServiceType
+from app.db.models import (
+    LocationService,
+    LocationServiceDay,
+    ServiceType,
+)
 
 
 class LocationServiceDayRepository(Repository):

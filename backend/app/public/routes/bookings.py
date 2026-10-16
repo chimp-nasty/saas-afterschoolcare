@@ -1,6 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
@@ -110,7 +112,7 @@ def get_booking(
 
 @router.get("/")
 def list_bookings(
-    filters: ListBookingsFilterRequest = Depends(),
+    filters: Annotated[ListBookingsFilterRequest, Query()],
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
@@ -125,7 +127,8 @@ def list_bookings(
     ),
 ) -> ApiResponse[list[BookingTableResponse]]:
     result = service.list_with_filters(
-        filters=filters
+        filters=filters,
+        pagination=filters,
     )
 
     return ApiResponse(

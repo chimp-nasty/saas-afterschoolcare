@@ -1,16 +1,26 @@
 from uuid import UUID
 from datetime import date
 
-from sqlalchemy import tuple_
+from sqlalchemy import func, tuple_
 from sqlalchemy.engine import Row
 
-from app.db.repository import Repository
-from app.db.models import Booking
-from app.db.models import ChildProfile
-from app.db.models import LocationServiceDay
-from app.db.models import LocationService
-from app.db.models import ServiceType
+from app.db.repository import Pagination, Repository
+from app.db.models import (
+    Booking,
+    ChildProfile,
+    LocationService,
+    LocationServiceDay,
+    ServiceType,
+)
 from app.public.schemas.enums import BookingStatus, PaymentStatus
+
+
+def _child_name():
+    return func.concat(
+        ChildProfile.first_name,
+        " ",
+        ChildProfile.last_name,
+    ).label("child_name")
 
 
 class BookingRepository(Repository):
@@ -68,12 +78,11 @@ class BookingRepository(Repository):
         return (
             self.db.query(
                 Booking.child_id,
-                ChildProfile.first_name,
-                ChildProfile.last_name,
-                Booking.location_service_day_id.label(
-                    "location_service_day_id"
+                _child_name(),
+                Booking.location_service_day_id,
+                LocationServiceDay.service_date.label(
+                    "location_service_date"
                 ),
-                LocationServiceDay.service_date,
             )
             .join(
                 ChildProfile,
@@ -135,13 +144,9 @@ class BookingRepository(Repository):
                 Booking.booking_group_id,
                 Booking.location_service_day_id,
                 Booking.child_id,
-
-                ChildProfile.first_name,
-                ChildProfile.last_name,
-
+                _child_name(),
                 LocationServiceDay.service_date,
                 ServiceType.name.label("service_name"),
-
                 Booking.booking_status,
                 Booking.payment_status,
                 Booking.cancelled_at,
@@ -179,6 +184,7 @@ class BookingRepository(Repository):
         payment_status: list[str] | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
+        pagination: Pagination | None = None,
     ) -> list[Row]:
         query = (
             self.db.query(
@@ -188,13 +194,9 @@ class BookingRepository(Repository):
                 Booking.booking_group_id,
                 Booking.location_service_day_id,
                 Booking.child_id,
-
-                ChildProfile.first_name,
-                ChildProfile.last_name,
-
+                _child_name(),
                 LocationServiceDay.service_date,
                 ServiceType.name.label("service_name"),
-
                 Booking.booking_status,
                 Booking.payment_status,
             )
@@ -239,5 +241,6 @@ class BookingRepository(Repository):
         return self._all(
             query.order_by(
                 LocationServiceDay.service_date.asc()
-            )
+            ),
+            pagination,
         )
