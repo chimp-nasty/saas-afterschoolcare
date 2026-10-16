@@ -17,11 +17,12 @@ def configure_middleware(app: FastAPI) -> None:
         InMemoryRateLimitMiddleware,
         default_limit=180,
         default_window_seconds=60,
+        # Full-path matches against the routes in app/api/router.py.
         route_limits={
-            r"/[^/]+/auth/v1/login/?": (10, 60),
-            r"/[^/]+/auth/v1/register/?": (5, 60),
-            r"/[^/]+/auth/v1/forgot-password/?": (5, 60),
-            r"/[^/]+/auth/v1/reset-password/?": (10, 60),
+            r"/auth/v1/login/[^/]+/?": (10, 60),
+            r"/customer/v1/onboard/[^/]+/?": (5, 60),
+            r"/auth/v1/forgot-password/?": (5, 60),
+            r"/auth/v1/reset-password/?": (10, 60),
         },
         exempt_paths={
             "/api/v1/webhooks/stripe",

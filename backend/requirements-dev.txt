@@ -2,3 +2,6 @@
 
 # Regenerates app/db/models.py from the database (migrations/migrator.py).
 sqlacodegen==4.0.4
+
+# Integration tests (tests/, configured by .env.test).
+pytest==9.1.1

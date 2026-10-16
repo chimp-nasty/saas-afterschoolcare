@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 
@@ -8,6 +9,10 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.errors.auth import LimitExceeded
+from app.middleware.error_handler import exception_response
+
+
+logger = logging.getLogger("app.error")
 
 
 class InMemoryRateLimitMiddleware(BaseHTTPMiddleware):
@@ -59,15 +64,25 @@ class InMemoryRateLimitMiddleware(BaseHTTPMiddleware):
             timestamps.popleft()
 
         if len(timestamps) >= limit:
-            raise LimitExceeded(
-                action="rate_limit",
-                message="Too many requests. Please try again shortly.",
-                log_reason=(
-                    f"path={path}; "
-                    f"client_ip={client_ip}; "
-                    f"limit={limit}; "
-                    f"window_seconds={window_seconds}"
-                ),
+            # Exceptions raised in middleware skip the app's exception
+            # handlers (they'd surface as a 500), so respond directly.
+            logger.warning(
+                LimitExceeded.message,
+                extra={
+                    "event": "rate_limit",
+                    "result": LimitExceeded.result,
+                    "reason": (
+                        f"path={path}; "
+                        f"client_ip={client_ip}; "
+                        f"limit={limit}; "
+                        f"window_seconds={window_seconds}"
+                    ),
+                },
+            )
+
+            return exception_response(
+                "Too many requests. Please try again shortly.",
+                status_code=LimitExceeded.status_code,
             )
 
         timestamps.append(now)

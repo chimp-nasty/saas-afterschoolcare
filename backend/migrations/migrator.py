@@ -42,6 +42,10 @@ MIGRATION_TABLE = f"{MIGRATION_SCHEMA}.migration_history"
 ALWAYS_FOLDERS = ("schema", "seed")
 DEV_FOLDERS = ("dev_seed",)
 
+# Environments whose database may be reset and gets dev seed data. The
+# test suite (APP_ENV=test) rebuilds its own database on every run.
+DISPOSABLE_ENVS = ("dev", "test")
+
 MODEL_SCHEMAS = ("tenancy", "auth", "public")
 MODELS_FILE = MIGRATIONS_DIR.parent / "app" / "db" / "models.py"
 MODELS_HEADER = (
@@ -157,7 +161,7 @@ def run() -> list[str]:
     applied = get_applied(engine)
 
     folders = ALWAYS_FOLDERS + (
-        DEV_FOLDERS if settings.APP_ENV == "dev" else ()
+        DEV_FOLDERS if settings.APP_ENV in DISPOSABLE_ENVS else ()
     )
 
     newly_applied: list[str] = []
@@ -265,10 +269,10 @@ def generate_models(engine: Engine | None = None) -> bool:
 
 
 def reset() -> None:
-    if settings.APP_ENV != "dev":
+    if settings.APP_ENV not in DISPOSABLE_ENVS:
         raise RuntimeError(
             "Database reset is only permitted "
-            "when APP_ENV='dev'."
+            f"when APP_ENV is one of {DISPOSABLE_ENVS}."
         )
 
     engine = get_engine()

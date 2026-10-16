@@ -41,7 +41,7 @@ class ChildTableResponse(BaseModel):
 
 class ListChildrenFilterRequest(BaseModel):
     is_active: bool | None = None
-    review_status: list[str] | None = None
+    review_status: list[MedicalReviewStatus] | None = None
 
 
 class CreateChildRequest(BaseModel):

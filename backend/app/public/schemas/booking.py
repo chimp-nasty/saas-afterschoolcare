@@ -4,6 +4,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from app.db.repository import Pagination
+from app.public.schemas.enums import BookingStatus, CurrencyCode, PaymentStatus
 
 
 class BookingSelection(BaseModel):
@@ -33,8 +34,8 @@ class BookingConflictRow(BaseModel):
 # Inherits page/limit: FastAPI only expands a query model when it's the
 # route's only query parameter.
 class ListBookingsFilterRequest(Pagination):
-    booking_status: list[str] | None = None
-    payment_status: list[str] | None = None
+    booking_status: list[BookingStatus] | None = None
+    payment_status: list[PaymentStatus] | None = None
     date_from: date | None = None
     date_to: date | None = None
 
@@ -51,12 +52,12 @@ class BookingResponse(BaseModel):
     service_date: date
     service_name: str
 
-    booking_status: str
-    payment_status: str
+    booking_status: BookingStatus
+    payment_status: PaymentStatus
     cancelled_at: datetime | None
 
     price_snapshot_cents: int
-    currency: str
+    currency: CurrencyCode
 
     created_at: datetime
     updated_at: datetime
@@ -74,5 +75,5 @@ class BookingTableResponse(BaseModel):
     service_date: date
     service_name: str
 
-    booking_status: str
-    payment_status: str
+    booking_status: BookingStatus
+    payment_status: PaymentStatus
