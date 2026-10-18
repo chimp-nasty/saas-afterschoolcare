@@ -4,7 +4,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from app.db.repository import Pagination
-from app.public.schemas.enums import BookingStatus, CurrencyCode, PaymentStatus
+from app.public.schemas.enums import BookingStatus, CurrencyCode, PaymentStatus, StripeStatus
 
 
 class BookingSelection(BaseModel):
@@ -21,6 +21,9 @@ class CreateBookingResponse(BaseModel):
     idempotency_key: str
     amount: int
     booking_group_id: UUID
+
+    # Stripe's hosted payment page; the frontend redirects here.
+    checkout_url: str | None
 
 
 class BookingConflictRow(BaseModel):
@@ -77,3 +80,61 @@ class BookingTableResponse(BaseModel):
 
     booking_status: BookingStatus
     payment_status: PaymentStatus
+
+    price_snapshot_cents: int
+    currency: CurrencyCode
+
+
+class CheckoutStatusResponse(BaseModel):
+    booking_group_id: UUID
+
+    # PENDING until the Stripe webhook lands, then SUCCEEDED or FAILED.
+    payment_status: StripeStatus
+
+    total_cents: int
+    currency: CurrencyCode
+
+    bookings: list[BookingTableResponse]
+
+
+class BookingGroupResponse(BaseModel):
+    """A booking group for the review screen (pay or cancel a pending one)."""
+
+    booking_group_id: UUID
+
+    # PENDING while it can still be paid or cancelled; a lapsed hold reads
+    # as EXPIRED.
+    status: BookingStatus
+
+    total_cents: int
+    currency: CurrencyCode
+
+    bookings: list[BookingTableResponse]
+
+
+class CheckoutUrlResponse(BaseModel):
+    checkout_url: str
+
+
+# Inherits page/limit (see ListBookingsFilterRequest).
+class ListBookingGroupsFilterRequest(Pagination):
+    pass
+
+
+class BookingGroupSummaryResponse(BaseModel):
+    """One card in "My bookings": a checkout and what it covers."""
+
+    booking_group_id: UUID
+    created_at: datetime
+
+    status: BookingStatus
+
+    service_name: str
+    child_names: list[str]
+
+    first_date: date
+    last_date: date
+    booking_count: int
+
+    total_cents: int
+    currency: CurrencyCode

@@ -141,6 +141,74 @@ export interface paths {
         patch: operations["update_profile_customer_v1_profile_patch"];
         trace?: never;
     };
+    "/booking/v1/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Booking Groups */
+        get: operations["list_booking_groups_booking_v1_groups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/booking/v1/groups/{booking_group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Booking Group */
+        get: operations["get_booking_group_booking_v1_groups__booking_group_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/booking/v1/groups/{booking_group_id}/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Booking Group Checkout */
+        post: operations["create_booking_group_checkout_booking_v1_groups__booking_group_id__checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/booking/v1/groups/{booking_group_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Booking Group */
+        post: operations["cancel_booking_group_booking_v1_groups__booking_group_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/booking/v1/": {
         parameters: {
             query?: never;
@@ -153,6 +221,23 @@ export interface paths {
         put?: never;
         /** Create Booking */
         post: operations["create_booking_booking_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/booking/v1/checkout/{checkout_session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Checkout Status */
+        get: operations["get_checkout_status_booking_v1_checkout__checkout_session_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -330,6 +415,23 @@ export interface paths {
         patch: operations["update_cited_at_action_v1__action_id__patch"];
         trace?: never;
     };
+    "/api/v1/webhooks/stripe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stripe Webhook */
+        post: operations["stripe_webhook_api_v1_webhooks_stripe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -375,6 +477,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["ActionResponse"] | null;
         };
+        /** ApiResponse[BookingGroupResponse] */
+        ApiResponse_BookingGroupResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["BookingGroupResponse"] | null;
+        };
         /** ApiResponse[BookingResponse] */
         ApiResponse_BookingResponse_: {
             /** Ok */
@@ -382,6 +492,22 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["BookingResponse"] | null;
+        };
+        /** ApiResponse[CheckoutStatusResponse] */
+        ApiResponse_CheckoutStatusResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["CheckoutStatusResponse"] | null;
+        };
+        /** ApiResponse[CheckoutUrlResponse] */
+        ApiResponse_CheckoutUrlResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["CheckoutUrlResponse"] | null;
         };
         /** ApiResponse[ChildResponse] */
         ApiResponse_ChildResponse_: {
@@ -459,6 +585,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["BookingConflictRow"][] | null;
         };
+        /** ApiResponse[list[BookingGroupSummaryResponse]] */
+        ApiResponse_list_BookingGroupSummaryResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["BookingGroupSummaryResponse"][] | null;
+        };
         /** ApiResponse[list[BookingTableResponse]] */
         ApiResponse_list_BookingTableResponse__: {
             /** Ok */
@@ -500,13 +635,6 @@ export interface components {
          * @enum {string}
          */
         AustralianState: "NSW" | "VIC" | "QLD" | "WA" | "SA" | "TAS" | "ACT" | "NT";
-        /** Body_list_bookings_booking_v1__get */
-        Body_list_bookings_booking_v1__get: {
-            /** Booking Status */
-            booking_status?: string[] | null;
-            /** Payment Status */
-            payment_status?: string[] | null;
-        };
         /** BookingConflictRow */
         BookingConflictRow: {
             /**
@@ -526,6 +654,59 @@ export interface components {
              * Format: date
              */
             location_service_date: string;
+        };
+        /**
+         * BookingGroupResponse
+         * @description A booking group for the review screen (pay or cancel a pending one).
+         */
+        BookingGroupResponse: {
+            /**
+             * Booking Group Id
+             * Format: uuid
+             */
+            booking_group_id: string;
+            status: components["schemas"]["BookingStatus"];
+            /** Total Cents */
+            total_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Bookings */
+            bookings: components["schemas"]["BookingTableResponse"][];
+        };
+        /**
+         * BookingGroupSummaryResponse
+         * @description One card in "My bookings": a checkout and what it covers.
+         */
+        BookingGroupSummaryResponse: {
+            /**
+             * Booking Group Id
+             * Format: uuid
+             */
+            booking_group_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            status: components["schemas"]["BookingStatus"];
+            /** Service Name */
+            service_name: string;
+            /** Child Names */
+            child_names: string[];
+            /**
+             * First Date
+             * Format: date
+             */
+            first_date: string;
+            /**
+             * Last Date
+             * Format: date
+             */
+            last_date: string;
+            /** Booking Count */
+            booking_count: number;
+            /** Total Cents */
+            total_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
         };
         /** BookingResponse */
         BookingResponse: {
@@ -568,16 +749,13 @@ export interface components {
             service_date: string;
             /** Service Name */
             service_name: string;
-            /** Booking Status */
-            booking_status: string;
-            /** Payment Status */
-            payment_status: string;
+            booking_status: components["schemas"]["BookingStatus"];
+            payment_status: components["schemas"]["PaymentStatus"];
             /** Cancelled At */
             cancelled_at: string | null;
             /** Price Snapshot Cents */
             price_snapshot_cents: number;
-            /** Currency */
-            currency: string;
+            currency: components["schemas"]["CurrencyCode"];
             /**
              * Created At
              * Format: date-time
@@ -599,6 +777,11 @@ export interface components {
             /** Location Service Days */
             location_service_days: string[];
         };
+        /**
+         * BookingStatus
+         * @enum {string}
+         */
+        BookingStatus: "PENDING" | "CONFIRMED" | "CANCELLED" | "EXPIRED";
         /** BookingTableResponse */
         BookingTableResponse: {
             /**
@@ -640,10 +823,30 @@ export interface components {
             service_date: string;
             /** Service Name */
             service_name: string;
-            /** Booking Status */
-            booking_status: string;
-            /** Payment Status */
-            payment_status: string;
+            booking_status: components["schemas"]["BookingStatus"];
+            payment_status: components["schemas"]["PaymentStatus"];
+            /** Price Snapshot Cents */
+            price_snapshot_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+        };
+        /** CheckoutStatusResponse */
+        CheckoutStatusResponse: {
+            /**
+             * Booking Group Id
+             * Format: uuid
+             */
+            booking_group_id: string;
+            payment_status: components["schemas"]["StripeStatus"];
+            /** Total Cents */
+            total_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Bookings */
+            bookings: components["schemas"]["BookingTableResponse"][];
+        };
+        /** CheckoutUrlResponse */
+        CheckoutUrlResponse: {
+            /** Checkout Url */
+            checkout_url: string;
         };
         /** ChildResponse */
         ChildResponse: {
@@ -739,6 +942,8 @@ export interface components {
              * Format: uuid
              */
             booking_group_id: string;
+            /** Checkout Url */
+            checkout_url: string | null;
         };
         /** CreateChildRequest */
         CreateChildRequest: {
@@ -858,6 +1063,11 @@ export interface components {
          * @enum {string}
          */
         MedicalReviewStatus: "not_required" | "pending" | "documentation_requested" | "approved";
+        /**
+         * PaymentStatus
+         * @enum {string}
+         */
+        PaymentStatus: "PENDING" | "PAID" | "REFUNDED" | "FAILED";
         /** PublicLocationResponse */
         PublicLocationResponse: {
             /** Tenant Name */
@@ -922,6 +1132,11 @@ export interface components {
             /** Roles */
             roles: string[];
         };
+        /**
+         * StripeStatus
+         * @enum {string}
+         */
+        StripeStatus: "PENDING" | "SUCCEEDED" | "FAILED";
         /** UpdateCustomerProfileRequest */
         UpdateCustomerProfileRequest: {
             /** Phone */
@@ -964,7 +1179,10 @@ export interface components {
 }
 export type ActionResponse = components['schemas']['ActionResponse'];
 export type ApiResponseActionResponse = components['schemas']['ApiResponse_ActionResponse_'];
+export type ApiResponseBookingGroupResponse = components['schemas']['ApiResponse_BookingGroupResponse_'];
 export type ApiResponseBookingResponse = components['schemas']['ApiResponse_BookingResponse_'];
+export type ApiResponseCheckoutStatusResponse = components['schemas']['ApiResponse_CheckoutStatusResponse_'];
+export type ApiResponseCheckoutUrlResponse = components['schemas']['ApiResponse_CheckoutUrlResponse_'];
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
@@ -974,16 +1192,21 @@ export type ApiResponseSessionResponse = components['schemas']['ApiResponse_Sess
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
 export type ApiResponseListActionResponse = components['schemas']['ApiResponse_list_ActionResponse__'];
 export type ApiResponseListBookingConflictRow = components['schemas']['ApiResponse_list_BookingConflictRow__'];
+export type ApiResponseListBookingGroupSummaryResponse = components['schemas']['ApiResponse_list_BookingGroupSummaryResponse__'];
 export type ApiResponseListBookingTableResponse = components['schemas']['ApiResponse_list_BookingTableResponse__'];
 export type ApiResponseListChildTableResponse = components['schemas']['ApiResponse_list_ChildTableResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
 export type AustralianState = components['schemas']['AustralianState'];
-export type BodyListBookingsBookingV1Get = components['schemas']['Body_list_bookings_booking_v1__get'];
 export type BookingConflictRow = components['schemas']['BookingConflictRow'];
+export type BookingGroupResponse = components['schemas']['BookingGroupResponse'];
+export type BookingGroupSummaryResponse = components['schemas']['BookingGroupSummaryResponse'];
 export type BookingResponse = components['schemas']['BookingResponse'];
 export type BookingSelection = components['schemas']['BookingSelection'];
+export type BookingStatus = components['schemas']['BookingStatus'];
 export type BookingTableResponse = components['schemas']['BookingTableResponse'];
+export type CheckoutStatusResponse = components['schemas']['CheckoutStatusResponse'];
+export type CheckoutUrlResponse = components['schemas']['CheckoutUrlResponse'];
 export type ChildResponse = components['schemas']['ChildResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
@@ -997,10 +1220,12 @@ export type LocationServiceDayTableResponse = components['schemas']['LocationSer
 export type LocationServiceSelectionResponse = components['schemas']['LocationServiceSelectionResponse'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
+export type PaymentStatus = components['schemas']['PaymentStatus'];
 export type PublicLocationResponse = components['schemas']['PublicLocationResponse'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type SessionResponse = components['schemas']['SessionResponse'];
+export type StripeStatus = components['schemas']['StripeStatus'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
 export type UpdateLocationServiceRequest = components['schemas']['UpdateLocationServiceRequest'];
 export type ValidationError = components['schemas']['ValidationError'];
@@ -1008,10 +1233,7 @@ export type $defs = Record<string, never>;
 export interface operations {
     login_auth_v1_login__location_code__post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: {
                 origin?: string | null;
             };
@@ -1068,10 +1290,7 @@ export interface operations {
     };
     forgot_password_auth_v1_forgot_password_post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1104,10 +1323,7 @@ export interface operations {
     };
     reset_password_auth_v1_reset_password_post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1171,10 +1387,7 @@ export interface operations {
     };
     get_public_branding_location_branding_v1_public__location_code__get: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: {
                 origin?: string | null;
             };
@@ -1207,10 +1420,7 @@ export interface operations {
     };
     onboard_customer_v1_onboard__location_code__post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: {
                 origin?: string | null;
             };
@@ -1247,10 +1457,7 @@ export interface operations {
     };
     get_profile_customer_v1_profile_get: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: {
@@ -1281,10 +1488,7 @@ export interface operations {
     };
     update_profile_customer_v1_profile_patch: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: {
@@ -1317,11 +1521,9 @@ export interface operations {
             };
         };
     };
-    list_bookings_booking_v1__get: {
+    list_booking_groups_booking_v1_groups_get: {
         parameters: {
             query?: {
-                date_from?: string | null;
-                date_to?: string | null;
                 page?: number;
                 limit?: number;
             };
@@ -1331,11 +1533,146 @@ export interface operations {
                 access_token?: string | null;
             };
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["Body_list_bookings_booking_v1__get"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_BookingGroupSummaryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
+    };
+    get_booking_group_booking_v1_groups__booking_group_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_group_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BookingGroupResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_booking_group_checkout_booking_v1_groups__booking_group_id__checkout_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                booking_group_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CheckoutUrlResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_booking_group_booking_v1_groups__booking_group_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_group_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_bookings_booking_v1__get: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+                booking_status?: components["schemas"]["BookingStatus"][] | null;
+                payment_status?: components["schemas"]["PaymentStatus"][] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1359,11 +1696,10 @@ export interface operations {
     };
     create_booking_booking_v1__post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
+            query?: never;
+            header?: {
+                origin?: string | null;
             };
-            header?: never;
             path?: never;
             cookie?: {
                 access_token?: string | null;
@@ -1395,12 +1731,42 @@ export interface operations {
             };
         };
     };
+    get_checkout_status_booking_v1_checkout__checkout_session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                checkout_session_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CheckoutStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     find_conflicts_booking_v1_conflicts_post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: {
@@ -1435,10 +1801,7 @@ export interface operations {
     };
     get_booking_booking_v1__booking_id__get: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 booking_id: string;
@@ -1471,10 +1834,7 @@ export interface operations {
     };
     get_child_children_v1__child_id__get: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 child_id: string;
@@ -1509,8 +1869,7 @@ export interface operations {
         parameters: {
             query?: {
                 is_active?: boolean | null;
-                page?: number;
-                limit?: number;
+                review_status?: components["schemas"]["MedicalReviewStatus"][] | null;
             };
             header?: never;
             path?: never;
@@ -1518,11 +1877,7 @@ export interface operations {
                 access_token?: string | null;
             };
         };
-        requestBody?: {
-            content: {
-                "application/json": string[] | null;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1546,10 +1901,7 @@ export interface operations {
     };
     create_child_profile_children_v1__post: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: {
@@ -1588,8 +1940,6 @@ export interface operations {
                 date_from?: string | null;
                 date_to?: string | null;
                 is_open?: boolean | null;
-                page?: number;
-                limit?: number;
             };
             header?: never;
             path?: never;
@@ -1621,13 +1971,11 @@ export interface operations {
     };
     update_price_location_services_v1__location_service_id__price_patch: {
         parameters: {
-            query: {
-                stripe_product_id: string;
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                location_service_id: string;
+            };
             cookie?: {
                 access_token?: string | null;
             };
@@ -1660,10 +2008,7 @@ export interface operations {
     };
     list_location_services_location_services_v1__get: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: {
@@ -1695,11 +2040,11 @@ export interface operations {
     list_actions_action_v1__get: {
         parameters: {
             query?: {
+                page?: number;
+                limit?: number;
                 cited?: boolean | null;
                 user_id?: string | null;
                 target?: string | null;
-                page?: number;
-                limit?: number;
             };
             header?: never;
             path?: never;
@@ -1731,10 +2076,7 @@ export interface operations {
     };
     count_uncited_action_v1_count_uncited_get: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: {
@@ -1765,10 +2107,7 @@ export interface operations {
     };
     update_cited_at_action_v1__action_id__patch: {
         parameters: {
-            query?: {
-                page?: number;
-                limit?: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 action_id: string;
@@ -1799,6 +2138,37 @@ export interface operations {
             };
         };
     };
+    stripe_webhook_api_v1_webhooks_stripe_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "stripe-signature"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
 }
 type FlattenedDeepRequired<T> = {
     [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
@@ -1809,5 +2179,8 @@ type ReadonlyArray<T> = [
     unknown[]
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingStatus"]> = ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
+export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
+export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

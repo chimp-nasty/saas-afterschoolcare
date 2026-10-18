@@ -1,12 +1,5 @@
 <script lang="ts">
-	type Booking = {
-		id: string;
-		serviceDate: string;
-		serviceCode: string;
-		serviceLabel: string;
-		childId: string;
-		childFirstName: string;
-	};
+	import type { BookingTableResponse } from '$lib/api/schema';
 
 	type Day = {
 		date: Date;
@@ -16,29 +9,45 @@
 	};
 
 	let {
-		bookings
+		bookings,
+		locationCode
 	}: {
-		bookings: Booking[];
+		bookings: BookingTableResponse[];
+		locationCode: string;
 	} = $props();
 
-	const serviceColors: Record<string, string> = {
-		BSC: '#3b82f6',
-		ASC: '#22c55e'
-	};
+	// Pending bookings open their review screen (pay or cancel).
+	function reviewHref(booking: BookingTableResponse): string {
+		return `/${locationCode}/bookings/${booking.booking_group_id}/review`;
+	}
 
-	const serviceOrder = [
-		'BSC',
-		'ASC'
+	const DAYS_IN_WEEK = 7;
+
+	// One dot row per service the customer has booked, in a stable order,
+	// each with its own colour (cycled if there are more services).
+	const SERVICE_PALETTE = [
+		'var(--primary)',
+		'var(--secondary-strong)',
+		'var(--success)',
+		'var(--text-muted)'
 	];
+
+	const services = $derived(
+		[...new Set(bookings.map((booking) => booking.service_name))].sort()
+	);
+
+	function serviceColor(serviceName: string): string {
+		const index = services.indexOf(serviceName);
+
+		return SERVICE_PALETTE[index % SERVICE_PALETTE.length];
+	}
 
 	const today = new Date();
 
 	let weekOffset = $state(0);
-	let selectedDayIndex = $state(
-		today.getDay() >= 1 && today.getDay() <= 5
-			? today.getDay() - 1
-			: 0
-	);
+
+	// Monday = 0 ... Sunday = 6
+	let selectedDayIndex = $state((today.getDay() + 6) % 7);
 
 	const weekDays = $derived.by(() => {
 		const current = new Date(today);
@@ -56,7 +65,7 @@
 		);
 
 		return Array.from(
-			{ length: 5 },
+			{ length: DAYS_IN_WEEK },
 			(_, index): Day => {
 				const date = new Date(current);
 				date.setDate(current.getDate() + index);
@@ -82,7 +91,7 @@
 	const selectedBookings = $derived(
 		bookings.filter(
 			(booking) =>
-				booking.serviceDate === selectedDay?.dateKey
+				booking.service_date === selectedDay?.dateKey
 		)
 	);
 
@@ -99,10 +108,13 @@
 			return 'Last week';
 		}
 
-		return `${weekDays[0].dayNumber} ${weekDays[0].date.toLocaleDateString(
+		const first = weekDays[0];
+		const last = weekDays[DAYS_IN_WEEK - 1];
+
+		return `${first.dayNumber} ${first.date.toLocaleDateString(
 			'en-AU',
 			{ month: 'short' }
-		)} – ${weekDays[4].dayNumber} ${weekDays[4].date.toLocaleDateString(
+		)} – ${last.dayNumber} ${last.date.toLocaleDateString(
 			'en-AU',
 			{ month: 'short' }
 		)}`;
@@ -118,12 +130,12 @@
 
 	function hasBooking(
 		dateKey: string,
-		serviceCode: string
+		serviceName: string
 	): boolean {
 		return bookings.some(
 			(booking) =>
-				booking.serviceDate === dateKey &&
-				booking.serviceCode === serviceCode
+				booking.service_date === dateKey &&
+				booking.service_name === serviceName
 		);
 	}
 
@@ -144,7 +156,7 @@
 	}
 
 	function nextDay() {
-		if (selectedDayIndex < 4) {
+		if (selectedDayIndex < DAYS_IN_WEEK - 1) {
 			selectedDayIndex += 1;
 		}
 	}
@@ -192,7 +204,7 @@
 	</div>
 
 	<!-- Week -->
-	<div class="mt-4 grid grid-cols-5">
+	<div class="mt-4 grid grid-cols-7">
 		{#each weekDays as day, index}
 			<button
 				type="button"
@@ -215,12 +227,12 @@
 				</span>
 
 				<div class="mt-3 flex min-h-8 flex-col gap-1.5">
-					{#each serviceOrder as serviceCode}
+					{#each services as serviceName}
 						<div class="flex h-3 items-center justify-center">
-							{#if hasBooking(day.dateKey, serviceCode)}
+							{#if hasBooking(day.dateKey, serviceName)}
 								<span
 									class="h-2.5 w-2.5 rounded-full"
-									style:background-color={serviceColors[serviceCode]}
+									style:background-color={serviceColor(serviceName)}
 								></span>
 							{/if}
 						</div>
@@ -253,7 +265,7 @@
 				type="button"
 				class="cursor-pointer px-3 py-2 text-lg disabled:cursor-default disabled:opacity-25"
 				onclick={nextDay}
-				disabled={selectedDayIndex === 4}
+				disabled={selectedDayIndex === DAYS_IN_WEEK - 1}
 				aria-label="Next day"
 			>
 				›
@@ -261,16 +273,39 @@
 		</div>
 
 		<div class="mt-4 min-h-28">
-			{#each selectedBookings as booking}
-				<div class="mb-4 last:mb-0">
-					<p class="font-semibold">
-						{booking.childFirstName}
-					</p>
+			{#each selectedBookings as booking (booking.id)}
+				{#snippet details()}
+					<span
+						class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+						style:background-color={serviceColor(booking.service_name)}
+					></span>
 
-					<p class="text-sm text-(--text-muted)">
-						{booking.serviceLabel}
-					</p>
-				</div>
+					<div>
+						<p class="font-semibold">
+							{booking.child_name}
+						</p>
+
+						<p class="text-sm text-(--text-muted)">
+							{booking.service_name}
+							{#if booking.booking_status === 'PENDING'}
+								· <span class="text-(--primary)">Awaiting payment ›</span>
+							{/if}
+						</p>
+					</div>
+				{/snippet}
+
+				{#if booking.booking_status === 'PENDING'}
+					<a
+						href={reviewHref(booking)}
+						class="-mx-2 mb-2 flex items-start gap-3 rounded-md px-2 py-2 last:mb-0 hover:bg-(--surface-muted)"
+					>
+						{@render details()}
+					</a>
+				{:else}
+					<div class="mb-4 flex items-start gap-3 last:mb-0">
+						{@render details()}
+					</div>
+				{/if}
 			{:else}
 				<p class="text-sm text-(--text-muted)">
 					No bookings

@@ -148,3 +148,93 @@ def test_get_unknown_booking(customer):
     )
 
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Rules enforced by the trg_bookings_enforce_rules trigger (schema/0008)
+# ---------------------------------------------------------------------------
+
+def test_cannot_book_a_past_day(api: Api, customer):
+    child = api.new_child(customer)
+    yesterday = api.service_day(days_from_today=-1)
+
+    response = api.book(customer, {child["id"]: [yesterday]})
+
+    assert response.status_code == 400
+    assert response.json()["msg"] == "Bookings must be for a future date"
+
+
+def test_cannot_book_today(api: Api, customer):
+    child = api.new_child(customer)
+    today = api.service_day(days_from_today=0)
+
+    response = api.book(customer, {child["id"]: [today]})
+
+    assert response.status_code == 400
+    assert response.json()["msg"] == "Bookings must be for a future date"
+
+
+def test_cannot_book_a_closed_day(api: Api, customer):
+    child = api.new_child(customer)
+    closed = api.service_day(is_open=False)
+
+    response = api.book(customer, {child["id"]: [closed]})
+
+    assert response.status_code == 400
+    assert response.json()["msg"] == "This service day is closed"
+
+
+def test_cannot_book_a_child_awaiting_medical_review(api: Api, customer):
+    child = api.new_child(customer, medical_info="Asthma")
+    assert child["review_status"] == "pending"
+
+    response = api.book(customer, {child["id"]: [api.service_day()]})
+
+    assert response.status_code == 400
+    assert "awaiting medical review" in response.json()["msg"]
+
+
+# ---------------------------------------------------------------------------
+# A complete customer profile is required to book
+# ---------------------------------------------------------------------------
+
+def test_cannot_book_after_clearing_profile(api: Api, customer):
+    # The profile was complete when the child was added, then cleared.
+    child = api.new_child(customer)
+    customer.client.patch("/customer/v1/profile", json={"phone": None})
+
+    response = api.book(customer, {child["id"]: [api.service_day()]})
+
+    assert response.status_code == 400
+    assert "Missing: phone" in response.json()["msg"]
+
+
+def test_cannot_book_without_ever_having_a_profile(api: Api):
+    # A child inserted directly (as the dev seed does), bypassing the
+    # complete-profile check on adding a child.
+    customer = api.new_customer(complete_profile=False)
+
+    [(child_id,)] = api.sql(
+        """
+        WITH child AS (
+            INSERT INTO public.child_profile (location_id, user_id, first_name, last_name, dob)
+            SELECT lur.location_id, u.id, 'Seeded', 'Child', DATE '2019-01-01'
+            FROM auth.users u
+            JOIN auth.location_user_roles lur ON lur.user_id = u.id
+            WHERE u.email = :email
+            RETURNING id
+        )
+        INSERT INTO public.child_medical_state (child_id)
+        SELECT id FROM child
+        RETURNING child_id
+        """,
+        email=customer.email,
+    )
+
+    response = api.book(customer, {str(child_id): [api.service_day()]})
+
+    assert response.status_code == 400
+    assert response.json()["msg"] == (
+        "Customer profile is incomplete. "
+        "Missing: phone, address_line_1, suburb, state, postcode"
+    )

@@ -9,3 +9,7 @@ export const ServiceDayStatus = {
 
 export type ServiceDayStatus =
     typeof ServiceDayStatus[keyof typeof ServiceDayStatus];
+
+// "My bookings" page size (bookings/+page.ts loads the first page, the page
+// appends the rest).
+export const BOOKING_GROUPS_PAGE_SIZE = 20;

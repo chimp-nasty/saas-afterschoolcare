@@ -62,6 +62,21 @@ class CustomerProfileRepository(Repository):
         for field, value in fields.items():
             setattr(profile, field, value)
 
+    def get_missing_fields_for_user(
+        self,
+        *,
+        user_id: UUID,
+    ) -> list[str]:
+        """
+        What the user still has to fill in before they can book. A user
+        with no profile row at all is missing everything.
+        """
+        profile = self.get_by_user_id(user_id=user_id)
+
+        return self.get_missing_profile_fields(
+            profile=profile or CustomerProfile(),
+        )
+
     def get_missing_profile_fields(
         self,
         *,

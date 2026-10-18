@@ -66,11 +66,18 @@ class LocationServiceDayRepository(Repository):
                 LocationService.currency,
 
                 LocationService.stripe_product_id,
+
+                ServiceType.name.label("service_name"),
             )
             .join(
                 LocationService,
                 LocationService.id
                 == LocationServiceDay.location_service_id,
+            )
+            .join(
+                ServiceType,
+                ServiceType.id
+                == LocationService.service_type_id,
             )
             .filter(
                 LocationServiceDay.id.in_(ids),
@@ -78,7 +85,9 @@ class LocationServiceDayRepository(Repository):
             .order_by(
                 LocationServiceDay.id,
             )
-            .with_for_update()
+            # Lock only the days being booked (capacity), not the shared
+            # service and service type rows every booking joins through.
+            .with_for_update(of=LocationServiceDay)
             .all()
         )
 

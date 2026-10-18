@@ -4,9 +4,14 @@ from sqlalchemy.exc import IntegrityError
 from app.errors.auth import UserCollisionError
 from app.errors.base import ApplicationError
 from app.errors.bookings import (
+    BookingAttemptFinishedError,
+    BookingCapacityCollisionError,
     BookingCollisionError,
+    ChildNotMedicallyClearedError,
     InvalidBookingChildError,
     InvalidBookingServiceDaysError,
+    ServiceDayClosedError,
+    ServiceDayNotInFutureError,
 )
 from app.errors.children import ChildProfileCollisionError
 
@@ -24,8 +29,15 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "uq_users_email": UserCollisionError,
     "uq_child_profile_active_identity": ChildProfileCollisionError,
     "uq_bookings_active_child_service_day": BookingCollisionError,
+    # Reusing the idempotency key of a group that's already paid/expired.
+    "uq_booking_groups_user_idempotency": BookingAttemptFinishedError,
     "fk_bookings_child": InvalidBookingChildError,
     "fk_bookings_location_service_day": InvalidBookingServiceDaysError,
+    # Raised by the trg_bookings_enforce_rules trigger (schema/0008).
+    "ck_bookings_service_day_in_future": ServiceDayNotInFutureError,
+    "ck_bookings_service_day_open": ServiceDayClosedError,
+    "ck_bookings_service_day_full": BookingCapacityCollisionError,
+    "ck_bookings_child_medically_cleared": ChildNotMedicallyClearedError,
 }
 
 

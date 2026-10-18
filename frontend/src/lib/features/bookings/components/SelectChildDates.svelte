@@ -1,8 +1,12 @@
 <script lang="ts">
+    import { untrack } from "svelte";
+
     import ServiceDayCalendar from "./ServiceDayCalendar.svelte";
 
-    import type { ChildTableResponse } from "$lib/api/schema";
-    import type { LocationServiceDayTableResponse } from "$lib/api/schema";
+    import type {
+        ChildTableResponse,
+        LocationServiceDayTableResponse,
+    } from "$lib/api/schema";
 
     let {
         children,
@@ -20,61 +24,32 @@
         onContinue: () => void;
     } = $props();
 
-    let selectedDates = $state<string[]>([]);
+    // One set of dates for every selected child. Starts from what was picked
+    // before (e.g. coming back from review).
+    let selectedDates = $state<string[]>(
+        untrack(() => selectedDatesByChild[selectedChildIds[0]] ?? [])
+    );
 
     function toggleChild(
         childId: string
     ) {
-        if (selectedChildIds.includes(childId)) {
-            selectedChildIds =
-                selectedChildIds.filter(
-                    (id) => id !== childId
-                );
-        } else {
-            selectedChildIds = [
-                ...selectedChildIds,
-                childId,
-            ];
-        }
-
-        syncSelectedDates();
+        selectedChildIds = selectedChildIds.includes(childId)
+            ? selectedChildIds.filter((id) => id !== childId)
+            : [...selectedChildIds, childId];
     }
-
-    function syncSelectedDates() {
-        if (selectedChildIds.length === 0) {
-            selectedDates = [];
-            return;
-        }
-
-        const [firstChildId] =
-            selectedChildIds;
-
-        selectedDates =
-            selectedDatesByChild[firstChildId] ?? [];
-    }
-
-    $effect(() => {
-        if (selectedChildIds.length === 0) {
-            return;
-        }
-
-        const next = {
-            ...selectedDatesByChild,
-        };
-
-        for (const childId of selectedChildIds) {
-            next[childId] = [
-                ...selectedDates,
-            ];
-        }
-
-        selectedDatesByChild = next;
-    });
 
     const canContinue = $derived(
-        Object.values(selectedDatesByChild)
-            .some((dates) => dates.length > 0)
+        selectedChildIds.length > 0 &&
+        selectedDates.length > 0
     );
+
+    function continueToReview() {
+        selectedDatesByChild = Object.fromEntries(
+            selectedChildIds.map((childId) => [childId, [...selectedDates]])
+        );
+
+        onContinue();
+    }
 </script>
 
 <div class="space-y-8">
@@ -146,7 +121,7 @@
 
         <button
             type="button"
-            onclick={onContinue}
+            onclick={continueToReview}
             disabled={!canContinue}
             class="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
         >

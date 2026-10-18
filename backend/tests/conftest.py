@@ -50,7 +50,7 @@ os.environ.update(
 os.environ["APP_ENV"] = "test"
 
 
-from tests.factories import Api  # noqa: E402  (needs the env above)
+from tests.factories import Api, FakeStripe  # noqa: E402  (needs the env above)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -58,6 +58,20 @@ def database():
     from migrations import migrator
 
     migrator.rebuild()
+
+
+@pytest.fixture(autouse=True)
+def fake_stripe(monkeypatch) -> type[FakeStripe]:
+    """Every service that talks to Stripe gets the fake instead."""
+    for module in (
+        "app.public.services.bookings_create",
+        "app.public.services.bookings_update",
+        "app.public.services.location_service",
+        "app.integrations.payments.stripe.webhook",
+    ):
+        monkeypatch.setattr(f"{module}.StripeClient", FakeStripe)
+
+    return FakeStripe
 
 
 @pytest.fixture(scope="session")

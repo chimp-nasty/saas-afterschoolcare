@@ -1,19 +1,24 @@
 <script lang="ts">
+    import { untrack } from "svelte";
     import { Calendar } from "bits-ui";
-    import type { DateValue } from "@internationalized/date";
+    import { parseDate, type DateValue } from "@internationalized/date";
 
     import type { LocationServiceDayTableResponse } from "$lib/api/schema";
     import { ServiceDayStatus } from "../types";
 
     let {
         serviceDays,
-        selectedDates = $bindable(),
+        selectedDates = $bindable([]),
     }: {
         serviceDays: LocationServiceDayTableResponse[];
         selectedDates: string[];
     } = $props();
 
-    let selected = $state<DateValue[]>([]);
+    // Starts from the parent's dates (e.g. coming back from review). After
+    // that only the user's clicks change it, through onValueChange.
+    let selected = $state<DateValue[]>(
+        untrack(() => selectedDates.map((date) => parseDate(date)))
+    );
 
     const dayMap = $derived.by(() => {
         const map = new Map<
@@ -55,13 +60,6 @@
             ServiceDayStatus.AVAILABLE;
     }
 
-    $effect(() => {
-        selectedDates =
-            selected.map(
-                (date) => date.toString()
-            );
-    });
-
     const STATUS_STYLES: Record<ServiceDayStatus, string> = {
         [ServiceDayStatus.AVAILABLE]:
             "border border-(--success)/20 bg-(--success-soft) text-(--success-text) hover:bg-(--secondary)",
@@ -84,6 +82,9 @@
     <Calendar.Root
         type="multiple"
         bind:value={selected}
+        onValueChange={(value) => {
+            selectedDates = value.map((date) => date.toString());
+        }}
         weekdayFormat="short"
         isDateUnavailable={(date) =>
             !isSelectable(date)

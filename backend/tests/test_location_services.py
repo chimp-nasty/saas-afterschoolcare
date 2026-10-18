@@ -1,22 +1,9 @@
 import uuid
 
-import pytest
-
-from app.integrations.payments.stripe.client import StripePrice
 from tests.factories import Api
 
 
-class FakeStripe:
-    def create_price(self, *, stripe_product_id, amount_cents, currency):
-        return StripePrice(amount_cents=amount_cents, currency=currency.upper())
-
-
-@pytest.fixture
-def fake_stripe(monkeypatch):
-    monkeypatch.setattr(
-        "app.public.services.location_service.StripeClient",
-        FakeStripe,
-    )
+# Stripe is replaced by tests.factories.FakeStripe for every test (conftest).
 
 
 def _service_id(admin, name: str) -> str:
@@ -38,7 +25,7 @@ def test_list_is_scoped_to_the_session_location(admin):
     assert len(response.json()["data"]) == 4
 
 
-def test_update_price(api: Api, admin, fake_stripe):
+def test_update_price(api: Api, admin):
     service_id = _service_id(admin, "Weekend Care")
     api.sql(
         "UPDATE public.location_services SET stripe_product_id = :product WHERE id = :id",
@@ -56,7 +43,7 @@ def test_update_price(api: Api, admin, fake_stripe):
     assert next(s for s in services if s["id"] == service_id)["current_price_cents"] == 7500
 
 
-def test_update_price_requires_stripe_product(admin, fake_stripe):
+def test_update_price_requires_stripe_product(admin):
     # The dev seed doesn't link Vacation Care to Stripe.
     response = admin.patch(
         f"/location-services/v1/{_service_id(admin, 'Vacation Care')}/price",
@@ -66,7 +53,7 @@ def test_update_price_requires_stripe_product(admin, fake_stripe):
     assert response.status_code == 400
 
 
-def test_update_price_unknown_service(admin, fake_stripe):
+def test_update_price_unknown_service(admin):
     response = admin.patch(
         "/location-services/v1/00000000-0000-0000-0000-000000000000/price",
         json={"amount_cents": 7500, "currency": "AUD"},

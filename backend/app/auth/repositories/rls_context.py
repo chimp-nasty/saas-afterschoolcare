@@ -21,6 +21,21 @@ class RlsContextRepository(Repository):
             )
         )
 
+    def set_location_id(
+        self,
+        *,
+        location_id: UUID,
+    ) -> None:
+        self.db.execute(
+            select(
+                func.set_config(
+                    "app.location_id",
+                    str(location_id),
+                    True,
+                )
+            )
+        )
+
     def set_login_email(
         self,
         email: str,

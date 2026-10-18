@@ -11,7 +11,11 @@ import type {
 	CreateBookingResponse,
 	BookingConflictRow,
 	BookingResponse,
-	BookingTableResponse
+	BookingTableResponse,
+	BookingGroupResponse,
+	BookingGroupSummaryResponse,
+	CheckoutStatusResponse,
+	CheckoutUrlResponse
 } from '$lib/api/schema';
 
 
@@ -34,6 +38,58 @@ export function createBookingApi(
 				{
 					method: 'POST',
 					body,
+					fetcher
+				}
+			);
+		},
+
+		listGroups(pagination: Pagination = {}) {
+			const query = buildQueryParams(pagination);
+
+			return apiWrapper<BookingGroupSummaryResponse[]>(
+				`${baseUrl}/groups${query ? `?${query}` : ''}`,
+				{
+					method: 'GET',
+					fetcher
+				}
+			);
+		},
+
+		getGroup(bookingGroupId: string) {
+			return apiWrapper<BookingGroupResponse>(
+				`${baseUrl}/groups/${bookingGroupId}`,
+				{
+					method: 'GET',
+					fetcher
+				}
+			);
+		},
+
+		createGroupCheckout(bookingGroupId: string) {
+			return apiWrapper<CheckoutUrlResponse>(
+				`${baseUrl}/groups/${bookingGroupId}/checkout`,
+				{
+					method: 'POST',
+					fetcher
+				}
+			);
+		},
+
+		cancelGroup(bookingGroupId: string) {
+			return apiWrapper<null>(
+				`${baseUrl}/groups/${bookingGroupId}/cancel`,
+				{
+					method: 'POST',
+					fetcher
+				}
+			);
+		},
+
+		getCheckoutStatus(checkoutSessionId: string) {
+			return apiWrapper<CheckoutStatusResponse>(
+				`${baseUrl}/checkout/${checkoutSessionId}`,
+				{
+					method: 'GET',
 					fetcher
 				}
 			);

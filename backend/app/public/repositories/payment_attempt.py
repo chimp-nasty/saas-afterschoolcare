@@ -46,6 +46,29 @@ class PaymentAttemptRepository(Repository):
             .first()
         )
 
+    def get_latest_by_booking_group_id(
+        self,
+        *,
+        booking_group_id: UUID,
+    ) -> PaymentAttempt | None:
+        return (
+            self.db.query(PaymentAttempt)
+            .filter(PaymentAttempt.booking_group_id == booking_group_id)
+            .order_by(PaymentAttempt.created_at.desc())
+            .first()
+        )
+
+    def get_by_checkout_session_id(
+        self,
+        *,
+        checkout_session_id: str,
+    ) -> PaymentAttempt | None:
+        return (
+            self.db.query(PaymentAttempt)
+            .filter(PaymentAttempt.stripe_checkout_session_id == checkout_session_id)
+            .first()
+        )
+
     def get_successful_by_booking_group_id(
         self,
         *,

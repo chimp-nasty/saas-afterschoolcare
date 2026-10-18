@@ -242,6 +242,7 @@ class Location(Base):
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'Australia/Brisbane'::text"))
     name: Mapped[Optional[str]] = mapped_column(String(200))
     address: Mapped[Optional[str]] = mapped_column(Text)
     phone: Mapped[Optional[str]] = mapped_column(String(50))

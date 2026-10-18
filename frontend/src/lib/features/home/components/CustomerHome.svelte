@@ -4,26 +4,19 @@
     import Button from "$lib/components/actions/Button.svelte";
     import CustomerBookings from "./CustomerBookings.svelte";
 
-    type Booking = {
-        id: string;
-        serviceDate: string;
-        serviceCode: string;
-        serviceLabel: string;
-        childId: string;
-        childFirstName: string;
-    };
+    import type { BookingTableResponse } from "$lib/api/schema";
 
     let {
         bookings,
         locationCode
     }: {
-        bookings: Booking[];
+        bookings: BookingTableResponse[];
         locationCode: string;
     } = $props();
 </script>
 
 <div class="flex flex-1 flex-col justify-between gap-4">
-    <CustomerBookings {bookings} />
+    <CustomerBookings {bookings} {locationCode} />
 
     <Button
         fullWidth
