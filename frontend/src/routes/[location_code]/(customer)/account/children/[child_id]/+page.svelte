@@ -10,7 +10,7 @@
     const tabs = [
         { id: childTabs.PROFILE, label: "Profile" },
         { id: childTabs.AUTHORIZED_PICKUPS, label: "Pickups" },
-        { id: childTabs.MANAGE_DOCUMENTS, label: "Documents" }
+        { id: childTabs.MANAGE_DOCUMENTS, label: "Docs" }
     ];
 </script>
 

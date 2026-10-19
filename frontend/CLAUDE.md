@@ -94,7 +94,7 @@ Only `font-semibold` and `font-extrabold`; no `font-medium` or `font-bold`.
 
 ### Tabs
 
-`TabbedPanels` takes `tabs: { id, label }[]` and a `panel(id)` snippet, so panel props are type-checked. Tab ids live in `navigation/tabs.ts`. Tabs always show inline (scrolling sideways if they don't fit), so keep labels short.
+`TabbedPanels` takes `tabs: { id, label }[]` and a `panel(id)` snippet, so panel props are type-checked. Tab ids live in `navigation/tabs.ts`. Nothing scrolls sideways: up to 3 tabs share the row equally (labels may wrap, so keep them to one or two words); with more, mobile gets a native select. Customer pages use at most 3 tabs; a page with more sections uses a list of 44px link rows to separate pages instead.
 
 ### Forms
 
