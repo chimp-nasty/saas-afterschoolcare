@@ -1,5 +1,8 @@
 <script lang="ts">
     import type { LocationServiceSelectionResponse } from "$lib/api/schema";
+    import { ChevronRight } from "lucide-svelte";
+
+    import { formatMoney } from "$lib/utils/helpers";
 
     let {
         locationServices,
@@ -11,55 +14,42 @@
         ) => void;
     } = $props();
 
-    function formatPrice(
-        priceCents: number,
-        currency: string,
-    ): string {
-        return new Intl.NumberFormat("en-AU", {
-            style: "currency",
-            currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(priceCents / 100);
-    }
 </script>
 
-<div class="grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2">
-    {#each locationServices as locationService}
+<!-- One tile per service; tapping one moves to the next step. -->
+<div class="flex flex-col gap-4">
+    {#each locationServices as locationService (locationService.id)}
         <button
             type="button"
             onclick={() => onSelect(locationService)}
             class="
-                flex min-h-32 items-center justify-between
-                rounded-xl border border-gray-200 bg-white p-6
-                text-left shadow-sm
-                transition
-                hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md
-                focus:outline-none focus:ring-2 focus:ring-gray-300
+                flex min-h-24 w-full items-center justify-between gap-4
+                rounded-2xl border border-(--border) bg-(--surface) p-5
+                text-left shadow-sm transition
+                hover:border-(--primary)
+                focus-visible:border-(--primary) focus-visible:outline-none
             "
         >
-            <div class="flex flex-col gap-4">
-                <h3 class="text-lg font-semibold text-gray-900">
+            <div class="flex flex-col gap-2">
+                <h2 class="text-lg font-extrabold text-(--text)">
                     {locationService.service_name}
-                </h3>
+                </h2>
 
-                <div>
-                    <span class="text-2xl font-semibold text-gray-900">
-                        {formatPrice(
+                <p>
+                    <span class="text-base font-semibold text-(--text)">
+                        {formatMoney(
                             locationService.current_price_cents,
                             locationService.currency,
                         )}
                     </span>
 
-                    <span class="ml-1 text-sm text-gray-500">
+                    <span class="text-sm text-(--text-muted)">
                         / session
                     </span>
-                </div>
+                </p>
             </div>
 
-            <span class="text-xl text-gray-400">
-                →
-            </span>
+            <ChevronRight size={20} class="shrink-0 text-(--text-muted)" />
         </button>
     {/each}
 </div>

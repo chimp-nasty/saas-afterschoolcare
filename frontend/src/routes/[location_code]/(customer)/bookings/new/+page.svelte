@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Page from "$lib/components/layout/Page.svelte";
     import CreateBookingFlow from "$lib/features/bookings/components/CreateBookingFlow.svelte";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
@@ -21,9 +22,11 @@
     }
 </script>
 
-<CreateBookingFlow
-    locationServices={data.locationServices}
-    children={data.children}
-    serviceDays={data.serviceDays}
-    onConfirm={handleConfirm}
-/>
+<Page>
+    <CreateBookingFlow
+        locationServices={data.locationServices}
+        children={data.children}
+        serviceDays={data.serviceDays}
+        onConfirm={handleConfirm}
+    />
+</Page>

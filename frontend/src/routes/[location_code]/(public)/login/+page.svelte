@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto, invalidate } from '$app/navigation';
+	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
+	import Page from '$lib/components/layout/Page.svelte';
+	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import LoginForm from '$lib/features/auth/components/LoginForm.svelte';
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
@@ -22,4 +25,21 @@
 	}
 </script>
 
-<LoginForm onsubmit={login} />
+<Page>
+	<PageHeader title="Log in" />
+
+	<LoginForm onsubmit={login} />
+
+	<div class="flex flex-col items-center">
+		<HyperTextLink href={`/${page.data.locationCode}/forgot-password`}>
+			Forgot your password?
+		</HyperTextLink>
+
+		<p class="text-sm text-(--text-muted)">
+			New here?
+			<HyperTextLink href={`/${page.data.locationCode}/register`}>
+				Create an account
+			</HyperTextLink>
+		</p>
+	</div>
+</Page>

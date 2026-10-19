@@ -24,6 +24,11 @@ export type ListBookingsFilter = Omit<
 	keyof Pagination
 >;
 
+export type ListBookingGroupsFilter = Omit<
+	NonNullable<operations['list_booking_groups_booking_v1_groups_get']['parameters']['query']>,
+	keyof Pagination
+>;
+
 
 export function createBookingApi(
 	fetcher?: typeof fetch
@@ -43,8 +48,14 @@ export function createBookingApi(
 			);
 		},
 
-		listGroups(pagination: Pagination = {}) {
-			const query = buildQueryParams(pagination);
+		listGroups(
+			filters: ListBookingGroupsFilter = {},
+			pagination: Pagination = {}
+		) {
+			const query = buildQueryParams(
+				filters,
+				pagination
+			);
 
 			return apiWrapper<BookingGroupSummaryResponse[]>(
 				`${baseUrl}/groups${query ? `?${query}` : ''}`,

@@ -100,7 +100,7 @@
                 />
             {:else}
                 <Card>
-                    <p class="p-4 text-sm text-(--text-muted)">
+                    <p class="text-sm text-(--text-muted)">
                         This panel is not ready yet.
                     </p>
                 </Card>

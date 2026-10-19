@@ -3,14 +3,16 @@
 	import { goto } from '$app/navigation';
 
 	import { setSession, clearSession, auth } from '$lib/auth/state.svelte';
-	import { createAuthApi } from '$lib/api/auth/adapters/auth';
+	import { logout as logoutAndLeave } from '$lib/auth/logout';
 
 	import { Toaster } from 'svelte-sonner';
+	import { CalendarDays, House, User } from 'lucide-svelte';
 
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Footer from '$lib/components/layout/tenant/Footer.svelte';
 	import Sidebar, { type SidebarItem } from '$lib/components/controls/Sidebar.svelte';
+	import BottomNav, { type BottomNavItem } from '$lib/components/controls/BottomNav.svelte';
 	import Drawer from '$lib/components/overlays/Drawer.svelte';
 
 	let { data, children } = $props();
@@ -99,18 +101,26 @@
 		return result;
 	});
 
+	// Customers (only) navigate with a bottom bar on mobile.
+	const isCustomerOnly = $derived(
+		$auth.roles.includes('customer') &&
+		!$auth.roles.includes('admin') &&
+		!$auth.roles.includes('staff')
+	);
+
+	const bottomNavItems = $derived.by((): BottomNavItem[] => [
+		{ label: 'Home', href: route('/home'), icon: House, isActive: isActive('/home') },
+		{ label: 'Bookings', href: route('/bookings'), icon: CalendarDays, isActive: isActive('/bookings') },
+		{ label: 'Account', href: route('/account'), icon: User, isActive: isActive('/account') }
+	]);
+
 	async function logout() {
 		isLoggingOut = true;
 
 		try {
-			const authApi = createAuthApi();
-
-			await authApi.logout();
-
-			clearSession();
 			sidebarOpen = false;
 
-			await goto(`/${locationCode}/`);
+			await logoutAndLeave(data.locationCode);
 		} finally {
 			isLoggingOut = false;
 		}
@@ -133,14 +143,20 @@
 	<Sidebar {items} />
 {/snippet}
 
+{#snippet bottomNav()}
+	<BottomNav items={bottomNavItems} />
+{/snippet}
+
 <Layout
 	primaryColor={data.location.primary_color}
 	secondaryColor={data.location.secondary_color}
 	sidebar={$auth.authenticated ? sidebar : undefined}
+	bottomNav={$auth.authenticated && isCustomerOnly ? bottomNav : undefined}
 >
 	{#snippet header()}
+		<!-- Customers use the BottomNav on mobile, so no menu. -->
 		<Header
-			onMenu={() => sidebarOpen = true}
+			onMenu={isCustomerOnly ? undefined : () => sidebarOpen = true}
 		/>
 	{/snippet}
 
@@ -151,7 +167,7 @@
 	{/snippet}
 </Layout>
 
-{#if $auth.authenticated}
+{#if $auth.authenticated && !isCustomerOnly}
 	<Drawer
 		open={sidebarOpen}
 		onclose={() => sidebarOpen = false}

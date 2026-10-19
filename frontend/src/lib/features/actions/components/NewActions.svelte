@@ -9,7 +9,6 @@
         PaginationLoadMode
     } from "$lib/types/pagination";
 
-    import Card from "$lib/components/layout/Card.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
 
     import PaginationControls from "$lib/components/controls/PaginationControls.svelte";
@@ -173,66 +172,64 @@
     }
 </script>
 
-<Card>
-    <div class="flex flex-col gap-4">
-        {#each actions as action}
-            <DataCard
-                title={action.title}
-                href={buildActionHref(
-                    locationCode,
-                    {
-                        childId: action.child_id,
-                        target: action.target
-                    }
-                ) ?? undefined}
-                onclick={(event) =>
-                    handleActionClick(
-                        action.id,
-                        event
-                    )}
-                data={[
-                    {
-                        label: "Message",
-                        value: action.message
-                    },
-                    {
-                        label: "Created",
-                        value: action.created_at,
-                        format: 'datetime'
-                    },
-                ]}
+<div class="flex flex-col gap-4">
+    {#each actions as action}
+        <DataCard
+            title={action.title}
+            href={buildActionHref(
+                locationCode,
+                {
+                    childId: action.child_id,
+                    target: action.target
+                }
+            ) ?? undefined}
+            onclick={(event) =>
+                handleActionClick(
+                    action.id,
+                    event
+                )}
+            data={[
+                {
+                    label: "Message",
+                    value: action.message
+                },
+                {
+                    label: "Created",
+                    value: action.created_at,
+                    format: 'datetime'
+                },
+            ]}
+        />
+    {/each}
+
+    {#if viewportReady}
+        {#if isDesktop}
+            <PaginationControls
+                {page}
+                {hasNext}
+                {isLoading}
+                onPrevious={handlePrevious}
+                onNext={handleNext}
             />
-        {/each}
+        {:else}
+            <InfiniteScrollTrigger
+                disabled={
+                    isLoading ||
+                    !hasNext
+                }
+                onTrigger={loadMore}
+            />
 
-        {#if viewportReady}
-            {#if isDesktop}
-                <PaginationControls
-                    {page}
-                    {hasNext}
-                    {isLoading}
-                    onPrevious={handlePrevious}
-                    onNext={handleNext}
-                />
-            {:else}
-                <InfiniteScrollTrigger
-                    disabled={
-                        isLoading ||
-                        !hasNext
-                    }
-                    onTrigger={loadMore}
-                />
-
-                {#if isLoading}
-                    <div
-                        class="
-                            py-3 text-center
-                            text-sm text-(--text-muted)
-                        "
-                    >
-                        Loading...
-                    </div>
-                {/if}
+            {#if isLoading}
+                <div
+                    class="
+                        py-3 text-center
+                        text-sm text-(--text-muted)
+                    "
+                >
+                    Loading...
+                </div>
             {/if}
         {/if}
-    </div>
-</Card>
+    {/if}
+</div>

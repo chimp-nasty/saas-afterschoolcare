@@ -1,90 +1,69 @@
 <!--
-    "My bookings": one card per checkout, linking to its review screen.
+    One "My bookings" tab: a card per checkout, linking to its review screen.
     The page owns loading; this just renders and asks for more.
 -->
 <script lang="ts">
     import Button from "$lib/components/actions/Button.svelte";
-    import Card from "$lib/components/layout/Card.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
 
     import type { BookingGroupSummaryResponse } from "$lib/api/schema";
-    import { formatDateDDMMYYYY } from "$lib/utils/helpers";
+    import { BOOKING_STATUS_LABELS } from "$lib/features/bookings/status";
+    import { formatDateRange, formatMoney, formatTimestamp } from "$lib/utils/helpers";
 
     let {
         bookingGroups,
         locationCode,
         hasMore,
         isLoading = false,
+        emptyMessage,
         onLoadMore,
-        onBookNow,
     }: {
         bookingGroups: BookingGroupSummaryResponse[];
         locationCode: string;
         hasMore: boolean;
         isLoading?: boolean;
+        emptyMessage: string;
         onLoadMore: () => void;
-        onBookNow: () => void;
     } = $props();
 
-    const STATUS_LABELS: Record<string, string> = {
-        PENDING: "Awaiting payment",
-        CONFIRMED: "Confirmed",
-        EXPIRED: "Expired",
-        CANCELLED: "Cancelled",
-    };
+    // "Confirmed Tue, 20 Oct" once paid; just the label otherwise.
+    function formatStatus(group: BookingGroupSummaryResponse): string {
+        const label = BOOKING_STATUS_LABELS[group.status];
 
-    function formatDates(group: BookingGroupSummaryResponse): string {
-        const first = formatDateDDMMYYYY(group.first_date);
-
-        return group.first_date === group.last_date
-            ? first
-            : `${first} – ${formatDateDDMMYYYY(group.last_date)}`;
+        return group.status === "CONFIRMED" && group.paid_at
+            ? `${label} ${formatTimestamp(group.paid_at)}`
+            : label;
     }
 
-    function formatPrice(group: BookingGroupSummaryResponse): string {
-        return new Intl.NumberFormat("en-AU", {
-            style: "currency",
-            currency: group.currency,
-        }).format(group.total_cents / 100);
-    }
 </script>
 
-<Card>
-    <div class="flex flex-col gap-4">
-        {#each bookingGroups as group (group.booking_group_id)}
-            <DataCard
-                title={group.service_name}
-                href={`/${locationCode}/bookings/${group.booking_group_id}/review`}
-                data={[
-                    { label: "Status", value: STATUS_LABELS[group.status] ?? group.status },
-                    { label: "Children", value: group.child_names.join(", ") },
-                    { label: "Dates", value: formatDates(group) },
-                    { label: "Sessions", value: group.booking_count },
-                    { label: "Total", value: formatPrice(group) },
-                ]}
-            />
-        {:else}
-            <p class="px-1 py-4 text-sm text-(--text-muted)">
-                You haven't made any bookings yet.
-            </p>
-        {/each}
+<div class="flex flex-col gap-4">
+    {#each bookingGroups as group (group.booking_group_id)}
+        <DataCard
+            title={group.service_name}
+            href={`/${locationCode}/bookings/${group.booking_group_id}/review`}
+            data={[
+                { label: "Status", value: formatStatus(group) },
+                { label: "Children", value: group.child_names.join(", ") },
+                { label: "Dates", value: formatDateRange(group.first_date, group.last_date) },
+                { label: "Sessions", value: group.booking_count },
+                { label: "Total", value: formatMoney(group.total_cents, group.currency) },
+            ]}
+        />
+    {:else}
+        <p class="px-1 py-4 text-sm text-(--text-muted)">
+            {emptyMessage}
+        </p>
+    {/each}
 
-        {#if hasMore}
-            <Button
-                variant="ghost"
-                fullWidth
-                {isLoading}
-                onclick={onLoadMore}
-            >
-                Load more
-            </Button>
-        {/if}
-
+    {#if hasMore}
         <Button
+            variant="ghost"
             fullWidth
-            onclick={onBookNow}
+            {isLoading}
+            onclick={onLoadMore}
         >
-            Book Now
+            Load more
         </Button>
-    </div>
-</Card>
+    {/if}
+</div>

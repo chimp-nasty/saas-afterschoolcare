@@ -63,6 +63,7 @@
 <Form
 	{isLoading}
 	handleSubmit={submit}
+	submitLabel="Create account"
 >
 	<Field label="Email" error={errors.email}>
 		{#snippet children(id)}
@@ -76,25 +77,25 @@
 		{/snippet}
 	</Field>
 
-	<Field label="Confirm Password" error={errors.confirmPassword}>
+	<Field label="Confirm password" error={errors.confirmPassword}>
 		{#snippet children(id)}
 			<input {id} type="password" autocomplete="new-password" bind:value={body.confirmPassword} required />
 		{/snippet}
 	</Field>
 
-	<Field label="First Name" error={errors.first_name}>
+	<Field label="First name" error={errors.first_name}>
 		{#snippet children(id)}
 			<input {id} type="text" autocomplete="given-name" maxlength="255" bind:value={body.first_name} required />
 		{/snippet}
 	</Field>
 
-	<Field label="Last Name" error={errors.last_name}>
+	<Field label="Last name" error={errors.last_name}>
 		{#snippet children(id)}
 			<input {id} type="text" autocomplete="family-name" maxlength="255" bind:value={body.last_name} required />
 		{/snippet}
 	</Field>
 
-	<Field label="Accept Terms and Conditions" error={errors.terms_accepted} inline>
+	<Field label="I accept the terms and conditions" error={errors.terms_accepted} inline>
 		{#snippet children(id)}
 			<input {id} type="checkbox" bind:checked={body.terms_accepted} required />
 		{/snippet}

@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+
+	import Button from '$lib/components/actions/Button.svelte';
+
 	import type { BookingTableResponse } from '$lib/api/schema';
+	import { BOOKING_STATUS_LABELS } from '$lib/features/bookings/status';
+	import { formatDate } from '$lib/utils/helpers';
 
 	type Day = {
 		date: Date;
@@ -16,7 +22,8 @@
 		locationCode: string;
 	} = $props();
 
-	// Pending bookings open their review screen (pay or cancel).
+	// Every booking opens its group's review screen: pay or cancel a pending
+	// one, see or refund a confirmed one.
 	function reviewHref(booking: BookingTableResponse): string {
 		return `/${locationCode}/bookings/${booking.booking_group_id}/review`;
 	}
@@ -149,58 +156,34 @@
 		selectedDayIndex = 0;
 	}
 
-	function previousDay() {
-		if (selectedDayIndex > 0) {
-			selectedDayIndex -= 1;
-		}
-	}
-
-	function nextDay() {
-		if (selectedDayIndex < DAYS_IN_WEEK - 1) {
-			selectedDayIndex += 1;
-		}
-	}
-
 	function selectDay(index: number) {
 		selectedDayIndex = index;
 	}
 
-	function formatSelectedDate(date: Date): string {
-		return date.toLocaleDateString(
-			'en-AU',
-			{
-				weekday: 'long',
-				day: 'numeric',
-				month: 'long'
-			}
-		);
-	}
 </script>
 
 <div class="w-full">
 	<!-- Week navigation -->
 	<div class="flex items-center justify-between">
-		<button
-			type="button"
-			class="cursor-pointer px-3 py-2 text-lg"
+		<Button
+			variant="ghost"
 			onclick={previousWeek}
 			aria-label="Previous week"
 		>
-			‹
-		</button>
+			<ChevronLeft size={20} />
+		</Button>
 
-		<p class="text-sm font-semibold">
+		<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
 			{weekLabel}
 		</p>
 
-		<button
-			type="button"
-			class="cursor-pointer px-3 py-2 text-lg"
+		<Button
+			variant="ghost"
 			onclick={nextWeek}
 			aria-label="Next week"
 		>
-			›
-		</button>
+			<ChevronRight size={20} />
+		</Button>
 	</div>
 
 	<!-- Week -->
@@ -209,9 +192,9 @@
 			<button
 				type="button"
 				class={[
-					'flex cursor-pointer flex-col items-center rounded-md py-2',
+					'flex cursor-pointer flex-col items-center rounded-lg py-2',
 					selectedDayIndex === index
-						? 'bg-(--surface-muted)'
+						? 'bg-(--primary-soft) text-(--primary)'
 						: ''
 				]}
 				onclick={() => selectDay(index)}
@@ -222,7 +205,7 @@
 					{day.dayLabel}
 				</span>
 
-				<span class="mt-1 text-sm">
+				<span class="mt-1 text-sm font-semibold">
 					{day.dayNumber}
 				</span>
 
@@ -246,41 +229,22 @@
 
 	<!-- Selected day -->
 	<div>
-		<div class="flex items-center justify-between">
-			<button
-				type="button"
-				class="cursor-pointer px-3 py-2 text-lg disabled:cursor-default disabled:opacity-25"
-				onclick={previousDay}
-				disabled={selectedDayIndex === 0}
-				aria-label="Previous day"
-			>
-				‹
-			</button>
+		<p class="text-center font-extrabold">
+			{formatDate(selectedDay.dateKey)}
+		</p>
 
-			<p class="font-semibold">
-				{formatSelectedDate(selectedDay.date)}
-			</p>
-
-			<button
-				type="button"
-				class="cursor-pointer px-3 py-2 text-lg disabled:cursor-default disabled:opacity-25"
-				onclick={nextDay}
-				disabled={selectedDayIndex === DAYS_IN_WEEK - 1}
-				aria-label="Next day"
-			>
-				›
-			</button>
-		</div>
-
-		<div class="mt-4 min-h-28">
+		<div class="mt-4 flex min-h-28 flex-col gap-2">
 			{#each selectedBookings as booking (booking.id)}
-				{#snippet details()}
+				<a
+					href={reviewHref(booking)}
+					class="flex min-h-11 items-center gap-3 rounded-lg border border-(--border) bg-(--surface) px-4 py-3 transition hover:border-(--primary)"
+				>
 					<span
-						class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+						class="h-2.5 w-2.5 shrink-0 rounded-full"
 						style:background-color={serviceColor(booking.service_name)}
 					></span>
 
-					<div>
+					<div class="min-w-0 flex-1">
 						<p class="font-semibold">
 							{booking.child_name}
 						</p>
@@ -288,27 +252,16 @@
 						<p class="text-sm text-(--text-muted)">
 							{booking.service_name}
 							{#if booking.booking_status === 'PENDING'}
-								· <span class="text-(--primary)">Awaiting payment ›</span>
+								· <span class="font-semibold text-(--primary)">{BOOKING_STATUS_LABELS.PENDING}</span>
 							{/if}
 						</p>
 					</div>
-				{/snippet}
 
-				{#if booking.booking_status === 'PENDING'}
-					<a
-						href={reviewHref(booking)}
-						class="-mx-2 mb-2 flex items-start gap-3 rounded-md px-2 py-2 last:mb-0 hover:bg-(--surface-muted)"
-					>
-						{@render details()}
-					</a>
-				{:else}
-					<div class="mb-4 flex items-start gap-3 last:mb-0">
-						{@render details()}
-					</div>
-				{/if}
+					<ChevronRight size={18} class="shrink-0 text-(--text-muted)" />
+				</a>
 			{:else}
 				<p class="text-sm text-(--text-muted)">
-					No bookings
+					No bookings on this day.
 				</p>
 			{/each}
 		</div>

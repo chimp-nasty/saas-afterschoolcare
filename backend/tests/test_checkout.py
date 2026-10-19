@@ -27,6 +27,8 @@ def _status(customer, session_id: str) -> dict:
     return response.json()["data"]
 
 
+# Booking opens a Stripe checkout for the right amount, with success and
+# cancel links pointing back to this tenant's site and location.
 def test_booking_opens_a_checkout(api: Api, customer, fake_stripe):
     data, _ = _booked(api, customer)
 
@@ -39,6 +41,8 @@ def test_booking_opens_a_checkout(api: Api, customer, fake_stripe):
     assert [item.amount_cents for item in created["line_items"]] == [data["amount"]]
 
 
+# A booking request from another website is refused (400), so Stripe can't
+# be told to send customers back to a site that isn't ours.
 def test_checkout_rejects_another_sites_origin(api: Api, customer):
     child = api.new_child(customer)
 
@@ -52,8 +56,11 @@ def test_checkout_rejects_another_sites_origin(api: Api, customer):
     )
 
     assert response.status_code == 400
+    assert response.json()["msg"] == "Bookings must be made from this location's site"
 
 
+# Straight after booking, the payment and the booking are both PENDING, for
+# the full amount.
 def test_new_checkout_is_pending(api: Api, customer):
     data, _ = _booked(api, customer)
 
@@ -64,6 +71,8 @@ def test_new_checkout_is_pending(api: Api, customer):
     assert [b["booking_status"] for b in status["bookings"]] == ["PENDING"]
 
 
+# When Stripe's 'paid' webhook arrives, the payment SUCCEEDS and the
+# bookings become CONFIRMED and PAID.
 def test_paid_webhook_confirms_bookings(api: Api, customer):
     data, _ = _booked(api, customer)
     session_id = api.session_id(data["checkout_url"])
@@ -77,6 +86,41 @@ def test_paid_webhook_confirms_bookings(api: Api, customer):
     ]
 
 
+# paid_at is empty until the payment goes through, then the paid webhook
+# sets it, and the review page and 'My bookings' list show the same time.
+def test_paid_webhook_records_when_it_was_paid(api: Api, customer):
+    data, _ = _booked(api, customer)
+    group_id = data["booking_group_id"]
+
+    def paid_at() -> tuple:
+        group = customer.client.get(f"/booking/v1/groups/{group_id}").json()["data"]
+        [summary] = [
+            g for g in customer.client.get("/booking/v1/groups").json()["data"]
+            if g["booking_group_id"] == group_id
+        ]
+        return group["paid_at"], summary["paid_at"]
+
+    assert paid_at() == (None, None)
+
+    api.webhook("checkout.session.completed", api.session_id(data["checkout_url"]))
+
+    group_paid_at, summary_paid_at = paid_at()
+    assert group_paid_at is not None
+    assert summary_paid_at == group_paid_at
+
+
+# A checkout that expires without payment never gets a paid_at.
+def test_expired_checkout_is_never_paid(api: Api, customer):
+    data, _ = _booked(api, customer)
+
+    api.webhook("checkout.session.expired", api.session_id(data["checkout_url"]))
+
+    group = customer.client.get(f"/booking/v1/groups/{data['booking_group_id']}").json()["data"]
+    assert group["paid_at"] is None
+
+
+# Stripe can resend webhooks or send a late 'expired' after payment; none of
+# these undo a confirmed payment.
 def test_repeat_webhook_delivery_is_harmless(api: Api, customer):
     data, _ = _booked(api, customer)
     session_id = api.session_id(data["checkout_url"])
@@ -91,6 +135,8 @@ def test_repeat_webhook_delivery_is_harmless(api: Api, customer):
     assert status["bookings"][0]["booking_status"] == "CONFIRMED"
 
 
+# For slower payment methods (e.g. bank debit), a completed but unpaid
+# checkout stays PENDING until Stripe says the payment succeeded.
 def test_unpaid_completion_waits_for_async_payment(api: Api, customer):
     data, _ = _booked(api, customer)
     session_id = api.session_id(data["checkout_url"])
@@ -102,6 +148,9 @@ def test_unpaid_completion_waits_for_async_payment(api: Api, customer):
     assert _status(customer, session_id)["payment_status"] == "SUCCEEDED"
 
 
+# While a checkout is open it holds the place (others get 409). When it
+# expires, the booking becomes EXPIRED and the place can be booked by
+# someone else.
 def test_expired_checkout_frees_the_place(api: Api, customer, other_customer):
     data, day = _booked(api, customer, capacity=1)
     session_id = api.session_id(data["checkout_url"])
@@ -120,6 +169,8 @@ def test_expired_checkout_frees_the_place(api: Api, customer, other_customer):
     assert api.book(other_customer, {their_child["id"]: [day]}).status_code == 201
 
 
+# Retrying a booking with the same idempotency key returns the same open
+# Stripe checkout link.
 def test_resuming_returns_the_open_checkout(api: Api, customer):
     child = api.new_child(customer)
     day = api.service_day()
@@ -131,6 +182,9 @@ def test_resuming_returns_the_open_checkout(api: Api, customer):
     assert again["checkout_url"] == first["checkout_url"]
 
 
+# If the old checkout expired on Stripe, retrying opens a new one. The old
+# checkout's late 'expired' webhook must not cancel the bookings the new one
+# is paying for.
 def test_resuming_after_expiry_starts_a_new_checkout(api: Api, customer, fake_stripe):
     child = api.new_child(customer)
     day = api.service_day()
@@ -155,6 +209,8 @@ def test_resuming_after_expiry_starts_a_new_checkout(api: Api, customer, fake_st
     assert _status(customer, new_session)["bookings"][0]["booking_status"] == "CONFIRMED"
 
 
+# An idempotency key that already belongs to a paid booking can't be reused
+# for a different booking (409).
 def test_reusing_a_paid_bookings_key(api: Api, customer):
     key = uuid.uuid4().hex
     data, day = _booked(api, customer, key=key)
@@ -166,6 +222,8 @@ def test_reusing_a_paid_bookings_key(api: Api, customer):
     assert response.status_code == 409
 
 
+# A webhook with an invalid Stripe signature is rejected (400) and the
+# payment stays PENDING.
 def test_forged_webhook_is_rejected(api: Api, customer):
     data, _ = _booked(api, customer)
     session_id = api.session_id(data["checkout_url"])
@@ -176,6 +234,7 @@ def test_forged_webhook_is_rejected(api: Api, customer):
     assert _status(customer, session_id)["payment_status"] == "PENDING"
 
 
+# A customer can't look up another customer's checkout status (404).
 def test_checkout_status_is_private(api: Api, customer, other_customer):
     data, _ = _booked(api, customer)
 
@@ -186,6 +245,7 @@ def test_checkout_status_is_private(api: Api, customer, other_customer):
     assert response.status_code == 404
 
 
+# Looking up a checkout session that doesn't exist returns 404.
 def test_unknown_checkout(customer):
     response = customer.client.get("/booking/v1/checkout/cs_test_unknown")
 
@@ -196,6 +256,8 @@ def test_unknown_checkout(customer):
 # The real StripeClient (the services get FakeStripe), network call stubbed
 # ---------------------------------------------------------------------------
 
+# Currency codes are sent to Stripe as plain lowercase text ('aud'), whether
+# they start as our enum or as a string.
 def test_stripe_gets_a_plain_currency_code():
     from app.db.models import CurrencyCodeEnum
     from app.integrations.payments.stripe.client import _currency_code
@@ -206,7 +268,10 @@ def test_stripe_gets_a_plain_currency_code():
     assert _currency_code("AUD") == "aud"
 
 
-def test_stripe_failures_become_a_502(monkeypatch):
+# An error from Stripe while creating a checkout is turned into our
+# PaymentProviderError instead of leaking Stripe's own exception, and a
+# booking that hits it gets a 502 with a retry message.
+def test_stripe_failures_become_a_502(api: Api, customer, fake_stripe, monkeypatch):
     import pytest
     import stripe
 
@@ -227,3 +292,15 @@ def test_stripe_failures_become_a_502(monkeypatch):
             cancel_url="https://example.test/cancel",
             idempotency_key="test",
         )
+
+    # The services use FakeStripe; make it fail the same way.
+    def provider_down(self, **_):
+        raise PaymentProviderError()
+
+    monkeypatch.setattr(fake_stripe, "create_checkout_session", provider_down)
+
+    child = api.new_child(customer)
+    response = api.book(customer, {child["id"]: [api.service_day()]})
+
+    assert response.status_code == 502
+    assert response.json()["msg"] == "Payment provider error. Please try again."

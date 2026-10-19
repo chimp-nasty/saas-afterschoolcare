@@ -41,6 +41,7 @@
 <Form
 	{isLoading}
 	handleSubmit={submit}
+	submitLabel="Log in"
 >
 	<Field label="Email" error={errors.email}>
 		{#snippet children(id)}

@@ -16,8 +16,6 @@ html {
 	--border: #E4E4E7;
 
 	--primary: #5E2BFF;
-	--primary-hover: #4C1EDB;
-	--primary-soft: #EEE9FF;
 
 	--secondary: #E8FFC2;
 	--secondary-strong: #548C0D;
@@ -29,6 +27,49 @@ html {
 	--danger: #e11d48;
 	--danger-soft: #ffe4e6;
 	--danger-text: #9f1239;
+
+	/* Behind drawers and modals. */
+	--overlay: rgb(0 0 0 / 0.2);
+}
+
+/*
+ * Derived from --primary. Declared again on the tenant layout (which swaps
+ * --primary for the location's brand colour), because a var() is resolved
+ * where it's declared: on :root alone these would keep the default purple.
+ */
+:root,
+[data-tenant-theme] {
+	--primary-hover: color-mix(in oklab, var(--primary) 82%, black);
+	--primary-soft: color-mix(in oklab, var(--primary) 10%, white);
+
+	--hyperlink: var(--primary);
+	--hyperlink-hover: var(--primary-hover);
+}
+
+body {
+	background-color: var(--bg);
+	color: var(--text);
+}
+
+/*
+ * Height of the customer BottomNav (mobile only). A sticky ActionBar sits
+ * above it, and the page leaves room for it at the bottom.
+ */
+:root {
+	--bottom-nav-height: 0px;
+}
+
+[data-bottom-nav] {
+	--bottom-nav-height: calc(4rem + env(safe-area-inset-bottom));
+
+	/* So the footer and the end of the page aren't hidden behind it. */
+	padding-bottom: var(--bottom-nav-height);
+}
+
+@media (width >= 48rem) {
+	[data-bottom-nav] {
+		--bottom-nav-height: 0px;
+	}
 }
 
 @layer base {

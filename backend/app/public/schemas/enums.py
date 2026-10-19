@@ -36,6 +36,12 @@ class BookingStatus(StrEnum):
     EXPIRED = "EXPIRED"
 
 
+# The "My bookings" tabs. Lower case: the frontend uses these as tab ids.
+class BookingGroupScope(StrEnum):
+    UPCOMING = "upcoming"
+    HISTORY = "history"
+
+
 class PaymentStatus(StrEnum):
     PENDING = "PENDING"
     PAID = "PAID"

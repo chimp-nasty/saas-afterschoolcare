@@ -1,6 +1,7 @@
 from tests.factories import COMPLETE_PROFILE, Api
 
 
+# Signing up with an email that already has an account is refused (409).
 def test_signup_duplicate_email(api: Api, customer):
     response = api.client().post(
         "/customer/v1/onboard/location1",
@@ -16,6 +17,7 @@ def test_signup_duplicate_email(api: Api, customer):
     assert response.status_code == 409
 
 
+# Signing up without accepting the terms is rejected as invalid (422).
 def test_signup_requires_terms(api: Api):
     response = api.client().post(
         "/customer/v1/onboard/location1",
@@ -31,6 +33,8 @@ def test_signup_requires_terms(api: Api):
     assert response.status_code == 422
 
 
+# A newly signed-up customer's profile has no contact details yet (phone is
+# empty).
 def test_new_profile_starts_empty(api: Api):
     customer = api.new_customer(complete_profile=False)
 
@@ -40,14 +44,26 @@ def test_new_profile_starts_empty(api: Api):
     assert response.json()["data"]["phone"] is None
 
 
+# Updating one field returns the updated profile, and reading it back shows
+# the change with every other field left as it was.
 def test_update_profile(customer):
-    response = customer.client.get("/customer/v1/profile")
+    response = customer.client.patch(
+        "/customer/v1/profile",
+        json={"suburb": "Toowong"},
+    )
 
     assert response.status_code == 200
-    data = response.json()["data"]
-    assert {key: data[key] for key in COMPLETE_PROFILE} == COMPLETE_PROFILE
+    assert response.json()["data"]["suburb"] == "Toowong"
+
+    data = customer.client.get("/customer/v1/profile").json()["data"]
+    assert {key: data[key] for key in COMPLETE_PROFILE} == {
+        **COMPLETE_PROFILE,
+        "suburb": "Toowong",
+    }
 
 
+# Saving an Australian state that doesn't exist ('XX') is rejected as
+# invalid (422).
 def test_update_profile_rejects_unknown_state(customer):
     response = customer.client.patch(
         "/customer/v1/profile",

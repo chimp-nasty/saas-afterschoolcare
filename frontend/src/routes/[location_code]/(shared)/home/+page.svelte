@@ -5,11 +5,12 @@
     import AdminHome from '$lib/features/home/components/AdminHome.svelte';
 	import StaffHome from '$lib/features/home/components/StaffHome.svelte';
 	import CustomerHome from '$lib/features/home/components/CustomerHome.svelte';
+	import Page from '$lib/components/layout/Page.svelte';
 
 	let { data } = $props();
 </script>
 
-<div class="flex w-full max-w-xl flex-1 flex-col">
+<Page>
 	<Authorize
         locationCode={page.data.locationCode}
         roles={['admin']}
@@ -35,4 +36,4 @@
     >
         <CustomerHome bookings={data.bookings} locationCode={data.locationCode}/>
     </Authorize>
-</div>
+</Page>

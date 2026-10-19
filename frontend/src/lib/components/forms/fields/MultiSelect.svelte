@@ -1,13 +1,21 @@
-<script lang="ts">
-	import { onMount } from 'svelte';
-
-	import InlineError from './InlineError.svelte';
-
+<!--
+    A labelled multi-select: a trigger styled like the other underline inputs,
+    opening a list of 44px checkbox rows (with "Select all"). Tapping outside
+    or Escape closes it.
+-->
+<script lang="ts" module>
 	export type MultiSelectOption = {
 		value: string;
 		label: string;
 		disabled?: boolean;
 	};
+</script>
+
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { ChevronDown } from 'lucide-svelte';
+
+	import Field from '../Field.svelte';
 
 	type Props = {
 		value: string[];
@@ -17,7 +25,6 @@
 		placeholder?: string;
 
 		isDisabled?: boolean;
-		isRequired?: boolean;
 
 		error?: string | null;
 	};
@@ -30,21 +37,12 @@
 		placeholder = 'Select options',
 
 		isDisabled = false,
-		isRequired = true,
 
 		error
 	}: Props = $props();
 
 	let containerElement: HTMLDivElement;
 	let isOpen = $state(false);
-
-	const name = $derived(
-		label.trim().toLowerCase().replace(/\s+/g, '-')
-	);
-	
-	const id = $derived(
-		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
-	);
 
 	const selectableOptions = $derived(
 		options.filter((option) => !option.disabled)
@@ -90,7 +88,8 @@
 	}
 
 	onMount(() => {
-		function handleMouseDown(event: MouseEvent) {
+		// pointerdown, not mousedown, so taps on phones close it too.
+		function handlePointerDown(event: PointerEvent) {
 			if (
 				containerElement &&
 				!containerElement.contains(event.target as Node)
@@ -105,80 +104,81 @@
 			}
 		}
 
-		document.addEventListener('mousedown', handleMouseDown);
+		document.addEventListener('pointerdown', handlePointerDown);
 		document.addEventListener('keydown', handleKeyDown);
 
 		return () => {
-			document.removeEventListener('mousedown', handleMouseDown);
+			document.removeEventListener('pointerdown', handlePointerDown);
 			document.removeEventListener('keydown', handleKeyDown);
 		};
 	});
 </script>
 
+{#snippet optionRow(checked: boolean, text: string, disabled: boolean, onclick: () => void, role?: string)}
+	<button
+		type="button"
+		{role}
+		aria-selected={role ? checked : undefined}
+		{disabled}
+		{onclick}
+		class="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-base text-(--text) hover:bg-(--surface-muted) disabled:cursor-not-allowed disabled:opacity-50"
+	>
+		<input
+			type="checkbox"
+			{checked}
+			{disabled}
+			tabindex="-1"
+			aria-hidden="true"
+			class="rounded text-(--primary)"
+		/>
+
+		{text}
+	</button>
+{/snippet}
+
 <div
-	class="field"
+	class="relative"
 	bind:this={containerElement}
 >
-	<label for={id}>
-		{label}
-        {#if isRequired}
-            <span aria-hidden="true">*</span>
-        {/if}
-	</label>
+	<Field {label} {error}>
+		{#snippet children(id)}
+			<button
+				{id}
+				type="button"
+				disabled={isDisabled}
+				aria-expanded={isOpen}
+				aria-haspopup="listbox"
+				onclick={() => (isOpen = !isOpen)}
+				class={[
+					'flex min-h-11 w-full items-center justify-between gap-2 border-b border-(--border) text-left text-base disabled:cursor-not-allowed disabled:opacity-65',
+					isOpen && 'border-(--primary)',
+					selectedCount === 0 ? 'text-(--text-muted)' : 'text-(--text)'
+				]}
+			>
+				{triggerText}
 
-	<button
-		{id}
-		type="button"
-		disabled={isDisabled}
-		aria-expanded={isOpen}
-		aria-haspopup="listbox"
-		onclick={() => (isOpen = !isOpen)}
-	>
-		{triggerText}
-	</button>
+				<ChevronDown size={18} class="shrink-0 text-(--text-muted)" />
+			</button>
+		{/snippet}
+	</Field>
 
 	{#if isOpen}
 		<div
 			role="listbox"
 			aria-multiselectable="true"
-			class="absolute z-50"
+			class="absolute inset-x-0 z-50 mt-1 flex max-h-72 flex-col overflow-y-auto rounded-2xl border border-(--border) bg-(--surface) p-2 shadow-sm"
 		>
-			<button
-				type="button"
-				onclick={toggleAll}
-			>
-				<input
-					type="checkbox"
-					checked={allSelected}
-					tabindex="-1"
-					aria-hidden="true"
-				/>
-
-				Select all
-			</button>
+			{@render optionRow(allSelected, 'Select all', false, toggleAll)}
 
 			{#each options as option (option.value)}
-				<button
-					type="button"
-					role="option"
-					disabled={option.disabled}
-					aria-selected={value.includes(option.value)}
-					onclick={() => toggleOption(option.value)}
-				>
-					<input
-						{name}
-						type="checkbox"
-						checked={value.includes(option.value)}
-						disabled={option.disabled}
-						tabindex="-1"
-						aria-hidden="true"
-					/>
-
-					{option.label}
-				</button>
+				{@render optionRow(
+					value.includes(option.value),
+					option.label,
+					option.disabled ?? false,
+					() => toggleOption(option.value),
+					'option'
+				)}
 			{/each}
 		</div>
 	{/if}
-
-	<InlineError message={error} />
 </div>

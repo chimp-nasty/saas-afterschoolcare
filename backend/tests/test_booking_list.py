@@ -30,6 +30,9 @@ def _move_day_to(api: Api, day_id: str, service_date: date):
     )
 
 
+# 'My bookings' shows one summary per checkout covering all of it: both
+# children's names, the first and last dates, the session count (3) and the
+# total price.
 def test_summary_covers_the_whole_checkout(api: Api, customer):
     emma = api.new_child(customer, first_name="Emma", last_name="Summary")
     noah = api.new_child(customer, first_name="Noah", last_name="Summary")
@@ -53,6 +56,8 @@ def test_summary_covers_the_whole_checkout(api: Api, customer):
     assert group["last_date"] == days[second_day].isoformat()
 
 
+# With no tab filter, the list shows upcoming bookings first (soonest
+# first), then past bookings (most recent first).
 def test_upcoming_first_then_past(api: Api, customer):
     child = api.new_child(customer)
 
@@ -73,6 +78,37 @@ def test_upcoming_first_then_past(api: Api, customer):
     assert order == [soon, later, recent, old]
 
 
+# The Upcoming tab only shows bookings still to come that are pending or
+# confirmed. History shows everything else: cancelled, expired (lapsed hold)
+# and past bookings. With no tab filter, all four show.
+def test_upcoming_and_history_scopes(api: Api, customer):
+    child = api.new_child(customer)
+    upcoming, cancelled, lapsed, past = (
+        _book(api, customer, {child["id"]: [api.service_day()]})
+        for _ in range(4)
+    )
+
+    customer.client.post(f"/booking/v1/groups/{cancelled}/cancel")
+    api.sql(
+        "UPDATE public.bookings SET created_at = now() - interval '2 hours' WHERE booking_group_id = :id",
+        id=lapsed,
+    )
+    [(past_day,)] = api.sql(
+        "SELECT location_service_day_id::text FROM public.bookings WHERE booking_group_id = :id",
+        id=past,
+    )
+    _move_day_to(api, past_day, date(2000, 2, 1))
+
+    def ids(**params) -> set[str]:
+        return {g["booking_group_id"] for g in _groups(customer, **params)}
+
+    assert ids(scope="upcoming") == {upcoming}
+    assert ids(scope="history") == {cancelled, lapsed, past}
+    assert ids() == {upcoming, cancelled, lapsed, past}
+
+
+# The bookings list splits into pages: with two per page, three bookings
+# come back as two then one, with no booking on both pages.
 def test_list_paginates(api: Api, customer):
     child = api.new_child(customer)
     for _ in range(3):
@@ -86,6 +122,8 @@ def test_list_paginates(api: Api, customer):
     assert {g["booking_group_id"] for g in first}.isdisjoint(g["booking_group_id"] for g in second)
 
 
+# The list reports each booking's real status: a cancelled one shows
+# CANCELLED, and an unpaid one whose hold has run out shows EXPIRED.
 def test_list_shows_cancelled_and_lapsed_status(api: Api, customer):
     child = api.new_child(customer)
     cancelled = _book(api, customer, {child["id"]: [api.service_day()]})
@@ -102,6 +140,7 @@ def test_list_shows_cancelled_and_lapsed_status(api: Api, customer):
     assert statuses == {cancelled: "CANCELLED", lapsed: "EXPIRED"}
 
 
+# A customer never sees another customer's bookings in their list.
 def test_list_is_private(api: Api, customer, other_customer):
     child = api.new_child(customer)
     _book(api, customer, {child["id"]: [api.service_day()]})

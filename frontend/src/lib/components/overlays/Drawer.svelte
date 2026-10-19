@@ -23,7 +23,7 @@
 {#if open}
 	<div class="fixed inset-0 z-50 md:hidden">
 		<button
-			class="absolute inset-0 bg-black/20 backdrop-blur-sm"
+			class="absolute inset-0 bg-(--overlay) backdrop-blur-sm"
 			aria-label="Close navigation"
 			onclick={onclose}
 			transition:fade={{ duration: 200 }}

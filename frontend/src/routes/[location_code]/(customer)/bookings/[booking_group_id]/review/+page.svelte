@@ -1,21 +1,33 @@
 <!--
-    Review a pending booking group: continue to Stripe, or cancel it and
-    release the places. Other statuses just explain where the booking is.
+    Review a booking group. Pending: continue to Stripe, or cancel it and
+    release the places. Confirmed: refund single days still inside their
+    refund window. Other statuses just explain where the booking is.
 -->
 <script lang="ts">
     import { goto, invalidate } from "$app/navigation";
+    import { toast } from "svelte-sonner";
 
-    import Card from "$lib/components/layout/Card.svelte";
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
+    import Button from "$lib/components/actions/Button.svelte";
     import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
+    import Card from "$lib/components/layout/Card.svelte";
+    import Page from "$lib/components/layout/Page.svelte";
+    import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import ReviewBooking, { type ReviewChild } from "$lib/features/bookings/components/ReviewBooking.svelte";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
+    import type { BookingGroupLineResponse } from "$lib/api/schema";
+    import { formatDate, formatTimestamp } from "$lib/utils/helpers";
 
     let { data } = $props();
 
     const bookingApi = createBookingApi();
 
     const group = $derived(data.group);
+
+    const bookingsById = $derived(
+        new Map(group.bookings.map((booking) => [booking.id, booking]))
+    );
 
     // One section per child, in the order their bookings come back (by date).
     const reviewChildren = $derived.by((): ReviewChild[] => {
@@ -29,6 +41,7 @@
             };
 
             child.lines.push({
+                bookingId: booking.id,
                 date: booking.service_date,
                 serviceName: booking.service_name,
                 priceCents: booking.price_snapshot_cents,
@@ -55,6 +68,18 @@
         },
     };
 
+    // A confirmed booking shows when it was paid (if recorded) in place of
+    // the generic message.
+    const statusMessage = $derived.by(() => {
+        const message = STATUS_MESSAGES[group.status];
+
+        if (group.status === "CONFIRMED" && group.paid_at) {
+            return { ...message, body: formatTimestamp(group.paid_at) };
+        }
+
+        return message;
+    });
+
     let isPaying = $state(false);
     let isCancelling = $state(false);
 
@@ -74,6 +99,19 @@
         } finally {
             isPaying = false;
         }
+    }
+
+    // Stub: refunds will go straight to Stripe, which isn't wired yet. The
+    // backend decides which days are refundable (is_refundable) and the
+    // refund endpoint will check it again.
+    function requestRefund(booking: BookingGroupLineResponse) {
+        const day = formatDate(booking.service_date);
+
+        if (!window.confirm(`Refund ${booking.child_name} on ${day}?`)) {
+            return;
+        }
+
+        toast.info("Refunds aren't available yet.");
     }
 
     async function cancelBooking() {
@@ -99,29 +137,21 @@
     }
 </script>
 
-<div class="mx-auto w-full max-w-5xl">
-    <div class="mb-8">
-        <h1 class="text-2xl font-semibold text-gray-900">
-            {group.status === "PENDING" ? "Review your booking" : "Your booking"}
-        </h1>
-    </div>
+<Page>
+    <PageHeader
+        title={group.status === "PENDING" ? "Review your booking" : "Your booking"}
+    />
 
     {#if group.status !== "PENDING"}
-        {@const message = STATUS_MESSAGES[group.status]}
+        <Card border>
+            <h2 class="text-lg font-extrabold text-(--text)">
+                {statusMessage?.title ?? "This booking can't be changed"}
+            </h2>
 
-        <div class="mb-6">
-            <Card border>
-                <div class="p-5">
-                    <h2 class="text-lg font-extrabold text-(--text)">
-                        {message?.title ?? "This booking can't be changed"}
-                    </h2>
-
-                    <p class="mt-1 text-sm text-(--text-muted)">
-                        {message?.body ?? ""}
-                    </p>
-                </div>
-            </Card>
-        </div>
+            <p class="text-sm text-(--text-muted)">
+                {statusMessage?.body ?? ""}
+            </p>
+        </Card>
     {/if}
 
     <ReviewBooking
@@ -129,30 +159,54 @@
         currency={group.currency}
         children={reviewChildren}
     >
-        {#snippet actions()}
-            {#if group.status === "PENDING"}
-                <button
-                    type="button"
-                    onclick={cancelBooking}
-                    disabled={isCancelling || isPaying}
-                    class="rounded-lg border border-gray-300 px-5 py-2.5 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    {isCancelling ? "Cancelling…" : "Cancel booking"}
-                </button>
+        {#snippet lineActions(line)}
+            {@const booking = line.bookingId ? bookingsById.get(line.bookingId) : undefined}
 
-                <button
-                    type="button"
-                    onclick={continueToPayment}
-                    disabled={isPaying || isCancelling}
-                    class="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+            {#if booking?.payment_status === "REFUNDED"}
+                <span class="text-sm text-(--text-muted)">
+                    Refunded
+                </span>
+            {:else if booking?.is_refundable}
+                <Button
+                    variant="ghost"
+                    onclick={() => requestRefund(booking)}
                 >
-                    {isPaying ? "Opening checkout…" : "Continue to payment"}
-                </button>
-            {:else}
-                <HyperTextLink href={`/${data.locationCode}/bookings`}>
-                    Back to my bookings
-                </HyperTextLink>
+                    Refund
+                </Button>
+
+                <span class="text-sm text-(--text-muted)">
+                    Until {formatDate(booking.refundable_until)}
+                </span>
+            {:else if booking?.booking_status === "CONFIRMED"}
+                <span class="text-sm text-(--text-muted)">
+                    Not refundable
+                </span>
             {/if}
         {/snippet}
     </ReviewBooking>
-</div>
+
+    {#if group.status === "PENDING"}
+        <ActionBar sticky>
+            <Button
+                variant="ghost"
+                onclick={cancelBooking}
+                isLoading={isCancelling}
+                isDisabled={isPaying}
+            >
+                Cancel booking
+            </Button>
+
+            <Button
+                onclick={continueToPayment}
+                isLoading={isPaying}
+                isDisabled={isCancelling}
+            >
+                Continue to payment
+            </Button>
+        </ActionBar>
+    {:else}
+        <HyperTextLink href={`/${data.locationCode}/bookings`}>
+            Back to bookings
+        </HyperTextLink>
+    {/if}
+</Page>

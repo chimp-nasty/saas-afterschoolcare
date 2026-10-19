@@ -6,6 +6,7 @@
 		secondaryColor,
 		header,
 		sidebar,
+		bottomNav,
 		footer,
 		children
 	}: {
@@ -13,12 +14,16 @@
 		secondaryColor?: string | null;
 		header?: Snippet;
 		sidebar?: Snippet;
+		// Mobile-only navigation (customers); see BottomNav.
+		bottomNav?: Snippet;
 		footer?: Snippet;
 		children: Snippet;
 	} = $props();
 </script>
 
 <div
+	data-tenant-theme
+	data-bottom-nav={bottomNav ? '' : undefined}
 	class="relative flex min-h-screen flex-col"
 	style:--primary={primaryColor ?? undefined}
 	style:--secondary={secondaryColor ?? undefined}
@@ -50,4 +55,6 @@
 			{@render footer()}
 		</footer>
 	{/if}
+
+	{@render bottomNav?.()}
 </div>

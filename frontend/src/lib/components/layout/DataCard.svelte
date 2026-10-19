@@ -54,6 +54,7 @@
 
 <Card 
 	border={true}
+	padded={false}
 	href={href}
 	onclick={onclick}
 >
@@ -62,13 +63,15 @@
 		{description}
 	/>
 
+	<!-- Label above value on mobile; label | value columns from md. -->
 	<div class="px-5 pb-5">
 		{#each data as item, index}
 			<div
 				class="
 					grid
-					grid-cols-[3fr_7fr]
-					items-stretch
+					grid-cols-1
+					md:grid-cols-[3fr_7fr]
+					md:items-stretch
 					{index < data.length - 1 ? 'border-b border-(--border)' : ''}
 				"
 			>
@@ -76,8 +79,9 @@
 					class="
 						flex
 						items-center
-						border-r border-(--border)
-						py-3 pr-4
+						pt-3
+						md:border-r md:border-(--border)
+						md:py-3 md:pr-4
 						text-xs font-extrabold
 						uppercase tracking-wide
 						text-(--text-muted)
@@ -91,7 +95,8 @@
 						flex
 						min-w-0
 						items-center
-						py-3 pl-4
+						pt-1 pb-3
+						md:py-3 md:pl-4
 						text-base font-semibold
 						text-(--text)
 						wrap-break-word

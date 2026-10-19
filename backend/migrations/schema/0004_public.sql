@@ -32,6 +32,11 @@ CREATE TABLE public.location_services (
     current_price_cents INTEGER NOT NULL,
     currency public.currency_code_enum NOT NULL,
 
+    -- A session can be refunded until the end of the day this many days
+    -- before it, in the location's timezone: with 2, a session on the 21st
+    -- is refundable until 11:59pm on the 19th.
+    refund_cutoff_days SMALLINT NOT NULL DEFAULT 2,
+
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -55,7 +60,10 @@ CREATE TABLE public.location_services (
         UNIQUE (id, location_id),
 
     CONSTRAINT ck_location_services_price_non_negative
-        CHECK (current_price_cents >= 0)
+        CHECK (current_price_cents >= 0),
+
+    CONSTRAINT ck_location_services_refund_cutoff_non_negative
+        CHECK (refund_cutoff_days >= 0)
 );
 
 CREATE TRIGGER trg_location_services_updated_at
@@ -503,7 +511,11 @@ CREATE TABLE public.payment_attempts (
     total_cents INTEGER NOT NULL,
     currency public.currency_code_enum NOT NULL,
 
+    -- When the checkout was opened, which can be well before it was paid.
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    -- Set by the webhook when the attempt moves to SUCCEEDED.
+    paid_at TIMESTAMPTZ,
 
     CONSTRAINT fk_payment_attempts_booking_group
         FOREIGN KEY (booking_group_id, user_id, location_id)

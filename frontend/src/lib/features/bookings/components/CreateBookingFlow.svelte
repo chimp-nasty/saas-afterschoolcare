@@ -1,4 +1,12 @@
+<!--
+    New booking, in three steps: service, children and dates, review. The
+    route wraps it in a Page.
+-->
 <script lang="ts">
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
+    import Button from "$lib/components/actions/Button.svelte";
+    import PageHeader from "$lib/components/layout/PageHeader.svelte";
+
     import SelectService from "./SelectService.svelte";
     import SelectChildDates from "./SelectChildDates.svelte";
     import ReviewBooking, { type ReviewChild } from "./ReviewBooking.svelte";
@@ -99,6 +107,12 @@
             });
     });
 
+    const STEP_TITLES: Record<number, string> = {
+        1: "Choose a service",
+        2: "Choose children and dates",
+        3: "Review your booking",
+    };
+
     let isSubmitting = $state(false);
 
     async function confirm() {
@@ -124,69 +138,42 @@
     }
 </script>
 
-<div class="mx-auto w-full max-w-5xl">
-    <div class="mb-8">
-        <p class="text-sm font-medium text-gray-500">
-            Step {step} of 3
-        </p>
+<PageHeader
+    eyebrow={`Step ${step} of 3`}
+    title={STEP_TITLES[step]}
+    description={step > 1 ? selectedService?.service_name : undefined}
+/>
 
-        <h1 class="mt-1 text-2xl font-semibold text-gray-900">
-            {#if step === 1}
-                Choose a service
-            {:else if step === 2}
-                Choose children and dates
-            {:else}
-                Review your booking
-            {/if}
-        </h1>
+{#if step === 1}
+    <SelectService
+        {locationServices}
+        onSelect={selectService}
+    />
 
-        {#if selectedService && step > 1}
-            <p class="mt-2 text-sm text-gray-500">
-                {selectedService.service_name}
-            </p>
-        {/if}
-    </div>
+{:else if step === 2 && selectedService}
+    <SelectChildDates
+        {children}
+        serviceDays={selectedServiceDays}
+        bind:selectedChildIds
+        bind:selectedDatesByChild
+        onBack={back}
+        onContinue={next}
+    />
 
-    {#if step === 1}
-        <SelectService
-            {locationServices}
-            onSelect={selectService}
-        />
+{:else if step === 3 && selectedService}
+    <ReviewBooking
+        serviceName={selectedService.service_name}
+        currency={selectedService.currency}
+        children={reviewChildren}
+    />
 
-    {:else if step === 2 && selectedService}
-        <SelectChildDates
-            {children}
-            serviceDays={selectedServiceDays}
-            bind:selectedChildIds
-            bind:selectedDatesByChild
-            onBack={back}
-            onContinue={next}
-        />
+    <ActionBar sticky>
+        <Button variant="ghost" onclick={back}>
+            Back
+        </Button>
 
-    {:else if step === 3 && selectedService}
-        <ReviewBooking
-            serviceName={selectedService.service_name}
-            currency={selectedService.currency}
-            children={reviewChildren}
-        >
-            {#snippet actions()}
-                <button
-                    type="button"
-                    onclick={back}
-                    class="rounded-lg border border-gray-300 px-5 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
-                >
-                    Back
-                </button>
-
-                <button
-                    type="button"
-                    onclick={confirm}
-                    disabled={isSubmitting}
-                    class="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    {isSubmitting ? "Booking…" : "Continue to payment"}
-                </button>
-            {/snippet}
-        </ReviewBooking>
-    {/if}
-</div>
+        <Button onclick={confirm} isLoading={isSubmitting}>
+            Continue to payment
+        </Button>
+    </ActionBar>
+{/if}

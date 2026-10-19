@@ -1,28 +1,28 @@
+<!--
+    A link. Standalone by default ("Back to bookings", "Forgot your
+    password?"): 44px tall so it's easy to tap. `inline` for a link inside a
+    sentence, which keeps the line height.
+-->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
 	let {
 		href = '/',
-		variant = 'default',
+		inline = false,
 		children
 	}: {
 		href?: string;
-		variant?: 'default' | 'raised' | 'plain';
+		inline?: boolean;
 		children?: Snippet;
 	} = $props();
-
-	const variantClass = $derived(
-		variant === 'default'
-			? 'text-(--hyperlink) hover:text-(--hyperlink-hover) hover:underline'
-			: variant === 'raised'
-				? 'transition-transform duration-300 hover:scale-110'
-				: ''
-	);
 </script>
 
 <a
 	{href}
-	class={variantClass}
+	class={[
+		'font-semibold text-(--hyperlink) hover:text-(--hyperlink-hover) hover:underline',
+		!inline && 'inline-flex min-h-11 items-center'
+	]}
 >
 	{@render children?.()}
 </a>

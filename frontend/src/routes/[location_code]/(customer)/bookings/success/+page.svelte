@@ -7,12 +7,15 @@
     import { onMount } from "svelte";
     import { page } from "$app/state";
 
-    import Card from "$lib/components/layout/Card.svelte";
+    import Page from "$lib/components/layout/Page.svelte";
+    import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
     import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
     import type { CheckoutStatusResponse } from "$lib/api/schema";
+    import { BOOKING_STATUS_LABELS } from "$lib/features/bookings/status";
+    import { formatDate, formatMoney } from "$lib/utils/helpers";
 
     let { data } = $props();
 
@@ -26,12 +29,32 @@
 
     const sessionId = page.url.searchParams.get("session_id");
 
-    function formatPrice(cents: number, currency: string): string {
-        return new Intl.NumberFormat("en-AU", {
-            style: "currency",
-            currency,
-        }).format(cents / 100);
-    }
+    // What the header says for each state of the checkout.
+    const result = $derived.by((): { title: string; description: string } => {
+        if (error) {
+            return { title: "We couldn't find this checkout", description: error };
+        }
+
+        if (!checkout || checkout.payment_status === "PENDING") {
+            return {
+                title: "Confirming your payment…",
+                description:
+                    "This usually takes a few seconds. You can leave this page; your bookings will update once payment is confirmed.",
+            };
+        }
+
+        if (checkout.payment_status === "SUCCEEDED") {
+            return {
+                title: "Booking confirmed",
+                description: `Paid ${formatMoney(checkout.total_cents, checkout.currency)}.`,
+            };
+        }
+
+        return {
+            title: "Payment didn't go through",
+            description: "These dates have been released. You can start a new booking.",
+        };
+    });
 
     onMount(() => {
         let cancelled = false;
@@ -68,54 +91,25 @@
     });
 </script>
 
-<div class="flex w-full max-w-xl flex-1 flex-col gap-4">
-    <Card border>
-        <div class="p-5">
-            {#if error}
-                <h1 class="text-lg font-extrabold text-(--danger-text)">
-                    We couldn't find this checkout
-                </h1>
-                <p class="mt-1 text-sm text-(--text-muted)">{error}</p>
-            {:else if !checkout || checkout.payment_status === "PENDING"}
-                <h1 class="text-lg font-extrabold text-(--text)">
-                    Confirming your payment…
-                </h1>
-                <p class="mt-1 text-sm text-(--text-muted)">
-                    This usually takes a few seconds. You can leave this page; your
-                    bookings will update once payment is confirmed.
-                </p>
-            {:else if checkout.payment_status === "SUCCEEDED"}
-                <h1 class="text-lg font-extrabold text-(--success-text)">
-                    Booking confirmed
-                </h1>
-                <p class="mt-1 text-sm text-(--text-muted)">
-                    Paid {formatPrice(checkout.total_cents, checkout.currency)}.
-                </p>
-            {:else}
-                <h1 class="text-lg font-extrabold text-(--danger-text)">
-                    Payment didn't go through
-                </h1>
-                <p class="mt-1 text-sm text-(--text-muted)">
-                    These dates have been released. You can start a new booking.
-                </p>
-            {/if}
-        </div>
-    </Card>
+<Page>
+    <PageHeader title={result.title} description={result.description} />
 
     {#if checkout}
-        {#each checkout.bookings as booking (booking.id)}
-            <DataCard
-                title={booking.child_name}
-                data={[
-                    { label: "Service", value: booking.service_name },
-                    { label: "Date", value: booking.service_date, format: "date" },
-                    { label: "Status", value: booking.booking_status, format: "enum" },
-                ]}
-            />
-        {/each}
+        <div class="flex flex-col gap-4">
+            {#each checkout.bookings as booking (booking.id)}
+                <DataCard
+                    title={booking.child_name}
+                    data={[
+                        { label: "Service", value: booking.service_name },
+                        { label: "Date", value: formatDate(booking.service_date) },
+                        { label: "Status", value: BOOKING_STATUS_LABELS[booking.booking_status] },
+                    ]}
+                />
+            {/each}
+        </div>
     {/if}
 
     <HyperTextLink href={`/${data.locationCode}/bookings`}>
         View all bookings
     </HyperTextLink>
-</div>
+</Page>

@@ -1,6 +1,9 @@
 <script lang="ts">
     import { untrack } from "svelte";
 
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
+    import Button from "$lib/components/actions/Button.svelte";
+
     import ServiceDayCalendar from "./ServiceDayCalendar.svelte";
 
     import type {
@@ -52,80 +55,66 @@
     }
 </script>
 
-<div class="space-y-8">
-    <section>
-        <h2 class="text-lg font-semibold text-gray-900">
+<section class="flex flex-col gap-4">
+    <div>
+        <h2 class="text-lg font-extrabold text-(--text)">
             Who are you booking for?
         </h2>
 
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="text-sm text-(--text-muted)">
             Select one or more children.
         </p>
+    </div>
 
-        <div class="mt-4 flex flex-wrap gap-3">
-            {#each children as child}
-                <button
-                    type="button"
-                    onclick={() =>
-                        toggleChild(child.id)
-                    }
-                    class={[
-                        "rounded-lg border px-4 py-3 text-left transition",
-                        selectedChildIds.includes(child.id)
-                            ? "border-gray-900 bg-gray-900 text-white"
-                            : "border-gray-200 bg-white text-gray-900 hover:border-gray-300",
-                    ]}
-                >
-                    <span class="font-medium">
-                        {child.first_name}
-                        {child.last_name}
-                    </span>
-                </button>
-            {/each}
-        </div>
-    </section>
+    <div class="flex flex-wrap gap-3">
+        {#each children as child (child.id)}
+            {@const isSelected = selectedChildIds.includes(child.id)}
 
-    <section>
-        <h2 class="text-lg font-semibold text-gray-900">
+            <button
+                type="button"
+                aria-pressed={isSelected}
+                onclick={() => toggleChild(child.id)}
+                class={[
+                    "min-h-11 rounded-lg border px-4 text-left font-semibold transition",
+                    isSelected
+                        ? "border-(--primary) bg-(--primary) text-white"
+                        : "border-(--border) bg-(--surface) text-(--text) hover:border-(--primary)",
+                ]}
+            >
+                {child.first_name}
+                {child.last_name}
+            </button>
+        {/each}
+    </div>
+</section>
+
+<section class="flex flex-col gap-4">
+    <div>
+        <h2 class="text-lg font-extrabold text-(--text)">
             Choose dates
         </h2>
 
-        {#if selectedChildIds.length === 0}
-            <p class="mt-1 text-sm text-gray-500">
-                Select a child before choosing dates.
-            </p>
-        {:else}
-            <p class="mt-1 text-sm text-gray-500">
-                Dates will be applied to all currently selected children.
-            </p>
-        {/if}
-
-        <div class="mt-4">
-            {#if selectedChildIds.length > 0}
-                <ServiceDayCalendar
-                    {serviceDays}
-                    bind:selectedDates
-                />
-            {/if}
-        </div>
-    </section>
-
-    <div class="flex items-center justify-between border-t border-gray-200 pt-6">
-        <button
-            type="button"
-            onclick={onBack}
-            class="rounded-lg border border-gray-300 px-5 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
-        >
-            Back
-        </button>
-
-        <button
-            type="button"
-            onclick={continueToReview}
-            disabled={!canContinue}
-            class="rounded-lg bg-gray-900 px-5 py-2.5 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-            Continue
-        </button>
+        <p class="text-sm text-(--text-muted)">
+            {selectedChildIds.length === 0
+                ? "Select a child before choosing dates."
+                : "Dates apply to every selected child."}
+        </p>
     </div>
-</div>
+
+    {#if selectedChildIds.length > 0}
+        <ServiceDayCalendar
+            {serviceDays}
+            bind:selectedDates
+        />
+    {/if}
+</section>
+
+<ActionBar sticky>
+    <Button variant="ghost" onclick={onBack}>
+        Back
+    </Button>
+
+    <Button onclick={continueToReview} isDisabled={!canContinue}>
+        Continue
+    </Button>
+</ActionBar>

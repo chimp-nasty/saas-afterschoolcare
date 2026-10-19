@@ -21,28 +21,27 @@
 	}: Props = $props();
 </script>
 
-<div class="w-full max-w-md">
-	<Card>
-		<form
-			onsubmit={(event) => {
-				event.preventDefault();
-				void handleSubmit();
-			}}
-		>
-			<div class="flex flex-col gap-4 px-4">
-				{@render children()}
+<!-- Takes the width of the Page it's in. -->
+<Card border={true}>
+	<form
+		onsubmit={(event) => {
+			event.preventDefault();
+			void handleSubmit();
+		}}
+	>
+		<div class="flex flex-col gap-4">
+			{@render children()}
 
-				<div class="mt-2">
-					<Button
-						type="submit"
-						{isLoading}
-						{fullWidth}
-						isDisabled={isLoading}
-					>
-						{submitLabel}
-					</Button>
-				</div>
+			<div class="mt-2">
+				<Button
+					type="submit"
+					{isLoading}
+					{fullWidth}
+					isDisabled={isLoading}
+				>
+					{submitLabel}
+				</Button>
 			</div>
-		</form>
-	</Card>
-</div>
+		</div>
+	</form>
+</Card>

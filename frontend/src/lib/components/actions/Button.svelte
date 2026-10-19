@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
+
 	import Spinner from '$lib/components/feedback/Spinner.svelte';
+	import { ACTION_BAR } from './ActionBar.svelte';
 
 	type Variant = 'default' | 'ghost' | 'hyperlink' | 'menu';
 	type TextSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
@@ -15,6 +18,8 @@
 		class?: string;
 		children?: () => any;
 		onclick?: (event: MouseEvent) => void;
+		// Required when the button only holds an icon.
+		'aria-label'?: string;
 	};
 
 	let {
@@ -24,7 +29,7 @@
 		isActive = false,
 		variant = 'default',
 		fullWidth = false,
-		textSize = 'base',
+		textSize = 'xs',
 		class: className = '',
 		children,
 		...restProps
@@ -49,8 +54,14 @@
 			: 'min-h-12 tracking-wider rounded-lg px-4 font-extrabold'
 	);
 
-	const widthClass = $derived(fullWidth ? 'w-full' : 'w-fit');
+	// Inside an ActionBar: full width on mobile, natural width from md.
+	const inActionBar = getContext<boolean>(ACTION_BAR) ?? false;
 
+	const widthClass = $derived(
+		fullWidth ? 'w-full' : inActionBar ? 'w-full md:w-fit' : 'w-fit'
+	);
+
+	// The hyperlink variant takes the size of the text around it.
 	const textSizeClasses: Record<TextSize, string> = {
 		xs: 'text-xs',
 		sm: 'text-sm',
@@ -65,7 +76,7 @@
 			border border-(--primary)
 			bg-(--primary)
 			px-5 py-3
-			text-xs font-extrabold uppercase tracking-wider
+			font-extrabold uppercase tracking-wider
 			text-white
 			shadow-none
 			hover:border-(--primary-hover)
@@ -80,7 +91,7 @@
 			border border-(--border)
 			bg-(--surface)
 			px-5 py-3
-			text-xs font-extrabold uppercase tracking-wider
+			font-extrabold uppercase tracking-wider
 			text-(--text-muted)
 			shadow-none
 			hover:border-(--primary)
@@ -119,7 +130,7 @@
 			border-x-0 border-y border-(--border)
 			bg-transparent
 			px-5 py-3
-			text-left text-xs uppercase tracking-wider
+			text-left uppercase tracking-wider
 			text-(--text-muted)
 			shadow-none
 			hover:bg-(--primary-soft)
@@ -134,7 +145,7 @@
 
 <button
 	{type}
-	class={`${baseClass} ${standardButtonClass} ${widthClass} ${textSizeClasses[textSize]} ${variantClasses[variant]} ${activeClass} ${className}`}
+	class={`${baseClass} ${standardButtonClass} ${widthClass} ${variant === 'hyperlink' ? '' : textSizeClasses[textSize]} ${variantClasses[variant]} ${activeClass} ${className}`}
 	disabled={isLoading || isDisabled}
 	{...restProps}
 >

@@ -1,10 +1,14 @@
 <script lang="ts">
+    import Button from "$lib/components/actions/Button.svelte";
     import TabbedPanels from "$lib/components/controls/TabbedPanels.svelte";
+    import Page from "$lib/components/layout/Page.svelte";
+    import PageHeader from "$lib/components/layout/PageHeader.svelte";
 
     import ParentProfileForm from "$lib/features/customer/components/ParentProfileForm.svelte";
     import ChildAccountData from "$lib/features/children/components/ChildAccountData.svelte";
 
     import { accountTabs } from "$lib/navigation/tabs";
+    import { logout } from "$lib/auth/logout";
 	import { createCustomerApi } from "$lib/api/public/adapters/customer";
 	import type { UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/schema";
 
@@ -19,7 +23,7 @@
     const customerApi = createCustomerApi();
 
     const tabs = [
-        { id: accountTabs.PROFILE, label: "Parent Profile" },
+        { id: accountTabs.PROFILE, label: "Profile" },
         { id: accountTabs.CHILDREN, label: "Children" }
     ];
 
@@ -36,7 +40,9 @@
     }
 </script>
 
-<div class="flex w-full max-w-xl flex-1 flex-col">
+<Page>
+    <PageHeader title="Account" />
+
     <TabbedPanels
         {tabs}
         bind:activeTab
@@ -56,4 +62,13 @@
             {/if}
         {/snippet}
     </TabbedPanels>
-</div>
+
+    <!-- Customers have no sidebar on mobile, so logging out lives here. -->
+    <Button
+        variant="ghost"
+        fullWidth
+        onclick={() => logout(data.locationCode)}
+    >
+        Log out
+    </Button>
+</Page>

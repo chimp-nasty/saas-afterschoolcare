@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 import stripe
@@ -113,6 +114,8 @@ class StripeWebhookService:
             attempt.stripe_payment_intent_id = session["payment_intent"]
 
         if succeeded:
+            attempt.paid_at = datetime.now(timezone.utc)
+
             confirmed = self.booking_repository.settle_pending_for_group(
                 booking_group_id=attempt.booking_group_id,
                 booking_status=BookingStatus.CONFIRMED,

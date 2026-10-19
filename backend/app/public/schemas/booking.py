@@ -4,7 +4,13 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from app.db.repository import Pagination
-from app.public.schemas.enums import BookingStatus, CurrencyCode, PaymentStatus, StripeStatus
+from app.public.schemas.enums import (
+    BookingGroupScope,
+    BookingStatus,
+    CurrencyCode,
+    PaymentStatus,
+    StripeStatus,
+)
 
 
 class BookingSelection(BaseModel):
@@ -97,6 +103,14 @@ class CheckoutStatusResponse(BaseModel):
     bookings: list[BookingTableResponse]
 
 
+class BookingGroupLineResponse(BookingTableResponse):
+    """One child on one day in the review screen, with its refund window."""
+
+    # The last day (location time) it can be refunded, inclusive.
+    refundable_until: date
+    is_refundable: bool
+
+
 class BookingGroupResponse(BaseModel):
     """A booking group for the review screen (pay or cancel a pending one)."""
 
@@ -106,10 +120,14 @@ class BookingGroupResponse(BaseModel):
     # as EXPIRED.
     status: BookingStatus
 
+    # When its payment succeeded; None until then (and for payments made
+    # before paid_at was recorded).
+    paid_at: datetime | None
+
     total_cents: int
     currency: CurrencyCode
 
-    bookings: list[BookingTableResponse]
+    bookings: list[BookingGroupLineResponse]
 
 
 class CheckoutUrlResponse(BaseModel):
@@ -118,7 +136,9 @@ class CheckoutUrlResponse(BaseModel):
 
 # Inherits page/limit (see ListBookingsFilterRequest).
 class ListBookingGroupsFilterRequest(Pagination):
-    pass
+    # UPCOMING: still to come (last day today or later) and pending or
+    # confirmed. HISTORY: everything else. None lists both.
+    scope: BookingGroupScope | None = None
 
 
 class BookingGroupSummaryResponse(BaseModel):
@@ -128,6 +148,7 @@ class BookingGroupSummaryResponse(BaseModel):
     created_at: datetime
 
     status: BookingStatus
+    paid_at: datetime | None
 
     service_name: str
     child_names: list[str]

@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import date, datetime
 
-from sqlalchemy import String, case, cast, distinct, func, tuple_, update
+from sqlalchemy import Date, String, and_, case, cast, distinct, func, or_, tuple_, update
 from sqlalchemy.engine import Row
 
 from app.db.repository import Pagination, Repository
@@ -9,11 +9,18 @@ from app.db.models import (
     Booking,
     BookingGroup,
     ChildProfile,
+    Location,
     LocationService,
     LocationServiceDay,
+    PaymentAttempt,
     ServiceType,
 )
-from app.public.schemas.enums import BookingStatus, PaymentStatus
+from app.public.schemas.enums import (
+    BookingGroupScope,
+    BookingStatus,
+    PaymentStatus,
+    StripeStatus,
+)
 
 
 def _child_name():
@@ -34,6 +41,32 @@ def _effective_status():
         Booking.booking_status,
         Booking.created_at,
         type_=Booking.__table__.c.booking_status.type,
+    )
+
+
+def _location_today():
+    """Today's date where the location is. Needs Location joined."""
+    return cast(func.timezone(Location.timezone, func.now()), Date)
+
+
+def _refundable_until():
+    """
+    The last day (location time) a booking can be refunded, inclusive:
+    refund_cutoff_days before its session (schema/0004). Needs
+    LocationServiceDay and LocationService joined.
+    """
+    return LocationServiceDay.service_date - LocationService.refund_cutoff_days
+
+
+def _is_refundable(effective_status):
+    """
+    The refund rule: a paid, confirmed booking whose cutoff hasn't passed.
+    Needs Location, LocationServiceDay and LocationService joined.
+    """
+    return and_(
+        effective_status == BookingStatus.CONFIRMED,
+        Booking.payment_status == PaymentStatus.PAID,
+        _location_today() <= _refundable_until(),
     )
 
 
@@ -147,6 +180,7 @@ class BookingRepository(Repository):
     def list_group_summaries(
         self,
         *,
+        scope: BookingGroupScope | None = None,
         pagination: Pagination | None = None,
     ) -> list[Row]:
         """
@@ -156,12 +190,33 @@ class BookingRepository(Repository):
         """
         first_date = func.min(LocationServiceDay.service_date)
         last_date = func.max(LocationServiceDay.service_date)
-        is_past = last_date < func.current_date()
+
+        # "Today" where the location is, not where the database is.
+        is_past = last_date < _location_today()
+
+        # Same rule as resolve_group_status: the group is live if any of
+        # its bookings is.
+        is_live = func.bool_or(
+            _effective_status().in_(["PENDING", "CONFIRMED"])
+        )
+
+        # A subquery, not a join: joining attempts would repeat each
+        # booking row once per attempt and inflate the counts and totals.
+        paid_at = (
+            self.db.query(func.max(PaymentAttempt.paid_at))
+            .filter(
+                PaymentAttempt.booking_group_id == BookingGroup.id,
+                PaymentAttempt.stripe_status == StripeStatus.SUCCEEDED,
+            )
+            .correlate(BookingGroup)
+            .scalar_subquery()
+        )
 
         query = (
             self.db.query(
                 BookingGroup.id.label("booking_group_id"),
                 BookingGroup.created_at,
+                paid_at.label("paid_at"),
                 func.min(ServiceType.name).label("service_name"),
                 func.array_agg(
                     distinct(_child_name().element)
@@ -196,9 +251,14 @@ class BookingRepository(Repository):
                 ServiceType,
                 ServiceType.id == LocationService.service_type_id,
             )
+            .join(
+                Location,
+                Location.id == BookingGroup.location_id,
+            )
             .group_by(
                 BookingGroup.id,
                 BookingGroup.created_at,
+                Location.timezone,
             )
             .order_by(
                 case((is_past, 1), else_=0).asc(),
@@ -207,6 +267,11 @@ class BookingRepository(Repository):
                 BookingGroup.created_at.desc(),
             )
         )
+
+        if scope == BookingGroupScope.UPCOMING:
+            query = query.having(and_(~is_past, is_live))
+        elif scope == BookingGroupScope.HISTORY:
+            query = query.having(or_(is_past, ~is_live))
 
         return self._all(query, pagination)
 
@@ -314,6 +379,8 @@ class BookingRepository(Repository):
                 Booking.payment_status,
                 Booking.price_snapshot_cents,
                 Booking.currency,
+                _refundable_until().label("refundable_until"),
+                _is_refundable(effective_status).label("is_refundable"),
             )
             .join(
                 ChildProfile,
@@ -330,6 +397,10 @@ class BookingRepository(Repository):
             .join(
                 ServiceType,
                 ServiceType.id == LocationService.service_type_id,
+            )
+            .join(
+                Location,
+                Location.id == Booking.location_id,
             )
         )
 

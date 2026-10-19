@@ -1,7 +1,10 @@
 <script lang="ts">
     import { untrack } from "svelte";
     import { Calendar } from "bits-ui";
+    import { ChevronLeft, ChevronRight } from "lucide-svelte";
     import { parseDate, type DateValue } from "@internationalized/date";
+
+    import Card from "$lib/components/layout/Card.svelte";
 
     import type { LocationServiceDayTableResponse } from "$lib/api/schema";
     import { ServiceDayStatus } from "../types";
@@ -78,7 +81,7 @@
     };
 </script>
 
-<div class="max-w-120 rounded-3xl border border-(--border) bg-(--surface-muted) p-5 shadow-sm">
+<Card border>
     <Calendar.Root
         type="multiple"
         bind:value={selected}
@@ -94,19 +97,21 @@
         {#snippet children({ months, weekdays })}
             <Calendar.Header class="mb-5 flex items-center justify-between gap-3">
                 <Calendar.PrevButton
-                    class="rounded-3xl border border-(--border) bg-(--surface) px-4 py-2 text-sm font-semibold text-(--text) transition hover:bg-(--primary-soft) hover:text-(--primary)"
+                    class="flex h-11 w-11 items-center justify-center rounded-lg border border-(--border) bg-(--surface) text-(--text) transition hover:bg-(--primary-soft) hover:text-(--primary)"
+                    aria-label="Previous month"
                 >
-                    Prev
+                    <ChevronLeft size={20} />
                 </Calendar.PrevButton>
 
                 <Calendar.Heading
-                    class="text-base font-semibold text-(--text)"
+                    class="text-base font-extrabold text-(--text)"
                 />
 
                 <Calendar.NextButton
-                    class="rounded-3xl border border-(--border) bg-(--surface) px-4 py-2 text-sm font-semibold text-(--text) transition hover:bg-(--primary-soft) hover:text-(--primary)"
+                    class="flex h-11 w-11 items-center justify-center rounded-lg border border-(--border) bg-(--surface) text-(--text) transition hover:bg-(--primary-soft) hover:text-(--primary)"
+                    aria-label="Next month"
                 >
-                    Next
+                    <ChevronRight size={20} />
                 </Calendar.NextButton>
             </Calendar.Header>
 
@@ -143,8 +148,8 @@
                                     >
                                         <Calendar.Day
                                             class="
-                                                flex h-10 w-10 items-center justify-center
-                                                rounded-2xl text-sm font-semibold transition
+                                                flex h-11 w-full items-center justify-center
+                                                rounded-lg text-sm font-semibold transition
                                                 {STATUS_STYLES[status]}
                                                 data-selected:border-(--primary)
                                                 data-selected:bg-(--primary)
@@ -186,4 +191,4 @@
             <span>Unavailable</span>
         </div>
     </div>
-</div>
+</Card>

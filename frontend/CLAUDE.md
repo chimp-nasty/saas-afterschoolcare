@@ -41,6 +41,72 @@ Each input is `<Field label error>` wrapping a native element that takes the sni
 
 `TabbedPanels` takes `tabs: { id, label }[]` and a `panel(id)` snippet, so panel props are type-checked. Tab ids live in `navigation/tabs.ts`.
 
-## Styling
+## UI conventions
 
-Use the colour tokens from `routes/layout.css` (`text-(--text-muted)`, `bg-(--primary)`, ...) so tenant branding applies. The bookings components still use raw `gray-*` classes; convert them to tokens when you touch them.
+These keep features looking like one app. They're written for the customer-facing pages; the admin UI can be plainer but uses the same components.
+
+### Mobile first
+
+- Customers use phones; admin uses desktop. Design every customer screen for a ~375px-wide phone first, then let it widen. Write the base classes for mobile and add `md:` only to make things nicer on desktop, never the other way round.
+- Tap targets are at least 44px tall (`Button` is 48px). This applies to calendar cells, chevrons, tiles and chips too.
+- Nothing may depend on hover: hover effects are extras, and every state must be visible without them.
+- Inputs stay at `text-base` (16px) so iOS doesn't zoom in on focus, and keep `type`/`inputmode`/`autocomplete` set so the right keyboard appears.
+- Check every customer change at 375px before desktop.
+
+### Colour
+
+- Use the tokens in `routes/layout.css` only: no Tailwind palette colours (`gray-*`, `slate-*`, hex values) in components. Tenant branding works by swapping `--primary`, so anything hard-coded escapes it.
+- `--primary-hover`, `--primary-soft` and `--hyperlink*` are derived from `--primary` in `layout.css`; never set them per component.
+
+### Page structure
+
+- Every customer page is `<Page>` → `<PageHeader>` → content (`components/layout/`).
+- `Page` is centred. Customer pages are always `narrow` (`max-w-xl`): one column on every screen, so desktop sees the same layout centred. `wide` is for admin pages only.
+- `PageHeader` takes `title` (sentence case), optional `eyebrow` (e.g. "Step 2 of 3"), `description` and an `actions` snippet.
+- Customers navigate with `BottomNav` on mobile and the sidebar on desktop; staff and admin use the sidebar (drawer on mobile).
+
+### Surfaces
+
+- `Card` is the only surface. It has default padding; don't add your own `p-*` to it (cards whose rows run edge to edge, like `DataCard` or the per-child sections in `ReviewBooking`, pass `padded={false}`). No bordered card inside another card: a list of cards is a plain `flex flex-col gap-4`.
+- Radius: `rounded-2xl` surfaces, `rounded-lg` buttons and tiles, `rounded-full` dots and pills. Nothing else.
+- Spacing: `gap-6` between page sections, `gap-4` inside a card.
+
+### Text
+
+| Role | Classes |
+|---|---|
+| Page title | `text-2xl font-extrabold text-(--text)` (via `PageHeader`) |
+| Section title | `text-lg font-extrabold text-(--text)` |
+| Label (fields, data rows, card titles, eyebrows) | `text-xs font-extrabold uppercase tracking-wide text-(--text-muted)` |
+| Body | `text-base text-(--text)`; values `font-semibold` |
+| Secondary | `text-sm text-(--text-muted)` |
+
+Only `font-semibold` and `font-extrabold`; no `font-medium` or `font-bold`.
+
+### Actions
+
+- In features and routes, every action is a `Button`. Raw `<button>` only for selectable tiles (service cards, child chips) and calendar cells and their prev/next arrows, styled with tokens and at least 44px. Components in `components/` may use raw elements internally (e.g. `MultiSelect`'s options); that's what they're for.
+- `default` for the main action (one per view), `ghost` for secondary (Back, Cancel). Buttons are uppercase (applied by `Button`).
+- A row of actions goes in `ActionBar`, secondary first and main action last. On mobile the buttons stack full width with the main action at the bottom, nearest the thumb; from `md:` they sit in one row, secondary left and main right. Buttons inside it size themselves; don't pass `fullWidth`.
+- In multi-step flows (booking), use `<ActionBar sticky>` so Continue stays reachable on long pages.
+- Links use `HyperTextLink`: 44px tall by default ("Back to bookings", "Forgot your password?"); `inline` only inside running text. `Button variant="hyperlink"` is for a button that looks like a link (e.g. "Show more"), not for navigation.
+- Confirmations and small forms over a page use `Modal` (a bottom sheet on mobile) with its buttons in `actions`. Navigation menus use `Drawer` (staff and admin only).
+
+### Tabs
+
+`TabbedPanels` takes `tabs: { id, label }[]` and a `panel(id)` snippet, so panel props are type-checked. Tab ids live in `navigation/tabs.ts`. Tabs always show inline (scrolling sideways if they don't fit), so keep labels short.
+
+### Forms
+
+`Form` + `Field` with native inputs (see "Forms" above). Inputs are underline-only, styled globally in `layout.css`; don't restyle them.
+
+### Words and formats
+
+- Write all copy in sentence case, even where CSS uppercases it ("Book now", "Add a child"). Australian spelling ("Authorised").
+- Customer dates use `utils/helpers.ts`: `formatDate` → "Tue, 20 Oct", plus the year when it isn't this year ("Mon, 20 Oct 2025"); `formatDateRange` → "Tue, 20 Oct – Fri, 24 Oct"; `formatTimestamp` for timestamps, same format. DD/MM/YYYY (`formatDateDDMMYYYY`) only in admin tables.
+- Money: `formatMoney(cents, currency)`. Never format inline.
+- Status wording comes from one map per feature, not per component.
+
+### Shared components
+
+Before using a component in `components/` that no feature uses yet, bring it up to these conventions first.

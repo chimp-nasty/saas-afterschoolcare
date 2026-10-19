@@ -45,38 +45,39 @@
 <Form
     {isLoading}
     handleSubmit={submit}
+    submitLabel="Add child"
 >
-    <Field label="First Name" error={errors.first_name}>
+    <Field label="First name" error={errors.first_name}>
         {#snippet children(id)}
-            <input {id} type="text" bind:value={body.first_name} required />
+            <input {id} type="text" autocomplete="off" bind:value={body.first_name} required />
         {/snippet}
     </Field>
 
-    <Field label="Last Name" error={errors.last_name}>
+    <Field label="Last name" error={errors.last_name}>
         {#snippet children(id)}
-            <input {id} type="text" bind:value={body.last_name} required />
+            <input {id} type="text" autocomplete="off" bind:value={body.last_name} required />
         {/snippet}
     </Field>
 
-    <Field label="Date of Birth" error={errors.dob}>
+    <Field label="Date of birth" error={errors.dob}>
         {#snippet children(id)}
             <input {id} type="date" bind:value={body.dob} required />
         {/snippet}
     </Field>
 
-    <Field label="Medical Info" error={errors.medical_info}>
+    <Field label="Medical conditions" error={errors.medical_info}>
         {#snippet children(id)}
             <textarea {id} rows="4" bind:value={body.medical_info}></textarea>
         {/snippet}
     </Field>
 
-    <Field label="Allergy Info" error={errors.allergy_info}>
+    <Field label="Allergies" error={errors.allergy_info}>
         {#snippet children(id)}
             <textarea {id} rows="4" bind:value={body.allergy_info}></textarea>
         {/snippet}
     </Field>
 
-    <Field label="Medication Info" error={errors.medication_info}>
+    <Field label="Medication" error={errors.medication_info}>
         {#snippet children(id)}
             <textarea {id} rows="4" bind:value={body.medication_info}></textarea>
         {/snippet}

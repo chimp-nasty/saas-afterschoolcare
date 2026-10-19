@@ -4,10 +4,8 @@
 	import { page } from '$app/state';
 
 	import type { Snippet } from 'svelte';
-	import { ChevronRight } from 'lucide-svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
-	import Drawer from '$lib/components/overlays/Drawer.svelte';
 
 	export type Tab = {
 		id: string;
@@ -29,18 +27,12 @@
 		panel: Snippet<[string]>;
 	} = $props();
 
-	let drawerOpen = $state(false);
-
 	const defaultTabId = $derived(
 		initialTab ?? tabs[0]?.id
 	);
 
 	const activePanel = $derived(
 		tabs.find((tab) => tab.id === activeTab) ?? null
-	);
-
-	const activeTabLabel = $derived(
-		activePanel?.label ?? 'Select section'
 	);
 
 	function isValidTab(tabId: string | null | undefined) {
@@ -87,35 +79,17 @@
 
 	async function selectTab(tabId: string) {
 		activeTab = tabId;
-		drawerOpen = false;
 
 		await updateUrl(tabId);
 	}
 </script>
 
 <div class="flex flex-col gap-4">
-	<!-- Mobile tab selector -->
-	<div class="md:hidden">
-		<Button
-			type="button"
-			variant="menu"
-			fullWidth
-			onclick={() => drawerOpen = true}
-		>
-			<span class="flex w-full items-center justify-between">
-				<span>
-					{activeTabLabel}
-				</span>
-
-				<ChevronRight size={18} />
-			</span>
-		</Button>
-	</div>
-
-	<!-- Desktop tabs -->
-	<div class="hidden flex-wrap gap-2 md:flex">
-		{#each tabs as tab}
-			<div class="w-40">
+	<!-- Always inline: equal-width tabs on mobile, scrolling sideways if
+	     they don't fit; fixed-width tabs from md. -->
+	<div class="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+		{#each tabs as tab (tab.id)}
+			<div class="min-w-32 flex-1 shrink-0 md:w-40 md:flex-none">
 				<Button
 					type="button"
 					variant="menu"
@@ -136,30 +110,3 @@
 		{/key}
 	{/if}
 </div>
-
-<Drawer
-	open={drawerOpen}
-	onclose={() => drawerOpen = false}
->
-	<div class="flex flex-col gap-2 p-4">
-		{#each tabs as tab}
-			<Button
-				type="button"
-				variant="menu"
-				fullWidth
-				isActive={activeTab === tab.id}
-				onclick={() => selectTab(tab.id)}
-			>
-				<span class="flex w-full items-center justify-between">
-					<span>{tab.label}</span>
-
-					{#if activeTab === tab.id}
-						<span class="text-xs text-(--primary)">
-							Selected
-						</span>
-					{/if}
-				</span>
-			</Button>
-		{/each}
-	</div>
-</Drawer>

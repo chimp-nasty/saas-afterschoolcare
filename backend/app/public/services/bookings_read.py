@@ -11,6 +11,7 @@ from app.errors.bookings import (
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.schemas.booking import (
+    BookingGroupLineResponse,
     BookingGroupResponse,
     BookingGroupSummaryResponse,
     ListBookingGroupsFilterRequest,
@@ -62,6 +63,7 @@ class ReadBookingService:
         filters: ListBookingGroupsFilterRequest,
     ) -> list[BookingGroupSummaryResponse]:
         rows = self.booking_repository.list_group_summaries(
+            scope=filters.scope,
             pagination=filters,
         )
 
@@ -72,6 +74,7 @@ class ReadBookingService:
                 status=resolve_group_status(
                     {BookingStatus(status) for status in row.statuses}
                 ),
+                paid_at=row.paid_at,
                 service_name=row.service_name,
                 child_names=sorted(row.child_names),
                 first_date=row.first_date,
@@ -96,18 +99,23 @@ class ReadBookingService:
             raise BookingGroupNotFoundError()
 
         bookings = [
-            BookingTableResponse.model_validate(
+            BookingGroupLineResponse.model_validate(
                 row,
                 from_attributes=True,
             )
             for row in rows
         ]
 
+        payment = self.payment_attempt_repository.get_successful_by_booking_group_id(
+            booking_group_id=booking_group_id,
+        )
+
         return BookingGroupResponse(
             booking_group_id=booking_group_id,
             status=resolve_group_status(
                 {booking.booking_status for booking in bookings}
             ),
+            paid_at=payment.paid_at if payment else None,
             total_cents=sum(
                 booking.price_snapshot_cents
                 for booking in bookings

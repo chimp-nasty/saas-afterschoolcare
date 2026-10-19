@@ -2,6 +2,9 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
+	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
+	import Page from '$lib/components/layout/Page.svelte';
+	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import OnboardForm from '$lib/features/customer/components/OnboardForm.svelte';
 
 	import { createCustomerApi } from '$lib/api/public/adapters/customer';
@@ -28,4 +31,15 @@
 	}
 </script>
 
-<OnboardForm onsubmit={register} />
+<Page>
+	<PageHeader title="Create an account" />
+
+	<OnboardForm onsubmit={register} />
+
+	<p class="text-center text-sm text-(--text-muted)">
+		Already have an account?
+		<HyperTextLink href={`/${page.data.locationCode}/login`}>
+			Log in
+		</HyperTextLink>
+	</p>
+</Page>

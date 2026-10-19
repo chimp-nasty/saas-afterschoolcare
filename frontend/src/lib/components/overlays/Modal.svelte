@@ -1,10 +1,26 @@
+<!--
+    A modal dialog. A bottom sheet on mobile (easy to reach with a thumb), a
+    centred card from md. Open and close it through bind:this:
+
+        <Modal bind:this={modal} title="Cancel booking?">...</Modal>
+        modal.open()
+
+    Put its buttons in an ActionBar inside `actions`. Escape and tapping the
+    backdrop close it.
+-->
 <script lang="ts">
-	import Card from '$lib/components/layout/Card.svelte';
+	import type { Snippet } from 'svelte';
+
+	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 
 	let {
-		children
+		title,
+		children,
+		actions
 	}: {
-		children?: () => any;
+		title: string;
+		children?: Snippet;
+		actions?: Snippet;
 	} = $props();
 
 	let dialogEl: HTMLDialogElement;
@@ -27,28 +43,32 @@
 <dialog
 	bind:this={dialogEl}
 	onclick={handleBackdropClick}
+	aria-label={title}
 	class="
-		fixed
-		inset-0
-		z-50
-		m-auto
-		max-h-none
-		max-w-none
-		border-0
-		bg-transparent
-		p-0
+		fixed inset-x-0 bottom-0 z-50 mx-0 mt-auto mb-0 w-full max-w-none
+		rounded-t-2xl border border-(--border) bg-(--surface) p-5
+		pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-(--text)
+		md:m-auto md:max-w-md md:rounded-2xl md:pb-5
 	"
 >
-	<Card>
-		{#if children}
-			{@render children()}
+	<div class="flex flex-col gap-4">
+		<h2 class="text-lg font-extrabold text-(--text)">
+			{title}
+		</h2>
+
+		{@render children?.()}
+
+		{#if actions}
+			<ActionBar>
+				{@render actions()}
+			</ActionBar>
 		{/if}
-	</Card>
+	</div>
 </dialog>
 
 <style>
 	dialog::backdrop {
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--overlay);
 		backdrop-filter: blur(6px);
 	}
 </style>

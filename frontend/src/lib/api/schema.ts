@@ -656,6 +656,63 @@ export interface components {
             location_service_date: string;
         };
         /**
+         * BookingGroupLineResponse
+         * @description One child on one day in the review screen, with its refund window.
+         */
+        BookingGroupLineResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Location Id
+             * Format: uuid
+             */
+            location_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Booking Group Id
+             * Format: uuid
+             */
+            booking_group_id: string;
+            /**
+             * Location Service Day Id
+             * Format: uuid
+             */
+            location_service_day_id: string;
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Child Name */
+            child_name: string;
+            /**
+             * Service Date
+             * Format: date
+             */
+            service_date: string;
+            /** Service Name */
+            service_name: string;
+            booking_status: components["schemas"]["BookingStatus"];
+            payment_status: components["schemas"]["PaymentStatus"];
+            /** Price Snapshot Cents */
+            price_snapshot_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Refundable Until
+             * Format: date
+             */
+            refundable_until: string;
+            /** Is Refundable */
+            is_refundable: boolean;
+        };
+        /**
          * BookingGroupResponse
          * @description A booking group for the review screen (pay or cancel a pending one).
          */
@@ -666,12 +723,19 @@ export interface components {
              */
             booking_group_id: string;
             status: components["schemas"]["BookingStatus"];
+            /** Paid At */
+            paid_at: string | null;
             /** Total Cents */
             total_cents: number;
             currency: components["schemas"]["CurrencyCode"];
             /** Bookings */
-            bookings: components["schemas"]["BookingTableResponse"][];
+            bookings: components["schemas"]["BookingGroupLineResponse"][];
         };
+        /**
+         * BookingGroupScope
+         * @enum {string}
+         */
+        BookingGroupScope: "upcoming" | "history";
         /**
          * BookingGroupSummaryResponse
          * @description One card in "My bookings": a checkout and what it covers.
@@ -688,6 +752,8 @@ export interface components {
              */
             created_at: string;
             status: components["schemas"]["BookingStatus"];
+            /** Paid At */
+            paid_at: string | null;
             /** Service Name */
             service_name: string;
             /** Child Names */
@@ -1199,7 +1265,9 @@ export type ApiResponseListLocationServiceDayTableResponse = components['schemas
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
 export type AustralianState = components['schemas']['AustralianState'];
 export type BookingConflictRow = components['schemas']['BookingConflictRow'];
+export type BookingGroupLineResponse = components['schemas']['BookingGroupLineResponse'];
 export type BookingGroupResponse = components['schemas']['BookingGroupResponse'];
+export type BookingGroupScope = components['schemas']['BookingGroupScope'];
 export type BookingGroupSummaryResponse = components['schemas']['BookingGroupSummaryResponse'];
 export type BookingResponse = components['schemas']['BookingResponse'];
 export type BookingSelection = components['schemas']['BookingSelection'];
@@ -1526,6 +1594,7 @@ export interface operations {
             query?: {
                 page?: number;
                 limit?: number;
+                scope?: components["schemas"]["BookingGroupScope"] | null;
             };
             header?: never;
             path?: never;
@@ -2179,6 +2248,7 @@ type ReadonlyArray<T> = [
     unknown[]
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingGroupScope"]> = ["upcoming", "history"];
 export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingStatus"]> = ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];

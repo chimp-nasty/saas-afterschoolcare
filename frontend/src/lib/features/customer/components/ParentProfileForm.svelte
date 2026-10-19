@@ -71,20 +71,21 @@
 <Form
 	{isLoading}
 	handleSubmit={submit}
+	submitLabel="Save"
 >
-	<Field label="Phone Number" error={errors.phone}>
+	<Field label="Phone number" error={errors.phone}>
 		{#snippet children(id)}
 			<input {id} type="tel" autocomplete="tel" bind:value={body.phone} required />
 		{/snippet}
 	</Field>
 
-	<Field label="Address Line 1" error={errors.address_line_1}>
+	<Field label="Address line 1" error={errors.address_line_1}>
 		{#snippet children(id)}
 			<input {id} type="text" autocomplete="address-line1" bind:value={body.address_line_1} required />
 		{/snippet}
 	</Field>
 
-	<Field label="Address Line 2" error={errors.address_line_2}>
+	<Field label="Address line 2" error={errors.address_line_2}>
 		{#snippet children(id)}
 			<input {id} type="text" autocomplete="address-line2" bind:value={body.address_line_2} />
 		{/snippet}

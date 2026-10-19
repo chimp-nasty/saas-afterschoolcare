@@ -31,6 +31,8 @@ def customer_with_actions(api: Api, customer):
     return customer
 
 
+# A customer can list their actions (to-dos raised for them) and sees all
+# three created for them.
 def test_list_actions(customer_with_actions):
     response = customer_with_actions.client.get("/action/v1/")
 
@@ -38,6 +40,8 @@ def test_list_actions(customer_with_actions):
     assert len(response.json()["data"]) == 3
 
 
+# The actions list splits into pages: with two per page, page one has two,
+# page two has the remaining one, and no action appears on both.
 def test_list_actions_paginates(customer_with_actions):
     first = customer_with_actions.client.get(
         "/action/v1/", params={"page": 1, "limit": 2}
@@ -51,6 +55,8 @@ def test_list_actions_paginates(customer_with_actions):
     assert {a["id"] for a in first}.isdisjoint(a["id"] for a in second)
 
 
+# Asking for more than the maximum page size (500 per page) is rejected as
+# invalid instead of returning everything.
 def test_list_actions_limit_is_capped(customer_with_actions):
     response = customer_with_actions.client.get(
         "/action/v1/", params={"limit": 500}
@@ -59,6 +65,8 @@ def test_list_actions_limit_is_capped(customer_with_actions):
     assert response.status_code == 422
 
 
+# Marking an action as seen (cited) records when it was seen and drops the
+# unseen count from three to two.
 def test_marking_cited_updates_count(customer_with_actions):
     client = customer_with_actions.client
     [action, *_] = client.get("/action/v1/").json()["data"]
@@ -72,6 +80,7 @@ def test_marking_cited_updates_count(customer_with_actions):
     assert client.get("/action/v1/count/uncited").json()["data"] == 2
 
 
+# Marking an action that doesn't exist returns 404 not found.
 def test_mark_unknown_action(customer):
     response = customer.client.patch(
         "/action/v1/00000000-0000-0000-0000-000000000000"

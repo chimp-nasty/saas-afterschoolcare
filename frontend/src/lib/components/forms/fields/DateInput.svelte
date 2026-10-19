@@ -1,11 +1,15 @@
+<!--
+    A labelled date field: Field around a native date input (which gives
+    phones their own date picker). Same as writing the Field by hand, for
+    when min/max or an onchange are needed.
+-->
 <script lang="ts">
-    import InlineError from "./InlineError.svelte";
+    import Field from "../Field.svelte";
 
     type Props = {
         value: string;
         label: string;
 
-        name?: string;
         min?: string;
         max?: string;
 
@@ -35,32 +39,19 @@
 
         onchange,
     }: Props = $props();
-
-    const name = $derived(
-		label.trim().toLowerCase().replace(/\s+/g, '-')
-	);
-	
-	const id = $derived(
-		`${label.trim().toLowerCase().replace(/\s+/g, '-')}-input`
-	);
 </script>
 
-<div class="field">
-    <label for={id}>
-        {label}
-    </label>
-
-    <input
-        bind:value
-        {id}
-        {name}
-        type="date"
-        {min}
-        {max}
-        required={isRequired}
-        disabled={isDisabled}
-        onchange={(event) => onchange?.(event)}
-    />
-
-    <InlineError message={error} />
-</div>
+<Field {label} {error}>
+    {#snippet children(id)}
+        <input
+            bind:value
+            {id}
+            type="date"
+            {min}
+            {max}
+            required={isRequired}
+            disabled={isDisabled}
+            onchange={(event) => onchange?.(event)}
+        />
+    {/snippet}
+</Field>

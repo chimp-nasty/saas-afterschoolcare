@@ -1,7 +1,10 @@
+<!--
+    A section that opens and closes: a full-width 44px toggle row with the
+    title as a label, optional actions beside it, and the content below.
+-->
 <script lang="ts">
-	import type { Snippet } from 'svelte';
-
-	import Button from '../actions/Button.svelte';
+	import { untrack, type Snippet } from 'svelte';
+	import { ChevronDown } from 'lucide-svelte';
 
 	let {
 		title,
@@ -15,25 +18,34 @@
 		actions?: Snippet;
 	} = $props();
 
-	let isOpen = $state(defaultOpen);
+	// Starts from defaultOpen; after that only the toggle changes it.
+	let isOpen = $state(untrack(() => defaultOpen));
+
+	const contentId = $props.id();
 </script>
 
-<div class="flex flex-col">
+<div class="flex flex-col gap-2">
 	<div class="flex items-center justify-between gap-2">
-		<Button
-			variant="hyperlink"
+		<button
+			type="button"
+			aria-expanded={isOpen}
+			aria-controls={contentId}
 			onclick={() => (isOpen = !isOpen)}
+			class="flex min-h-11 flex-1 items-center justify-between gap-2 text-left text-xs font-extrabold uppercase tracking-wide text-(--text-muted)"
 		>
 			{title}
-		</Button>
 
-		{#if actions}
-			{@render actions()}
-		{/if}
+			<ChevronDown
+				size={18}
+				class={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+			/>
+		</button>
+
+		{@render actions?.()}
 	</div>
 
 	{#if isOpen}
-		<div class="mt-2">
+		<div id={contentId}>
 			{@render children?.()}
 		</div>
 	{/if}

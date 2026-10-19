@@ -1,18 +1,22 @@
 <script lang="ts">
     import TabbedPanels from "$lib/components/controls/TabbedPanels.svelte";
     import Card from "$lib/components/layout/Card.svelte";
+    import Page from "$lib/components/layout/Page.svelte";
+    import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import { childTabs } from "$lib/navigation/tabs";
 
     let activeTab = $state<string>(childTabs.PROFILE);
 
     const tabs = [
         { id: childTabs.PROFILE, label: "Profile" },
-        { id: childTabs.AUTHORIZED_PICKUPS, label: "Authorized Pickups" },
-        { id: childTabs.MANAGE_DOCUMENTS, label: "Manage Documents" }
+        { id: childTabs.AUTHORIZED_PICKUPS, label: "Pickups" },
+        { id: childTabs.MANAGE_DOCUMENTS, label: "Documents" }
     ];
 </script>
 
-<div class="flex w-full max-w-xl flex-1 flex-col">
+<Page>
+    <PageHeader title="Child details" />
+
     <TabbedPanels
         {tabs}
         initialTab={childTabs.PROFILE}
@@ -22,10 +26,10 @@
         {#snippet panel()}
             <!-- None of the child panels are built yet. -->
             <Card>
-                <p class="p-4 text-sm text-(--text-muted)">
+                <p class="text-sm text-(--text-muted)">
                     This panel is not ready yet.
                 </p>
             </Card>
         {/snippet}
     </TabbedPanels>
-</div>
+</Page>

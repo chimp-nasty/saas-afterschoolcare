@@ -339,6 +339,7 @@ class LocationService(Base):
     __tablename__ = 'location_services'
     __table_args__ = (
         CheckConstraint('current_price_cents >= 0', name='ck_location_services_price_non_negative'),
+        CheckConstraint('refund_cutoff_days >= 0', name='ck_location_services_refund_cutoff_non_negative'),
         ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], name='fk_location_services_location'),
         ForeignKeyConstraint(['service_type_id'], ['public.service_types.id'], name='fk_location_services_service_type'),
         PrimaryKeyConstraint('id', name='location_services_pkey'),
@@ -353,6 +354,7 @@ class LocationService(Base):
     service_type_id: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     current_price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[CurrencyCodeEnum] = mapped_column(Enum(CurrencyCodeEnum, values_callable=lambda cls: [member.value for member in cls], name='currency_code_enum'), nullable=False)
+    refund_cutoff_days: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('2'))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
@@ -533,6 +535,7 @@ class PaymentAttempt(Base):
     stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String(255))
     stripe_checkout_session_id: Mapped[Optional[str]] = mapped_column(String(255))
     stripe_receipt_url: Mapped[Optional[str]] = mapped_column(Text)
+    paid_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 

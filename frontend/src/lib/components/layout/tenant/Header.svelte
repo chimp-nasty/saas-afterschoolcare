@@ -41,6 +41,7 @@
 			<Button
 				variant="ghost"
 				class="group relative"
+				aria-label="Notifications"
 				onclick={() => goto(`/${page.params.location_code}/actions`)}
 			>
 				<span
@@ -80,14 +81,17 @@
 				{/if}
 			</Button>
 
-			<div class="md:hidden">
-				<Button
-					variant="ghost"
-					onclick={onMenu}
-				>
-					<Menu size={20} />
-				</Button>
-			</div>
+			{#if onMenu}
+				<div class="md:hidden">
+					<Button
+						variant="ghost"
+						onclick={onMenu}
+						aria-label="Menu"
+					>
+						<Menu size={20} />
+					</Button>
+				</div>
+			{/if}
 		{:else}
 			<Button
 				variant="ghost"

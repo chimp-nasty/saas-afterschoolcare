@@ -1,10 +1,12 @@
 <!--
     The booking summary: one section per child, a line per day, and totals.
-    Presentational only; the caller supplies the lines and the buttons
-    (new booking: Back / Continue, pending review: Cancel / Continue).
+    Presentational only; the caller supplies the lines, optional per-line
+    actions (review: refund a day), and its own ActionBar below.
 -->
 <script lang="ts" module>
     export type ReviewLine = {
+        // Set once the booking exists (review screen); lets lineActions find it.
+        bookingId?: string;
         date: string;
         serviceName: string;
         priceCents: number;
@@ -20,33 +22,24 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
 
+    import Card from "$lib/components/layout/Card.svelte";
+
+    import { formatDate, formatMoney } from "$lib/utils/helpers";
+
     let {
         serviceName,
         currency,
         children,
-        actions,
+        lineActions,
     }: {
         serviceName: string;
         currency: string;
         children: ReviewChild[];
-        actions: Snippet;
+        lineActions?: Snippet<[ReviewLine]>;
     } = $props();
 
     function formatPrice(priceCents: number): string {
-        return new Intl.NumberFormat("en-AU", {
-            style: "currency",
-            currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(priceCents / 100);
-    }
-
-    function formatDate(date: string): string {
-        return new Intl.DateTimeFormat("en-AU", {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-        }).format(new Date(`${date}T00:00:00`));
+        return formatMoney(priceCents, currency);
     }
 
     function subtotal(child: ReviewChild): number {
@@ -64,86 +57,77 @@
     const pricePerSession = $derived(children[0]?.lines[0]?.priceCents);
 </script>
 
-<div class="space-y-8">
-    <section class="rounded-xl border border-gray-200 bg-white p-6">
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <h2 class="text-lg font-semibold text-gray-900">
-                    {serviceName}
-                </h2>
+<div class="flex flex-col gap-4">
+    <Card border>
+        <h2 class="text-lg font-extrabold text-(--text)">
+            {serviceName}
+        </h2>
 
-                {#if pricePerSession !== undefined}
-                    <p class="mt-1 text-sm text-gray-500">
-                        {formatPrice(pricePerSession)}
-                        / session
-                    </p>
-                {/if}
-            </div>
-        </div>
-    </section>
+        {#if pricePerSession !== undefined}
+            <p class="text-sm text-(--text-muted)">
+                {formatPrice(pricePerSession)} / session
+            </p>
+        {/if}
+    </Card>
 
-    <div class="space-y-6">
-        {#each children as child (child.childId)}
-            <section class="rounded-xl border border-gray-200 bg-white">
-                <div class="border-b border-gray-200 px-6 py-4">
-                    <h3 class="font-semibold text-gray-900">
-                        {child.childName}
-                    </h3>
-                </div>
+    <!-- Unpadded: the rows and subtotal run edge to edge. -->
+    {#each children as child (child.childId)}
+        <Card border padded={false}>
+            <h3 class="border-b border-(--border) px-5 py-4 text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+                {child.childName}
+            </h3>
 
-                <div class="divide-y divide-gray-100">
-                    {#each child.lines as line}
-                        <div class="flex items-center justify-between px-6 py-4">
-                            <div>
-                                <p class="font-medium text-gray-900">
-                                    {formatDate(line.date)}
-                                </p>
+            <div class="divide-y divide-(--border)">
+                {#each child.lines as line (line.bookingId ?? line.date)}
+                    <div class="flex items-start justify-between gap-4 px-5 py-4">
+                        <div>
+                            <p class="font-semibold text-(--text)">
+                                {formatDate(line.date)}
+                            </p>
 
-                                <p class="mt-1 text-sm text-gray-500">
-                                    {line.serviceName}
-                                </p>
-                            </div>
-
-                            <p class="font-medium text-gray-900">
-                                {formatPrice(line.priceCents)}
+                            <p class="text-sm text-(--text-muted)">
+                                {line.serviceName}
                             </p>
                         </div>
-                    {/each}
-                </div>
 
-                <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-                    <span class="text-sm font-medium text-gray-600">
-                        Subtotal
-                    </span>
+                        <div class="flex flex-col items-end gap-2">
+                            <p class="font-semibold text-(--text)">
+                                {formatPrice(line.priceCents)}
+                            </p>
 
-                    <span class="font-semibold text-gray-900">
-                        {formatPrice(subtotal(child))}
-                    </span>
-                </div>
-            </section>
-        {/each}
-    </div>
+                            {@render lineActions?.(line)}
+                        </div>
+                    </div>
+                {/each}
+            </div>
 
-    <section class="rounded-xl border border-gray-200 bg-white p-6">
-        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between rounded-b-2xl border-t border-(--border) bg-(--surface-muted) px-5 py-4">
+                <span class="text-sm text-(--text-muted)">
+                    Subtotal
+                </span>
+
+                <span class="font-semibold text-(--text)">
+                    {formatPrice(subtotal(child))}
+                </span>
+            </div>
+        </Card>
+    {/each}
+
+    <Card border>
+        <div class="flex items-center justify-between gap-4">
             <div>
-                <p class="text-sm text-gray-500">
-                    {bookingCount}
-                    {bookingCount === 1 ? " booking" : " bookings"}
+                <p class="text-sm text-(--text-muted)">
+                    {bookingCount} {bookingCount === 1 ? "session" : "sessions"}
                 </p>
 
-                <p class="mt-1 text-lg font-semibold text-gray-900">
+                <p class="text-lg font-extrabold text-(--text)">
                     Total
                 </p>
             </div>
 
-            <p class="text-2xl font-semibold text-gray-900">
+            <p class="text-2xl font-extrabold text-(--text)">
                 {formatPrice(totalPriceCents)}
             </p>
         </div>
-    </section>
-
-    <div class="flex items-center justify-between border-t border-gray-200 pt-6">
-        {@render actions()}
-    </div>
+    </Card>
 </div>

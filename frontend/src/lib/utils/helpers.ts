@@ -14,6 +14,54 @@ export function formatTimestampDDMMYYYY(value: string): string {
     });
 }
 
+// Customer-facing dates and money (see "Words and formats" in CLAUDE.md).
+
+// "Tue, 20 Oct", plus the year when it isn't this year ("Mon, 20 Oct 2025").
+function formatWeekdayDate(date: Date): string {
+    return date.toLocaleDateString('en-AU', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric'
+    });
+}
+
+// A YYYY-MM-DD date, read as a local date so it can't shift a day.
+export function formatDate(value: string): string {
+    return formatWeekdayDate(new Date(`${value.slice(0, 10)}T00:00:00`));
+}
+
+// "Tue, 20 Oct – Fri, 24 Oct"; a single date when both ends are the same day.
+export function formatDateRange(first: string, last: string): string {
+    return first === last
+        ? formatDate(first)
+        : `${formatDate(first)} – ${formatDate(last)}`;
+}
+
+// An ISO timestamp, as the date it falls on in the viewer's timezone.
+export function formatTimestamp(value: string): string {
+    return formatWeekdayDate(new Date(value));
+}
+
+// "1 Mar 2019": a date of birth reads oddly with a weekday.
+export function formatDateOfBirth(value: string): string {
+    return new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString('en-AU', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
+// "$30.00"
+export function formatMoney(cents: number, currency: string): string {
+    return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(cents / 100);
+}
+
 export function formatEnum(value: string): string {
 	return value
 		.replaceAll('_', ' ')

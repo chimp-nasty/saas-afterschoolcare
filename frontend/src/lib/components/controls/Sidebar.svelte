@@ -47,7 +47,7 @@
 			{/each}
 		</nav>
 	{:else}
-		<Card>
+		<Card padded={false}>
 			<nav class="flex h-full flex-col gap-2 p-4">
 				{#each items as item}
 					<Button

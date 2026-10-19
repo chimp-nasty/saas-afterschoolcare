@@ -50,7 +50,7 @@ os.environ.update(
 os.environ["APP_ENV"] = "test"
 
 
-from tests.factories import Api, FakeStripe  # noqa: E402  (needs the env above)
+from tests.factories import Api, FakeStripe, FakeStripeState  # noqa: E402  (needs the env above)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -62,7 +62,12 @@ def database():
 
 @pytest.fixture(autouse=True)
 def fake_stripe(monkeypatch) -> type[FakeStripe]:
-    """Every service that talks to Stripe gets the fake instead."""
+    """
+    Every service that talks to Stripe gets the fake instead, with fresh
+    state so no test sees another test's sessions.
+    """
+    monkeypatch.setattr(FakeStripe, "state", FakeStripeState())
+
     for module in (
         "app.public.services.bookings_create",
         "app.public.services.bookings_update",

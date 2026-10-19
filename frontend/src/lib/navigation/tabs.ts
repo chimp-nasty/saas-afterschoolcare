@@ -9,6 +9,13 @@ export const childTabs = {
 	MANAGE_DOCUMENTS: 'manage-documents'
 } as const;
 
+// Match the backend's BookingGroupScope values: each tab is also the
+// `scope` it lists.
+export const bookingTabs = {
+	UPCOMING: 'upcoming',
+	HISTORY: 'history'
+} as const;
+
 export const actionTabs = {
 	NEW: 'new',
 	OLDER: 'older'
@@ -19,6 +26,9 @@ export type AccountTab =
 
 export type ChildTab =
 	typeof childTabs[keyof typeof childTabs];
+
+export type BookingTab =
+	typeof bookingTabs[keyof typeof bookingTabs];
 
 export type ActionTab =
 	typeof actionTabs[keyof typeof actionTabs];
