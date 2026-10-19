@@ -52,6 +52,18 @@ export function formatDateOfBirth(value: string): string {
     });
 }
 
+// "0400 000 000" for a mobile, "(07) 3000 0000" for a landline. Phones are
+// stored as 10 digits.
+export function formatPhone(value: string): string {
+    if (!/^\d{10}$/.test(value)) {
+        return value;
+    }
+
+    return value.startsWith('04')
+        ? `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`
+        : `(${value.slice(0, 2)}) ${value.slice(2, 6)} ${value.slice(6)}`;
+}
+
 // "$30.00"
 export function formatMoney(cents: number, currency: string): string {
     return new Intl.NumberFormat('en-AU', {

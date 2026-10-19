@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, field_validator, ConfigDict
 
 from app.public.schemas.enums import AustralianState
+from app.public.schemas.phone import normalise_au_phone
 
 
 class UpdateCustomerProfileRequest(BaseModel):
@@ -33,23 +34,7 @@ class UpdateCustomerProfileRequest(BaseModel):
         if value is None:
             return None
 
-        value = value.strip()
-
-        digits = (
-            value
-            .replace(" ", "")
-            .replace("-", "")
-            .replace("(", "")
-            .replace(")", "")
-        )
-
-        if digits.startswith("+61"):
-            digits = "0" + digits[3:]
-
-        if not digits.isdigit() or len(digits) != 10:
-            raise ValueError("Enter a valid Australian phone number")
-
-        return digits
+        return normalise_au_phone(value)
 
 class CustomerProfileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

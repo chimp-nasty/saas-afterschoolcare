@@ -8,19 +8,26 @@ migrations/dev_seed, in filename order, once each.
   Editing a file that has already been applied is an error: add a new
   file instead (`python -m migrations.migrator new schema add_thing`).
 - In dev, `run` and `rebuild` then regenerate app/db/models.py from the
-  database with sqlacodegen (requirements-dev.txt).
+  database with sqlacodegen (requirements-dev.txt), and the frontend's API
+  types (frontend/src/lib/api/schema.ts) from the app's OpenAPI document,
+  so a schema change reaches both in one step. The API types follow the
+  Pydantic schemas, not the database: after an API-only change, run
+  `npm run gen:api` (or the `api-types` command below).
 
 Usage:
     python -m migrations.migrator run
     python -m migrations.migrator reset      (dev only)
     python -m migrations.migrator rebuild    (dev only)
     python -m migrations.migrator models     (regenerate models only)
+    python -m migrations.migrator api-types  (regenerate frontend API types only)
     python -m migrations.migrator new <folder> <name>
 """
 
 import hashlib
 import importlib.util
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -45,6 +52,12 @@ DEV_FOLDERS = ("dev_seed",)
 # Environments whose database may be reset and gets dev seed data. The
 # test suite (APP_ENV=test) rebuilds its own database on every run.
 DISPOSABLE_ENVS = ("dev", "test")
+
+BACKEND_DIR = MIGRATIONS_DIR.parent
+FRONTEND_DIR = BACKEND_DIR.parent / "frontend"
+
+# Written for the frontend's `gen:api:file` script (gitignored).
+OPENAPI_FILE = FRONTEND_DIR / ".openapi.json"
 
 MODEL_SCHEMAS = ("tenancy", "auth", "public")
 MODELS_FILE = MIGRATIONS_DIR.parent / "app" / "db" / "models.py"
@@ -215,6 +228,7 @@ def run() -> list[str]:
 
     if settings.APP_ENV == "dev":
         generate_models(engine)
+        generate_api_types()
 
     return newly_applied
 
@@ -264,6 +278,57 @@ def generate_models(engine: Engine | None = None) -> bool:
 
     MODELS_FILE.write_text(source, encoding="utf-8")
     print(f"Models updated: {MODELS_FILE.relative_to(MIGRATIONS_DIR.parent)}")
+
+    return True
+
+
+def generate_api_types() -> bool:
+    """
+    Regenerate frontend/src/lib/api/schema.ts without the backend running:
+    build the OpenAPI document from the app, then run the frontend's
+    `gen:api:file` script on it. Skipped (with a message) if either step
+    can't run, like model generation without sqlacodegen.
+    """
+    # A fresh interpreter, so the app imports the models.py just written.
+    exported = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import json, sys; from app.main import app; json.dump(app.openapi(), sys.stdout)",
+        ],
+        cwd=BACKEND_DIR,
+        capture_output=True,
+        text=True,
+    )
+
+    if exported.returncode != 0:
+        # The last line of the traceback says what went wrong.
+        reason = exported.stderr.strip().splitlines()[-1:]
+
+        print(
+            "Skipping API types: the app's OpenAPI document couldn't be built."
+            + (f"\n{reason[0]}" if reason else "")
+        )
+        return False
+
+    npm = shutil.which("npm")
+
+    if not npm or not FRONTEND_DIR.exists():
+        print("Skipping API types: npm or the frontend folder wasn't found.")
+        return False
+
+    OPENAPI_FILE.write_text(exported.stdout, encoding="utf-8")
+
+    generated = subprocess.run(
+        [npm, "run", "--silent", "gen:api:file"],
+        cwd=FRONTEND_DIR,
+    )
+
+    if generated.returncode != 0:
+        print("Skipping API types: `npm run gen:api:file` failed.")
+        return False
+
+    print("API types updated: frontend/src/lib/api/schema.ts")
 
     return True
 
@@ -346,6 +411,10 @@ def main() -> None:
 
     if command == "models":
         generate_models()
+        return
+
+    if command == "api-types":
+        generate_api_types()
         return
 
     if command == "new" and len(sys.argv) == 4:

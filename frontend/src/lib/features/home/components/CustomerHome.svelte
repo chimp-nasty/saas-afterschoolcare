@@ -7,6 +7,7 @@
     import CustomerBookings from "./CustomerBookings.svelte";
 
     import { auth } from "$lib/auth/state.svelte";
+    import { logout } from "$lib/auth/logout";
     import type { BookingTableResponse } from "$lib/api/schema";
 
     let {
@@ -82,4 +83,13 @@
     onclick={() => goto(`/${locationCode}/bookings/new`)}
 >
     Book now
+</Button>
+
+<!-- Same as Account: customers have no sidebar on mobile. -->
+<Button
+    variant="ghost"
+    fullWidth
+    onclick={() => logout(locationCode)}
+>
+    Log out
 </Button>

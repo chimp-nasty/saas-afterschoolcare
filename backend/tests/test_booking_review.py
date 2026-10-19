@@ -280,7 +280,7 @@ def test_cannot_pay_after_clearing_profile(api: Api, customer):
     assert "Missing: phone" in response.json()["msg"]
 
     # Completing it again lets them pay.
-    customer.client.patch("/customer/v1/profile", json={"phone": "0400000000"})
+    customer.client.patch("/customer/v1/profile", json={"phone": customer.phone})
     assert customer.client.post(url).status_code == 200
 
 

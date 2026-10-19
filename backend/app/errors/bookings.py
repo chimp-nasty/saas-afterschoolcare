@@ -51,6 +51,16 @@ class ChildNotMedicallyClearedError(ApplicationError):
     result = "denied"
 
 
+class ChildInactiveError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "This child has been removed and can't be booked"
+
+
+class ChildAgeNotEligibleError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "This child's age is outside this service's age range on one or more of the selected days"
+
+
 class CheckoutOriginError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "Bookings must be made from this location's site"

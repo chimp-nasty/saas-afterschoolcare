@@ -15,7 +15,8 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
-		"gen:api": "npx -y openapi-typescript@7.13.0 http://localhost:8000/openapi.json -o src/lib/api/schema.ts --root-types --root-types-no-schema-prefix --enum-values"
+		"gen:api": "npx -y openapi-typescript@7.13.0 http://localhost:8000/openapi.json -o src/lib/api/schema.ts --root-types --root-types-no-schema-prefix --enum-values",
+		"gen:api:file": "npx -y openapi-typescript@7.13.0 ./.openapi.json -o src/lib/api/schema.ts --root-types --root-types-no-schema-prefix --enum-values"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

@@ -15,8 +15,9 @@ from app.integrations.payments.stripe.client import StripeCheckout, StripePrice
 from app.main import app
 
 
+# Every customer gets their own phone (new_phone): a phone number belongs to
+# one family across the tenant, and their pickup row follows it.
 COMPLETE_PROFILE = {
-    "phone": "0400000000",
     "address_line_1": "1 Test Street",
     "suburb": "Brisbane",
     "state": "QLD",
@@ -26,11 +27,17 @@ COMPLETE_PROFILE = {
 PASSWORD = "Password123"
 
 
+def new_phone() -> str:
+    """A unique-enough Australian mobile number."""
+    return "04" + str(uuid.uuid4().int)[:8]
+
+
 @dataclass
 class Customer:
     client: TestClient
     email: str
     password: str
+    phone: str | None = None
 
 
 @dataclass
@@ -171,17 +178,22 @@ class Api:
 
         client = self.login(email, PASSWORD, tenant=tenant, location=location)
 
+        phone = None
+
         if complete_profile:
-            response = client.patch("/customer/v1/profile", json=COMPLETE_PROFILE)
+            phone = new_phone()
+            response = client.patch("/customer/v1/profile", json={**COMPLETE_PROFILE, "phone": phone})
             assert response.status_code == 200, response.text
 
-        return Customer(client=client, email=email, password=PASSWORD)
+        return Customer(client=client, email=email, password=PASSWORD, phone=phone)
 
     def new_child(self, customer: Customer, **overrides) -> dict:
+        # Ten years old: inside the dev seed's 8-17 age range now and on the
+        # factory's service days (~13 months out).
         body = {
             "first_name": "Child",
             "last_name": uuid.uuid4().hex[:8],
-            "dob": "2019-03-01",
+            "dob": date(date.today().year - 10, 3, 1).isoformat(),
             "medical_info": None,
             "allergy_info": None,
             "medication_info": None,

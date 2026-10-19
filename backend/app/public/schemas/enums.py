@@ -49,6 +49,16 @@ class PaymentStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class PickupRelation(StrEnum):
+    ACCOUNT_HOLDER = "account_holder"
+    GRANDPARENT = "grandparent"
+    AUNT_UNCLE = "aunt_uncle"
+    FAMILY_FRIEND = "family_friend"
+    NEIGHBOUR = "neighbour"
+    NANNY_BABYSITTER = "nanny_babysitter"
+    OTHER = "other"
+
+
 class ChildDocumentType(StrEnum):
     MEDICAL_ACTION_PLAN = "medical_action_plan"
     ASTHMA_ACTION_PLAN = "asthma_action_plan"

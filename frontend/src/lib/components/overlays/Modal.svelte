@@ -16,11 +16,14 @@
 	let {
 		title,
 		children,
-		actions
+		actions,
+		onclose
 	}: {
 		title: string;
 		children?: Snippet;
 		actions?: Snippet;
+		// However it closed: a button, Escape or the backdrop.
+		onclose?: () => void;
 	} = $props();
 
 	let dialogEl: HTMLDialogElement;
@@ -43,6 +46,7 @@
 <dialog
 	bind:this={dialogEl}
 	onclick={handleBackdropClick}
+	{onclose}
 	aria-label={title}
 	class="
 		fixed inset-x-0 bottom-0 z-50 mx-0 mt-auto mb-0 w-full max-w-none

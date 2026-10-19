@@ -56,10 +56,8 @@ def test_update_profile(customer):
     assert response.json()["data"]["suburb"] == "Toowong"
 
     data = customer.client.get("/customer/v1/profile").json()["data"]
-    assert {key: data[key] for key in COMPLETE_PROFILE} == {
-        **COMPLETE_PROFILE,
-        "suburb": "Toowong",
-    }
+    expected = {**COMPLETE_PROFILE, "phone": customer.phone, "suburb": "Toowong"}
+    assert {key: data[key] for key in expected} == expected
 
 
 # Saving an Australian state that doesn't exist ('XX') is rejected as

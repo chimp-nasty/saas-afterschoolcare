@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import Row
+from sqlalchemy import Date, Row, cast, func
 
 from app.db.repository import Repository
-from app.db.models import LocationService, ServiceType
+from app.db.models import Location, LocationService, ServiceType
 
 
 class LocationServiceRepository(Repository):
@@ -39,6 +39,33 @@ class LocationServiceRepository(Repository):
         return (
             self.db.query(LocationService)
             .filter(LocationService.id == id)
+            .first()
+        )
+
+    def get_child_age_limits(
+        self,
+        *,
+        location_id: UUID,
+    ) -> Row | None:
+        """
+        The widest age range the location's active services accept, and
+        today's date there: (min_age, max_age, today). min_age and max_age
+        are None when the location has no active services.
+        """
+        return (
+            self.db.query(
+                func.min(LocationService.min_child_age).label("min_age"),
+                func.max(LocationService.max_child_age).label("max_age"),
+                cast(func.timezone(Location.timezone, func.now()), Date).label("today"),
+            )
+            .select_from(Location)
+            .outerjoin(
+                LocationService,
+                (LocationService.location_id == Location.id)
+                & LocationService.is_active,
+            )
+            .filter(Location.id == location_id)
+            .group_by(Location.timezone)
             .first()
         )
 

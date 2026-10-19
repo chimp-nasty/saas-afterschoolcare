@@ -11,11 +11,13 @@ from app.dependencies.rls import get_rls_db
 from app.dependencies.service import get_service
 from app.public.services.children_read import ReadChildService
 from app.public.services.children_create import CreateChildService
+from app.public.services.children_update import UpdateChildService
 from app.public.schemas.children import (
     ChildResponse,
     ChildTableResponse,
     ListChildrenFilterRequest,
-    CreateChildRequest
+    CreateChildRequest,
+    UpdateChildRequest,
 )
 
 
@@ -105,4 +107,60 @@ def create_child_profile(
         ok=True,
         msg="Child profile created",
         data=result
+    )
+
+
+@router.patch("/{child_id}")
+def update_child_profile(
+    child_id: UUID,
+    body: UpdateChildRequest,
+    ctx: TokenContext = Depends(
+        require_permission(
+            resource="child_profile",
+            action="u",
+        )
+    ),
+    service: UpdateChildService = Depends(
+        get_service(
+            UpdateChildService,
+            db_dependency=get_rls_db,
+        )
+    ),
+) -> ApiResponse[ChildResponse]:
+    result = service.update(
+        id=child_id,
+        body=body,
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Child profile updated",
+        data=result,
+    )
+
+
+@router.post("/{child_id}/deactivate")
+def deactivate_child_profile(
+    child_id: UUID,
+    ctx: TokenContext = Depends(
+        require_permission(
+            resource="child_profile",
+            action="d",
+        )
+    ),
+    service: UpdateChildService = Depends(
+        get_service(
+            UpdateChildService,
+            db_dependency=get_rls_db,
+        )
+    ),
+) -> ApiResponse[ChildResponse]:
+    result = service.deactivate(
+        id=child_id,
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Child removed",
+        data=result,
     )

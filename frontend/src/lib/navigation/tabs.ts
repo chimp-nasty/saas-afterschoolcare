@@ -1,11 +1,11 @@
 export const accountTabs = {
 	PROFILE: 'profile',
-	CHILDREN: 'children'
+	CHILDREN: 'children',
+	PICKUPS: 'pickups'
 } as const;
 
 export const childTabs = {
 	PROFILE: 'profile',
-	AUTHORIZED_PICKUPS: 'authorized-pickups',
 	MANAGE_DOCUMENTS: 'manage-documents'
 } as const;
 

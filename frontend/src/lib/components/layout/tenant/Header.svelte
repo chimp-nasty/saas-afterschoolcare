@@ -97,7 +97,7 @@
 				variant="ghost"
 				onclick={() => goto(`/${page.params.location_code}/login`)}
 			>
-				Login
+				Log in
 			</Button>
 		{/if}
 	</div>

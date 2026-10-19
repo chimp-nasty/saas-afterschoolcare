@@ -162,6 +162,33 @@ class BookingRepository(Repository):
             .all()
         )
 
+    def has_upcoming_for_child(
+        self,
+        *,
+        child_id: UUID,
+    ) -> bool:
+        """
+        Whether the child has a pending or confirmed booking from today on
+        (location time). A lapsed hold doesn't count.
+        """
+        return self.db.query(
+            self.db.query(Booking)
+            .join(
+                LocationServiceDay,
+                LocationServiceDay.id == Booking.location_service_day_id,
+            )
+            .join(
+                Location,
+                Location.id == Booking.location_id,
+            )
+            .filter(
+                Booking.child_id == child_id,
+                _effective_status().in_(["PENDING", "CONFIRMED"]),
+                LocationServiceDay.service_date >= _location_today(),
+            )
+            .exists()
+        ).scalar()
+
     def get_group_statuses(
         self,
         *,

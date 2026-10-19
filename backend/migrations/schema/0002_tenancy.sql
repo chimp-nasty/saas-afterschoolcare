@@ -53,6 +53,10 @@ CREATE TABLE tenancy.locations (
     CONSTRAINT uq_locations_tenant_code
         UNIQUE (tenant_id, code),
 
+    -- Target for authorized_pickup_persons' composite foreign key.
+    CONSTRAINT uq_locations_id_tenant
+        UNIQUE (id, tenant_id),
+
     CONSTRAINT ck_locations_code_format
         CHECK (code ~ '^[a-z][a-z0-9-]*$')
 );

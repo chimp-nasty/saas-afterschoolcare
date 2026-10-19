@@ -10,6 +10,8 @@
     import type { CreateChildRequest } from "$lib/api/schema";
     import { accountTabs } from "$lib/navigation/tabs";
 
+    let { data } = $props();
+
     const childApi = createChildrenApi();
 
     // Back to Account → Children, where the new child now shows.
@@ -31,5 +33,8 @@
         description="Children with medical conditions, allergies or medication are reviewed by staff before they can be booked."
     />
 
-    <ChildProfileForm onsubmit={createChild} />
+    <ChildProfileForm
+        askPickupConsent={data.hasOtherPickups}
+        onsubmit={createChild}
+    />
 </Page>

@@ -5,7 +5,8 @@
 
 	let { children } = $props();
 
-    const roles = ["customer", "admin", "staff"]
+    // Any role, but a role is required.
+    const roles = ["customer", "staff", "admin", "superadmin"]
 </script>
 
 <Authorize locationCode={page.data.locationCode} {roles}>

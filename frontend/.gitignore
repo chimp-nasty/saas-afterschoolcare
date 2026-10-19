@@ -18,6 +18,9 @@ Thumbs.db
 !.env.example
 !.env.test
 
+# Written by the backend migrator for gen:api:file
+/.openapi.json
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

@@ -225,7 +225,7 @@ def up(conn: Connection) -> None:
                 :user_id,
                 'Noah',
                 'Test',
-                DATE '2020-08-22',
+                DATE '2016-08-22',
                 TRUE
             WHERE NOT EXISTS (
                 SELECT 1

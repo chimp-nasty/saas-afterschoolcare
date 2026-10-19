@@ -7,6 +7,8 @@ from app.errors.bookings import (
     BookingAttemptFinishedError,
     BookingCapacityCollisionError,
     BookingCollisionError,
+    ChildAgeNotEligibleError,
+    ChildInactiveError,
     ChildNotMedicallyClearedError,
     InvalidBookingChildError,
     InvalidBookingServiceDaysError,
@@ -14,6 +16,13 @@ from app.errors.bookings import (
     ServiceDayNotInFutureError,
 )
 from app.errors.children import ChildProfileCollisionError
+from app.errors.pickups import (
+    PickupConsentRequiredError,
+    PickupLimitReachedError,
+    PickupPhoneInvalidError,
+    PickupPhoneOnListError,
+    PickupPhoneTakenError,
+)
 
 
 class InvalidValueError(ApplicationError):
@@ -38,6 +47,15 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_bookings_service_day_open": ServiceDayClosedError,
     "ck_bookings_service_day_full": BookingCapacityCollisionError,
     "ck_bookings_child_medically_cleared": ChildNotMedicallyClearedError,
+    "ck_bookings_child_active": ChildInactiveError,
+    "ck_bookings_child_age": ChildAgeNotEligibleError,
+    # Pickup people (schema/0004). The phone rules also apply when an
+    # account holder's profile phone changes (their row follows it).
+    "uq_authorized_pickup_persons_family_phone": PickupPhoneOnListError,
+    "ex_authorized_pickup_persons_tenant_phone": PickupPhoneTakenError,
+    "ck_authorized_pickup_persons_phone_format": PickupPhoneInvalidError,
+    "ck_authorized_pickup_persons_limit": PickupLimitReachedError,
+    "ck_child_profile_pickup_consent": PickupConsentRequiredError,
 }
 
 

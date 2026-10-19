@@ -6,8 +6,12 @@
     import type { FormErrors, SubmitHandler } from '$lib/types/forms';
 
     let {
+		askPickupConsent = false,
 		onsubmit
 	}: {
+		// The family has pickup people besides the account holder, who'll
+		// be able to collect this child too.
+		askPickupConsent?: boolean;
 		onsubmit: SubmitHandler<CreateChildRequest>;
 	} = $props();
 
@@ -17,7 +21,8 @@
         dob: '',
         medical_info: '',
         allergy_info: '',
-        medication_info: ''
+        medication_info: '',
+        pickup_consent: false
 	};
 
 	let body = $state<CreateChildRequest>({ ...initialBody });
@@ -82,4 +87,15 @@
             <textarea {id} rows="4" bind:value={body.medication_info}></textarea>
         {/snippet}
     </Field>
+    {#if askPickupConsent}
+        <Field
+            label={`Everyone on my pickup list may collect ${body.first_name.trim() || "this child"}`}
+            error={errors.pickup_consent}
+            inline
+        >
+            {#snippet children(id)}
+                <input {id} type="checkbox" bind:checked={body.pickup_consent} required />
+            {/snippet}
+        </Field>
+    {/if}
 </Form>

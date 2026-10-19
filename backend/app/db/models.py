@@ -53,6 +53,16 @@ class PaymentStatusEnum(str, enum.Enum):
     FAILED = 'FAILED'
 
 
+class PickupRelationEnum(str, enum.Enum):
+    ACCOUNT_HOLDER = 'account_holder'
+    GRANDPARENT = 'grandparent'
+    AUNT_UNCLE = 'aunt_uncle'
+    FAMILY_FRIEND = 'family_friend'
+    NEIGHBOUR = 'neighbour'
+    NANNY_BABYSITTER = 'nanny_babysitter'
+    OTHER = 'other'
+
+
 class StripeStatusEnum(str, enum.Enum):
     PENDING = 'PENDING'
     SUCCEEDED = 'SUCCEEDED'
@@ -186,24 +196,6 @@ class RolePermission(Base):
 
 
 
-class CustomerKioskPin(Base):
-    __tablename__ = 'customer_kiosk_pins'
-    __table_args__ = (
-        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_customer_kiosk_pins_user'),
-        PrimaryKeyConstraint('id', name='customer_kiosk_pins_pkey'),
-        UniqueConstraint('user_id', name='uq_customer_kiosk_pins_user'),
-        {'schema': 'public'}
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    pin_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    last_used_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-
-
-
 class CustomerProfile(Base):
     __tablename__ = 'customer_profile'
     __table_args__ = (
@@ -233,6 +225,7 @@ class Location(Base):
         CheckConstraint("code::text ~ '^[a-z][a-z0-9-]*$'::text", name='ck_locations_code_format'),
         ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_locations_tenant'),
         PrimaryKeyConstraint('id', name='locations_pkey'),
+        UniqueConstraint('id', 'tenant_id', name='uq_locations_id_tenant'),
         UniqueConstraint('tenant_id', 'code', name='uq_locations_tenant_code'),
         {'schema': 'tenancy'}
     )
@@ -266,6 +259,45 @@ class LocationUserRole(Base):
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class AuthorizedPickupPerson(Base):
+    __tablename__ = 'authorized_pickup_persons'
+    __table_args__ = (
+        CheckConstraint('failed_pin_attempts >= 0', name='ck_authorized_pickup_persons_failed_pin_attempts'),
+        CheckConstraint("phone::text ~ '^[0-9]{8,15}$'::text", name='ck_authorized_pickup_persons_phone_format'),
+        CheckConstraint("relation = 'account_holder'::pickup_relation_enum OR consent_confirmed_at IS NOT NULL AND adult_confirmed_at IS NOT NULL", name='ck_authorized_pickup_persons_declarations'),
+        CheckConstraint("relation = 'other'::pickup_relation_enum) = (relation_other IS NOT NULL AND btrim(relation_other::text) <> ''::text", name='ck_authorized_pickup_persons_relation_other'),
+        ForeignKeyConstraint(['identity_verified_by_user_id'], ['auth.users.id'], name='fk_authorized_pickup_persons_verified_by'),
+        ForeignKeyConstraint(['location_id', 'tenant_id'], ['tenancy.locations.id', 'tenancy.locations.tenant_id'], name='fk_authorized_pickup_persons_location'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_authorized_pickup_persons_user'),
+        PrimaryKeyConstraint('id', name='authorized_pickup_persons_pkey'),
+        Index('uq_authorized_pickup_persons_account_holder', 'user_id', 'location_id', postgresql_where="(is_active AND (relation = 'account_holder'::pickup_relation_enum))", unique=True),
+        Index('uq_authorized_pickup_persons_family_phone', 'user_id', 'location_id', 'phone', postgresql_where='is_active', unique=True),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    phone: Mapped[str] = mapped_column(String(15), nullable=False)
+    relation: Mapped[PickupRelationEnum] = mapped_column(Enum(PickupRelationEnum, values_callable=lambda cls: [member.value for member in cls], name='pickup_relation_enum'), nullable=False)
+    failed_pin_attempts: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('0'))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    relation_other: Mapped[Optional[str]] = mapped_column(String(100))
+    consent_confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    adult_confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    identity_verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    identity_verified_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    pin_hash: Mapped[Optional[str]] = mapped_column(Text)
+    pin_locked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    kiosk_pin_reset_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 
@@ -312,6 +344,7 @@ class ChildProfile(Base):
     medical_info: Mapped[Optional[str]] = mapped_column(Text)
     allergy_info: Mapped[Optional[str]] = mapped_column(Text)
     medication_info: Mapped[Optional[str]] = mapped_column(Text)
+    pickup_consent_confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 
@@ -339,6 +372,7 @@ class LocationService(Base):
     __tablename__ = 'location_services'
     __table_args__ = (
         CheckConstraint('current_price_cents >= 0', name='ck_location_services_price_non_negative'),
+        CheckConstraint('min_child_age >= 0 AND max_child_age >= min_child_age', name='ck_location_services_child_age_range'),
         CheckConstraint('refund_cutoff_days >= 0', name='ck_location_services_refund_cutoff_non_negative'),
         ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], name='fk_location_services_location'),
         ForeignKeyConstraint(['service_type_id'], ['public.service_types.id'], name='fk_location_services_service_type'),
@@ -355,6 +389,8 @@ class LocationService(Base):
     current_price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[CurrencyCodeEnum] = mapped_column(Enum(CurrencyCodeEnum, values_callable=lambda cls: [member.value for member in cls], name='currency_code_enum'), nullable=False)
     refund_cutoff_days: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('2'))
+    min_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('8'))
+    max_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('17'))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
@@ -404,33 +440,6 @@ class Action(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     child_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     cited_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-
-
-
-class AuthorizedPickupPerson(Base):
-    __tablename__ = 'authorized_pickup_persons'
-    __table_args__ = (
-        ForeignKeyConstraint(['child_id'], ['public.child_profile.id'], ondelete='CASCADE', name='fk_authorized_pickup_persons_child'),
-        ForeignKeyConstraint(['identity_verified_by_user_id'], ['auth.users.id'], name='fk_authorized_pickup_persons_verified_by'),
-        ForeignKeyConstraint(['user_id'], ['auth.users.id'], name='fk_authorized_pickup_persons_user'),
-        PrimaryKeyConstraint('id', name='authorized_pickup_persons_pkey'),
-        UniqueConstraint('child_id', 'phone', name='uq_authorized_pickup_persons_child_phone'),
-        {'schema': 'public'}
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
-    child_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[str] = mapped_column(String(30), nullable=False)
-    relation: Mapped[str] = mapped_column(String(100), nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    consent_confirmed: Mapped[Optional[bool]] = mapped_column(Boolean)
-    identity_verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    identity_verified_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 
 

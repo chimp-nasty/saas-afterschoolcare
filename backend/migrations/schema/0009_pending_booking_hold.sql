@@ -47,7 +47,8 @@ $$;
 
 
 -- Same rules as 0008, plus expiring the day's lapsed holds before
--- counting. Only the "LAPSED HOLDS" block is new.
+-- counting ("LAPSED HOLDS"), and checking the child is still active and
+-- within the service's age range on the day ("CHILD").
 CREATE OR REPLACE FUNCTION public.enforce_booking_rules()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -60,15 +61,24 @@ DECLARE
     v_capacity INTEGER;
     v_timezone TEXT;
     v_live_bookings INTEGER;
+    v_min_child_age SMALLINT;
+    v_max_child_age SMALLINT;
     v_review_status public.medical_review_status_enum;
+    v_dob DATE;
+    v_is_active BOOLEAN;
+    v_age INTEGER;
 BEGIN
     -- Locking the day makes concurrent bookings for it queue, so two
     -- requests can't both take the last place.
-    SELECT d.service_date, d.is_open, d.capacity, l.timezone
-    INTO v_service_date, v_is_open, v_capacity, v_timezone
+    SELECT d.service_date, d.is_open, d.capacity, l.timezone,
+           ls.min_child_age, ls.max_child_age
+    INTO v_service_date, v_is_open, v_capacity, v_timezone,
+         v_min_child_age, v_max_child_age
     FROM public.location_service_days d
     JOIN tenancy.locations l
         ON l.id = d.location_id
+    JOIN public.location_services ls
+        ON ls.id = d.location_service_id
     WHERE d.id = NEW.location_service_day_id
     FOR UPDATE OF d;
 
@@ -116,18 +126,45 @@ BEGIN
         END IF;
     END IF;
 
-    SELECT ms.review_status
-    INTO v_review_status
-    FROM public.child_medical_state ms
-    WHERE ms.child_id = NEW.child_id;
+    -- CHILD
+    SELECT cp.dob, cp.is_active, ms.review_status
+    INTO v_dob, v_is_active, v_review_status
+    FROM public.child_profile cp
+    LEFT JOIN public.child_medical_state ms
+        ON ms.child_id = cp.id
+    WHERE cp.id = NEW.child_id;
 
     -- An unknown child is left to fk_bookings_child.
-    IF FOUND AND v_review_status NOT IN ('approved', 'not_required') THEN
-        RAISE EXCEPTION 'Child % is awaiting medical review (%)', NEW.child_id, v_review_status
-            USING ERRCODE = 'check_violation',
-                  CONSTRAINT = 'ck_bookings_child_medically_cleared',
-                  TABLE = 'bookings',
-                  SCHEMA = 'public';
+    IF FOUND THEN
+        IF NOT v_is_active THEN
+            RAISE EXCEPTION 'Child % has been removed', NEW.child_id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_bookings_child_active',
+                      TABLE = 'bookings',
+                      SCHEMA = 'public';
+        END IF;
+
+        IF v_review_status NOT IN ('approved', 'not_required') THEN
+            RAISE EXCEPTION 'Child % is awaiting medical review (%)', NEW.child_id, v_review_status
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_bookings_child_medically_cleared',
+                      TABLE = 'bookings',
+                      SCHEMA = 'public';
+        END IF;
+
+        -- Age in whole years on the day of the session. Skipped when the
+        -- day is unknown (no service date to measure against).
+        v_age := date_part('year', age(v_service_date, v_dob))::integer;
+
+        IF v_service_date IS NOT NULL
+           AND (v_age < v_min_child_age OR v_age > v_max_child_age) THEN
+            RAISE EXCEPTION 'Child % is % on %, outside ages % to %',
+                    NEW.child_id, v_age, v_service_date, v_min_child_age, v_max_child_age
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_bookings_child_age',
+                      TABLE = 'bookings',
+                      SCHEMA = 'public';
+        END IF;
     END IF;
 
     RETURN NEW;

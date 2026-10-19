@@ -60,6 +60,24 @@ AS $$
     );
 $$;
 
+-- The current user is staff or above at the location (redefined in
+-- schema/0007 to also require it's the session's location).
+CREATE FUNCTION auth.is_location_staff(p_location_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        WHERE lur.user_id = auth.current_user_id()
+          AND lur.location_id = p_location_id
+          AND r.code IN ('superadmin', 'admin', 'staff')
+    );
+$$;
+
 -- The current user outranks the target user at a shared location
 -- (optionally a specific one): staff > customer, admin > staff/customer,
 -- superadmin > admin/staff/customer.
@@ -221,8 +239,6 @@ ALTER TABLE public.service_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_types FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_profile ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_profile FORCE ROW LEVEL SECURITY;
-ALTER TABLE public.customer_kiosk_pins ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customer_kiosk_pins FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.booking_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.booking_groups FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.location_services ENABLE ROW LEVEL SECURITY;
@@ -256,12 +272,6 @@ ALTER TABLE public.attendance_records FORCE ROW LEVEL SECURITY;
 CREATE POLICY service_types_scope_policy
     ON public.service_types FOR ALL
     USING (true) WITH CHECK (true);
-
--- User-owned
-CREATE POLICY customer_kiosk_pins_scope_policy
-    ON public.customer_kiosk_pins FOR ALL
-    USING (user_id = auth.current_user_id())
-    WITH CHECK (user_id = auth.current_user_id());
 
 CREATE POLICY booking_groups_scope_policy
     ON public.booking_groups FOR ALL
@@ -336,21 +346,33 @@ CREATE POLICY actions_scope_policy
         OR auth.can_manage_user(user_id, location_id)
     );
 
--- Inherited from child_profile
-CREATE POLICY child_medical_state_scope_policy
-    ON public.child_medical_state FOR ALL
+-- Read access follows child_profile: the family sees their child's review
+-- status. Only staff and above change it; the family's edits reach it
+-- through trg_child_profile_medical_review (schema/0004), never directly.
+CREATE POLICY child_medical_state_read_policy
+    ON public.child_medical_state FOR SELECT
     USING (
         EXISTS (
             SELECT 1 FROM public.child_profile cp
             WHERE cp.id = child_medical_state.child_id
               AND auth.can_access_location_row(cp.location_id, cp.user_id)
         )
+    );
+
+CREATE POLICY child_medical_state_staff_write_policy
+    ON public.child_medical_state FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.child_profile cp
+            WHERE cp.id = child_medical_state.child_id
+              AND auth.is_location_staff(cp.location_id)
+        )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM public.child_profile cp
             WHERE cp.id = child_medical_state.child_id
-              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+              AND auth.is_location_staff(cp.location_id)
         )
     );
 
@@ -388,22 +410,13 @@ CREATE POLICY child_documents_scope_policy
         )
     );
 
+-- The family's own list (and every list at the location for staff). The
+-- ID check and kiosk fields are further limited to staff by
+-- trg_authorized_pickup_persons_rules (schema/0004).
 CREATE POLICY authorized_pickup_persons_scope_policy
     ON public.authorized_pickup_persons FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.child_profile cp
-            WHERE cp.id = authorized_pickup_persons.child_id
-              AND auth.can_access_location_row(cp.location_id, cp.user_id)
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.child_profile cp
-            WHERE cp.id = authorized_pickup_persons.child_id
-              AND auth.can_access_location_row(cp.location_id, cp.user_id)
-        )
-    );
+    USING (auth.can_access_location_row(location_id, user_id))
+    WITH CHECK (auth.can_access_location_row(location_id, user_id));
 
 -- Inherited from bookings
 CREATE POLICY attendance_records_scope_policy

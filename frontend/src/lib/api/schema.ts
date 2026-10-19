@@ -292,7 +292,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Child Profile */
+        patch: operations["update_child_profile_children_v1__child_id__patch"];
         trace?: never;
     };
     "/children/v1/": {
@@ -307,6 +308,23 @@ export interface paths {
         put?: never;
         /** Create Child Profile */
         post: operations["create_child_profile_children_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/children/v1/{child_id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate Child Profile */
+        post: operations["deactivate_child_profile_children_v1__child_id__deactivate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -413,6 +431,59 @@ export interface paths {
         head?: never;
         /** Update Cited At */
         patch: operations["update_cited_at_action_v1__action_id__patch"];
+        trace?: never;
+    };
+    "/pickups/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pickups */
+        get: operations["list_pickups_pickups_v1__get"];
+        put?: never;
+        /** Create Pickup */
+        post: operations["create_pickup_pickups_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pickups/v1/{pickup_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pickup */
+        get: operations["get_pickup_pickups_v1__pickup_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Pickup */
+        patch: operations["update_pickup_pickups_v1__pickup_id__patch"];
+        trace?: never;
+    };
+    "/pickups/v1/{pickup_id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate Pickup */
+        post: operations["deactivate_pickup_pickups_v1__pickup_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/webhooks/stripe": {
@@ -542,6 +613,14 @@ export interface components {
             /** Data */
             data?: null;
         };
+        /** ApiResponse[PickupResponse] */
+        ApiResponse_PickupResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PickupResponse"] | null;
+        };
         /** ApiResponse[PublicLocationResponse] */
         ApiResponse_PublicLocationResponse_: {
             /** Ok */
@@ -629,6 +708,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["LocationServiceSelectionResponse"][] | null;
+        };
+        /** ApiResponse[list[PickupResponse]] */
+        ApiResponse_list_PickupResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["PickupResponse"][] | null;
         };
         /**
          * AustralianState
@@ -1028,6 +1116,33 @@ export interface components {
             allergy_info: string | null;
             /** Medication Info */
             medication_info: string | null;
+            /**
+             * Pickup Consent
+             * @default false
+             */
+            pickup_consent: boolean;
+        };
+        /** CreatePickupRequest */
+        CreatePickupRequest: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Phone */
+            phone: string;
+            relation: components["schemas"]["PickupRelation"];
+            /** Relation Other */
+            relation_other?: string | null;
+            /**
+             * Consent Confirmed
+             * @constant
+             */
+            consent_confirmed: true;
+            /**
+             * Adult Confirmed
+             * @constant
+             */
+            adult_confirmed: true;
         };
         /**
          * CurrencyCode
@@ -1134,6 +1249,43 @@ export interface components {
          * @enum {string}
          */
         PaymentStatus: "PENDING" | "PAID" | "REFUNDED" | "FAILED";
+        /**
+         * PickupRelation
+         * @enum {string}
+         */
+        PickupRelation: "account_holder" | "grandparent" | "aunt_uncle" | "family_friend" | "neighbour" | "nanny_babysitter" | "other";
+        /**
+         * PickupResponse
+         * @description A person on the family's pickup list. The ID check and kiosk state are
+         *     shown as yes/no only: never who checked, when, or anything about the PIN.
+         */
+        PickupResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Phone */
+            phone: string;
+            relation: components["schemas"]["PickupRelation"];
+            /** Relation Other */
+            relation_other: string | null;
+            /** Is Account Holder */
+            is_account_holder: boolean;
+            /** Identity Verified */
+            identity_verified: boolean;
+            /** Kiosk Pin Set */
+            kiosk_pin_set: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** PublicLocationResponse */
         PublicLocationResponse: {
             /** Tenant Name */
@@ -1203,6 +1355,24 @@ export interface components {
          * @enum {string}
          */
         StripeStatus: "PENDING" | "SUCCEEDED" | "FAILED";
+        /**
+         * UpdateChildRequest
+         * @description What a family can change about a child. Only the fields sent are
+         *     updated. The date of birth isn't editable (staff correct it); changing
+         *     any medical field sends the child back to medical review.
+         */
+        UpdateChildRequest: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Medical Info */
+            medical_info?: string | null;
+            /** Allergy Info */
+            allergy_info?: string | null;
+            /** Medication Info */
+            medication_info?: string | null;
+        };
         /** UpdateCustomerProfileRequest */
         UpdateCustomerProfileRequest: {
             /** Phone */
@@ -1222,6 +1392,22 @@ export interface components {
             /** Amount Cents */
             amount_cents: number;
             currency: components["schemas"]["CurrencyCode"];
+        };
+        /**
+         * UpdatePickupRequest
+         * @description Only the fields sent are updated. A new name or phone means staff check
+         *     their ID again; a new phone also resets their kiosk PIN (schema/0004).
+         */
+        UpdatePickupRequest: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+            relation?: components["schemas"]["PickupRelation"] | null;
+            /** Relation Other */
+            relation_other?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1253,6 +1439,7 @@ export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildR
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
+export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
 export type ApiResponsePublicLocationResponse = components['schemas']['ApiResponse_PublicLocationResponse_'];
 export type ApiResponseSessionResponse = components['schemas']['ApiResponse_SessionResponse_'];
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
@@ -1263,6 +1450,7 @@ export type ApiResponseListBookingTableResponse = components['schemas']['ApiResp
 export type ApiResponseListChildTableResponse = components['schemas']['ApiResponse_list_ChildTableResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
+export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
 export type AustralianState = components['schemas']['AustralianState'];
 export type BookingConflictRow = components['schemas']['BookingConflictRow'];
 export type BookingGroupLineResponse = components['schemas']['BookingGroupLineResponse'];
@@ -1280,6 +1468,7 @@ export type ChildTableResponse = components['schemas']['ChildTableResponse'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
 export type CreateChildRequest = components['schemas']['CreateChildRequest'];
+export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
@@ -1289,13 +1478,17 @@ export type LocationServiceSelectionResponse = components['schemas']['LocationSe
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
 export type PaymentStatus = components['schemas']['PaymentStatus'];
+export type PickupRelation = components['schemas']['PickupRelation'];
+export type PickupResponse = components['schemas']['PickupResponse'];
 export type PublicLocationResponse = components['schemas']['PublicLocationResponse'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type SessionResponse = components['schemas']['SessionResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
+export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
 export type UpdateLocationServiceRequest = components['schemas']['UpdateLocationServiceRequest'];
+export type UpdatePickupRequest = components['schemas']['UpdatePickupRequest'];
 export type ValidationError = components['schemas']['ValidationError'];
 export type $defs = Record<string, never>;
 export interface operations {
@@ -1934,6 +2127,43 @@ export interface operations {
             };
         };
     };
+    update_child_profile_children_v1__child_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                child_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChildRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_children_children_v1__get: {
         parameters: {
             query?: {
@@ -1985,6 +2215,39 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deactivate_child_profile_children_v1__child_id__deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                child_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2207,6 +2470,175 @@ export interface operations {
             };
         };
     };
+    list_pickups_pickups_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_PickupResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_pickup_pickups_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePickupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PickupResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pickup_pickups_v1__pickup_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickup_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PickupResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_pickup_pickups_v1__pickup_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickup_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePickupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PickupResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deactivate_pickup_pickups_v1__pickup_id__deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pickup_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PickupResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     stripe_webhook_api_v1_webhooks_stripe_post: {
         parameters: {
             query?: never;
@@ -2253,4 +2685,5 @@ export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
 export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
+export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

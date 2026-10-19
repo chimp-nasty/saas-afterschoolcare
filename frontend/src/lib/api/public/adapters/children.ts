@@ -9,7 +9,8 @@ import type {
 	operations,
 	ChildResponse,
 	ChildTableResponse,
-	CreateChildRequest
+	CreateChildRequest,
+	UpdateChildRequest
 } from '$lib/api/schema';
 
 
@@ -62,6 +63,30 @@ export function createChildrenApi(
 				{
 					method: 'POST',
 					body,
+					fetcher
+				}
+			);
+		},
+
+		update(
+			childId: string,
+			body: UpdateChildRequest
+		) {
+			return apiWrapper<ChildResponse>(
+				`${baseUrl}/${childId}`,
+				{
+					method: 'PATCH',
+					body,
+					fetcher
+				}
+			);
+		},
+
+		deactivate(childId: string) {
+			return apiWrapper<ChildResponse>(
+				`${baseUrl}/${childId}/deactivate`,
+				{
+					method: 'POST',
 					fetcher
 				}
 			);

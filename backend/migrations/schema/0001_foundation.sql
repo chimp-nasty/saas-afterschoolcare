@@ -1,6 +1,8 @@
 -- Shared building blocks used by the later schema files.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- For exclusion constraints mixing = and <> (ex_authorized_pickup_persons_tenant_phone).
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE SCHEMA tenancy;
 CREATE SCHEMA auth;
@@ -64,6 +66,16 @@ CREATE TYPE public.payment_status_enum AS ENUM (
     'PAID',
     'REFUNDED',
     'FAILED'
+);
+
+CREATE TYPE public.pickup_relation_enum AS ENUM (
+    'account_holder',
+    'grandparent',
+    'aunt_uncle',
+    'family_friend',
+    'neighbour',
+    'nanny_babysitter',
+    'other'
 );
 
 CREATE TYPE public.booking_status_enum AS ENUM (

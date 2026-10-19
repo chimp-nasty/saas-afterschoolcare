@@ -6,6 +6,9 @@
 
     import ParentProfileForm from "$lib/features/customer/components/ParentProfileForm.svelte";
     import ChildAccountData from "$lib/features/children/components/ChildAccountData.svelte";
+    import PickupList from "$lib/features/pickups/components/PickupList.svelte";
+
+    import { invalidate } from "$app/navigation";
 
     import { accountTabs } from "$lib/navigation/tabs";
     import { logout } from "$lib/auth/logout";
@@ -24,7 +27,8 @@
 
     const tabs = [
         { id: accountTabs.PROFILE, label: "Profile" },
-        { id: accountTabs.CHILDREN, label: "Children" }
+        { id: accountTabs.CHILDREN, label: "Children" },
+        { id: accountTabs.PICKUPS, label: "Pickups" }
     ];
 
     async function updateProfile(
@@ -34,6 +38,9 @@
 
         if (response.ok && response.data) {
             customerProfile = response.data;
+
+            // Their own pickup row follows their name and phone.
+            await invalidate("app:customer-account");
         }
 
         return response;
@@ -58,6 +65,11 @@
                 <ChildAccountData
                     locationCode={data.locationCode}
                     childProfiles={data.childProfiles}
+                />
+            {:else if id === accountTabs.PICKUPS}
+                <PickupList
+                    locationCode={data.locationCode}
+                    pickups={data.pickups}
                 />
             {/if}
         {/snippet}

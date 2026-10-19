@@ -251,22 +251,18 @@ def test_cannot_book_after_clearing_profile(api: Api, customer):
 # added behind the scenes, and is told every missing field.
 def test_cannot_book_without_ever_having_a_profile(api: Api):
     # A child inserted directly (as the dev seed does), bypassing the
-    # complete-profile check on adding a child.
+    # complete-profile check on adding a child. Its medical review state is
+    # created by trg_child_profile_medical_review.
     customer = api.new_customer(complete_profile=False)
 
     [(child_id,)] = api.sql(
         """
-        WITH child AS (
-            INSERT INTO public.child_profile (location_id, user_id, first_name, last_name, dob)
-            SELECT lur.location_id, u.id, 'Seeded', 'Child', DATE '2019-01-01'
-            FROM auth.users u
-            JOIN auth.location_user_roles lur ON lur.user_id = u.id
-            WHERE u.email = :email
-            RETURNING id
-        )
-        INSERT INTO public.child_medical_state (child_id)
-        SELECT id FROM child
-        RETURNING child_id
+        INSERT INTO public.child_profile (location_id, user_id, first_name, last_name, dob)
+        SELECT lur.location_id, u.id, 'Seeded', 'Child', DATE '2016-01-01'
+        FROM auth.users u
+        JOIN auth.location_user_roles lur ON lur.user_id = u.id
+        WHERE u.email = :email
+        RETURNING id
         """,
         email=customer.email,
     )

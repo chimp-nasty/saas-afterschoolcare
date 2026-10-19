@@ -19,6 +19,7 @@ class ChildProfileRepository(Repository):
         medical_info: str | None = None,
         allergy_info: str | None = None,
         medication_info: str | None = None,
+        pickup_consent_confirmed_at=None,
         is_active: bool = True,
     ) -> ChildProfile:
         record = ChildProfile(
@@ -30,6 +31,7 @@ class ChildProfileRepository(Repository):
             medical_info=medical_info,
             allergy_info=allergy_info,
             medication_info=medication_info,
+            pickup_consent_confirmed_at=pickup_consent_confirmed_at,
             is_active=is_active,
         )
 
@@ -48,6 +50,30 @@ class ChildProfileRepository(Repository):
             .filter(ChildProfile.id == id)
             .first()
         )
+
+    def update(
+        self,
+        *,
+        child: ChildProfile,
+        values: dict,
+    ) -> ChildProfile:
+        for field, value in values.items():
+            setattr(child, field, value)
+
+        self.db.flush()
+
+        return child
+
+    def deactivate(
+        self,
+        *,
+        child: ChildProfile,
+    ) -> ChildProfile:
+        child.is_active = False
+
+        self.db.flush()
+
+        return child
 
     def get_by_unique_contraint(
         self,
