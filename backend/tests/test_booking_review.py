@@ -285,7 +285,7 @@ def test_cannot_pay_after_clearing_profile(api: Api, customer):
 
 
 # ---------------------------------------------------------------------------
-# Refund window (location_services.refund_cutoff_days, schema/0004)
+# Refund window (location_service_config.refund_cutoff_days, schema/0004)
 # ---------------------------------------------------------------------------
 
 def _paid_group(api: Api, customer):
@@ -321,16 +321,16 @@ def _refund_cutoff(api: Api, day_id: str, days: int):
     (the service is shared by every test).
     """
     [(original,)] = api.sql(
-        "SELECT ls.refund_cutoff_days "
-        "FROM public.location_services ls "
-        "JOIN public.location_service_days d ON d.location_service_id = ls.id "
+        "SELECT lsc.refund_cutoff_days "
+        "FROM public.location_service_config lsc "
+        "JOIN public.location_service_days d ON d.location_service_id = lsc.location_service_id "
         "WHERE d.id = :day_id",
         day_id=day_id,
     )
     set_cutoff = (
-        "UPDATE public.location_services ls SET refund_cutoff_days = :days "
+        "UPDATE public.location_service_config lsc SET refund_cutoff_days = :days "
         "FROM public.location_service_days d "
-        "WHERE d.id = :day_id AND ls.id = d.location_service_id"
+        "WHERE d.id = :day_id AND lsc.location_service_id = d.location_service_id"
     )
 
     api.sql(set_cutoff, days=days, day_id=day_id)

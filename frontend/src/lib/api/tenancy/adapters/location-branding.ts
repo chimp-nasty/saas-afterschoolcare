@@ -12,6 +12,17 @@ export function createLocationBrandingApi(
 		`${PUBLIC_API_URL}/location-branding/v1`;
 
 	return {
+		// The tenant's centres (from the site's address), before login.
+		listPublicLocations() {
+			return apiWrapper<PublicLocationResponse[]>(
+				`${baseUrl}/public`,
+				{
+					method: 'GET',
+					fetcher
+				}
+			);
+		},
+
 		getPublicLocation(locationCode: string) {
 			return apiWrapper<PublicLocationResponse>(
 				`${baseUrl}/public/${locationCode}`,

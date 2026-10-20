@@ -39,19 +39,21 @@ def _service_age_range(api: Api, min_age: int, max_age: int):
     it back (the service is shared by every test).
     """
     service = (
-        "FROM public.service_types st, tenancy.locations l "
-        "WHERE ls.service_type_id = st.id AND ls.location_id = l.id "
+        "FROM public.location_services ls, public.service_types st, tenancy.locations l "
+        "WHERE lsc.location_service_id = ls.id "
+        "AND ls.service_type_id = st.id AND ls.location_id = l.id "
         "AND st.code = 'after_school_care' AND l.code = 'location1'"
     )
     [(original_min, original_max)] = api.sql(
-        "SELECT ls.min_child_age, ls.max_child_age "
-        "FROM public.location_services ls "
+        "SELECT lsc.min_child_age, lsc.max_child_age "
+        "FROM public.location_service_config lsc "
+        "JOIN public.location_services ls ON ls.id = lsc.location_service_id "
         "JOIN public.service_types st ON st.id = ls.service_type_id "
         "JOIN tenancy.locations l ON l.id = ls.location_id "
         "WHERE st.code = 'after_school_care' AND l.code = 'location1'"
     )
     set_range = (
-        "UPDATE public.location_services ls "
+        "UPDATE public.location_service_config lsc "
         "SET min_child_age = :min_age, max_child_age = :max_age " + service
     )
 
@@ -157,7 +159,7 @@ def test_list_children_filters_by_review_status(api: Api, customer):
 
 
 # ---------------------------------------------------------------------------
-# Age range (location_services.min_child_age / max_child_age, default 8-17)
+# Age range (location_service_config.min_child_age / max_child_age, default 8-17)
 # ---------------------------------------------------------------------------
 
 # A child too young or too old for every service at the location can't be

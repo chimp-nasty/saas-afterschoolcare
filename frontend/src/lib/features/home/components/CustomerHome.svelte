@@ -4,18 +4,21 @@
     import Button from "$lib/components/actions/Button.svelte";
     import Card from "$lib/components/layout/Card.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import CentreCard from "$lib/features/location/components/CentreCard.svelte";
     import CustomerBookings from "./CustomerBookings.svelte";
 
     import { auth } from "$lib/auth/state.svelte";
     import { logout } from "$lib/auth/logout";
-    import type { BookingTableResponse } from "$lib/api/schema";
+    import type { BookingTableResponse, PublicLocationResponse } from "$lib/api/schema";
 
     let {
         bookings,
-        locationCode
+        locationCode,
+        location
     }: {
         bookings: BookingTableResponse[];
         locationCode: string;
+        location: PublicLocationResponse;
     } = $props();
 
     function toDateKey(date: Date): string {
@@ -84,6 +87,9 @@
 >
     Book now
 </Button>
+
+<!-- The "running late" number, one tap from the main screen. -->
+<CentreCard {location} />
 
 <!-- Same as Account: customers have no sidebar on mobile. -->
 <Button

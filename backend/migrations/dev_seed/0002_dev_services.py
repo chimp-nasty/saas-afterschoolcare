@@ -142,49 +142,18 @@ def get_service_type_id(
     ).scalar_one()
 
 
-def upsert_location_service(
+def configure_location_service(
     conn: Connection,
     *,
     location_id,
     service_type_id,
     price_cents: int,
 ):
-    conn.execute(
-        text("""
-            INSERT INTO public.location_services (
-                location_id,
-                service_type_id,
-                current_price_cents,
-                currency,
-                is_active
-            )
-            VALUES (
-                :location_id,
-                :service_type_id,
-                :price_cents,
-                'AUD',
-                TRUE
-            )
-            ON CONFLICT (
-                location_id,
-                service_type_id
-            )
-            DO UPDATE SET
-                current_price_cents =
-                    EXCLUDED.current_price_cents,
-                currency =
-                    EXCLUDED.currency,
-                is_active =
-                    EXCLUDED.is_active;
-        """),
-        {
-            "location_id": location_id,
-            "service_type_id": service_type_id,
-            "price_cents": price_cents,
-        },
-    )
-
-    return conn.execute(
+    """
+    Price and offer one of the location's services. The service and its
+    config were created with the location (schema/0004).
+    """
+    location_service_id = conn.execute(
         text("""
             SELECT id
             FROM public.location_services
@@ -197,6 +166,23 @@ def upsert_location_service(
             "service_type_id": service_type_id,
         },
     ).scalar_one()
+
+    conn.execute(
+        text("""
+            UPDATE public.location_service_config
+            SET
+                current_price_cents = :price_cents,
+                currency = 'AUD',
+                is_active = TRUE
+            WHERE location_service_id = :location_service_id;
+        """),
+        {
+            "location_service_id": location_service_id,
+            "price_cents": price_cents,
+        },
+    )
+
+    return location_service_id
 
 
 def upsert_location_service_day(
@@ -274,7 +260,7 @@ def up(conn: Connection) -> None:
 
         for service_code, config in SERVICE_CONFIG.items():
             location_services[service_code] = (
-                upsert_location_service(
+                configure_location_service(
                     conn,
                     location_id=location_id,
                     service_type_id=service_type_ids[

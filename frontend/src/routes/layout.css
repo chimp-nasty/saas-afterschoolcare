@@ -28,6 +28,11 @@ html {
 	--danger-soft: #ffe4e6;
 	--danger-text: #9f1239;
 
+	/* Getting low (e.g. few places left). */
+	--warning: #d97706;
+	--warning-soft: #fef3c7;
+	--warning-text: #92400e;
+
 	/* Behind drawers and modals. */
 	--overlay: rgb(0 0 0 / 0.2);
 }

@@ -3,44 +3,50 @@ from uuid import UUID
 from sqlalchemy import Date, Row, cast, func
 
 from app.db.repository import Repository
-from app.db.models import Location, LocationService, ServiceType
+from app.db.models import (
+    Location,
+    LocationService,
+    LocationServiceConfig,
+    ServiceType,
+)
 
 
 class LocationServiceRepository(Repository):
-    def create(
+    """
+    A location's services and their config. Both are readable by anyone
+    (schema/0005), so every query filters by location itself.
+    """
+
+    def get_config(
         self,
         *,
+        location_service_id: UUID,
         location_id: UUID,
-        service_type_id: int,
-        current_price_cents: int,
-        currency: str,
-        stripe_product_id: str | None = None,
-        is_active: bool = True,
-    ) -> LocationService:
-        record = LocationService(
-            location_id=location_id,
-            service_type_id=service_type_id,
-            current_price_cents=current_price_cents,
-            currency=currency,
-            stripe_product_id=stripe_product_id,
-            is_active=is_active,
-        )
-
-        self.db.add(record)
-        self.db.flush()
-
-        return record
-
-    def get_by_id(
-        self,
-        *,
-        id: UUID,
-    ) -> LocationService | None:
+    ) -> LocationServiceConfig | None:
         return (
-            self.db.query(LocationService)
-            .filter(LocationService.id == id)
+            self.db.query(LocationServiceConfig)
+            .filter(
+                LocationServiceConfig.location_service_id == location_service_id,
+                LocationServiceConfig.location_id == location_id,
+            )
             .first()
         )
+
+    def update_config(
+        self,
+        *,
+        config: LocationServiceConfig,
+        values: dict,
+        updated_by_user_id: UUID,
+    ) -> LocationServiceConfig:
+        for field, value in values.items():
+            setattr(config, field, value)
+
+        config.updated_by_user_id = updated_by_user_id
+
+        self.db.flush()
+
+        return config
 
     def get_child_age_limits(
         self,
@@ -48,51 +54,31 @@ class LocationServiceRepository(Repository):
         location_id: UUID,
     ) -> Row | None:
         """
-        The widest age range the location's active services accept, and
+        The widest age range the location's offered services accept, and
         today's date there: (min_age, max_age, today). min_age and max_age
-        are None when the location has no active services.
+        are None when the location offers no services.
         """
         return (
             self.db.query(
-                func.min(LocationService.min_child_age).label("min_age"),
-                func.max(LocationService.max_child_age).label("max_age"),
+                func.min(LocationServiceConfig.min_child_age).label("min_age"),
+                func.max(LocationServiceConfig.max_child_age).label("max_age"),
                 cast(func.timezone(Location.timezone, func.now()), Date).label("today"),
             )
             .select_from(Location)
             .outerjoin(
-                LocationService,
-                (LocationService.location_id == Location.id)
-                & LocationService.is_active,
+                LocationServiceConfig,
+                (LocationServiceConfig.location_id == Location.id)
+                & LocationServiceConfig.is_active,
             )
             .filter(Location.id == location_id)
             .group_by(Location.timezone)
             .first()
         )
 
-    def get_by_stripe_product_id(
-        self,
-        *,
-        stripe_product_id: str
-    ) -> LocationService | None:
-        return (
-            self.db.query(LocationService)
-            .filter(LocationService.stripe_product_id == stripe_product_id)
-            .first()
-        )
-
-    def update_current_price_cents(
-        self,
-        *,
-        location_service: LocationService,
-        amount_cents: int,
-        currency: str
-    ) -> None:
-        location_service.current_price_cents = amount_cents
-        location_service.currency = currency
-
     def list_with_context(
         self,
         *,
+        location_id: UUID,
         is_active: bool | None = None,
     ) -> list[Row]:
         query = (
@@ -102,19 +88,33 @@ class LocationServiceRepository(Repository):
 
                 ServiceType.name.label("service_name"),
 
-                LocationService.current_price_cents,
-                LocationService.currency,
+                LocationServiceConfig.description,
+                LocationServiceConfig.current_price_cents,
+                LocationServiceConfig.currency,
+                LocationServiceConfig.start_time,
+                LocationServiceConfig.end_time,
+                LocationServiceConfig.min_child_age,
+                LocationServiceConfig.max_child_age,
+                LocationServiceConfig.refund_cutoff_days,
+                LocationServiceConfig.late_fee_cents,
+                LocationServiceConfig.late_fee_grace_minutes,
             )
             .join(
                 ServiceType,
                 ServiceType.id
                 == LocationService.service_type_id,
             )
+            .join(
+                LocationServiceConfig,
+                LocationServiceConfig.location_service_id
+                == LocationService.id,
+            )
+            .filter(LocationService.location_id == location_id)
         )
 
         if is_active is not None:
             query = query.filter(
-                LocationService.is_active == is_active
+                LocationServiceConfig.is_active == is_active
             )
 
         return self._all(

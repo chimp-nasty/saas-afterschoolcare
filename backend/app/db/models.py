@@ -3,10 +3,11 @@
 
 from typing import Optional
 import datetime
+import decimal
 import enum
 import uuid
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Enum, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, SmallInteger, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import Boolean, CHAR, CheckConstraint, Date, DateTime, Enum, ForeignKeyConstraint, Index, Integer, Numeric, PrimaryKeyConstraint, SmallInteger, String, Text, Time, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
@@ -61,6 +62,12 @@ class PickupRelationEnum(str, enum.Enum):
     NEIGHBOUR = 'neighbour'
     NANNY_BABYSITTER = 'nanny_babysitter'
     OTHER = 'other'
+
+
+class RefundStatusEnum(str, enum.Enum):
+    PENDING = 'PENDING'
+    SUCCEEDED = 'SUCCEEDED'
+    FAILED = 'FAILED'
 
 
 class StripeStatusEnum(str, enum.Enum):
@@ -128,6 +135,7 @@ class User(Base):
 class ServiceType(Base):
     __tablename__ = 'service_types'
     __table_args__ = (
+        CheckConstraint('default_end_time > default_start_time', name='ck_service_types_default_times'),
         PrimaryKeyConstraint('id', name='service_types_pkey'),
         UniqueConstraint('code', name='uq_service_types_code'),
         {'schema': 'public'}
@@ -136,6 +144,8 @@ class ServiceType(Base):
     id: Mapped[int] = mapped_column(SmallInteger, primary_key=True, autoincrement=True)
     code: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
+    default_start_time: Mapped[datetime.time] = mapped_column(Time, nullable=False)
+    default_end_time: Mapped[datetime.time] = mapped_column(Time, nullable=False)
 
 
 
@@ -222,7 +232,11 @@ class CustomerProfile(Base):
 class Location(Base):
     __tablename__ = 'locations'
     __table_args__ = (
+        CheckConstraint("btrim(address_line_1::text) <> ''::text AND btrim(suburb::text) <> ''::text", name='ck_locations_address_not_blank'),
         CheckConstraint("code::text ~ '^[a-z][a-z0-9-]*$'::text", name='ck_locations_code_format'),
+        CheckConstraint('latitude IS NULL) = (longitude IS NULL', name='ck_locations_coordinates'),
+        CheckConstraint("postcode ~ '^[0-9]{4}$'::text", name='ck_locations_postcode'),
+        CheckConstraint("state::text = ANY (ARRAY['NSW'::character varying, 'VIC'::character varying, 'QLD'::character varying, 'WA'::character varying, 'SA'::character varying, 'TAS'::character varying, 'ACT'::character varying, 'NT'::character varying]::text[])", name='ck_locations_state'),
         ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_locations_tenant'),
         PrimaryKeyConstraint('id', name='locations_pkey'),
         UniqueConstraint('id', 'tenant_id', name='uq_locations_id_tenant'),
@@ -233,11 +247,18 @@ class Location(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     code: Mapped[str] = mapped_column(String(50), nullable=False)
+    address_line_1: Mapped[str] = mapped_column(String(255), nullable=False)
+    suburb: Mapped[str] = mapped_column(String(100), nullable=False)
+    state: Mapped[str] = mapped_column(String(3), nullable=False)
+    postcode: Mapped[str] = mapped_column(CHAR(4), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'Australia/Brisbane'::text"))
     name: Mapped[Optional[str]] = mapped_column(String(200))
-    address: Mapped[Optional[str]] = mapped_column(Text)
+    address_line_2: Mapped[Optional[str]] = mapped_column(String(255))
+    latitude: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(9, 6))
+    longitude: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(9, 6))
+    google_place_id: Mapped[Optional[str]] = mapped_column(Text)
     phone: Mapped[Optional[str]] = mapped_column(String(50))
     email: Mapped[Optional[str]] = mapped_column(String(255))
 
@@ -371,30 +392,18 @@ class LocationKioskDevice(Base):
 class LocationService(Base):
     __tablename__ = 'location_services'
     __table_args__ = (
-        CheckConstraint('current_price_cents >= 0', name='ck_location_services_price_non_negative'),
-        CheckConstraint('min_child_age >= 0 AND max_child_age >= min_child_age', name='ck_location_services_child_age_range'),
-        CheckConstraint('refund_cutoff_days >= 0', name='ck_location_services_refund_cutoff_non_negative'),
         ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], name='fk_location_services_location'),
         ForeignKeyConstraint(['service_type_id'], ['public.service_types.id'], name='fk_location_services_service_type'),
         PrimaryKeyConstraint('id', name='location_services_pkey'),
         UniqueConstraint('id', 'location_id', name='uq_location_services_id_location'),
         UniqueConstraint('location_id', 'service_type_id', name='uq_location_services_location_service_type'),
-        UniqueConstraint('stripe_product_id', name='uq_location_services_stripe_product'),
         {'schema': 'public'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     service_type_id: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    current_price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
-    currency: Mapped[CurrencyCodeEnum] = mapped_column(Enum(CurrencyCodeEnum, values_callable=lambda cls: [member.value for member in cls], name='currency_code_enum'), nullable=False)
-    refund_cutoff_days: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('2'))
-    min_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('8'))
-    max_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('17'))
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    stripe_product_id: Mapped[Optional[str]] = mapped_column(String(255))
 
 
 
@@ -498,6 +507,39 @@ class ChildNote(Base):
     note: Mapped[str] = mapped_column(Text, nullable=False)
     created_by_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class LocationServiceConfig(Base):
+    __tablename__ = 'location_service_config'
+    __table_args__ = (
+        CheckConstraint('NOT is_active OR current_price_cents > 0', name='ck_location_service_config_active_priced'),
+        CheckConstraint('current_price_cents >= 0', name='ck_location_service_config_price_non_negative'),
+        CheckConstraint('end_time > start_time', name='ck_location_service_config_times'),
+        CheckConstraint('late_fee_cents >= 0 AND late_fee_grace_minutes >= 0', name='ck_location_service_config_late_fee_non_negative'),
+        CheckConstraint('min_child_age >= 0 AND max_child_age >= min_child_age', name='ck_location_service_config_child_age_range'),
+        CheckConstraint('refund_cutoff_days >= 0', name='ck_location_service_config_refund_cutoff_non_negative'),
+        ForeignKeyConstraint(['location_service_id', 'location_id'], ['public.location_services.id', 'public.location_services.location_id'], ondelete='CASCADE', name='fk_location_service_config_service'),
+        ForeignKeyConstraint(['updated_by_user_id'], ['auth.users.id'], name='fk_location_service_config_updated_by'),
+        PrimaryKeyConstraint('location_service_id', name='location_service_config_pkey'),
+        {'schema': 'public'}
+    )
+
+    location_service_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    current_price_cents: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    currency: Mapped[CurrencyCodeEnum] = mapped_column(Enum(CurrencyCodeEnum, values_callable=lambda cls: [member.value for member in cls], name='currency_code_enum'), nullable=False, server_default=text("'AUD'::currency_code_enum"))
+    start_time: Mapped[datetime.time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[datetime.time] = mapped_column(Time, nullable=False)
+    refund_cutoff_days: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('2'))
+    min_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('8'))
+    max_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('17'))
+    late_fee_cents: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
+    late_fee_grace_minutes: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('0'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    updated_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 
 
@@ -606,10 +648,13 @@ class AttendanceRecord(Base):
 class Refund(Base):
     __tablename__ = 'refunds'
     __table_args__ = (
+        CheckConstraint('amount_cents > 0', name='ck_refunds_amount_positive'),
         ForeignKeyConstraint(['booking_id', 'user_id', 'location_id'], ['public.bookings.id', 'public.bookings.user_id', 'public.bookings.location_id'], name='fk_refunds_booking'),
+        ForeignKeyConstraint(['payment_attempt_id'], ['public.payment_attempts.id'], name='fk_refunds_payment_attempt'),
         ForeignKeyConstraint(['requested_by_user_id'], ['auth.users.id'], name='fk_refunds_requested_by'),
         PrimaryKeyConstraint('id', name='refunds_pkey'),
         UniqueConstraint('stripe_refund_id', name='uq_refunds_stripe_refund'),
+        Index('uq_refunds_active_booking', 'booking_id', postgresql_where="(status = ANY (ARRAY['PENDING'::refund_status_enum, 'SUCCEEDED'::refund_status_enum]))", unique=True),
         {'schema': 'public'}
     )
 
@@ -618,6 +663,10 @@ class Refund(Base):
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     requested_by_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    payment_attempt_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[CurrencyCodeEnum] = mapped_column(Enum(CurrencyCodeEnum, values_callable=lambda cls: [member.value for member in cls], name='currency_code_enum'), nullable=False)
+    status: Mapped[RefundStatusEnum] = mapped_column(Enum(RefundStatusEnum, values_callable=lambda cls: [member.value for member in cls], name='refund_status_enum'), nullable=False, server_default=text("'PENDING'::refund_status_enum"))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     reason: Mapped[Optional[str]] = mapped_column(Text)
     stripe_refund_id: Mapped[Optional[str]] = mapped_column(String(255))

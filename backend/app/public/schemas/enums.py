@@ -49,6 +49,12 @@ class PaymentStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class RefundStatus(StrEnum):
+    PENDING = "PENDING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+
+
 class PickupRelation(StrEnum):
     ACCOUNT_HOLDER = "account_holder"
     GRANDPARENT = "grandparent"

@@ -1,12 +1,15 @@
 <!--
-    A modal dialog. A bottom sheet on mobile (easy to reach with a thumb), a
-    centred card from md. Open and close it through bind:this:
+    A modal dialog for small forms or extra content. A bottom sheet on mobile
+    (easy to reach with a thumb), a centred card from md. Open and close it
+    through bind:this:
 
-        <Modal bind:this={modal} title="Cancel booking?">...</Modal>
+        <Modal bind:this={modal} title="Add a note">...</Modal>
         modal.open()
 
     Put its buttons in an ActionBar inside `actions`. Escape and tapping the
-    backdrop close it.
+    backdrop close it (unless `dismissible` is false).
+
+    For a yes/no confirmation use confirmAction() instead (ConfirmDialog).
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
@@ -17,11 +20,14 @@
 		title,
 		children,
 		actions,
+		dismissible = true,
 		onclose
 	}: {
 		title: string;
 		children?: Snippet;
 		actions?: Snippet;
+		// False while something is running: Escape and the backdrop do nothing.
+		dismissible?: boolean;
 		// However it closed: a button, Escape or the backdrop.
 		onclose?: () => void;
 	} = $props();
@@ -29,7 +35,9 @@
 	let dialogEl: HTMLDialogElement;
 
 	export function open() {
-		dialogEl.showModal();
+		if (!dialogEl.open) {
+			dialogEl.showModal();
+		}
 	}
 
 	export function close() {
@@ -37,8 +45,15 @@
 	}
 
 	function handleBackdropClick(event: MouseEvent) {
-		if (event.target === dialogEl) {
+		if (event.target === dialogEl && dismissible) {
 			close();
+		}
+	}
+
+	// Escape fires "cancel" before closing; stop it while not dismissible.
+	function handleCancel(event: Event) {
+		if (!dismissible) {
+			event.preventDefault();
 		}
 	}
 </script>
@@ -46,6 +61,7 @@
 <dialog
 	bind:this={dialogEl}
 	onclick={handleBackdropClick}
+	oncancel={handleCancel}
 	{onclose}
 	aria-label={title}
 	class="

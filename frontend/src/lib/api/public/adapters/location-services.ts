@@ -3,7 +3,7 @@ import { PUBLIC_API_URL } from '$env/static/public';
 import { apiWrapper } from '$lib/api/wrapper';
 
 import type {
-    UpdateLocationServiceRequest,
+    UpdateLocationServiceConfigRequest,
     LocationServiceSelectionResponse,
 } from '$lib/api/schema';
 
@@ -25,12 +25,24 @@ export function createLocationServicesApi(
             );
         },
 
-        updatePrice(
+        // Before login (the landing page): the location's offered services.
+        listPublic(locationCode: string) {
+            return apiWrapper<LocationServiceSelectionResponse[]>(
+                `${baseUrl}/public/${locationCode}`,
+                {
+                    method: 'GET',
+                    fetcher
+                }
+            );
+        },
+
+        // Admins: price, times, description, policies.
+        updateConfig(
             location_service_id: string,
-            body: UpdateLocationServiceRequest
+            body: UpdateLocationServiceConfigRequest
         ) {
-            return apiWrapper<null>(
-                `${baseUrl}/${location_service_id}/price`,
+            return apiWrapper<LocationServiceSelectionResponse>(
+                `${baseUrl}/${location_service_id}/config`,
                 {
                     method: 'PATCH',
                     body,

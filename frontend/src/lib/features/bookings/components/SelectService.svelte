@@ -2,7 +2,8 @@
     import type { LocationServiceSelectionResponse } from "$lib/api/schema";
     import { ChevronRight } from "lucide-svelte";
 
-    import { formatMoney } from "$lib/utils/helpers";
+    import { formatMoney, formatTimeRange } from "$lib/utils/helpers";
+    import { agesLabel } from "$lib/features/services/policies";
 
     let {
         locationServices,
@@ -31,9 +32,16 @@
             "
         >
             <div class="flex flex-col gap-2">
-                <h2 class="text-lg font-extrabold text-(--text)">
-                    {locationService.service_name}
-                </h2>
+                <div>
+                    <h2 class="text-lg font-extrabold text-(--text)">
+                        {locationService.service_name}
+                    </h2>
+
+                    <p class="text-sm text-(--text-muted)">
+                        {formatTimeRange(locationService.start_time, locationService.end_time)}
+                        · {agesLabel(locationService)}
+                    </p>
+                </div>
 
                 <p>
                     <span class="text-base font-semibold text-(--text)">

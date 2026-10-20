@@ -1,14 +1,17 @@
 from tests.factories import Api
 
 
-# After logging in, the session endpoint reports who you are: the customer's
-# email and their 'customer' role.
+# After logging in, the session endpoint reports who you are and where: the
+# customer's email, their 'customer' role, and the location they logged in
+# at (the frontend only treats them as logged in there).
 def test_login_sets_session(api: Api, customer):
     response = customer.client.get("/auth/v1/session")
 
     assert response.status_code == 200
-    assert response.json()["data"]["email"] == customer.email
-    assert response.json()["data"]["roles"] == ["customer"]
+    session = response.json()["data"]
+    assert session["email"] == customer.email
+    assert session["roles"] == ["customer"]
+    assert (session["location_code"], session["location_name"]) == ("location1", "Location 1")
 
 
 # Logging in with the wrong password is refused (401).

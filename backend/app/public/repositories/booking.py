@@ -1,16 +1,18 @@
 from uuid import UUID
 from datetime import date, datetime
 
-from sqlalchemy import Date, String, and_, case, cast, distinct, func, or_, tuple_, update
+from sqlalchemy import Date, String, and_, case, cast, distinct, func, or_, select, tuple_, update
 from sqlalchemy.engine import Row
 
 from app.db.repository import Pagination, Repository
 from app.db.models import (
     Booking,
     BookingGroup,
+    Refund,
     ChildProfile,
     Location,
     LocationService,
+    LocationServiceConfig,
     LocationServiceDay,
     PaymentAttempt,
     ServiceType,
@@ -51,22 +53,42 @@ def _location_today():
 
 def _refundable_until():
     """
-    The last day (location time) a booking can be refunded, inclusive:
-    refund_cutoff_days before its session (schema/0004). Needs
-    LocationServiceDay and LocationService joined.
+    The last day (location time) the family can refund a booking,
+    inclusive: refund_cutoff_days before its session (schema/0004). Needs
+    LocationServiceDay and LocationServiceConfig joined.
     """
-    return LocationServiceDay.service_date - LocationService.refund_cutoff_days
+    return LocationServiceDay.service_date - LocationServiceConfig.refund_cutoff_days
 
 
-def _is_refundable(effective_status):
+def _session_times():
     """
-    The refund rule: a paid, confirmed booking whose cutoff hasn't passed.
-    Needs Location, LocationServiceDay and LocationService joined.
+    A booking's session times. Every screen reads them through here, so
+    per-day overrides (an early finish) can be added in this one place
+    later. Needs LocationServiceConfig joined.
     """
-    return and_(
-        effective_status == BookingStatus.CONFIRMED,
-        Booking.payment_status == PaymentStatus.PAID,
-        _location_today() <= _refundable_until(),
+    return (
+        LocationServiceConfig.start_time.label("start_time"),
+        LocationServiceConfig.end_time.label("end_time"),
+    )
+
+
+def _is_refundable_by_family():
+    """
+    Whether the family can refund the booking now. The rule lives in the
+    database (public.booking_is_refundable, schema/0004), where the refund
+    trigger uses it too.
+    """
+    return func.public.booking_is_refundable(Booking.id, False)
+
+
+def _latest_refund_status():
+    return (
+        select(Refund.status)
+        .where(Refund.booking_id == Booking.id)
+        .order_by(Refund.created_at.desc())
+        .limit(1)
+        .correlate(Booking)
+        .scalar_subquery()
     )
 
 
@@ -302,6 +324,31 @@ class BookingRepository(Repository):
 
         return self._all(query, pagination)
 
+    def mark_refunded(
+        self,
+        *,
+        booking_id: UUID,
+    ) -> int:
+        """
+        A refund went through: cancel the booking (releasing its place).
+        Only a confirmed, paid booking moves, so repeat webhooks are no-ops.
+        """
+        result = self.db.execute(
+            update(Booking)
+            .where(
+                Booking.id == booking_id,
+                Booking.booking_status == BookingStatus.CONFIRMED,
+                Booking.payment_status == PaymentStatus.PAID,
+            )
+            .values(
+                booking_status=BookingStatus.CANCELLED,
+                payment_status=PaymentStatus.REFUNDED,
+                cancelled_at=func.now(),
+            )
+        )
+
+        return result.rowcount
+
     def settle_pending_for_group(
         self,
         *,
@@ -406,8 +453,10 @@ class BookingRepository(Repository):
                 Booking.payment_status,
                 Booking.price_snapshot_cents,
                 Booking.currency,
+                *_session_times(),
                 _refundable_until().label("refundable_until"),
-                _is_refundable(effective_status).label("is_refundable"),
+                _is_refundable_by_family().label("is_refundable"),
+                _latest_refund_status().label("refund_status"),
             )
             .join(
                 ChildProfile,
@@ -424,6 +473,10 @@ class BookingRepository(Repository):
             .join(
                 ServiceType,
                 ServiceType.id == LocationService.service_type_id,
+            )
+            .join(
+                LocationServiceConfig,
+                LocationServiceConfig.location_service_id == LocationService.id,
             )
             .join(
                 Location,

@@ -78,6 +78,24 @@ AS $$
     );
 $$;
 
+-- The current user is an admin or superadmin at the location (redefined in
+-- schema/0007 to also require it's the session's location).
+CREATE FUNCTION auth.is_location_admin(p_location_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        WHERE lur.user_id = auth.current_user_id()
+          AND lur.location_id = p_location_id
+          AND r.code IN ('superadmin', 'admin')
+    );
+$$;
+
 -- The current user outranks the target user at a shared location
 -- (optionally a specific one): staff > customer, admin > staff/customer,
 -- superadmin > admin/staff/customer.
@@ -242,6 +260,8 @@ ALTER TABLE public.customer_profile FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.booking_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.booking_groups FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.location_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.location_service_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.location_service_config FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.location_services FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.location_service_days ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.location_service_days FORCE ROW LEVEL SECURITY;
@@ -279,10 +299,21 @@ CREATE POLICY booking_groups_scope_policy
     WITH CHECK (user_id = auth.current_user_id());
 
 -- Location-scoped: anyone with a role at the location
-CREATE POLICY location_services_scope_policy
-    ON public.location_services FOR ALL
-    USING (auth.has_location_role(location_id))
-    WITH CHECK (auth.has_location_role(location_id));
+-- A location's services and their config are public (the landing page shows
+-- them before login), so queries filter by location themselves. The
+-- services are created by the system only; admins change the config.
+CREATE POLICY location_services_read_policy
+    ON public.location_services FOR SELECT
+    USING (true);
+
+CREATE POLICY location_service_config_read_policy
+    ON public.location_service_config FOR SELECT
+    USING (true);
+
+CREATE POLICY location_service_config_admin_update_policy
+    ON public.location_service_config FOR UPDATE
+    USING (auth.is_location_admin(location_id))
+    WITH CHECK (auth.is_location_admin(location_id));
 
 CREATE POLICY location_kiosk_devices_scope_policy
     ON public.location_kiosk_devices FOR ALL

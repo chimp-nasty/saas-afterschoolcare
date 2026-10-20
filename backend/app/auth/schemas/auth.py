@@ -32,3 +32,9 @@ class SessionResponse(BaseModel):
     email: EmailStr
     first_name: str
     roles: list[str]
+
+    # The location this session is for (logins are per location). The
+    # frontend only treats it as logged in at this location.
+    location_id: UUID
+    location_code: str
+    location_name: str | None

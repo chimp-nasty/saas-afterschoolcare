@@ -6,7 +6,7 @@
     import Card from "$lib/components/layout/Card.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
-    import Modal from "$lib/components/overlays/Modal.svelte";
+    import { confirmAction } from "$lib/components/overlays/confirm.svelte";
     import EditChildProfileForm from "$lib/features/children/components/EditChildProfileForm.svelte";
 
     import { createChildrenApi } from "$lib/api/public/adapters/children";
@@ -43,27 +43,23 @@
         return response;
     }
 
-    let removeModal: Modal;
-    let isRemoving = $state(false);
-
     // Refused (and explained in a toast) while the child has upcoming
     // bookings.
     async function removeChild() {
-        isRemoving = true;
+        await confirmAction({
+            title: `Remove ${child.first_name}?`,
+            message: `${child.first_name} will no longer appear in your account and can't be booked. Past bookings are kept. You can't remove a child with upcoming bookings.`,
+            confirmLabel: "Remove child",
+            tone: "danger",
+            action: async () => {
+                const response = await childrenApi.deactivate(child.id);
 
-        try {
-            const response = await childrenApi.deactivate(child.id);
-
-            if (response.ok) {
-                await invalidate("app:customer-account");
-                await goto(`/${data.locationCode}/account?state=${accountTabs.CHILDREN}`);
-                return;
-            }
-
-            removeModal.close();
-        } finally {
-            isRemoving = false;
-        }
+                if (response.ok) {
+                    await invalidate("app:customer-account");
+                    await goto(`/${data.locationCode}/account?state=${accountTabs.CHILDREN}`);
+                }
+            },
+        });
     }
 </script>
 
@@ -96,7 +92,7 @@
                 <Button
                     variant="ghost"
                     fullWidth
-                    onclick={() => removeModal.open()}
+                    onclick={removeChild}
                 >
                     Remove child
                 </Button>
@@ -111,21 +107,3 @@
         {/snippet}
     </TabbedPanels>
 </Page>
-
-<Modal bind:this={removeModal} title={`Remove ${child.first_name}?`}>
-    <p class="text-sm text-(--text-muted)">
-        {child.first_name} will no longer appear in your account and can't be
-        booked. Past bookings are kept. You can't remove a child with upcoming
-        bookings.
-    </p>
-
-    {#snippet actions()}
-        <Button variant="ghost" onclick={() => removeModal.close()}>
-            Keep
-        </Button>
-
-        <Button onclick={removeChild} isLoading={isRemoving}>
-            Remove child
-        </Button>
-    {/snippet}
-</Modal>

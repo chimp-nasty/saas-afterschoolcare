@@ -51,6 +51,11 @@ class ChildNotMedicallyClearedError(ApplicationError):
     result = "denied"
 
 
+class ServiceNotOfferedError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "This service isn't currently offered"
+
+
 class ChildInactiveError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "This child has been removed and can't be booked"

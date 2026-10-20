@@ -46,6 +46,33 @@ AS $$
 $$;
 
 
+-- Places left on a service day: capacity less every family's live bookings
+-- (pending or confirmed; a lapsed hold doesn't count). The same count the
+-- booking rules use, so the calendar and booking agree. SECURITY DEFINER: a
+-- family can only see its own bookings, but needs the whole day's number
+-- (and gets only the number).
+CREATE FUNCTION public.service_day_places_left(p_location_service_day_id UUID)
+RETURNS integer
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT GREATEST(
+        d.capacity - (
+            SELECT count(*)
+            FROM public.bookings b
+            WHERE b.location_service_day_id = d.id
+              AND b.booking_status IN ('PENDING', 'CONFIRMED')
+              AND NOT public.booking_hold_lapsed(b.booking_status, b.created_at)
+        ),
+        0
+    )::integer
+    FROM public.location_service_days d
+    WHERE d.id = p_location_service_day_id;
+$$;
+
+
 -- Same rules as 0008, plus expiring the day's lapsed holds before
 -- counting ("LAPSED HOLDS"), and checking the child is still active and
 -- within the service's age range on the day ("CHILD").
@@ -63,6 +90,7 @@ DECLARE
     v_live_bookings INTEGER;
     v_min_child_age SMALLINT;
     v_max_child_age SMALLINT;
+    v_service_active BOOLEAN;
     v_review_status public.medical_review_status_enum;
     v_dob DATE;
     v_is_active BOOLEAN;
@@ -71,14 +99,14 @@ BEGIN
     -- Locking the day makes concurrent bookings for it queue, so two
     -- requests can't both take the last place.
     SELECT d.service_date, d.is_open, d.capacity, l.timezone,
-           ls.min_child_age, ls.max_child_age
+           lsc.min_child_age, lsc.max_child_age, lsc.is_active
     INTO v_service_date, v_is_open, v_capacity, v_timezone,
-         v_min_child_age, v_max_child_age
+         v_min_child_age, v_max_child_age, v_service_active
     FROM public.location_service_days d
     JOIN tenancy.locations l
         ON l.id = d.location_id
-    JOIN public.location_services ls
-        ON ls.id = d.location_service_id
+    JOIN public.location_service_config lsc
+        ON lsc.location_service_id = d.location_service_id
     WHERE d.id = NEW.location_service_day_id
     FOR UPDATE OF d;
 
@@ -88,6 +116,16 @@ BEGIN
             RAISE EXCEPTION 'Service day % is not in the future', v_service_date
                 USING ERRCODE = 'check_violation',
                       CONSTRAINT = 'ck_bookings_service_day_in_future',
+                      TABLE = 'bookings',
+                      SCHEMA = 'public';
+        END IF;
+
+        -- A service the location doesn't offer (not yet priced, or turned
+        -- off) has no bookable days.
+        IF NOT v_service_active THEN
+            RAISE EXCEPTION 'Service for day % is not offered', v_service_date
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_bookings_service_offered',
                       TABLE = 'bookings',
                       SCHEMA = 'public';
         END IF;

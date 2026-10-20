@@ -10,7 +10,7 @@
     import Card from "$lib/components/layout/Card.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
-    import Modal from "$lib/components/overlays/Modal.svelte";
+    import { confirmAction } from "$lib/components/overlays/confirm.svelte";
     import PickupForm, { type PickupFormValues } from "$lib/features/pickups/components/PickupForm.svelte";
 
     import { createPickupsApi } from "$lib/api/public/adapters/pickups";
@@ -33,27 +33,21 @@
 
     // --- Confirming an ID re-check ------------------------------------------
 
-    let resetModal: Modal;
-    let resolveReset: ((confirmed: boolean) => void) | null = null;
-    let resetChangesPhone = $state(false);
-
     function digits(value: string): string {
         return value.replace(/\D/g, "").replace(/^61/, "0");
     }
 
-    function askToConfirmReset(changesPhone: boolean): Promise<boolean> {
-        resetChangesPhone = changesPhone;
-        resetModal.open();
+    function confirmIdRecheck(changesPhone: boolean): Promise<boolean> {
+        const what = changesPhone ? "phone number" : "name";
+        const pin = changesPhone
+            ? " Their kiosk PIN will also go back to 1111, and they'll choose a new one when they next sign in."
+            : "";
 
-        return new Promise((resolve) => {
-            resolveReset = resolve;
+        return confirmAction({
+            title: "Their ID will need checking again",
+            message: `Changing ${pickup.first_name}'s ${what} means staff will check their photo ID again at their next pickup.${pin}`,
+            confirmLabel: "Save changes",
         });
-    }
-
-    function answerReset(confirmed: boolean) {
-        resolveReset?.(confirmed);
-        resolveReset = null;
-        resetModal.close();
     }
 
     // A cancelled save: nothing sent, nothing to show.
@@ -66,7 +60,7 @@
         const changesPhone = digits(values.phone) !== pickup.phone;
 
         if (pickup.identity_verified && (changesName || changesPhone)) {
-            if (!(await askToConfirmReset(changesPhone))) {
+            if (!(await confirmIdRecheck(changesPhone))) {
                 return CANCELLED;
             }
         }
@@ -83,25 +77,21 @@
 
     // --- Removing ----------------------------------------------------------
 
-    let removeModal: Modal;
-    let isRemoving = $state(false);
-
     async function removePickup() {
-        isRemoving = true;
+        await confirmAction({
+            title: `Remove ${pickup.first_name}?`,
+            message: `${pickup.first_name} will no longer be able to collect your children or sign in at the kiosk.`,
+            confirmLabel: "Remove",
+            tone: "danger",
+            action: async () => {
+                const response = await pickupsApi.deactivate(pickup.id);
 
-        try {
-            const response = await pickupsApi.deactivate(pickup.id);
-
-            if (response.ok) {
-                await invalidate("app:customer-account");
-                await goto(accountPickupsHref);
-                return;
-            }
-
-            removeModal.close();
-        } finally {
-            isRemoving = false;
-        }
+                if (response.ok) {
+                    await invalidate("app:customer-account");
+                    await goto(accountPickupsHref);
+                }
+            },
+        });
     }
 </script>
 
@@ -127,51 +117,8 @@
     <Button
         variant="ghost"
         fullWidth
-        onclick={() => removeModal.open()}
+        onclick={removePickup}
     >
         Remove pickup person
     </Button>
 </Page>
-
-<Modal
-    bind:this={resetModal}
-    title="Their ID will need checking again"
-    onclose={() => resolveReset && answerReset(false)}
->
-    <p class="text-sm text-(--text-muted)">
-        Changing {pickup.first_name}'s
-        {resetChangesPhone ? "phone number" : "name"} means staff will check
-        their photo ID again at their next pickup.
-        {#if resetChangesPhone}
-            Their kiosk PIN will also go back to 1111, and they'll choose a new
-            one when they next sign in.
-        {/if}
-    </p>
-
-    {#snippet actions()}
-        <Button variant="ghost" onclick={() => answerReset(false)}>
-            Cancel
-        </Button>
-
-        <Button onclick={() => answerReset(true)}>
-            Save changes
-        </Button>
-    {/snippet}
-</Modal>
-
-<Modal bind:this={removeModal} title={`Remove ${pickup.first_name}?`}>
-    <p class="text-sm text-(--text-muted)">
-        {pickup.first_name} will no longer be able to collect your children or
-        sign in at the kiosk.
-    </p>
-
-    {#snippet actions()}
-        <Button variant="ghost" onclick={() => removeModal.close()}>
-            Keep
-        </Button>
-
-        <Button onclick={removePickup} isLoading={isRemoving}>
-            Remove
-        </Button>
-    {/snippet}
-</Modal>

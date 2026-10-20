@@ -1,11 +1,11 @@
 <!--
     Review a booking group. Pending: continue to Stripe, or cancel it and
     release the places. Confirmed: refund single days still inside their
-    refund window. Other statuses just explain where the booking is.
+    refund window (the webhook finishes each refund, so it shows as
+    processing for a few seconds). Other statuses explain where it is.
 -->
 <script lang="ts">
     import { goto, invalidate } from "$app/navigation";
-    import { toast } from "svelte-sonner";
 
     import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Button from "$lib/components/actions/Button.svelte";
@@ -13,11 +13,14 @@
     import Card from "$lib/components/layout/Card.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import { confirmAction } from "$lib/components/overlays/confirm.svelte";
     import ReviewBooking, { type ReviewChild } from "$lib/features/bookings/components/ReviewBooking.svelte";
+    import CentreCard from "$lib/features/location/components/CentreCard.svelte";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
+    import { createRefundsApi } from "$lib/api/public/adapters/refunds";
     import type { BookingGroupLineResponse } from "$lib/api/schema";
-    import { formatDate, formatTimestamp } from "$lib/utils/helpers";
+    import { formatDate, formatMoney, formatTimeRange, formatTimestamp } from "$lib/utils/helpers";
 
     let { data } = $props();
 
@@ -44,6 +47,7 @@
                 bookingId: booking.id,
                 date: booking.service_date,
                 serviceName: booking.service_name,
+                time: formatTimeRange(booking.start_time, booking.end_time),
                 priceCents: booking.price_snapshot_cents,
             });
 
@@ -68,9 +72,30 @@
         },
     };
 
+    const REFUNDED_MESSAGE = {
+        title: "This booking was refunded",
+        body: "The money has gone back to your card, and the places were released.",
+    };
+
+    const refundedCents = $derived(
+        group.bookings
+            .filter((booking) => booking.payment_status === "REFUNDED")
+            .reduce((total, booking) => total + booking.price_snapshot_cents, 0)
+    );
+
+    // Every session refunded reads as "refunded", not "cancelled".
+    const isFullyRefunded = $derived(
+        group.bookings.length > 0 &&
+        group.bookings.every((booking) => booking.payment_status === "REFUNDED")
+    );
+
     // A confirmed booking shows when it was paid (if recorded) in place of
     // the generic message.
     const statusMessage = $derived.by(() => {
+        if (isFullyRefunded) {
+            return REFUNDED_MESSAGE;
+        }
+
         const message = STATUS_MESSAGES[group.status];
 
         if (group.status === "CONFIRMED" && group.paid_at) {
@@ -81,7 +106,6 @@
     });
 
     let isPaying = $state(false);
-    let isCancelling = $state(false);
 
     async function continueToPayment() {
         isPaying = true;
@@ -101,39 +125,62 @@
         }
     }
 
-    // Stub: refunds will go straight to Stripe, which isn't wired yet. The
-    // backend decides which days are refundable (is_refundable) and the
-    // refund endpoint will check it again.
-    function requestRefund(booking: BookingGroupLineResponse) {
-        const day = formatDate(booking.service_date);
+    // --- Refunds -----------------------------------------------------------
 
-        if (!window.confirm(`Refund ${booking.child_name} on ${day}?`)) {
-            return;
+    const refundsApi = createRefundsApi();
+
+    // The webhook usually confirms within seconds; check back a few times
+    // so "Refund processing" turns into "Refunded" without a reload.
+    async function refreshWhileProcessing() {
+        for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await invalidate("app:booking-group");
+
+            if (!group.bookings.some((booking) => booking.refund_status === "PENDING")) {
+                return;
+            }
         }
+    }
 
-        toast.info("Refunds aren't available yet.");
+    async function refund(booking: BookingGroupLineResponse) {
+        const day = formatDate(booking.service_date);
+        const amount = formatMoney(booking.price_snapshot_cents, booking.currency);
+
+        await confirmAction({
+            title: "Refund this session?",
+            message: `${booking.child_name} on ${day}: ${amount} goes back to your card, and the place is released.`,
+            confirmLabel: "Refund",
+            tone: "danger",
+            action: async () => {
+                const response = await refundsApi.create(booking.id);
+
+                await invalidate("app:booking-group");
+
+                if (response.ok) {
+                    void refreshWhileProcessing();
+                }
+            },
+        });
     }
 
     async function cancelBooking() {
-        if (!window.confirm("Cancel this booking and release the places?")) {
-            return;
-        }
+        await confirmAction({
+            title: "Cancel this booking?",
+            message: "The places will be released, and you can make a new booking at any time.",
+            confirmLabel: "Cancel booking",
+            tone: "danger",
+            action: async () => {
+                const response = await bookingApi.cancelGroup(group.booking_group_id);
 
-        isCancelling = true;
+                if (response.ok) {
+                    await invalidate("app:home-bookings");
+                    await goto(`/${data.locationCode}/home`);
+                    return;
+                }
 
-        try {
-            const response = await bookingApi.cancelGroup(group.booking_group_id);
-
-            if (response.ok) {
-                await invalidate("app:home-bookings");
-                await goto(`/${data.locationCode}/home`);
-                return;
-            }
-
-            await invalidate("app:booking-group");
-        } finally {
-            isCancelling = false;
-        }
+                await invalidate("app:booking-group");
+            },
+        });
     }
 </script>
 
@@ -151,6 +198,12 @@
             <p class="text-sm text-(--text-muted)">
                 {statusMessage?.body ?? ""}
             </p>
+
+            {#if group.receipt_url}
+                <HyperTextLink href={group.receipt_url} external>
+                    View receipt
+                </HyperTextLink>
+            {/if}
         </Card>
     {/if}
 
@@ -158,6 +211,7 @@
         serviceName={group.bookings[0]?.service_name ?? "Booking"}
         currency={group.currency}
         children={reviewChildren}
+        {refundedCents}
     >
         {#snippet lineActions(line)}
             {@const booking = line.bookingId ? bookingsById.get(line.bookingId) : undefined}
@@ -166,16 +220,22 @@
                 <span class="text-sm text-(--text-muted)">
                     Refunded
                 </span>
+            {:else if booking?.refund_status === "PENDING"}
+                <span class="text-sm text-(--text-muted)">
+                    Refund processing
+                </span>
             {:else if booking?.is_refundable}
                 <Button
                     variant="ghost"
-                    onclick={() => requestRefund(booking)}
+                    onclick={() => refund(booking)}
                 >
                     Refund
                 </Button>
 
                 <span class="text-sm text-(--text-muted)">
-                    Until {formatDate(booking.refundable_until)}
+                    {booking.refund_status === "FAILED"
+                        ? "Last refund didn't go through"
+                        : `Until ${formatDate(booking.refundable_until)}`}
                 </span>
             {:else if booking?.booking_status === "CONFIRMED"}
                 <span class="text-sm text-(--text-muted)">
@@ -185,12 +245,16 @@
         {/snippet}
     </ReviewBooking>
 
+    <CentreCard
+        location={data.location}
+        note="Sign your child in when you drop them off and out when you collect them."
+    />
+
     {#if group.status === "PENDING"}
         <ActionBar sticky>
             <Button
                 variant="ghost"
                 onclick={cancelBooking}
-                isLoading={isCancelling}
                 isDisabled={isPaying}
             >
                 Cancel booking
@@ -199,7 +263,6 @@
             <Button
                 onclick={continueToPayment}
                 isLoading={isPaying}
-                isDisabled={isCancelling}
             >
                 Continue to payment
             </Button>

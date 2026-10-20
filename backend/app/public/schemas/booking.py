@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from pydantic import BaseModel
 
@@ -9,6 +9,7 @@ from app.public.schemas.enums import (
     BookingStatus,
     CurrencyCode,
     PaymentStatus,
+    RefundStatus,
     StripeStatus,
 )
 
@@ -84,6 +85,10 @@ class BookingTableResponse(BaseModel):
     service_date: date
     service_name: str
 
+    # The session's times, in the location's timezone.
+    start_time: time
+    end_time: time
+
     booking_status: BookingStatus
     payment_status: PaymentStatus
 
@@ -106,9 +111,12 @@ class CheckoutStatusResponse(BaseModel):
 class BookingGroupLineResponse(BookingTableResponse):
     """One child on one day in the review screen, with its refund window."""
 
-    # The last day (location time) it can be refunded, inclusive.
+    # The last day (location time) the family can refund it, inclusive.
     refundable_until: date
     is_refundable: bool
+
+    # Its latest refund, if any: PENDING while Stripe processes it.
+    refund_status: RefundStatus | None
 
 
 class BookingGroupResponse(BaseModel):
@@ -123,6 +131,10 @@ class BookingGroupResponse(BaseModel):
     # When its payment succeeded; None until then (and for payments made
     # before paid_at was recorded).
     paid_at: datetime | None
+
+    # Stripe's receipt for the payment; None until paid, or if Stripe
+    # couldn't give it when the payment settled.
+    receipt_url: str | None
 
     total_cents: int
     currency: CurrencyCode

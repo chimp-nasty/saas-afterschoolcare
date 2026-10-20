@@ -5,7 +5,6 @@
 	import { setSession, clearSession, auth } from '$lib/auth/state.svelte';
 	import { logout as logoutAndLeave } from '$lib/auth/logout';
 
-	import { Toaster } from 'svelte-sonner';
 	import { CalendarDays, House, User } from 'lucide-svelte';
 
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
@@ -14,6 +13,7 @@
 	import Sidebar, { type SidebarItem } from '$lib/components/controls/Sidebar.svelte';
 	import BottomNav, { type BottomNavItem } from '$lib/components/controls/BottomNav.svelte';
 	import Drawer from '$lib/components/overlays/Drawer.svelte';
+	import ConfirmDialog from '$lib/components/overlays/ConfirmDialog.svelte';
 
 	let { data, children } = $props();
 
@@ -127,17 +127,9 @@
 	}
 </script>
 
-<Toaster
-	position="top-center"
-	duration={3000}
-	toastOptions={{
-		classes: {
-			toast: 'rounded-2xl! border! border-(--border)! text-sm! font-bold!',
-			success: 'bg-(--success-soft)! text-(--success-text)!',
-			error: 'bg-(--danger-soft)! text-(--danger-text)!'
-		}
-	}}
-/>
+
+<!-- Every confirmation in the app (confirmAction). -->
+<ConfirmDialog />
 
 {#snippet sidebar()}
 	<Sidebar {items} />

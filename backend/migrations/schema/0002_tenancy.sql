@@ -38,7 +38,18 @@ CREATE TABLE tenancy.locations (
 
     name VARCHAR(200),
     code VARCHAR(50) NOT NULL,
-    address TEXT,
+    -- Where the location's services run, shown to families (a service may
+    -- get its own venue later). Australian addresses only.
+    address_line_1 VARCHAR(255) NOT NULL,
+    address_line_2 VARCHAR(255),
+    suburb VARCHAR(100) NOT NULL,
+    state VARCHAR(3) NOT NULL,
+    postcode CHAR(4) NOT NULL,
+
+    -- For maps, not integrated yet: set once the address is geocoded.
+    latitude NUMERIC(9, 6),
+    longitude NUMERIC(9, 6),
+    google_place_id TEXT,
     phone VARCHAR(50),
     email VARCHAR(255),
 
@@ -58,7 +69,19 @@ CREATE TABLE tenancy.locations (
         UNIQUE (id, tenant_id),
 
     CONSTRAINT ck_locations_code_format
-        CHECK (code ~ '^[a-z][a-z0-9-]*$')
+        CHECK (code ~ '^[a-z][a-z0-9-]*$'),
+
+    CONSTRAINT ck_locations_address_not_blank
+        CHECK (btrim(address_line_1) <> '' AND btrim(suburb) <> ''),
+
+    CONSTRAINT ck_locations_state
+        CHECK (state IN ('NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT')),
+
+    CONSTRAINT ck_locations_postcode
+        CHECK (postcode ~ '^[0-9]{4}$'),
+
+    CONSTRAINT ck_locations_coordinates
+        CHECK ((latitude IS NULL) = (longitude IS NULL))
 );
 
 

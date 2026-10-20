@@ -7,11 +7,12 @@ from sqlalchemy.orm import Session
 
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.db.transaction import transactional
-from app.errors.payments import InvalidWebhookError
+from app.errors.payments import InvalidWebhookError, PaymentProviderError
 from app.integrations.payments.stripe.client import StripeClient
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
-from app.public.schemas.enums import BookingStatus, PaymentStatus, StripeStatus
+from app.public.repositories.refund import RefundRepository
+from app.public.schemas.enums import BookingStatus, PaymentStatus, RefundStatus, StripeStatus
 
 
 logger = logging.getLogger("app.payments")
@@ -31,11 +32,13 @@ class StripeWebhookService:
         rls_context: RlsContextRepository,
         payment_attempt_repository: PaymentAttemptRepository,
         booking_repository: BookingRepository,
+        refund_repository: RefundRepository,
     ):
         self.db = db
         self.rls_context = rls_context
         self.payment_attempt_repository = payment_attempt_repository
         self.booking_repository = booking_repository
+        self.refund_repository = refund_repository
         self.stripe = StripeClient()
 
     def handle(
@@ -69,6 +72,14 @@ class StripeWebhookService:
             "checkout.session.async_payment_failed",
         ):
             self._settle(session=session, succeeded=False)
+
+        # A Refund object; its status says how far it's got.
+        elif event_type in (
+            "refund.created",
+            "refund.updated",
+            "refund.failed",
+        ):
+            self._settle_refund(stripe_refund=session)
 
         # Anything else is acknowledged and ignored.
 
@@ -116,6 +127,11 @@ class StripeWebhookService:
         if succeeded:
             attempt.paid_at = datetime.now(timezone.utc)
 
+            if attempt.stripe_payment_intent_id:
+                attempt.stripe_receipt_url = self._receipt_url(
+                    payment_intent_id=attempt.stripe_payment_intent_id,
+                )
+
             confirmed = self.booking_repository.settle_pending_for_group(
                 booking_group_id=attempt.booking_group_id,
                 booking_status=BookingStatus.CONFIRMED,
@@ -152,4 +168,100 @@ class StripeWebhookService:
                 booking_group_id=attempt.booking_group_id,
                 booking_status=BookingStatus.EXPIRED,
                 payment_status=PaymentStatus.FAILED,
+            )
+
+    def _receipt_url(
+        self,
+        *,
+        payment_intent_id: str,
+    ) -> str | None:
+        """
+        The payment's receipt link, if Stripe can give it now. A failed
+        lookup never stops the payment settling: the booking page just
+        goes without "View receipt".
+        """
+        try:
+            return self.stripe.get_receipt_url(payment_intent_id=payment_intent_id)
+        except PaymentProviderError as exc:
+            logger.warning(
+                "Couldn't fetch the Stripe receipt",
+                extra={
+                    "event": "stripe_receipt_unavailable",
+                    "result": "skipped",
+                    "reason": f"payment_intent_id={payment_intent_id}; {exc.log_reason}",
+                },
+            )
+            return None
+
+    @transactional
+    def _settle_refund(
+        self,
+        *,
+        stripe_refund,
+    ) -> None:
+        """
+        Finish one of our refunds. Succeeded: cancel the booking (releasing
+        its place) and mark the refund processed. Failed or canceled: record
+        it, so the family or staff can try again. Pending and
+        requires_action wait for a later event.
+        """
+        metadata = stripe_refund.get("metadata") or {}
+
+        # Refunds made by hand in the Stripe dashboard aren't ours to settle.
+        if "refund_id" not in metadata:
+            logger.warning(
+                "Stripe refund without our metadata",
+                extra={
+                    "event": "stripe_refund_unmatched",
+                    "result": "ignored",
+                    "reason": stripe_refund.get("id"),
+                },
+            )
+            return
+
+        self.rls_context.set_user_id(user_id=UUID(metadata["user_id"]))
+        self.rls_context.set_location_id(location_id=UUID(metadata["location_id"]))
+
+        refund = self.refund_repository.get_by_id(id=UUID(metadata["refund_id"]))
+
+        # Stripe retries and sends several events per refund; only a
+        # pending refund moves.
+        if not refund or refund.status != RefundStatus.PENDING:
+            return
+
+        # Saving Stripe's reply may have failed after the refund was made.
+        if not refund.stripe_refund_id:
+            self.refund_repository.mark_submitted(
+                refund=refund,
+                stripe_refund_id=stripe_refund["id"],
+            )
+
+        status = stripe_refund.get("status")
+
+        if status == "succeeded":
+            self.refund_repository.mark_succeeded(refund=refund)
+            self.booking_repository.mark_refunded(booking_id=refund.booking_id)
+
+            logger.info(
+                "Refund completed",
+                extra={
+                    "event": "refund_completed",
+                    "result": "success",
+                    "reason": f"refund_id={refund.id}; booking_id={refund.booking_id}",
+                },
+            )
+
+        elif status in ("failed", "canceled"):
+            self.refund_repository.mark_failed(
+                refund=refund,
+                failure_reason=stripe_refund.get("failure_reason") or f"Stripe refund {status}",
+            )
+
+            logger.warning(
+                "Refund failed",
+                extra={
+                    "event": "refund_failed",
+                    "result": "failed",
+                    "reason": f"refund_id={refund.id}; status={status}",
+                },
             )

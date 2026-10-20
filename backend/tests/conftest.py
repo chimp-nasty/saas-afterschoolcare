@@ -71,7 +71,7 @@ def fake_stripe(monkeypatch) -> type[FakeStripe]:
     for module in (
         "app.public.services.bookings_create",
         "app.public.services.bookings_update",
-        "app.public.services.location_service",
+        "app.public.services.refunds_create",
         "app.integrations.payments.stripe.webhook",
     ):
         monkeypatch.setattr(f"{module}.StripeClient", FakeStripe)

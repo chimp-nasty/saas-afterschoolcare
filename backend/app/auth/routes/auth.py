@@ -131,14 +131,15 @@ def get_session(
     ctx: TokenContext = Depends(
         get_current_token_context,
     ),
+    service: AuthService = Depends(
+        get_service(
+            AuthService,
+            db_dependency=get_db,
+        )
+    ),
 ) -> ApiResponse[SessionResponse]:
     return ApiResponse(
         ok=True,
         msg="Session retrieved",
-        data=SessionResponse(
-            user_id=ctx.user_id,
-            email=ctx.email,
-            first_name=ctx.first_name,
-            roles=ctx.roles,
-        )
+        data=service.get_session(ctx=ctx),
     )

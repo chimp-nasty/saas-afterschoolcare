@@ -67,6 +67,10 @@ def up(conn: Connection) -> None:
                 tenant_id,
                 name,
                 code,
+                address_line_1,
+                suburb,
+                state,
+                postcode,
                 email,
                 is_active
             )
@@ -74,6 +78,10 @@ def up(conn: Connection) -> None:
                 :tenant_id,
                 'Location 1',
                 'location1',
+                '1 Placeholder Street',
+                'Brisbane City',
+                'QLD',
+                '4000',
                 'tenant_1_location_1@test.com',
                 TRUE
             )
@@ -111,6 +119,10 @@ def up(conn: Connection) -> None:
                 tenant_id,
                 name,
                 code,
+                address_line_1,
+                suburb,
+                state,
+                postcode,
                 email,
                 is_active
             )
@@ -118,6 +130,10 @@ def up(conn: Connection) -> None:
                 :tenant_id,
                 'Location 2',
                 'location2',
+                '2 Placeholder Street',
+                'Brisbane City',
+                'QLD',
+                '4000',
                 'tenant_1_location_2@test.com',
                 TRUE
             )
@@ -234,6 +250,10 @@ def up(conn: Connection) -> None:
                 tenant_id,
                 name,
                 code,
+                address_line_1,
+                suburb,
+                state,
+                postcode,
                 email,
                 is_active
             )
@@ -241,6 +261,10 @@ def up(conn: Connection) -> None:
                 :tenant_id,
                 'Location 2',
                 'location2',
+                '3 Placeholder Street',
+                'Brisbane City',
+                'QLD',
+                '4000',
                 'tenant_2_location_2@test.com',
                 TRUE
             )

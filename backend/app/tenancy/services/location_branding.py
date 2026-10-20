@@ -6,6 +6,38 @@ from app.tenancy.schemas.location_branding import PublicLocationResponse
 from app.tenancy.repositories.location_branding import LocationBrandingRepository
 
 
+def _to_public_location(location, tenant, branding) -> PublicLocationResponse:
+    return PublicLocationResponse(
+        tenant_name=tenant.name,
+        tenant_code=tenant.code,
+
+        location_id=location.id,
+        location_code=location.code,
+        # locations.name is optional; families always need something to
+        # call it, so fall back to its code.
+        location_name=location.name or location.code,
+
+        address_line_1=location.address_line_1,
+        address_line_2=location.address_line_2,
+        suburb=location.suburb,
+        state=location.state,
+        postcode=location.postcode,
+
+        latitude=float(location.latitude) if location.latitude is not None else None,
+        longitude=float(location.longitude) if location.longitude is not None else None,
+        google_place_id=location.google_place_id,
+
+        phone=location.phone,
+        email=location.email,
+
+        display_name=branding.display_name if branding else None,
+        logo_key=branding.logo_key if branding else None,
+        primary_color=branding.primary_color if branding else None,
+        secondary_color=branding.secondary_color if branding else None,
+        font_family=branding.font_family if branding else None,
+    )
+
+
 class LocationBrandingService:
     def __init__(
         self,
@@ -30,18 +62,16 @@ class LocationBrandingService:
         if result is None:
             raise LocationNotFoundError()
 
-        location, tenant, branding = result
+        return _to_public_location(*result)
 
-        return PublicLocationResponse(
-            tenant_name=tenant.name,
-            tenant_code=tenant.code,
-
-            location_code=location.code,
-            location_name=location.name if location.name else None,
-
-            display_name=branding.display_name if branding else None,
-            logo_key=branding.logo_key if branding else None,
-            primary_color=branding.primary_color if branding else None,
-            secondary_color=branding.secondary_color if branding else None,
-            font_family=branding.font_family if branding else None,
-        )
+    def list_public_locations(
+        self,
+        *,
+        tenant_id: UUID,
+    ) -> list[PublicLocationResponse]:
+        return [
+            _to_public_location(*row)
+            for row in self.location_branding_repo.list_locations_with_branding_by_tenant_id(
+                tenant_id=tenant_id,
+            )
+        ]

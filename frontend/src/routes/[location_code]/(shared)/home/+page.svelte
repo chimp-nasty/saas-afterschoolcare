@@ -34,6 +34,6 @@
         excludeRoles={['admin', 'staff']}
         redirect={false}
     >
-        <CustomerHome bookings={data.bookings} locationCode={data.locationCode}/>
+        <CustomerHome bookings={data.bookings} locationCode={data.locationCode} location={data.location} />
     </Authorize>
 </Page>

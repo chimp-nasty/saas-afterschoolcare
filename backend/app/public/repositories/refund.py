@@ -1,7 +1,9 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.db.models import Refund
+from app.db.models import PaymentAttempt, Refund
+from app.public.schemas.enums import RefundStatus
 
 
 class RefundRepository(Repository):
@@ -13,25 +15,23 @@ class RefundRepository(Repository):
         user_id: UUID,
         requested_by_user_id: UUID,
         reason: str | None = None,
-        stripe_refund_id: str | None = None,
-        failed_at=None,
-        failure_reason: str | None = None,
-        processed_at=None,
     ) -> Refund:
+        """
+        A pending refund. trg_refunds_rules (schema/0004) refuses one the
+        booking isn't eligible for, and fills in the amount, currency and
+        payment from the booking.
+        """
         record = Refund(
             booking_id=booking_id,
             location_id=location_id,
             user_id=user_id,
             requested_by_user_id=requested_by_user_id,
             reason=reason,
-            stripe_refund_id=stripe_refund_id,
-            failed_at=failed_at,
-            failure_reason=failure_reason,
-            processed_at=processed_at,
         )
 
         self.db.add(record)
         self.db.flush()
+        self.db.refresh(record)
 
         return record
 
@@ -45,3 +45,52 @@ class RefundRepository(Repository):
             .filter(Refund.id == id)
             .first()
         )
+
+    def get_payment_intent_id(
+        self,
+        *,
+        refund: Refund,
+    ) -> str | None:
+        return (
+            self.db.query(PaymentAttempt.stripe_payment_intent_id)
+            .filter(PaymentAttempt.id == refund.payment_attempt_id)
+            .scalar()
+        )
+
+    def mark_submitted(
+        self,
+        *,
+        refund: Refund,
+        stripe_refund_id: str,
+    ) -> Refund:
+        refund.stripe_refund_id = stripe_refund_id
+
+        self.db.flush()
+
+        return refund
+
+    def mark_succeeded(
+        self,
+        *,
+        refund: Refund,
+    ) -> Refund:
+        refund.status = RefundStatus.SUCCEEDED
+        refund.processed_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+
+        return refund
+
+    def mark_failed(
+        self,
+        *,
+        refund: Refund,
+        failure_reason: str,
+    ) -> Refund:
+        refund.status = RefundStatus.FAILED
+        refund.failed_at = datetime.now(timezone.utc)
+        refund.failure_reason = failure_reason
+
+        self.db.flush()
+
+        return refund

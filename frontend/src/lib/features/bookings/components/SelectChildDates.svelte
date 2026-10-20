@@ -104,6 +104,10 @@
     {#if selectedChildIds.length > 0}
         <ServiceDayCalendar
             {serviceDays}
+            {selectedChildIds}
+            childNames={Object.fromEntries(
+                children.map((child) => [child.id, child.first_name])
+            )}
             bind:selectedDates
         />
     {/if}

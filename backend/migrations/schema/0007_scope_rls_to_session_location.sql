@@ -56,6 +56,26 @@ AS $$
 $$;
 
 
+-- The current user is an admin or superadmin at the location, and it's the
+-- session's location.
+CREATE OR REPLACE FUNCTION auth.is_location_admin(p_location_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT p_location_id = auth.current_location_id()
+       AND EXISTS (
+           SELECT 1
+           FROM auth.location_user_roles lur
+           JOIN auth.roles r
+               ON r.id = lur.role_id
+           WHERE lur.user_id = auth.current_user_id()
+             AND lur.location_id = p_location_id
+             AND r.code IN ('superadmin', 'admin')
+       );
+$$;
+
+
 -- Staff and above at the row's location see every row there; customers
 -- see only rows they own. Either way, only at the session's location.
 CREATE OR REPLACE FUNCTION auth.can_access_location_row(

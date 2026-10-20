@@ -13,9 +13,15 @@ from app.errors.bookings import (
     InvalidBookingChildError,
     InvalidBookingServiceDaysError,
     ServiceDayClosedError,
+    ServiceNotOfferedError,
     ServiceDayNotInFutureError,
 )
 from app.errors.children import ChildProfileCollisionError
+from app.errors.services import LocationServiceNotPricedError
+from app.errors.refunds import (
+    RefundAlreadyRequestedError,
+    RefundNotAllowedError,
+)
 from app.errors.pickups import (
     PickupConsentRequiredError,
     PickupLimitReachedError,
@@ -45,6 +51,7 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     # Raised by the trg_bookings_enforce_rules trigger (schema/0008).
     "ck_bookings_service_day_in_future": ServiceDayNotInFutureError,
     "ck_bookings_service_day_open": ServiceDayClosedError,
+    "ck_bookings_service_offered": ServiceNotOfferedError,
     "ck_bookings_service_day_full": BookingCapacityCollisionError,
     "ck_bookings_child_medically_cleared": ChildNotMedicallyClearedError,
     "ck_bookings_child_active": ChildInactiveError,
@@ -56,6 +63,10 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_authorized_pickup_persons_phone_format": PickupPhoneInvalidError,
     "ck_authorized_pickup_persons_limit": PickupLimitReachedError,
     "ck_child_profile_pickup_consent": PickupConsentRequiredError,
+    # Refunds (schema/0004): the window and one active refund per booking.
+    "ck_refunds_booking_refundable": RefundNotAllowedError,
+    "uq_refunds_active_booking": RefundAlreadyRequestedError,
+    "ck_location_service_config_active_priced": LocationServiceNotPricedError,
 }
 
 

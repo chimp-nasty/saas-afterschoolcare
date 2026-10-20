@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/location-branding/v1/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Public Locations */
+        get: operations["list_public_locations_location_branding_v1_public_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/location-branding/v1/public/{location_code}": {
         parameters: {
             query?: never;
@@ -348,7 +365,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/location-services/v1/{location_service_id}/price": {
+    "/location-services/v1/public/{location_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Public Location Services */
+        get: operations["list_public_location_services_location_services_v1_public__location_code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/location-services/v1/{location_service_id}/config": {
         parameters: {
             query?: never;
             header?: never;
@@ -361,8 +395,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update Price */
-        patch: operations["update_price_location_services_v1__location_service_id__price_patch"];
+        /** Update Location Service Config */
+        patch: operations["update_location_service_config_location_services_v1__location_service_id__config_patch"];
         trace?: never;
     };
     "/location-services/v1/": {
@@ -480,6 +514,23 @@ export interface paths {
         put?: never;
         /** Deactivate Pickup */
         post: operations["deactivate_pickup_pickups_v1__pickup_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/refunds/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Refund */
+        post: operations["create_refund_refunds_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -604,6 +655,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["CustomerProfileResponse"] | null;
         };
+        /** ApiResponse[LocationServiceSelectionResponse] */
+        ApiResponse_LocationServiceSelectionResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["LocationServiceSelectionResponse"] | null;
+        };
         /** ApiResponse[NoneType] */
         ApiResponse_NoneType_: {
             /** Ok */
@@ -628,6 +687,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["PublicLocationResponse"] | null;
+        };
+        /** ApiResponse[RefundResponse] */
+        ApiResponse_RefundResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["RefundResponse"] | null;
         };
         /** ApiResponse[SessionResponse] */
         ApiResponse_SessionResponse_: {
@@ -718,6 +785,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["PickupResponse"][] | null;
         };
+        /** ApiResponse[list[PublicLocationResponse]] */
+        ApiResponse_list_PublicLocationResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["PublicLocationResponse"][] | null;
+        };
         /**
          * AustralianState
          * @enum {string}
@@ -787,6 +863,16 @@ export interface components {
             service_date: string;
             /** Service Name */
             service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
             booking_status: components["schemas"]["BookingStatus"];
             payment_status: components["schemas"]["PaymentStatus"];
             /** Price Snapshot Cents */
@@ -799,6 +885,7 @@ export interface components {
             refundable_until: string;
             /** Is Refundable */
             is_refundable: boolean;
+            refund_status: components["schemas"]["RefundStatus"] | null;
         };
         /**
          * BookingGroupResponse
@@ -813,6 +900,8 @@ export interface components {
             status: components["schemas"]["BookingStatus"];
             /** Paid At */
             paid_at: string | null;
+            /** Receipt Url */
+            receipt_url: string | null;
             /** Total Cents */
             total_cents: number;
             currency: components["schemas"]["CurrencyCode"];
@@ -977,6 +1066,16 @@ export interface components {
             service_date: string;
             /** Service Name */
             service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
             booking_status: components["schemas"]["BookingStatus"];
             payment_status: components["schemas"]["PaymentStatus"];
             /** Price Snapshot Cents */
@@ -1144,6 +1243,14 @@ export interface components {
              */
             adult_confirmed: true;
         };
+        /** CreateRefundRequest */
+        CreateRefundRequest: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+        };
         /**
          * CurrencyCode
          * @enum {string}
@@ -1213,8 +1320,18 @@ export interface components {
             is_open: boolean;
             /** Capacity */
             capacity: number;
+            /** Places Left */
+            places_left: number;
+            /** Booked Child Ids */
+            booked_child_ids: string[];
+            /** Is Past */
+            is_past: boolean;
         };
-        /** LocationServiceSelectionResponse */
+        /**
+         * LocationServiceSelectionResponse
+         * @description One service a location offers, with everything a family sees before
+         *     booking. Public: the landing page shows it before login.
+         */
         LocationServiceSelectionResponse: {
             /**
              * Id
@@ -1225,9 +1342,31 @@ export interface components {
             service_type_id: number;
             /** Service Name */
             service_name: string;
+            /** Description */
+            description: string | null;
             /** Current Price Cents */
             current_price_cents: number;
             currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Min Child Age */
+            min_child_age: number;
+            /** Max Child Age */
+            max_child_age: number;
+            /** Refund Cutoff Days */
+            refund_cutoff_days: number;
+            /** Late Fee Cents */
+            late_fee_cents: number;
+            /** Late Fee Grace Minutes */
+            late_fee_grace_minutes: number;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -1292,10 +1431,35 @@ export interface components {
             tenant_name: string;
             /** Tenant Code */
             tenant_code: string;
+            /**
+             * Location Id
+             * Format: uuid
+             */
+            location_id: string;
             /** Location Code */
             location_code: string;
             /** Location Name */
             location_name: string;
+            /** Address Line 1 */
+            address_line_1: string;
+            /** Address Line 2 */
+            address_line_2: string | null;
+            /** Suburb */
+            suburb: string;
+            /** State */
+            state: string;
+            /** Postcode */
+            postcode: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Google Place Id */
+            google_place_id: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Email */
+            email: string | null;
             /** Display Name */
             display_name: string | null;
             /** Logo Key */
@@ -1307,6 +1471,37 @@ export interface components {
             /** Font Family */
             font_family: string | null;
         };
+        /**
+         * RefundResponse
+         * @description A refund once it's been sent to Stripe. PENDING until the webhook
+         *     confirms it; the booking is cancelled and its place released then.
+         */
+        RefundResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            status: components["schemas"]["RefundStatus"];
+            /** Amount Cents */
+            amount_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * RefundStatus
+         * @enum {string}
+         */
+        RefundStatus: "PENDING" | "SUCCEEDED" | "FAILED";
         /** RegistrationRequest */
         RegistrationRequest: {
             /**
@@ -1349,6 +1544,15 @@ export interface components {
             first_name: string;
             /** Roles */
             roles: string[];
+            /**
+             * Location Id
+             * Format: uuid
+             */
+            location_id: string;
+            /** Location Code */
+            location_code: string;
+            /** Location Name */
+            location_name: string | null;
         };
         /**
          * StripeStatus
@@ -1387,11 +1591,32 @@ export interface components {
             /** Postcode */
             postcode?: string | null;
         };
-        /** UpdateLocationServiceRequest */
-        UpdateLocationServiceRequest: {
-            /** Amount Cents */
-            amount_cents: number;
-            currency: components["schemas"]["CurrencyCode"];
+        /**
+         * UpdateLocationServiceConfigRequest
+         * @description An admin's changes to a service. Only the fields sent are updated.
+         */
+        UpdateLocationServiceConfigRequest: {
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Current Price Cents */
+            current_price_cents?: number | null;
+            currency?: components["schemas"]["CurrencyCode"] | null;
+            /** Start Time */
+            start_time?: string | null;
+            /** End Time */
+            end_time?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Refund Cutoff Days */
+            refund_cutoff_days?: number | null;
+            /** Min Child Age */
+            min_child_age?: number | null;
+            /** Max Child Age */
+            max_child_age?: number | null;
+            /** Late Fee Cents */
+            late_fee_cents?: number | null;
+            /** Late Fee Grace Minutes */
+            late_fee_grace_minutes?: number | null;
         };
         /**
          * UpdatePickupRequest
@@ -1438,9 +1663,11 @@ export type ApiResponseCheckoutUrlResponse = components['schemas']['ApiResponse_
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
+export type ApiResponseLocationServiceSelectionResponse = components['schemas']['ApiResponse_LocationServiceSelectionResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
 export type ApiResponsePublicLocationResponse = components['schemas']['ApiResponse_PublicLocationResponse_'];
+export type ApiResponseRefundResponse = components['schemas']['ApiResponse_RefundResponse_'];
 export type ApiResponseSessionResponse = components['schemas']['ApiResponse_SessionResponse_'];
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
 export type ApiResponseListActionResponse = components['schemas']['ApiResponse_list_ActionResponse__'];
@@ -1451,6 +1678,7 @@ export type ApiResponseListChildTableResponse = components['schemas']['ApiRespon
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
+export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
 export type AustralianState = components['schemas']['AustralianState'];
 export type BookingConflictRow = components['schemas']['BookingConflictRow'];
 export type BookingGroupLineResponse = components['schemas']['BookingGroupLineResponse'];
@@ -1469,6 +1697,7 @@ export type CreateBookingRequest = components['schemas']['CreateBookingRequest']
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
 export type CreateChildRequest = components['schemas']['CreateChildRequest'];
 export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
+export type CreateRefundRequest = components['schemas']['CreateRefundRequest'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
@@ -1481,13 +1710,15 @@ export type PaymentStatus = components['schemas']['PaymentStatus'];
 export type PickupRelation = components['schemas']['PickupRelation'];
 export type PickupResponse = components['schemas']['PickupResponse'];
 export type PublicLocationResponse = components['schemas']['PublicLocationResponse'];
+export type RefundResponse = components['schemas']['RefundResponse'];
+export type RefundStatus = components['schemas']['RefundStatus'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type SessionResponse = components['schemas']['SessionResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
-export type UpdateLocationServiceRequest = components['schemas']['UpdateLocationServiceRequest'];
+export type UpdateLocationServiceConfigRequest = components['schemas']['UpdateLocationServiceConfigRequest'];
 export type UpdatePickupRequest = components['schemas']['UpdatePickupRequest'];
 export type ValidationError = components['schemas']['ValidationError'];
 export type $defs = Record<string, never>;
@@ -1633,6 +1864,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_SessionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_public_locations_location_branding_v1_public_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_PublicLocationResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -2301,7 +2563,40 @@ export interface operations {
             };
         };
     };
-    update_price_location_services_v1__location_service_id__price_patch: {
+    list_public_location_services_location_services_v1_public__location_code__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_LocationServiceSelectionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_location_service_config_location_services_v1__location_service_id__config_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -2314,7 +2609,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateLocationServiceRequest"];
+                "application/json": components["schemas"]["UpdateLocationServiceConfigRequest"];
             };
         };
         responses: {
@@ -2324,7 +2619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                    "application/json": components["schemas"]["ApiResponse_LocationServiceSelectionResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -2639,6 +2934,41 @@ export interface operations {
             };
         };
     };
+    create_refund_refunds_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RefundResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     stripe_webhook_api_v1_webhooks_stripe_post: {
         parameters: {
             query?: never;
@@ -2686,4 +3016,5 @@ export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
 export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
 export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
+export const refundStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RefundStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

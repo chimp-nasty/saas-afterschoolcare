@@ -90,7 +90,48 @@ Only `font-semibold` and `font-extrabold`; no `font-medium` or `font-bold`.
 - A row of actions goes in `ActionBar`, secondary first and main action last. On mobile the buttons stack full width with the main action at the bottom, nearest the thumb; from `md:` they sit in one row, secondary left and main right. Buttons inside it size themselves; don't pass `fullWidth`.
 - In multi-step flows (booking), use `<ActionBar sticky>` so Continue stays reachable on long pages.
 - Links use `HyperTextLink`: 44px tall by default ("Back to bookings", "Forgot your password?"); `inline` only inside running text. `Button variant="hyperlink"` is for a button that looks like a link (e.g. "Show more"), not for navigation.
-- Confirmations and small forms over a page use `Modal` (a bottom sheet on mobile) with its buttons in `actions`. Navigation menus use `Drawer` (staff and admin only).
+- Yes/no questions use `confirmAction()` (see Confirmations below). `Modal` (a bottom sheet on mobile) is only for small forms or extra content over a page, with its buttons in `actions`. Navigation menus use `Drawer` (staff and admin only).
+
+### Confirmations
+
+Every "are you sure?" goes through `confirmAction()` from `components/overlays/confirm.svelte`. It's shown by the one `ConfirmDialog`, already mounted in the tenant layout (`routes/[location_code]/+layout.svelte`), so a page only calls the function: no `Modal`, no `bind:this`, no open/close or loading state of its own. Never use `window.confirm`.
+
+A destructive action (cancel, refund, remove), with the work passed as `action`:
+
+```ts
+import { confirmAction } from "$lib/components/overlays/confirm.svelte";
+
+async function removePickup() {
+    await confirmAction({
+        title: `Remove ${pickup.first_name}?`,
+        message: `${pickup.first_name} will no longer be able to collect your children.`,
+        confirmLabel: "Remove",
+        tone: "danger",
+        action: async () => {
+            const response = await pickupsApi.deactivate(pickup.id);
+
+            if (response.ok) {
+                await invalidate("app:customer-account");
+                await goto(accountPickupsHref);
+            }
+        },
+    });
+}
+```
+
+A check before continuing, with no `action` (the page carries on itself):
+
+```ts
+if (!(await confirmAction({ title: "Their ID will need checking again", message, confirmLabel: "Save changes" }))) {
+    return;
+}
+```
+
+- `title` is a question or consequence in sentence case; `message` says what happens (what's released, refunded or reset); `confirmLabel` repeats the verb ("Remove", "Refund", "Cancel booking"), never "OK" or "Yes".
+- `tone: "danger"` for anything destructive: red confirm button, and the cancel button reads "Keep". Otherwise it reads "Cancel". Override with `cancelLabel` only if neither fits.
+- With `action`, the confirm button shows a spinner and the dialog can't be dismissed until it finishes; then it closes. Do the follow-up (refresh, navigate) inside `action`. API errors already toast from `apiWrapper`, so the action doesn't need to report them.
+- It resolves `true` once confirmed (and the action has finished), `false` for cancel, Escape or tapping outside.
+- Reference uses: the review page (cancel booking, refund), child page (remove child), pickup edit page (remove, ID re-check).
 
 ### Tabs
 
@@ -105,6 +146,8 @@ Only `font-semibold` and `font-extrabold`; no `font-medium` or `font-bold`.
 - Write all copy in sentence case, even where CSS uppercases it ("Book now", "Add a child"). Australian spelling ("Authorised").
 - Customer dates use `utils/helpers.ts`: `formatDate` → "Tue, 20 Oct", plus the year when it isn't this year ("Mon, 20 Oct 2025"); `formatDateRange` → "Tue, 20 Oct – Fri, 24 Oct"; `formatTimestamp` for timestamps, same format. DD/MM/YYYY (`formatDateDDMMYYYY`) only in admin tables.
 - Money: `formatMoney(cents, currency)`. Never format inline.
+- Session times: `formatTimeRange(start, end)` → "3:00pm – 6:00pm" (`formatTime` for one). They're in the location's timezone; show them as sent, never convert.
+- Service policies (ages, refund window, late fee) are worded only by `features/services/policies.ts`, so every screen says the same thing. Addresses and the maps link come from `features/location/address.ts`; the centre's details are shown with `CentreCard`.
 - Status wording comes from one map per feature, not per component.
 
 ### Shared components

@@ -14,6 +14,7 @@ from app.public.routes.location_service_days import router as location_service_d
 from app.public.routes.location_services import router as location_service_router
 from app.public.routes.actions import router as actions_router
 from app.public.routes.pickups import router as pickups_router
+from app.public.routes.refunds import router as refunds_router
 
 # integrations
 from app.integrations.payments.stripe.router import router as stripe_webhook_router
@@ -35,6 +36,7 @@ api_router.include_router(location_service_day_router)
 api_router.include_router(location_service_router)
 api_router.include_router(actions_router)
 api_router.include_router(pickups_router)
+api_router.include_router(refunds_router)
 
 # integrations
 api_router.include_router(stripe_webhook_router)

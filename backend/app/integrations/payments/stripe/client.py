@@ -15,17 +15,17 @@ CHECKOUT_EXPIRY_SECONDS = 30 * 60
 
 
 @dataclass
-class StripePrice:
-    amount_cents: int
-    currency: str
-
-
-@dataclass
 class StripeCheckout:
     checkout_url: str | None
     checkout_session_id: str
     payment_intent_id: str | None
     status: str  # "open", "complete" or "expired"
+
+
+@dataclass
+class StripeRefund:
+    refund_id: str
+    status: str  # "pending", "requires_action", "succeeded", "failed" or "canceled"
 
 
 @dataclass
@@ -65,7 +65,8 @@ class StripeClient:
     ) -> StripeCheckout:
         """
         A hosted Checkout page for a one-off payment. Prices come from our
-        booking snapshots (price_data), not Stripe Price objects.
+        booking snapshots (price_data): our database is the only source of
+        prices, so there's no Stripe catalogue to keep in step.
         """
         try:
             session = stripe.checkout.Session.create(
@@ -119,6 +120,55 @@ class StripeClient:
 
         return _to_checkout(session)
 
+    def get_receipt_url(
+        self,
+        *,
+        payment_intent_id: str,
+    ) -> str | None:
+        """
+        The Stripe-hosted receipt for a payment (it also shows any refunds).
+        It's on the payment's charge, not the checkout session.
+        """
+        try:
+            payment_intent = stripe.PaymentIntent.retrieve(
+                payment_intent_id,
+                expand=["latest_charge"],
+            )
+        except stripe.StripeError as exc:
+            raise PaymentProviderError(log_reason=str(exc)) from exc
+
+        charge = payment_intent.latest_charge
+
+        return charge.receipt_url if charge else None
+
+    def create_refund(
+        self,
+        *,
+        payment_intent_id: str,
+        amount_cents: int,
+        metadata: dict[str, str],
+        idempotency_key: str,
+    ) -> StripeRefund:
+        """
+        Refund part of a payment (one booking) to the card it came from.
+        The full amount goes back; the centre absorbs Stripe's fee.
+        """
+        try:
+            refund = stripe.Refund.create(
+                payment_intent=payment_intent_id,
+                amount=amount_cents,
+                reason="requested_by_customer",
+                metadata=metadata,
+                idempotency_key=idempotency_key,
+            )
+        except stripe.StripeError as exc:
+            raise PaymentProviderError(log_reason=str(exc)) from exc
+
+        return StripeRefund(
+            refund_id=refund.id,
+            status=refund.status,
+        )
+
     def construct_webhook_event(
         self,
         *,
@@ -130,51 +180,4 @@ class StripeClient:
             payload,
             signature,
             settings.STRIPE_WEBHOOK_SECRET,
-        )
-
-    def get_price(
-        self,
-        *,
-        stripe_price_id: str,
-    ) -> StripePrice:
-        price = stripe.Price.retrieve(
-            stripe_price_id,
-        )
-
-        if not price.active:
-            raise ValueError(
-                "Stripe price is inactive."
-            )
-
-        if price.unit_amount is None:
-            raise ValueError(
-                "Stripe price does not have a fixed unit amount."
-            )
-
-        return StripePrice(
-            amount_cents=price.unit_amount,
-            currency=price.currency.upper(),
-        )
-
-    def create_price(
-        self,
-        *,
-        stripe_product_id: str,
-        amount_cents: int,
-        currency: str,
-    ) -> StripePrice:
-        price = stripe.Price.create(
-            product=stripe_product_id,
-            unit_amount=amount_cents,
-            currency=currency.lower(),
-        )
-
-        if price.unit_amount is None:
-            raise ValueError(
-                "Stripe price does not have a fixed unit amount."
-            )
-
-        return StripePrice(
-            amount_cents=price.unit_amount,
-            currency=price.currency.upper(),
         )

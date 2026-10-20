@@ -109,6 +109,35 @@ def test_paid_webhook_records_when_it_was_paid(api: Api, customer):
     assert summary_paid_at == group_paid_at
 
 
+# When the payment goes through, the booking keeps a link to Stripe's receipt
+# for it, which the review page shows as "View receipt".
+def test_paid_webhook_records_the_receipt(api: Api, customer):
+    data, _ = _booked(api, customer)
+
+    api.webhook("checkout.session.completed", api.session_id(data["checkout_url"]))
+
+    group = customer.client.get(f"/booking/v1/groups/{data['booking_group_id']}").json()["data"]
+    assert group["receipt_url"].startswith("https://pay.stripe.test/receipts/pi_test_")
+
+
+# If Stripe can't give the receipt link at that moment, the payment still
+# settles: the booking is confirmed, just without a receipt link.
+def test_payment_settles_without_a_receipt(api: Api, customer, fake_stripe, monkeypatch):
+    from app.errors.payments import PaymentProviderError
+
+    def receipts_down(_self, **_):
+        raise PaymentProviderError(log_reason="Stripe unavailable")
+
+    monkeypatch.setattr(fake_stripe, "get_receipt_url", receipts_down)
+
+    data, _ = _booked(api, customer)
+    api.webhook("checkout.session.completed", api.session_id(data["checkout_url"]))
+
+    group = customer.client.get(f"/booking/v1/groups/{data['booking_group_id']}").json()["data"]
+    assert group["status"] == "CONFIRMED"
+    assert group["receipt_url"] is None
+
+
 # A checkout that expires without payment never gets a paid_at.
 def test_expired_checkout_is_never_paid(api: Api, customer):
     data, _ = _booked(api, customer)

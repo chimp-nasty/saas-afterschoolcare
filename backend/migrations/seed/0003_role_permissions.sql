@@ -91,6 +91,8 @@ VALUES
     ('staff', 'child_notes', 'u'),
     ('staff', 'authorized_pickup_persons', 'r'),
     ('staff', 'pickup_identity', 'u'),
+    ('staff', 'refunds', 'c'),
+    ('staff', 'refunds', 'r'),
     ('staff', 'child_documents', 'r'),
     ('staff', 'child_medical_state', 'r'),
     ('staff', 'child_medical_state', 'u'),

@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, text
 
 from app.core.config import settings
 from app.core.security import hash_token
-from app.integrations.payments.stripe.client import StripeCheckout, StripePrice
+from app.integrations.payments.stripe.client import StripeCheckout, StripeRefund
 from app.main import app
 
 
@@ -47,6 +47,9 @@ class FakeStripeState:
     sessions: dict[str, StripeCheckout] = field(default_factory=dict)
     metadata: dict[str, dict] = field(default_factory=dict)
     created: list[dict] = field(default_factory=list)
+
+    # Refunds by Stripe refund id: what was asked for, with its metadata.
+    refunds: dict[str, dict] = field(default_factory=dict)
 
 
 class FakeStripe:
@@ -92,14 +95,32 @@ class FakeStripe:
 
         return checkout
 
+    def get_receipt_url(self, *, payment_intent_id):
+        return f"https://pay.stripe.test/receipts/{payment_intent_id}"
+
+    def create_refund(self, *, payment_intent_id, amount_cents, metadata, idempotency_key):
+        # Like Stripe, the same idempotency key returns the same refund.
+        for refund_id, refund in self.state.refunds.items():
+            if refund["idempotency_key"] == idempotency_key:
+                return StripeRefund(refund_id=refund_id, status="pending")
+
+        refund_id = f"re_test_{uuid.uuid4().hex}"
+
+        self.state.refunds[refund_id] = {
+            "payment_intent_id": payment_intent_id,
+            "amount_cents": amount_cents,
+            "metadata": metadata,
+            "idempotency_key": idempotency_key,
+        }
+
+        return StripeRefund(refund_id=refund_id, status="pending")
+
     def construct_webhook_event(self, *, payload, signature):
         if signature == "invalid":
             raise stripe.SignatureVerificationError("Invalid signature", signature)
 
         return json.loads(payload)
 
-    def create_price(self, *, stripe_product_id, amount_cents, currency):
-        return StripePrice(amount_cents=amount_cents, currency=currency.upper())
 
 
 class Api:
@@ -310,6 +331,34 @@ class Api:
             "/api/v1/webhooks/stripe",
             content=json.dumps(event),
             headers={"Stripe-Signature": signature},
+        )
+
+    def refund_webhook(
+        self,
+        event_type: str,
+        stripe_refund_id: str,
+        *,
+        status: str,
+        metadata: dict | None = None,
+    ):
+        """Deliver a Stripe refund webhook for a refund the fake created."""
+        refund = FakeStripe.state.refunds.get(stripe_refund_id, {})
+
+        event = {
+            "type": event_type,
+            "data": {
+                "object": {
+                    "id": stripe_refund_id,
+                    "status": status,
+                    "metadata": refund.get("metadata", {}) if metadata is None else metadata,
+                }
+            },
+        }
+
+        return self.client().post(
+            "/api/v1/webhooks/stripe",
+            content=json.dumps(event),
+            headers={"Stripe-Signature": "test"},
         )
 
     @staticmethod

@@ -52,6 +52,21 @@ export function formatDateOfBirth(value: string): string {
     });
 }
 
+// "3:00pm" for a time of day ("15:00:00"), as sent by the API in the
+// location's timezone. Times are shown as given, never converted.
+export function formatTime(value: string): string {
+    const [hours, minutes] = value.split(':').map(Number);
+    const suffix = hours < 12 ? 'am' : 'pm';
+    const hour = hours % 12 === 0 ? 12 : hours % 12;
+
+    return `${hour}:${String(minutes).padStart(2, '0')}${suffix}`;
+}
+
+// "3:00pm – 6:00pm"
+export function formatTimeRange(start: string, end: string): string {
+    return `${formatTime(start)} – ${formatTime(end)}`;
+}
+
 // "0400 000 000" for a mobile, "(07) 3000 0000" for a landline. Phones are
 // stored as 10 digits.
 export function formatPhone(value: string): string {

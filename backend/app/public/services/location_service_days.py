@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 
 from app.public.repositories.location_service_day import LocationServiceDayRepository
@@ -23,11 +25,13 @@ class LocationServiceDayService:
     def list_with_filters(
         self,
         *,
+        user_id: UUID,
         filters: ListLocationServiceDaysFilterRequest,
     ) -> list[LocationServiceDayTableResponse]:
         rows = (
             self.location_service_repository
             .list_context_with_filters(
+                user_id=user_id,
                 date_from=filters.date_from,
                 date_to=filters.date_to,
                 is_open=filters.is_open,

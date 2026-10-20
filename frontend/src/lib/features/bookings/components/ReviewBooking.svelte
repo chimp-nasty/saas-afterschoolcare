@@ -9,6 +9,8 @@
         bookingId?: string;
         date: string;
         serviceName: string;
+        // "3:00pm – 6:00pm"
+        time?: string;
         priceCents: number;
     };
 
@@ -30,11 +32,14 @@
         serviceName,
         currency,
         children,
+        refundedCents = 0,
         lineActions,
     }: {
         serviceName: string;
         currency: string;
         children: ReviewChild[];
+        // Review screen: what's been refunded of what was paid.
+        refundedCents?: number;
         lineActions?: Snippet<[ReviewLine]>;
     } = $props();
 
@@ -86,7 +91,7 @@
                             </p>
 
                             <p class="text-sm text-(--text-muted)">
-                                {line.serviceName}
+                                {line.serviceName}{line.time ? ` · ${line.time}` : ""}
                             </p>
                         </div>
 
@@ -121,7 +126,7 @@
                 </p>
 
                 <p class="text-lg font-extrabold text-(--text)">
-                    Total
+                    {refundedCents > 0 ? "Total paid" : "Total"}
                 </p>
             </div>
 
@@ -129,5 +134,17 @@
                 {formatPrice(totalPriceCents)}
             </p>
         </div>
+
+        {#if refundedCents > 0}
+            <div class="mt-4 flex items-center justify-between gap-4 border-t border-(--border) pt-4">
+                <span class="text-sm text-(--text-muted)">
+                    Refunded
+                </span>
+
+                <span class="font-semibold text-(--text)">
+                    −{formatPrice(refundedCents)}
+                </span>
+            </div>
+        {/if}
     </Card>
 </div>

@@ -46,6 +46,35 @@ class LocationBrandingRepository(Repository):
             .first()
         )
 
+    def list_locations_with_branding_by_tenant_id(
+        self,
+        *,
+        tenant_id: UUID,
+    ):
+        """The tenant's active locations, with branding, by name."""
+        stmt = (
+            select(
+                Location,
+                Tenant,
+                LocationBranding,
+            )
+            .join(
+                Tenant,
+                Tenant.id == Location.tenant_id,
+            )
+            .outerjoin(
+                LocationBranding,
+                LocationBranding.location_id == Location.id,
+            )
+            .where(
+                Location.tenant_id == tenant_id,
+                Location.is_active.is_(True),
+            )
+            .order_by(Location.name.asc(), Location.code.asc())
+        )
+
+        return self.db.execute(stmt).all()
+
     def get_location_with_branding_by_id(
         self,
         *,

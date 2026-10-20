@@ -13,8 +13,16 @@ CREATE TABLE public.service_types (
     code VARCHAR(32) NOT NULL,
     name VARCHAR(64) NOT NULL,
 
+    -- Starting session times for a new location's service; each location
+    -- then sets its own (location_service_config).
+    default_start_time TIME NOT NULL,
+    default_end_time TIME NOT NULL,
+
     CONSTRAINT uq_service_types_code
-        UNIQUE (code)
+        UNIQUE (code),
+
+    CONSTRAINT ck_service_types_default_times
+        CHECK (default_end_time > default_start_time)
 );
 
 
@@ -22,30 +30,16 @@ CREATE TABLE public.service_types (
 -- LOCATION SERVICES
 -- =====================================================
 
+-- One row per service type per location, created with the location
+-- (trg_locations_create_services) and never edited: what a location offers
+-- and charges lives in location_service_config.
 CREATE TABLE public.location_services (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     location_id UUID NOT NULL,
     service_type_id SMALLINT NOT NULL,
 
-    stripe_product_id VARCHAR(255),
-    current_price_cents INTEGER NOT NULL,
-    currency public.currency_code_enum NOT NULL,
-
-    -- A session can be refunded until the end of the day this many days
-    -- before it, in the location's timezone: with 2, a session on the 21st
-    -- is refundable until 11:59pm on the 19th.
-    refund_cutoff_days SMALLINT NOT NULL DEFAULT 2,
-
-    -- Children this service takes, by age in whole years on the day of the
-    -- session (inclusive). Checked when a child is added (against the
-    -- location's widest range) and on every booking (schema/0009).
-    min_child_age SMALLINT NOT NULL DEFAULT 8,
-    max_child_age SMALLINT NOT NULL DEFAULT 17,
-
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     CONSTRAINT fk_location_services_location
         FOREIGN KEY (location_id)
@@ -58,26 +52,134 @@ CREATE TABLE public.location_services (
     CONSTRAINT uq_location_services_location_service_type
         UNIQUE (location_id, service_type_id),
 
-    CONSTRAINT uq_location_services_stripe_product
-        UNIQUE (stripe_product_id),
-
-    -- Target for location_service_days' composite foreign key.
+    -- Target for location_service_days' and location_service_config's
+    -- composite foreign keys.
     CONSTRAINT uq_location_services_id_location
-        UNIQUE (id, location_id),
-
-    CONSTRAINT ck_location_services_price_non_negative
-        CHECK (current_price_cents >= 0),
-
-    CONSTRAINT ck_location_services_refund_cutoff_non_negative
-        CHECK (refund_cutoff_days >= 0),
-
-    CONSTRAINT ck_location_services_child_age_range
-        CHECK (min_child_age >= 0 AND max_child_age >= min_child_age)
+        UNIQUE (id, location_id)
 );
 
-CREATE TRIGGER trg_location_services_updated_at
-    BEFORE UPDATE ON public.location_services
+
+-- =====================================================
+-- LOCATION SERVICE CONFIG
+-- =====================================================
+
+-- What an admin sets for one of their location's services (one row each,
+-- created with the service from its type's defaults). Anyone can read it:
+-- families see times, prices and policies before logging in. Only admins
+-- change it.
+--
+-- A new location's services start inactive (not offered) until an admin
+-- prices them. Prices live only here: checkout and invoices send amounts
+-- to Stripe directly, so there's no Stripe catalogue to keep in step.
+CREATE TABLE public.location_service_config (
+    location_service_id UUID PRIMARY KEY,
+    location_id UUID NOT NULL,
+
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+
+    current_price_cents INTEGER NOT NULL DEFAULT 0,
+    currency public.currency_code_enum NOT NULL DEFAULT 'AUD',
+
+    -- Session times, in the location's timezone.
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+
+    description TEXT,
+
+    -- A session can be refunded by the family until the end of the day this
+    -- many days before it, in the location's timezone: with 2, a session on
+    -- the 21st is refundable until 11:59pm on the 19th.
+    refund_cutoff_days SMALLINT NOT NULL DEFAULT 2,
+
+    -- Children this service takes, by age in whole years on the day of the
+    -- session (inclusive). Checked when a child is added (against the
+    -- location's widest range) and on every booking (schema/0009).
+    min_child_age SMALLINT NOT NULL DEFAULT 8,
+    max_child_age SMALLINT NOT NULL DEFAULT 17,
+
+    -- A flat fee for collection after end_time plus the grace period; 0 means
+    -- no late fee. Shown to families; charging it isn't built yet.
+    late_fee_cents INTEGER NOT NULL DEFAULT 0,
+    late_fee_grace_minutes SMALLINT NOT NULL DEFAULT 0,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by_user_id UUID,
+
+    CONSTRAINT fk_location_service_config_service
+        FOREIGN KEY (location_service_id, location_id)
+        REFERENCES public.location_services (id, location_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_location_service_config_updated_by
+        FOREIGN KEY (updated_by_user_id)
+        REFERENCES auth.users (id),
+
+    CONSTRAINT ck_location_service_config_price_non_negative
+        CHECK (current_price_cents >= 0),
+
+    -- Nothing is bookable for free by accident.
+    CONSTRAINT ck_location_service_config_active_priced
+        CHECK (NOT is_active OR current_price_cents > 0),
+
+    CONSTRAINT ck_location_service_config_times
+        CHECK (end_time > start_time),
+
+    CONSTRAINT ck_location_service_config_refund_cutoff_non_negative
+        CHECK (refund_cutoff_days >= 0),
+
+    CONSTRAINT ck_location_service_config_child_age_range
+        CHECK (min_child_age >= 0 AND max_child_age >= min_child_age),
+
+    CONSTRAINT ck_location_service_config_late_fee_non_negative
+        CHECK (late_fee_cents >= 0 AND late_fee_grace_minutes >= 0)
+);
+
+CREATE TRIGGER trg_location_service_config_updated_at
+    BEFORE UPDATE ON public.location_service_config
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- A new location gets every service type, each with its config.
+-- SECURITY DEFINER: writes past the read-only RLS on these tables.
+CREATE FUNCTION public.create_location_services()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    INSERT INTO public.location_services (location_id, service_type_id)
+    SELECT NEW.id, st.id
+    FROM public.service_types st;
+
+    RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_locations_create_services
+    AFTER INSERT ON tenancy.locations
+    FOR EACH ROW EXECUTE FUNCTION public.create_location_services();
+
+CREATE FUNCTION public.create_location_service_config()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    INSERT INTO public.location_service_config (
+        location_service_id, location_id, start_time, end_time
+    )
+    SELECT NEW.id, NEW.location_id, st.default_start_time, st.default_end_time
+    FROM public.service_types st
+    WHERE st.id = NEW.service_type_id;
+
+    RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_location_services_create_config
+    AFTER INSERT ON public.location_services
+    FOR EACH ROW EXECUTE FUNCTION public.create_location_service_config();
 
 
 -- =====================================================
@@ -870,6 +972,16 @@ CREATE TABLE public.payment_attempts (
 -- REFUNDS
 -- =====================================================
 
+-- A refund of one booking (one child on one day), back to the payment it
+-- was paid with. Refunds go to Stripe first; the webhook settles them: on
+-- success the booking becomes CANCELLED / REFUNDED and its place is
+-- released. Until then the place stays held.
+--
+-- Who can refund, and until when (public.booking_is_refundable):
+--   * the family: until refund_cutoff_days before the session
+--   * staff and above: until the end of the session day
+-- A booking has at most one active refund (pending or succeeded); a failed
+-- one can be tried again.
 CREATE TABLE public.refunds (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -877,6 +989,14 @@ CREATE TABLE public.refunds (
     location_id UUID NOT NULL,
     user_id UUID NOT NULL,
     requested_by_user_id UUID NOT NULL,
+
+    -- Set from the booking by trg_refunds_rules: its group's successful
+    -- payment, and its price.
+    payment_attempt_id UUID NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency public.currency_code_enum NOT NULL,
+
+    status public.refund_status_enum NOT NULL DEFAULT 'PENDING',
 
     reason TEXT,
     stripe_refund_id VARCHAR(255),
@@ -890,13 +1010,125 @@ CREATE TABLE public.refunds (
         FOREIGN KEY (booking_id, user_id, location_id)
         REFERENCES public.bookings (id, user_id, location_id),
 
+    CONSTRAINT fk_refunds_payment_attempt
+        FOREIGN KEY (payment_attempt_id)
+        REFERENCES public.payment_attempts (id),
+
     CONSTRAINT fk_refunds_requested_by
         FOREIGN KEY (requested_by_user_id)
         REFERENCES auth.users (id),
 
     CONSTRAINT uq_refunds_stripe_refund
-        UNIQUE (stripe_refund_id)
+        UNIQUE (stripe_refund_id),
+
+    CONSTRAINT ck_refunds_amount_positive
+        CHECK (amount_cents > 0)
 );
+
+CREATE UNIQUE INDEX uq_refunds_active_booking
+    ON public.refunds (booking_id)
+    WHERE status IN ('PENDING', 'SUCCEEDED');
+
+-- Whether a booking can be refunded now: confirmed and paid, inside the
+-- window (by_staff: until the end of the session day; otherwise until
+-- refund_cutoff_days before it, location time), and no active refund.
+-- plpgsql so it can use effective_booking_status (schema/0009) at run time.
+CREATE FUNCTION public.booking_is_refundable(
+    p_booking_id UUID,
+    p_by_staff BOOLEAN
+)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.bookings b
+        JOIN public.location_service_days d
+            ON d.id = b.location_service_day_id
+        JOIN public.location_service_config lsc
+            ON lsc.location_service_id = d.location_service_id
+        JOIN tenancy.locations l
+            ON l.id = b.location_id
+        WHERE b.id = p_booking_id
+          AND public.effective_booking_status(b.booking_status, b.created_at) = 'CONFIRMED'
+          AND b.payment_status = 'PAID'
+          AND (now() AT TIME ZONE l.timezone)::date <= CASE
+                  WHEN p_by_staff THEN d.service_date
+                  ELSE d.service_date - lsc.refund_cutoff_days
+              END
+          AND NOT EXISTS (
+              SELECT 1
+              FROM public.refunds r
+              WHERE r.booking_id = b.id
+                AND r.status IN ('PENDING', 'SUCCEEDED')
+          )
+    );
+END;
+$$;
+
+-- A new refund must be for a refundable booking (by the requester's role),
+-- and takes its amount, currency and payment from the booking.
+CREATE FUNCTION public.enforce_refund_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    -- Checked first so it reads as "already requested", not "can't be
+    -- refunded" (booking_is_refundable is false while one is pending too).
+    -- uq_refunds_active_booking still catches two requests at once.
+    IF EXISTS (
+        SELECT 1
+        FROM public.refunds r
+        WHERE r.booking_id = NEW.booking_id
+          AND r.status IN ('PENDING', 'SUCCEEDED')
+    ) THEN
+        RAISE EXCEPTION 'Booking % already has a refund', NEW.booking_id
+            USING ERRCODE = 'unique_violation',
+                  CONSTRAINT = 'uq_refunds_active_booking',
+                  TABLE = 'refunds',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF NOT public.booking_is_refundable(
+        NEW.booking_id,
+        COALESCE(auth.is_location_staff(NEW.location_id), FALSE)
+    ) THEN
+        RAISE EXCEPTION 'Booking % can''t be refunded', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_refunds_booking_refundable',
+                  TABLE = 'refunds',
+                  SCHEMA = 'public';
+    END IF;
+
+    SELECT b.price_snapshot_cents, b.currency, pa.id
+    INTO NEW.amount_cents, NEW.currency, NEW.payment_attempt_id
+    FROM public.bookings b
+    JOIN public.payment_attempts pa
+        ON pa.booking_group_id = b.booking_group_id
+       AND pa.stripe_status = 'SUCCEEDED'
+       AND pa.stripe_payment_intent_id IS NOT NULL
+    WHERE b.id = NEW.booking_id;
+
+    -- Paid, but with nothing in Stripe to refund against.
+    IF NEW.payment_attempt_id IS NULL THEN
+        RAISE EXCEPTION 'Booking % has no refundable payment', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_refunds_booking_refundable',
+                  TABLE = 'refunds',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_refunds_rules
+    BEFORE INSERT ON public.refunds
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_refund_rules();
 
 
 -- =====================================================

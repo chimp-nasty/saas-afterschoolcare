@@ -37,13 +37,31 @@ export const load: LayoutLoad = async ({
 	const sessionResponse =
 		await authApi.getSession();
 
-	const session =
+	const loggedIn =
 		sessionResponse.ok && sessionResponse.data
 			? {
 					userId: sessionResponse.data.user_id,
 					email: sessionResponse.data.email,
 					firstName: sessionResponse.data.first_name,
-					roles: sessionResponse.data.roles
+					roles: sessionResponse.data.roles,
+					locationCode: sessionResponse.data.location_code,
+					locationName: sessionResponse.data.location_name
+				}
+			: null;
+
+	// Logins are per location: a session only counts at its own location.
+	// Elsewhere the user is treated as logged out (no nav, protected pages
+	// go to the landing page), which shows where they're logged in instead.
+	const session =
+		loggedIn && loggedIn.locationCode === locationCode
+			? loggedIn
+			: null;
+
+	const signedInElsewhere =
+		loggedIn && !session
+			? {
+					locationCode: loggedIn.locationCode,
+					locationName: loggedIn.locationName ?? loggedIn.locationCode
 				}
 			: null;
 
@@ -66,6 +84,7 @@ export const load: LayoutLoad = async ({
 		locationCode,
 		location: locationResponse.data,
 		session,
+		signedInElsewhere,
 		uncitedActionCount
 	};
 };

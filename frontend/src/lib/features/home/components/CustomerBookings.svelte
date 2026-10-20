@@ -5,7 +5,7 @@
 
 	import type { BookingTableResponse } from '$lib/api/schema';
 	import { BOOKING_STATUS_LABELS } from '$lib/features/bookings/status';
-	import { formatDate } from '$lib/utils/helpers';
+	import { formatDate, formatTimeRange } from '$lib/utils/helpers';
 
 	type Day = {
 		date: Date;
@@ -250,7 +250,7 @@
 						</p>
 
 						<p class="text-sm text-(--text-muted)">
-							{booking.service_name}
+							{booking.service_name} · {formatTimeRange(booking.start_time, booking.end_time)}
 							{#if booking.booking_status === 'PENDING'}
 								· <span class="font-semibold text-(--primary)">{BOOKING_STATUS_LABELS.PENDING}</span>
 							{/if}

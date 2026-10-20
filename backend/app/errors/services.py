@@ -1,5 +1,3 @@
-from datetime import date
-
 from fastapi import status
 
 from app.errors.base import ApplicationError
@@ -11,7 +9,7 @@ class LocationServiceNotFoundError(ApplicationError):
     result = "failed"
 
 
-class LocationServiceNotLinkedError(ApplicationError):
+class LocationServiceNotPricedError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
-    message = "This service is not linked to a Stripe product"
+    message = "Set a price above $0 before offering this service"
     result = "failed"

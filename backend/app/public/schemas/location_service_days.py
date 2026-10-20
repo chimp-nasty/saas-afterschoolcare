@@ -20,3 +20,12 @@ class LocationServiceDayTableResponse(BaseModel):
 
     is_open: bool
     capacity: int
+
+    # Places left for anyone (every family's live bookings counted).
+    places_left: int
+
+    # The caller's own children already booked this day.
+    booked_child_ids: list[UUID]
+
+    # Today or earlier, location time: can't be booked.
+    is_past: bool

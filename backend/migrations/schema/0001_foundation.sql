@@ -68,6 +68,14 @@ CREATE TYPE public.payment_status_enum AS ENUM (
     'FAILED'
 );
 
+-- A Stripe refund of one booking. Stripe's requires_action stays PENDING;
+-- its canceled counts as FAILED.
+CREATE TYPE public.refund_status_enum AS ENUM (
+    'PENDING',
+    'SUCCEEDED',
+    'FAILED'
+);
+
 CREATE TYPE public.pickup_relation_enum AS ENUM (
     'account_holder',
     'grandparent',

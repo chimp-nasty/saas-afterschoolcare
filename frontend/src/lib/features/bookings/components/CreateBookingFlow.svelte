@@ -5,7 +5,11 @@
 <script lang="ts">
     import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Button from "$lib/components/actions/Button.svelte";
+    import Card from "$lib/components/layout/Card.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+
+    import { formatTimeRange } from "$lib/utils/helpers";
+    import { latePolicy, refundPolicy } from "$lib/features/services/policies";
 
     import SelectService from "./SelectService.svelte";
     import SelectChildDates from "./SelectChildDates.svelte";
@@ -101,6 +105,7 @@
                     lines: dates.map((date) => ({
                         date,
                         serviceName: service.service_name,
+                        time: formatTimeRange(service.start_time, service.end_time),
                         priceCents: service.current_price_cents,
                     })),
                 };
@@ -115,7 +120,7 @@
 
     let isSubmitting = $state(false);
 
-    async function confirm() {
+    async function submitBooking() {
         isSubmitting = true;
 
         try {
@@ -167,12 +172,24 @@
         children={reviewChildren}
     />
 
+    <!-- What they're agreeing to before paying. -->
+    <Card border>
+        <ul class="flex flex-col gap-1 text-sm text-(--text-muted)">
+            <li>You'll pay by card on the next screen.</li>
+            <li>{refundPolicy(selectedService.refund_cutoff_days)}</li>
+
+            {#if latePolicy(selectedService)}
+                <li>{latePolicy(selectedService)}</li>
+            {/if}
+        </ul>
+    </Card>
+
     <ActionBar sticky>
         <Button variant="ghost" onclick={back}>
             Back
         </Button>
 
-        <Button onclick={confirm} isLoading={isSubmitting}>
+        <Button onclick={submitBooking} isLoading={isSubmitting}>
             Continue to payment
         </Button>
     </ActionBar>

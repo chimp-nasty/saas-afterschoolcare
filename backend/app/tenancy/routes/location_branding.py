@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from app.api.response import ApiResponse
-from app.dependencies.auth import resolve_location_id
+from app.dependencies.auth import resolve_location_id, resolve_tenant_id
 from app.dependencies.db import get_db
 from app.dependencies.service import get_service
 from app.core.cache.cache import cached
@@ -17,6 +17,30 @@ router = APIRouter(
     prefix="/location-branding/v1",
     tags=["location-branding"],
 )
+
+
+@router.get("/public")
+def list_public_locations(
+    tenant_id: UUID = Depends(
+        resolve_tenant_id,
+    ),
+    service: LocationBrandingService = Depends(
+        get_service(
+            LocationBrandingService,
+            db_dependency=get_db,
+        )
+    ),
+) -> ApiResponse[list[PublicLocationResponse]]:
+    # The tenant's landing page ("/"), before login: its centres to choose from.
+    result = service.list_public_locations(
+        tenant_id=tenant_id,
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Fetched public locations",
+        data=result,
+    )
 
 
 @router.get("/public/{location_code}")

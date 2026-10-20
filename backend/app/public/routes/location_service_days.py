@@ -37,6 +37,7 @@ def list_location_service_days(
     ),
 ) -> ApiResponse[list[LocationServiceDayTableResponse]]:
     result = service.list_with_filters(
+        user_id=ctx.user_id,
         filters=filters,
     )
 

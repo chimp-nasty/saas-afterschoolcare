@@ -1,81 +1,215 @@
-import uuid
+"""
+A location's services (created with the location) and their config (what
+an admin sets: price, times, policies). Both are public, for the landing
+page; only admins change the config.
+"""
+
+from contextlib import contextmanager
 
 from tests.factories import Api
 
 
-# Stripe is replaced by tests.factories.FakeStripe for every test (conftest).
+def _service(client, name: str) -> dict:
+    services = client.get("/location-services/v1/").json()["data"]
+
+    return next(s for s in services if s["service_name"] == name)
 
 
-def _service_id(admin, name: str) -> str:
-    services = admin.get("/location-services/v1/").json()["data"]
-    return next(s["id"] for s in services if s["service_name"] == name)
+@contextmanager
+def _restored_config(api: Api, service_id: str):
+    """Put a service's config back after a test (every test shares it)."""
+    [row] = api.sql(
+        "SELECT is_active, current_price_cents, start_time, end_time, description, late_fee_cents "
+        "FROM public.location_service_config WHERE location_service_id = :id",
+        id=service_id,
+    )
+    try:
+        yield
+    finally:
+        api.sql(
+            "UPDATE public.location_service_config SET is_active = :is_active, "
+            "current_price_cents = :price, start_time = :start_time, end_time = :end_time, "
+            "description = :description, late_fee_cents = :late_fee "
+            "WHERE location_service_id = :id",
+            is_active=row.is_active,
+            price=row.current_price_cents,
+            start_time=row.start_time,
+            end_time=row.end_time,
+            description=row.description,
+            late_fee=row.late_fee_cents,
+            id=service_id,
+        )
 
 
-# A customer can list the location's services (the dev seed has four).
+# A customer can list the location's services (the dev seed offers all
+# four), each with its times and policies.
 def test_list_location_services(customer):
     response = customer.client.get("/location-services/v1/")
+
+    assert response.status_code == 200
+    services = response.json()["data"]
+    assert len(services) == 4
+
+    after_school = next(s for s in services if s["service_name"] == "After School Care")
+    assert (after_school["start_time"], after_school["end_time"]) == ("15:00:00", "18:00:00")
+    assert after_school["refund_cutoff_days"] == 2
+    assert (after_school["min_child_age"], after_school["max_child_age"]) == (8, 17)
+
+
+# Before login, the landing page can list a location's services.
+def test_public_services_need_no_login(api: Api):
+    response = api.client().get("/location-services/v1/public/location1")
 
     assert response.status_code == 200
     assert len(response.json()["data"]) == 4
 
 
-# An admin can change a service's price when it's linked to a Stripe
-# product, and the new price shows in the list. The service is put back
-# afterwards, since other tests share it.
-def test_update_price(api: Api, admin):
-    service_id = _service_id(admin, "Weekend Care")
-    [(product, price, currency)] = api.sql(
-        "SELECT stripe_product_id, current_price_cents, currency "
-        "FROM public.location_services WHERE id = :id",
-        id=service_id,
-    )
-    api.sql(
-        "UPDATE public.location_services SET stripe_product_id = :product WHERE id = :id",
-        product=f"prod_test_{uuid.uuid4().hex[:8]}",
-        id=service_id,
+# Another tenant's services never show, logged in or not.
+def test_public_services_are_per_location(api: Api, tenant2_admin):
+    tenant1 = {s["id"] for s in api.client().get("/location-services/v1/public/location1").json()["data"]}
+    tenant2 = {s["id"] for s in tenant2_admin.get("/location-services/v1/").json()["data"]}
+
+    assert tenant1.isdisjoint(tenant2)
+
+
+# A new location gets every service type, each with a config from the type's
+# defaults, not offered until an admin prices it.
+def test_new_location_gets_its_services(api: Api):
+    [(location_id,)] = api.sql(
+        "INSERT INTO tenancy.locations (tenant_id, code, address_line_1, suburb, state, postcode) "
+        "SELECT id, 'new-location', '9 Test Street', 'Brisbane City', 'QLD', '4000' "
+        "FROM tenancy.tenants WHERE code = 'tenant2' "
+        "RETURNING id"
     )
 
-    try:
+    rows = api.sql(
+        "SELECT st.code, lsc.is_active, lsc.current_price_cents, lsc.start_time = st.default_start_time "
+        "FROM public.location_services ls "
+        "JOIN public.service_types st ON st.id = ls.service_type_id "
+        "JOIN public.location_service_config lsc ON lsc.location_service_id = ls.id "
+        "WHERE ls.location_id = :location_id",
+        location_id=location_id,
+    )
+
+    assert len(rows) == 4
+    assert all(not is_active and price == 0 and default_times for _, is_active, price, default_times in rows)
+
+
+# An admin can change a service's price, times, description and late fee;
+# the list shows the change.
+def test_admin_updates_service_config(api: Api, admin):
+    service = _service(admin, "Weekend Care")
+
+    with _restored_config(api, service["id"]):
         response = admin.patch(
-            f"/location-services/v1/{service_id}/price",
-            json={"amount_cents": 7500, "currency": "AUD"},
+            f"/location-services/v1/{service['id']}/config",
+            json={
+                "current_price_cents": 7500,
+                "start_time": "09:00",
+                "end_time": "16:00",
+                "description": "  Sport and games  ",
+                "late_fee_cents": 2500,
+            },
         )
 
-        assert response.status_code == 200
-        services = admin.get("/location-services/v1/").json()["data"]
-        assert next(s for s in services if s["id"] == service_id)["current_price_cents"] == 7500
-    finally:
-        api.sql(
-            "UPDATE public.location_services "
-            "SET stripe_product_id = :product, current_price_cents = :price, currency = :currency "
-            "WHERE id = :id",
-            product=product,
-            price=price,
-            currency=currency,
-            id=service_id,
+        assert response.status_code == 200, response.text
+        updated = _service(admin, "Weekend Care")
+        assert updated["current_price_cents"] == 7500
+        assert (updated["start_time"], updated["end_time"]) == ("09:00:00", "16:00:00")
+        assert updated["description"] == "Sport and games"
+        assert updated["late_fee_cents"] == 2500
+
+
+# A service can't be offered for $0, and can't end before it starts.
+def test_service_config_rules(api: Api, admin):
+    service = _service(admin, "Weekend Care")
+
+    with _restored_config(api, service["id"]):
+        response = admin.patch(
+            f"/location-services/v1/{service['id']}/config",
+            json={"current_price_cents": 0},
         )
+        assert response.status_code == 400
+        assert "price above $0" in response.json()["msg"]
+
+        response = admin.patch(
+            f"/location-services/v1/{service['id']}/config",
+            json={"start_time": "17:00", "end_time": "09:00"},
+        )
+        assert response.status_code == 400
 
 
-# A price can't be changed for a service that isn't linked to a Stripe
-# product (400).
-def test_update_price_requires_stripe_product(admin):
-    # The dev seed doesn't link Vacation Care to Stripe.
+# A service that isn't offered disappears from the list and can't be booked.
+def test_service_not_offered_cannot_be_booked(api: Api, admin, customer):
+    service = _service(admin, "After School Care")
+    child = api.new_child(customer)
+    day = api.service_day()
+
+    with _restored_config(api, service["id"]):
+        admin.patch(f"/location-services/v1/{service['id']}/config", json={"is_active": False})
+
+        assert service["id"] not in [s["id"] for s in admin.get("/location-services/v1/").json()["data"]]
+
+        response = api.book(customer, {child["id"]: [day]})
+        assert response.status_code == 400
+        assert response.json()["msg"] == "This service isn't currently offered"
+
+
+# Changing a service that doesn't exist (or is another location's) is 404.
+def test_update_unknown_service_config(admin):
     response = admin.patch(
-        f"/location-services/v1/{_service_id(admin, 'Vacation Care')}/price",
-        json={"amount_cents": 7500, "currency": "AUD"},
-    )
-
-    assert response.status_code == 400
-
-
-# Changing the price of a service that doesn't exist returns 404.
-def test_update_price_unknown_service(admin):
-    response = admin.patch(
-        "/location-services/v1/00000000-0000-0000-0000-000000000000/price",
-        json={"amount_cents": 7500, "currency": "AUD"},
+        "/location-services/v1/00000000-0000-0000-0000-000000000000/config",
+        json={"current_price_cents": 7500},
     )
 
     assert response.status_code == 404
+
+
+# A booking's review line carries its session times.
+def test_booking_lines_have_session_times(api: Api, customer):
+    child = api.new_child(customer)
+    data = api.book(customer, {child["id"]: [api.service_day()]}).json()["data"]
+
+    [line] = customer.client.get(f"/booking/v1/groups/{data['booking_group_id']}").json()["data"]["bookings"]
+
+    assert (line["start_time"], line["end_time"]) == ("15:00:00", "18:00:00")
+
+
+# The public location details include its address and contact details.
+def test_public_location_has_its_address(api: Api):
+    response = api.client().get("/location-branding/v1/public/location1")
+
+    assert response.status_code == 200
+    location = response.json()["data"]
+    assert location["address_line_1"] == "1 Placeholder Street"
+    assert (location["suburb"], location["state"], location["postcode"]) == ("Brisbane City", "QLD", "4000")
+    assert location["latitude"] is None
+
+
+# The tenant's landing page ("/") lists its centres, before login, and never
+# another tenant's.
+def test_public_locations_list_the_tenants_centres(api: Api):
+    tenant1 = api.client().get("/location-branding/v1/public")
+    tenant2 = api.client(tenant="tenant2").get("/location-branding/v1/public")
+
+    assert tenant1.status_code == 200
+    assert tenant2.status_code == 200, tenant2.text
+    assert {loc["location_code"] for loc in tenant1.json()["data"]} >= {"location1", "location2"}
+    assert {loc["tenant_code"] for loc in tenant2.json()["data"]} == {"tenant2"}
+
+
+# A location saved without a name is still listed, under its code, rather
+# than breaking the public pages.
+def test_public_location_without_a_name_uses_its_code(api: Api):
+    api.sql(
+        "INSERT INTO tenancy.locations (tenant_id, code, address_line_1, suburb, state, postcode) "
+        "SELECT id, 'unnamed', '8 Test Street', 'Brisbane City', 'QLD', '4000' "
+        "FROM tenancy.tenants WHERE code = 'tenant2'"
+    )
+
+    locations = api.client(tenant="tenant2").get("/location-branding/v1/public").json()["data"]
+
+    assert next(loc for loc in locations if loc["location_code"] == "unnamed")["location_name"] == "unnamed"
 
 
 # The service days list returns every matching day rather than stopping at a

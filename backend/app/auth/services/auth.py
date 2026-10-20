@@ -14,14 +14,18 @@ from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.auth.repositories.password_reset_token import PasswordResetTokenRepository
 from app.auth.repositories.rls_context import RlsContextRepository
+from app.auth.jwt.context import TokenContext
+from app.tenancy.repositories.location import LocationRepository
 from app.auth.schemas.auth import (
     LoginRequest,
     ResetPasswordRequest,
     ForgotPasswordRequest,
+    SessionResponse,
 )
 from app.errors.auth import (
     AuthenticationFailedError,
-    InvalidPasswordResetError
+    InvalidPasswordResetError,
+    JwtInvalidError,
 )
 
 
@@ -36,6 +40,7 @@ class AuthService:
         location_user_roles: LocationUserRoleRepository,
         password_reset_tokens: PasswordResetTokenRepository,
         rls_context: RlsContextRepository,
+        locations: LocationRepository,
     ):
         self.db = db
         self.users = users
@@ -44,6 +49,28 @@ class AuthService:
         self.location_user_roles = location_user_roles
         self.password_reset_tokens = password_reset_tokens
         self.rls_context = rls_context
+        self.locations = locations
+
+    def get_session(
+        self,
+        *,
+        ctx: TokenContext,
+    ) -> SessionResponse:
+        """Who's logged in, and at which location (from their token)."""
+        location = self.locations.get_by_id(id=ctx.location_id)
+
+        if not location:
+            raise JwtInvalidError()
+
+        return SessionResponse(
+            user_id=ctx.user_id,
+            email=ctx.email,
+            first_name=ctx.first_name,
+            roles=ctx.roles,
+            location_id=location.id,
+            location_code=location.code,
+            location_name=location.name,
+        )
 
     @transactional
     def login(

@@ -110,13 +110,14 @@ def test_tenants_see_only_their_own_services(admin, tenant2_admin):
     assert tenant1.isdisjoint(tenant2)
 
 
-# A customer isn't allowed to change service prices (403 forbidden).
-def test_customer_cannot_update_prices(admin, customer):
+# A customer isn't allowed to change a service's config, such as its price
+# (403 forbidden).
+def test_customer_cannot_update_service_config(admin, customer):
     service_id = admin.get("/location-services/v1/").json()["data"][0]["id"]
 
     response = customer.client.patch(
-        f"/location-services/v1/{service_id}/price",
-        json={"amount_cents": 1, "currency": "AUD"},
+        f"/location-services/v1/{service_id}/config",
+        json={"current_price_cents": 1},
     )
 
     assert response.status_code == 403

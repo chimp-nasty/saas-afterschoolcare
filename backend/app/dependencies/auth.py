@@ -60,11 +60,15 @@ def require_permission(
     return dependency
 
 
-def resolve_location_id(
-    location_code: str,
-    origin: str | None = Header(default=None),
-    db: Session = Depends(get_db),
-) -> UUID:
+def _resolve_tenant(
+    *,
+    origin: str | None,
+    db: Session,
+):
+    """
+    The tenant whose site the request came from: tenant1.<BASE_DOMAIN>, or a
+    tenant's own custom domain.
+    """
     if not origin:
         raise LocationNotFoundError()
 
@@ -76,7 +80,6 @@ def resolve_location_id(
     hostname = hostname.lower()
 
     tenants = TenantRepository(db=db)
-    locations = LocationRepository(db=db)
 
     base_domain = settings.BASE_DOMAIN.lower()
     generated_domain_suffix = f".{base_domain}"
@@ -98,7 +101,24 @@ def resolve_location_id(
     if not tenant:
         raise LocationNotFoundError()
 
-    location = locations.get_by_tenant_and_code(
+    return tenant
+
+
+def resolve_tenant_id(
+    origin: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> UUID:
+    return _resolve_tenant(origin=origin, db=db).id
+
+
+def resolve_location_id(
+    location_code: str,
+    origin: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+) -> UUID:
+    tenant = _resolve_tenant(origin=origin, db=db)
+
+    location = LocationRepository(db=db).get_by_tenant_and_code(
         tenant_id=tenant.id,
         code=location_code,
     )

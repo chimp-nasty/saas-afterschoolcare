@@ -116,6 +116,7 @@ class ReadBookingService:
                 {booking.booking_status for booking in bookings}
             ),
             paid_at=payment.paid_at if payment else None,
+            receipt_url=payment.stripe_receipt_url if payment else None,
             total_cents=sum(
                 booking.price_snapshot_cents
                 for booking in bookings

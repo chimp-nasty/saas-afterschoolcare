@@ -4,7 +4,8 @@
 	import Spinner from '$lib/components/feedback/Spinner.svelte';
 	import { ACTION_BAR } from './ActionBar.svelte';
 
-	type Variant = 'default' | 'ghost' | 'hyperlink' | 'menu';
+	// danger: the confirm button of a destructive confirmation (ConfirmDialog).
+	type Variant = 'default' | 'ghost' | 'danger' | 'hyperlink' | 'menu';
 	type TextSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
 
 	type Props = {
@@ -85,6 +86,19 @@
 			focus-visible:ring-0
 			focus-visible:border-(--primary-hover)
 			focus-visible:bg-(--primary-hover)
+		`,
+
+		danger: `
+			border border-(--danger)
+			bg-(--danger)
+			px-5 py-3
+			font-extrabold uppercase tracking-wider
+			text-white
+			shadow-none
+			hover:brightness-95
+			active:scale-[0.99]
+			focus-visible:ring-0
+			focus-visible:brightness-95
 		`,
 
 		ghost: `
