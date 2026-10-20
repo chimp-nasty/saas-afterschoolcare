@@ -39,9 +39,9 @@
 
     <Card border>
         <p class="text-sm text-(--text-muted)">
-            Their first kiosk PIN is 1111. They'll choose their own the first
-            time they sign in at the centre, and staff will check their photo
-            ID before they can collect.
+            We'll email them a kiosk PIN, which they'll change the first time
+            they sign in at the centre. Staff check their photo ID before they
+            can collect.
         </p>
     </Card>
 </Page>

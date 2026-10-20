@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.public.schemas.enums import PickupRelation
 from app.public.schemas.phone import normalise_au_phone
@@ -19,6 +19,7 @@ class PickupResponse(BaseModel):
     first_name: str
     last_name: str
     phone: str
+    email: str
 
     relation: PickupRelation
     relation_other: str | None
@@ -27,9 +28,16 @@ class PickupResponse(BaseModel):
     # editable or removable here.
     is_account_holder: bool
 
+    # Staff checked their photo ID.
     identity_verified: bool
 
-    # False while they're still on the default kiosk PIN.
+    # Staff approved them to collect (an ID check approves them too).
+    staff_approved: bool
+
+    # A kiosk PIN has been emailed to them.
+    kiosk_pin_issued: bool
+
+    # They've chosen their own PIN at the kiosk (not still on the emailed one).
     kiosk_pin_set: bool
 
     created_at: datetime
@@ -51,6 +59,8 @@ class CreatePickupRequest(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str
+    # Their kiosk PIN is emailed here.
+    email: EmailStr
 
     relation: PickupRelation
     relation_other: str | None = Field(default=None, max_length=100)
@@ -85,12 +95,13 @@ class CreatePickupRequest(BaseModel):
 class UpdatePickupRequest(BaseModel):
     """
     Only the fields sent are updated. A new name or phone means staff check
-    their ID again; a new phone also resets their kiosk PIN (schema/0004).
+    their ID again; a new email gets them a new kiosk PIN (schema/0004).
     """
 
     first_name: str | None = Field(default=None, min_length=1, max_length=100)
     last_name: str | None = Field(default=None, min_length=1, max_length=100)
     phone: str | None = None
+    email: EmailStr | None = None
 
     relation: PickupRelation | None = None
     relation_other: str | None = Field(default=None, max_length=100)

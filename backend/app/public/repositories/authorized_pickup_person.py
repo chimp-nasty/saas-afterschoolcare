@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import case
+from sqlalchemy import case, func, select
 
 from app.db.repository import Repository
 from app.db.models import AuthorizedPickupPerson
@@ -10,8 +10,8 @@ from app.public.schemas.enums import PickupRelation
 
 class AuthorizedPickupPersonRepository(Repository):
     """
-    The ID check and kiosk fields are set only by staff and the database
-    (schema/0004); nothing here writes them.
+    The ID check and approval are set only by staff, and PIN fields only by
+    public.issue_pickup_pin() (schema/0004); nothing here writes them.
     """
 
     def create(
@@ -22,6 +22,7 @@ class AuthorizedPickupPersonRepository(Repository):
         first_name: str,
         last_name: str,
         phone: str,
+        email: str,
         relation: PickupRelation,
         relation_other: str | None,
         consent_confirmed_at: datetime,
@@ -33,6 +34,7 @@ class AuthorizedPickupPersonRepository(Repository):
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            email=email,
             relation=relation,
             relation_other=relation_other,
             consent_confirmed_at=consent_confirmed_at,
@@ -54,6 +56,40 @@ class AuthorizedPickupPersonRepository(Repository):
             .filter(AuthorizedPickupPerson.id == id)
             .first()
         )
+
+    def get_account_holder(
+        self,
+        *,
+        user_id: UUID,
+        location_id: UUID,
+    ) -> AuthorizedPickupPerson | None:
+        return (
+            self.db.query(AuthorizedPickupPerson)
+            .filter(
+                AuthorizedPickupPerson.user_id == user_id,
+                AuthorizedPickupPerson.location_id == location_id,
+                AuthorizedPickupPerson.relation == PickupRelation.ACCOUNT_HOLDER,
+                AuthorizedPickupPerson.is_active,
+            )
+            .first()
+        )
+
+    def issue_pin(
+        self,
+        *,
+        person: AuthorizedPickupPerson,
+    ) -> str:
+        """
+        A new random PIN for the person (its hash stored, to be changed at
+        the next kiosk login). Returns it once, to email; it isn't kept.
+        """
+        pin = self.db.execute(
+            select(func.public.issue_pickup_pin(person.id))
+        ).scalar_one()
+
+        self.db.refresh(person)
+
+        return pin
 
     def list_active(self) -> list[AuthorizedPickupPerson]:
         """The active list RLS lets the user see: account holder first."""

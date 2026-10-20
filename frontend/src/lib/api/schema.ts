@@ -1229,6 +1229,11 @@ export interface components {
             last_name: string;
             /** Phone */
             phone: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
             relation: components["schemas"]["PickupRelation"];
             /** Relation Other */
             relation_other?: string | null;
@@ -1410,6 +1415,8 @@ export interface components {
             last_name: string;
             /** Phone */
             phone: string;
+            /** Email */
+            email: string;
             relation: components["schemas"]["PickupRelation"];
             /** Relation Other */
             relation_other: string | null;
@@ -1417,6 +1424,10 @@ export interface components {
             is_account_holder: boolean;
             /** Identity Verified */
             identity_verified: boolean;
+            /** Staff Approved */
+            staff_approved: boolean;
+            /** Kiosk Pin Issued */
+            kiosk_pin_issued: boolean;
             /** Kiosk Pin Set */
             kiosk_pin_set: boolean;
             /**
@@ -1621,7 +1632,7 @@ export interface components {
         /**
          * UpdatePickupRequest
          * @description Only the fields sent are updated. A new name or phone means staff check
-         *     their ID again; a new phone also resets their kiosk PIN (schema/0004).
+         *     their ID again; a new email gets them a new kiosk PIN (schema/0004).
          */
         UpdatePickupRequest: {
             /** First Name */
@@ -1630,6 +1641,8 @@ export interface components {
             last_name?: string | null;
             /** Phone */
             phone?: string | null;
+            /** Email */
+            email?: string | null;
             relation?: components["schemas"]["PickupRelation"] | null;
             /** Relation Other */
             relation_other?: string | null;

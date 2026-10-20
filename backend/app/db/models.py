@@ -286,15 +286,18 @@ class LocationUserRole(Base):
 class AuthorizedPickupPerson(Base):
     __tablename__ = 'authorized_pickup_persons'
     __table_args__ = (
+        CheckConstraint("email::text ~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'::text", name='ck_authorized_pickup_persons_email_format'),
         CheckConstraint('failed_pin_attempts >= 0', name='ck_authorized_pickup_persons_failed_pin_attempts'),
         CheckConstraint("phone::text ~ '^[0-9]{8,15}$'::text", name='ck_authorized_pickup_persons_phone_format'),
         CheckConstraint("relation = 'account_holder'::pickup_relation_enum OR consent_confirmed_at IS NOT NULL AND adult_confirmed_at IS NOT NULL", name='ck_authorized_pickup_persons_declarations'),
         CheckConstraint("relation = 'other'::pickup_relation_enum) = (relation_other IS NOT NULL AND btrim(relation_other::text) <> ''::text", name='ck_authorized_pickup_persons_relation_other'),
         ForeignKeyConstraint(['identity_verified_by_user_id'], ['auth.users.id'], name='fk_authorized_pickup_persons_verified_by'),
         ForeignKeyConstraint(['location_id', 'tenant_id'], ['tenancy.locations.id', 'tenancy.locations.tenant_id'], name='fk_authorized_pickup_persons_location'),
+        ForeignKeyConstraint(['staff_approved_by_user_id'], ['auth.users.id'], name='fk_authorized_pickup_persons_approved_by'),
         ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_authorized_pickup_persons_user'),
         PrimaryKeyConstraint('id', name='authorized_pickup_persons_pkey'),
         Index('uq_authorized_pickup_persons_account_holder', 'user_id', 'location_id', postgresql_where="(is_active AND (relation = 'account_holder'::pickup_relation_enum))", unique=True),
+        Index('uq_authorized_pickup_persons_family_email', 'user_id', 'location_id', postgresql_where='is_active', unique=True),
         Index('uq_authorized_pickup_persons_family_phone', 'user_id', 'location_id', 'phone', postgresql_where='is_active', unique=True),
         {'schema': 'public'}
     )
@@ -306,7 +309,9 @@ class AuthorizedPickupPerson(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[str] = mapped_column(String(15), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
     relation: Mapped[PickupRelationEnum] = mapped_column(Enum(PickupRelationEnum, values_callable=lambda cls: [member.value for member in cls], name='pickup_relation_enum'), nullable=False)
+    pin_change_required: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     failed_pin_attempts: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('0'))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
@@ -316,9 +321,11 @@ class AuthorizedPickupPerson(Base):
     adult_confirmed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     identity_verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     identity_verified_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    staff_approved_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    staff_approved_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     pin_hash: Mapped[Optional[str]] = mapped_column(Text)
     pin_locked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    kiosk_pin_reset_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    pin_reset_requested_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 

@@ -50,7 +50,7 @@ os.environ.update(
 os.environ["APP_ENV"] = "test"
 
 
-from tests.factories import Api, FakeStripe, FakeStripeState  # noqa: E402  (needs the env above)
+from tests.factories import Api, FakeEmail, FakeEmailState, FakeStripe, FakeStripeState  # noqa: E402  (needs the env above)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -77,6 +77,24 @@ def fake_stripe(monkeypatch) -> type[FakeStripe]:
         monkeypatch.setattr(f"{module}.StripeClient", FakeStripe)
 
     return FakeStripe
+
+
+@pytest.fixture(autouse=True)
+def fake_email(monkeypatch) -> type[FakeEmail]:
+    """
+    Every service that sends email records it on the fake instead, with
+    fresh state per test.
+    """
+    monkeypatch.setattr(FakeEmail, "state", FakeEmailState())
+
+    for module in (
+        "app.public.services.pickups_create",
+        "app.public.services.pickups_update",
+        "app.public.services.children_create",
+    ):
+        monkeypatch.setattr(f"{module}.EmailClient", FakeEmail)
+
+    return FakeEmail
 
 
 @pytest.fixture(scope="session")

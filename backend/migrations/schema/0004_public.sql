@@ -428,33 +428,39 @@ CREATE TABLE public.child_notes (
 -- every child on the account. Each person is also a kiosk login (phone and
 -- 4-digit PIN) for signing children in and out on a registered device.
 --
---   * one phone number belongs to one family across the whole tenant (the
---     same family may be listed at several of its locations)
---   * the account holder's row is kept in sync with their name and profile
---     phone (sync_account_holder_pickups); families can't edit or remove it
---   * only staff set the ID check and kiosk fields
---     (trg_authorized_pickup_persons_rules)
---   * changing a name or phone resets the ID check; changing the phone also
---     resets the kiosk PIN (it's a new login)
+--   * a phone number and an email each belong to one family across the
+--     whole tenant (the same family may be listed at several locations)
+--   * the account holder's row is kept in sync with their name, login email
+--     and profile phone (sync_account_holder_pickups); families can't edit
+--     or remove it
+--   * releasing a child needs staff approval: checking photo ID approves
+--     the person automatically; staff can also approve someone without ID
+--     (e.g. they're known to the centre). A new name or phone clears both.
+--     Only staff set these (trg_authorized_pickup_persons_rules).
 --
--- Kiosk PIN: pin_hash NULL means the default PIN 1111, which must be
--- changed at the next kiosk login. Five wrong PINs lock the person
--- (pin_locked_at), not the device, until staff reset it. A staff reset sets
--- kiosk_pin_reset_at: if the default PIN isn't changed within 30 minutes of
--- it, it stops working and staff must reset it again.
+-- Kiosk PIN: staff never handle PINs. A random PIN is issued by
+-- issue_pickup_pin() and emailed to the person (never shown in the app):
+-- when they're added, when their email changes, and for the account holder
+-- after their first child is added. Only its hash is stored. pin_hash NULL
+-- means none issued yet. An issued PIN must be changed at the next kiosk
+-- login (pin_change_required); after that, changes and "forgot PIN" happen
+-- only at the kiosk (a new PIN emailed). Five wrong PINs lock the person
+-- (pin_locked_at), not the device, until a reset.
 CREATE TABLE public.authorized_pickup_persons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     user_id UUID NOT NULL,
     location_id UUID NOT NULL,
     -- Set from the location by trg_authorized_pickup_persons_rules, for the
-    -- tenant-wide phone rule.
+    -- tenant-wide phone and email rules.
     tenant_id UUID NOT NULL,
 
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     -- Digits only, so formatting can't get around the phone rules.
     phone VARCHAR(15) NOT NULL,
+    -- Where kiosk PINs are sent. Compared case-insensitively.
+    email VARCHAR(255) NOT NULL,
 
     relation public.pickup_relation_enum NOT NULL,
     relation_other VARCHAR(100),
@@ -463,13 +469,21 @@ CREATE TABLE public.authorized_pickup_persons (
     consent_confirmed_at TIMESTAMPTZ,
     adult_confirmed_at TIMESTAMPTZ,
 
+    -- Staff checked their photo ID.
     identity_verified_at TIMESTAMPTZ,
     identity_verified_by_user_id UUID,
 
+    -- Staff approved them to collect children (set by an ID check, or on
+    -- its own without ID). The kiosk only lets approved people sign out.
+    staff_approved_at TIMESTAMPTZ,
+    staff_approved_by_user_id UUID,
+
     pin_hash TEXT,
+    pin_change_required BOOLEAN NOT NULL DEFAULT TRUE,
     failed_pin_attempts SMALLINT NOT NULL DEFAULT 0,
     pin_locked_at TIMESTAMPTZ,
-    kiosk_pin_reset_at TIMESTAMPTZ,
+    -- The last "forgot PIN" at the kiosk, for rate limiting resets.
+    pin_reset_requested_at TIMESTAMPTZ,
 
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -488,8 +502,15 @@ CREATE TABLE public.authorized_pickup_persons (
         FOREIGN KEY (identity_verified_by_user_id)
         REFERENCES auth.users (id),
 
+    CONSTRAINT fk_authorized_pickup_persons_approved_by
+        FOREIGN KEY (staff_approved_by_user_id)
+        REFERENCES auth.users (id),
+
     CONSTRAINT ck_authorized_pickup_persons_phone_format
         CHECK (phone ~ '^[0-9]{8,15}$'),
+
+    CONSTRAINT ck_authorized_pickup_persons_email_format
+        CHECK (email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
 
     -- "Other" needs its own wording; every other relation has none.
     CONSTRAINT ck_authorized_pickup_persons_relation_other
@@ -515,12 +536,25 @@ CREATE TABLE public.authorized_pickup_persons (
             phone WITH =,
             user_id WITH <>
         )
+        WHERE (is_active),
+
+    -- The same for emails (a PIN reset must find one person's family).
+    CONSTRAINT ex_authorized_pickup_persons_tenant_email
+        EXCLUDE USING gist (
+            tenant_id WITH =,
+            (lower(email)) WITH =,
+            user_id WITH <>
+        )
         WHERE (is_active)
 );
 
--- A family lists a phone number once.
+-- A family lists a phone number, and an email, once.
 CREATE UNIQUE INDEX uq_authorized_pickup_persons_family_phone
     ON public.authorized_pickup_persons (user_id, location_id, phone)
+    WHERE is_active;
+
+CREATE UNIQUE INDEX uq_authorized_pickup_persons_family_email
+    ON public.authorized_pickup_persons (user_id, location_id, lower(email))
     WHERE is_active;
 
 -- One account holder row per family per location.
@@ -535,10 +569,11 @@ CREATE TRIGGER trg_authorized_pickup_persons_updated_at
 -- The rules every write to a pickup row goes through. SECURITY DEFINER:
 -- counts the family's rows and checks the writer's role past RLS.
 --
--- The staff-only fields are protected for writes made as a logged-in user
--- (app.user_id set, as every RLS request is). Writes with no user session
--- are trusted server code: migrations, maintenance, and the kiosk endpoints
--- still to be built (which change PIN fields without a staff login).
+-- Who may set what (writes with no user session are trusted server code:
+-- migrations, maintenance, and the kiosk endpoints still to be built):
+--   * ID check and staff approval: staff only
+--   * PIN fields: only issue_pickup_pin() (and, later, the kiosk), never a
+--     family or staff member directly
 CREATE FUNCTION public.enforce_pickup_person_rules()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -546,6 +581,8 @@ SECURITY DEFINER
 SET search_path = pg_catalog, public
 AS $$
 DECLARE
+    v_user_session BOOLEAN := auth.current_user_id() IS NOT NULL;
+    v_pin_writer BOOLEAN := current_setting('app.pin_writer', true) = 'on';
     v_others INTEGER;
 BEGIN
     SELECT l.tenant_id
@@ -554,25 +591,37 @@ BEGIN
     WHERE l.id = NEW.location_id;
 
     NEW.phone := regexp_replace(NEW.phone, '\D', '', 'g');
+    NEW.email := btrim(NEW.email);
 
-    -- ID check and kiosk fields: staff only. A family's write can't set
-    -- them on a new row or change them on an existing one.
-    IF auth.current_user_id() IS NOT NULL
-       AND NOT auth.is_location_staff(NEW.location_id) THEN
+    -- ID check and approval: a non-staff write can't set or change them.
+    IF v_user_session AND NOT auth.is_location_staff(NEW.location_id) THEN
         IF TG_OP = 'INSERT' THEN
             NEW.identity_verified_at := NULL;
             NEW.identity_verified_by_user_id := NULL;
-            NEW.pin_hash := NULL;
-            NEW.failed_pin_attempts := 0;
-            NEW.pin_locked_at := NULL;
-            NEW.kiosk_pin_reset_at := NULL;
+            NEW.staff_approved_at := NULL;
+            NEW.staff_approved_by_user_id := NULL;
         ELSE
             NEW.identity_verified_at := OLD.identity_verified_at;
             NEW.identity_verified_by_user_id := OLD.identity_verified_by_user_id;
+            NEW.staff_approved_at := OLD.staff_approved_at;
+            NEW.staff_approved_by_user_id := OLD.staff_approved_by_user_id;
+        END IF;
+    END IF;
+
+    -- PIN fields: only through issue_pickup_pin() (or trusted code).
+    IF v_user_session AND NOT v_pin_writer THEN
+        IF TG_OP = 'INSERT' THEN
+            NEW.pin_hash := NULL;
+            NEW.pin_change_required := TRUE;
+            NEW.failed_pin_attempts := 0;
+            NEW.pin_locked_at := NULL;
+            NEW.pin_reset_requested_at := NULL;
+        ELSE
             NEW.pin_hash := OLD.pin_hash;
+            NEW.pin_change_required := OLD.pin_change_required;
             NEW.failed_pin_attempts := OLD.failed_pin_attempts;
             NEW.pin_locked_at := OLD.pin_locked_at;
-            NEW.kiosk_pin_reset_at := OLD.kiosk_pin_reset_at;
+            NEW.pin_reset_requested_at := OLD.pin_reset_requested_at;
         END IF;
     END IF;
 
@@ -583,15 +632,24 @@ BEGIN
            OR NEW.phone IS DISTINCT FROM OLD.phone THEN
             NEW.identity_verified_at := NULL;
             NEW.identity_verified_by_user_id := NULL;
+            NEW.staff_approved_at := NULL;
+            NEW.staff_approved_by_user_id := NULL;
         END IF;
 
-        -- A new phone is a new kiosk login: back to the default PIN.
-        IF NEW.phone IS DISTINCT FROM OLD.phone THEN
+        -- A new email: the old PIN may have gone to the wrong address, so
+        -- it stops working until a new one is issued (to the new address).
+        IF lower(NEW.email) IS DISTINCT FROM lower(OLD.email) THEN
             NEW.pin_hash := NULL;
+            NEW.pin_change_required := TRUE;
             NEW.failed_pin_attempts := 0;
             NEW.pin_locked_at := NULL;
-            NEW.kiosk_pin_reset_at := NULL;
         END IF;
+    END IF;
+
+    -- Checking ID approves the person (approval can also be given alone).
+    IF NEW.identity_verified_at IS NOT NULL AND NEW.staff_approved_at IS NULL THEN
+        NEW.staff_approved_at := NEW.identity_verified_at;
+        NEW.staff_approved_by_user_id := NEW.identity_verified_by_user_id;
     END IF;
 
     -- At most three people besides the account holder. The lock makes two
@@ -629,10 +687,59 @@ CREATE TRIGGER trg_authorized_pickup_persons_rules
     BEFORE INSERT OR UPDATE ON public.authorized_pickup_persons
     FOR EACH ROW EXECUTE FUNCTION public.enforce_pickup_person_rules();
 
+-- Issue a pickup person a new random 4-digit PIN: store its hash, require
+-- it to be changed at the next kiosk login, clear any lock, and return the
+-- PIN once so the caller can email it. It's never stored or shown anywhere
+-- else. SECURITY DEFINER: the only way PIN fields change from a user
+-- session (trg_authorized_pickup_persons_rules); it checks the caller can
+-- reach the person first.
+CREATE FUNCTION public.issue_pickup_pin(p_pickup_id UUID)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_pin TEXT;
+BEGIN
+    IF auth.current_user_id() IS NOT NULL AND NOT EXISTS (
+        SELECT 1
+        FROM public.authorized_pickup_persons p
+        WHERE p.id = p_pickup_id
+          AND p.is_active
+          AND auth.can_access_location_row(p.location_id, p.user_id)
+    ) THEN
+        RAISE EXCEPTION 'Pickup person % not found', p_pickup_id
+            USING ERRCODE = 'no_data_found';
+    END IF;
+
+    -- 0000-9999 from a cryptographic source (the modulo bias is negligible).
+    v_pin := lpad(
+        (('x' || encode(gen_random_bytes(2), 'hex'))::bit(16)::integer % 10000)::text,
+        4,
+        '0'
+    );
+
+    PERFORM set_config('app.pin_writer', 'on', true);
+
+    UPDATE public.authorized_pickup_persons
+    SET pin_hash = crypt(v_pin, gen_salt('bf')),
+        pin_change_required = TRUE,
+        failed_pin_attempts = 0,
+        pin_locked_at = NULL
+    WHERE id = p_pickup_id;
+
+    PERFORM set_config('app.pin_writer', 'off', true);
+
+    RETURN v_pin;
+END;
+$$;
+
 -- Keep a user's account holder rows (one per location where they're a
--- customer) matching their name and profile phone. Creates them once the
--- profile has a phone. A cleared phone leaves the rows as they are.
--- SECURITY DEFINER: writes the rows past RLS for the trigger callers below.
+-- customer) matching their name, login email and profile phone. Creates
+-- them once the profile has a phone. A cleared phone leaves the rows as
+-- they are. SECURITY DEFINER: writes the rows past RLS for the trigger
+-- callers below.
 CREATE FUNCTION public.sync_account_holder_pickups(p_user_id UUID)
 RETURNS void
 LANGUAGE plpgsql
@@ -643,6 +750,7 @@ DECLARE
     v_phone TEXT;
     v_first_name VARCHAR(100);
     v_last_name VARCHAR(100);
+    v_email VARCHAR(255);
     v_location_id UUID;
 BEGIN
     SELECT NULLIF(regexp_replace(cp.phone, '\D', '', 'g'), '')
@@ -654,8 +762,8 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT u.first_name, u.last_name
-    INTO v_first_name, v_last_name
+    SELECT u.first_name, u.last_name, u.email
+    INTO v_first_name, v_last_name, v_email
     FROM auth.users u
     WHERE u.id = p_user_id;
 
@@ -670,18 +778,19 @@ BEGIN
         UPDATE public.authorized_pickup_persons
         SET first_name = v_first_name,
             last_name = v_last_name,
+            email = v_email,
             phone = v_phone
         WHERE user_id = p_user_id
           AND location_id = v_location_id
           AND relation = 'account_holder'
           AND is_active
-          AND (first_name, last_name, phone)
-              IS DISTINCT FROM (v_first_name, v_last_name, v_phone);
+          AND (first_name, last_name, lower(email), phone)
+              IS DISTINCT FROM (v_first_name, v_last_name, lower(v_email), v_phone);
 
         INSERT INTO public.authorized_pickup_persons (
-            user_id, location_id, first_name, last_name, phone, relation
+            user_id, location_id, first_name, last_name, phone, email, relation
         )
-        SELECT p_user_id, v_location_id, v_first_name, v_last_name, v_phone, 'account_holder'
+        SELECT p_user_id, v_location_id, v_first_name, v_last_name, v_phone, v_email, 'account_holder'
         WHERE NOT EXISTS (
             SELECT 1
             FROM public.authorized_pickup_persons p
@@ -694,8 +803,8 @@ BEGIN
 END;
 $$;
 
--- Callers: a profile phone change, a name change, or becoming a customer
--- at another location.
+-- Callers: a profile phone change, a name or email change, or becoming a
+-- customer at another location.
 CREATE FUNCTION public.trg_sync_account_holder_pickups()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -716,7 +825,7 @@ CREATE TRIGGER trg_customer_profile_account_holder_pickup
     FOR EACH ROW EXECUTE FUNCTION public.trg_sync_account_holder_pickups();
 
 CREATE TRIGGER trg_users_account_holder_pickup
-    AFTER UPDATE OF first_name, last_name ON auth.users
+    AFTER UPDATE OF first_name, last_name, email ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.trg_sync_account_holder_pickups();
 
 CREATE TRIGGER trg_location_user_roles_account_holder_pickup

@@ -24,6 +24,8 @@ from app.errors.refunds import (
 )
 from app.errors.pickups import (
     PickupConsentRequiredError,
+    PickupEmailOnListError,
+    PickupEmailTakenError,
     PickupLimitReachedError,
     PickupPhoneInvalidError,
     PickupPhoneOnListError,
@@ -61,6 +63,8 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "uq_authorized_pickup_persons_family_phone": PickupPhoneOnListError,
     "ex_authorized_pickup_persons_tenant_phone": PickupPhoneTakenError,
     "ck_authorized_pickup_persons_phone_format": PickupPhoneInvalidError,
+    "uq_authorized_pickup_persons_family_email": PickupEmailOnListError,
+    "ex_authorized_pickup_persons_tenant_email": PickupEmailTakenError,
     "ck_authorized_pickup_persons_limit": PickupLimitReachedError,
     "ck_child_profile_pickup_consent": PickupConsentRequiredError,
     # Refunds (schema/0004): the window and one active refund per booking.

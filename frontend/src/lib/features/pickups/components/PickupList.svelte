@@ -43,7 +43,8 @@
             data={[
                 { label: "Relationship", value: relationLabel(pickup) },
                 { label: "Phone", value: formatPhone(pickup.phone) },
-                { label: "ID check", value: pickup.identity_verified ? "Checked" : "Not yet checked" },
+                { label: "Email", value: pickup.email },
+                { label: "Can collect", value: pickup.identity_verified ? "Yes, ID checked" : pickup.staff_approved ? "Yes, approved by staff" : "After staff check their ID" },
             ]}
         />
     {:else}

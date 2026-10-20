@@ -33,6 +33,18 @@ class PickupPhoneTakenError(ApplicationError):
     result = "denied"
 
 
+class PickupEmailOnListError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "This email is already on your pickup list."
+    result = "failed"
+
+
+class PickupEmailTakenError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "This email is already registered at this centre. Use a different email, or contact the centre."
+    result = "denied"
+
+
 class PickupPhoneInvalidError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "Enter a valid Australian phone number"

@@ -1,7 +1,7 @@
 <!--
     Edit or remove a pickup person. Changing the name or phone of someone
-    whose ID staff have checked means they're checked again (and a new phone
-    also resets their kiosk PIN), so that asks for confirmation first.
+    staff have checked or approved means they're checked again; a new email
+    gets them a new kiosk PIN. Both ask for confirmation first.
 -->
 <script lang="ts">
     import { goto, invalidate } from "$app/navigation";
@@ -39,13 +39,18 @@
 
     function confirmIdRecheck(changesPhone: boolean): Promise<boolean> {
         const what = changesPhone ? "phone number" : "name";
-        const pin = changesPhone
-            ? " Their kiosk PIN will also go back to 1111, and they'll choose a new one when they next sign in."
-            : "";
 
         return confirmAction({
             title: "Their ID will need checking again",
-            message: `Changing ${pickup.first_name}'s ${what} means staff will check their photo ID again at their next pickup.${pin}`,
+            message: `Changing ${pickup.first_name}'s ${what} means staff will check their photo ID again at their next pickup.`,
+            confirmLabel: "Save changes",
+        });
+    }
+
+    function confirmNewPin(email: string): Promise<boolean> {
+        return confirmAction({
+            title: "We'll email a new kiosk PIN",
+            message: `${pickup.first_name}'s old PIN will stop working, and a new one will be emailed to ${email}.`,
             confirmLabel: "Save changes",
         });
     }
@@ -58,11 +63,16 @@
             values.first_name.trim() !== pickup.first_name ||
             values.last_name.trim() !== pickup.last_name;
         const changesPhone = digits(values.phone) !== pickup.phone;
+        const changesEmail = values.email.trim().toLowerCase() !== pickup.email.toLowerCase();
 
-        if (pickup.identity_verified && (changesName || changesPhone)) {
+        if (pickup.staff_approved && (changesName || changesPhone)) {
             if (!(await confirmIdRecheck(changesPhone))) {
                 return CANCELLED;
             }
+        }
+
+        if (changesEmail && !(await confirmNewPin(values.email.trim()))) {
+            return CANCELLED;
         }
 
         const response = await pickupsApi.update(pickup.id, values);
@@ -105,10 +115,14 @@
         <p class="text-sm text-(--text-muted)">
             {pickup.identity_verified
                 ? "Staff have checked their photo ID."
-                : "Staff will check their photo ID the first time they collect."}
+                : pickup.staff_approved
+                    ? "Staff have approved them to collect."
+                    : "Staff will check their photo ID the first time they collect."}
             {pickup.kiosk_pin_set
                 ? "They've set their own kiosk PIN."
-                : "Their kiosk PIN is 1111 until they choose their own at the centre."}
+                : pickup.kiosk_pin_issued
+                    ? "We've emailed them a kiosk PIN; they'll change it the first time they sign in."
+                    : "Their kiosk PIN hasn't been sent yet."}
         </p>
     </Card>
 

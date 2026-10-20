@@ -15,11 +15,14 @@ def to_pickup_response(person: AuthorizedPickupPerson) -> PickupResponse:
         first_name=person.first_name,
         last_name=person.last_name,
         phone=person.phone,
+        email=person.email,
         relation=person.relation,
         relation_other=person.relation_other,
         is_account_holder=person.relation == PickupRelation.ACCOUNT_HOLDER,
         identity_verified=person.identity_verified_at is not None,
-        kiosk_pin_set=person.pin_hash is not None,
+        staff_approved=person.staff_approved_at is not None,
+        kiosk_pin_issued=person.pin_hash is not None,
+        kiosk_pin_set=person.pin_hash is not None and not person.pin_change_required,
         created_at=person.created_at,
     )
 

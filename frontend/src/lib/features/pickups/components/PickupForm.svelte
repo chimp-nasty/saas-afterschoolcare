@@ -12,6 +12,7 @@
 		first_name: string;
 		last_name: string;
 		phone: string;
+		email: string;
 		relation: PickupRelation;
 		relation_other: string | null;
 	};
@@ -29,6 +30,7 @@
 		first_name: string;
 		last_name: string;
 		phone: string;
+		email: string;
 		relation: PickupRelation | '';
 		relation_other: string;
 		consent_confirmed: boolean;
@@ -57,6 +59,7 @@
 			first_name: pickup?.first_name ?? '',
 			last_name: pickup?.last_name ?? '',
 			phone: pickup?.phone ?? '',
+			email: pickup?.email ?? '',
 			relation: pickup?.relation ?? '',
 			relation_other: pickup?.relation_other ?? '',
 			consent_confirmed: false,
@@ -78,6 +81,7 @@
 			first_name: body.first_name,
 			last_name: body.last_name,
 			phone: body.phone,
+			email: body.email,
 			relation: body.relation as PickupRelation,
 			relation_other: body.relation === 'other' ? body.relation_other : null
 		};
@@ -116,6 +120,16 @@
 			<input {id} type="tel" inputmode="tel" autocomplete="off" bind:value={body.phone} required />
 		{/snippet}
 	</Field>
+
+	<Field label="Email" error={errors.email}>
+		{#snippet children(id)}
+			<input {id} type="email" inputmode="email" autocomplete="off" maxlength="255" bind:value={body.email} required />
+		{/snippet}
+	</Field>
+
+	<p class="text-sm text-(--text-muted)">
+		Their kiosk PIN is emailed here, never shown in the app.
+	</p>
 
 	<Field label="Relationship" error={errors.relation}>
 		{#snippet children(id)}

@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.db.transaction import transactional
+from app.integrations.email.client import EmailClient
 from app.errors.auth import UserNotFoundError
 from app.errors.children import ChildAgeOutOfRangeError
 from app.errors.customer import (
@@ -12,6 +13,7 @@ from app.errors.customer import (
 )
 
 from app.db.models import CustomerProfile, User
+from app.public.repositories.authorized_pickup_person import AuthorizedPickupPersonRepository
 from app.public.repositories.child_profile import ChildProfileRepository
 from app.public.repositories.customer_profile import CustomerProfileRepository
 from app.public.repositories.location_service import LocationServiceRepository
@@ -29,12 +31,15 @@ class CreateChildService:
         *,
         db: Session,
         child_repository: ChildProfileRepository,
+        pickup_repository: AuthorizedPickupPersonRepository,
         customer_profile_repository: CustomerProfileRepository,
         location_service_repository: LocationServiceRepository,
         user_repository: UserRepository,
     ):
         self.db = db
         self.child_repository = child_repository
+        self.pickup_repository = pickup_repository
+        self.email = EmailClient()
         self.customer_profile_repository = customer_profile_repository
         self.location_service_repository = location_service_repository
         self.user_repository = user_repository
@@ -76,7 +81,19 @@ class CreateChildService:
 
         # The account holder is already on the pickup list (their row is
         # kept in sync with their profile, schema/0004), and everyone on it
-        # may collect every child.
+        # may collect every child. Their first child gets them a kiosk PIN,
+        # emailed to their login email.
+        holder = self.pickup_repository.get_account_holder(
+            user_id=user_id,
+            location_id=location_id,
+        )
+
+        if holder and holder.pin_hash is None:
+            self.email.send_kiosk_pin(
+                to_email=holder.email,
+                first_name=holder.first_name,
+                pin=self.pickup_repository.issue_pin(person=holder),
+            )
 
         self.db.flush()
 

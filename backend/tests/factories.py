@@ -27,6 +27,28 @@ COMPLETE_PROFILE = {
 PASSWORD = "Password123"
 
 
+def new_email(name: str = "pickup") -> str:
+    return f"{name}-{uuid.uuid4().hex[:12]}@test.com"
+
+
+@dataclass
+class FakeEmailState:
+    """Emails the app would have sent, for tests to inspect."""
+
+    kiosk_pins: list[dict] = field(default_factory=list)
+
+
+class FakeEmail:
+    """Stands in for EmailClient in every service (patched in conftest)."""
+
+    state = FakeEmailState()
+
+    def send_kiosk_pin(self, *, to_email, first_name, pin):
+        self.state.kiosk_pins.append(
+            {"to_email": to_email, "first_name": first_name, "pin": pin}
+        )
+
+
 def new_phone() -> str:
     """A unique-enough Australian mobile number."""
     return "04" + str(uuid.uuid4().int)[:8]

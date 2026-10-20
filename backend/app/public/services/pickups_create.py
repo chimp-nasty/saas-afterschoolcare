@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.db.transaction import transactional
+from app.integrations.email.client import EmailClient
 from app.public.repositories.authorized_pickup_person import AuthorizedPickupPersonRepository
 from app.public.schemas.pickups import CreatePickupRequest, PickupResponse
 from app.public.services.pickups_read import to_pickup_response
@@ -11,8 +12,9 @@ from app.public.services.pickups_read import to_pickup_response
 
 class CreatePickupService:
     """
-    A family adding someone to their pickup list. The limit of three and the
-    phone rules are enforced by the database (schema/0004).
+    A family adding someone to their pickup list, who is then emailed a
+    kiosk PIN. The limit of three and the phone and email rules are enforced
+    by the database (schema/0004).
     """
 
     def __init__(
@@ -23,6 +25,7 @@ class CreatePickupService:
     ):
         self.db = db
         self.pickup_repository = pickup_repository
+        self.email = EmailClient()
 
     @transactional
     def create(
@@ -41,10 +44,18 @@ class CreatePickupService:
             first_name=body.first_name,
             last_name=body.last_name,
             phone=body.phone,
+            email=body.email,
             relation=body.relation,
             relation_other=body.relation_other,
             consent_confirmed_at=confirmed_at,
             adult_confirmed_at=confirmed_at,
+        )
+
+        # Sent to them, never shown in the app.
+        self.email.send_kiosk_pin(
+            to_email=person.email,
+            first_name=person.first_name,
+            pin=self.pickup_repository.issue_pin(person=person),
         )
 
         return to_pickup_response(person)
