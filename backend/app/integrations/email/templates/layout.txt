@@ -1,0 +1,14 @@
+{#- The plain-text version of layout.html, for mail apps that don't show HTML. -#}
+{{ heading }}
+
+{% for paragraph in paragraphs -%}
+{{ paragraph }}
+
+{% endfor -%}
+{% include "blocks/" ~ email_type ~ ".txt" %}
+
+{{ sign_off }}
+
+--
+{{ footer_reason }}
+{{ centre.name }}{% if centre.email %} · {{ centre.email }}{% endif %}{% if centre.phone %} · {{ centre.phone }}{% endif %}

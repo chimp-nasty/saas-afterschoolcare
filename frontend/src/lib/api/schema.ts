@@ -38,7 +38,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/v1/forgot-password": {
+    "/auth/v1/forgot-password/{location_code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -48,7 +48,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Forgot Password */
-        post: operations["forgot_password_auth_v1_forgot_password_post"];
+        post: operations["forgot_password_auth_v1_forgot_password__location_code__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2166,11 +2166,15 @@ export interface operations {
             };
         };
     };
-    forgot_password_auth_v1_forgot_password_post: {
+    forgot_password_auth_v1_forgot_password__location_code__post: {
         parameters: {
             query?: never;
-            header?: never;
-            path?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
             cookie?: never;
         };
         requestBody: {

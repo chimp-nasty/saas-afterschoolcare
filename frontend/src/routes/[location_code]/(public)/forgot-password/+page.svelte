@@ -17,7 +17,7 @@
 		description="We'll email you a link to choose a new password."
 	/>
 
-	<ForgotPasswordForm onsubmit={(body) => authApi.forgotPassword(body)} />
+	<ForgotPasswordForm onsubmit={(body) => authApi.forgotPassword(page.data.locationCode, body)} />
 
 	<div class="flex justify-center">
 		<HyperTextLink href={`/${page.data.locationCode}/login`}>

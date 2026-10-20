@@ -1,0 +1,4 @@
+Refund reference: {{ reference }}
+Amount refunded: {{ amount }}
+
+View bookings: {{ bookings_url }}

@@ -3,8 +3,11 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.auth.repositories.user import UserRepository
 from app.db.transaction import transactional
 from app.errors.children import ChildProfileInactiveError, ChildProfileNotFoundError
+from app.integrations.email.messages import ChildApprovedEmail, DocumentsRequestedEmail
+from app.integrations.email.outbox import EmailOutbox
 from app.public.repositories.action import ActionRepository
 from app.public.repositories.child_medical_state import ChildMedicalStateRepository
 from app.public.repositories.child_profile import ChildProfileRepository
@@ -29,8 +32,9 @@ class UpdateMedicalReviewService:
     allowed, recording the reviewer and clearing an old request all happen
     in the database (trg_child_medical_state_rules, schema/0004).
 
-    The family is told through an action that links to the child's page.
-    Email follows with the email slice.
+    The family is told twice: an action in the app that links to the
+    child's page (with the staff message), and an email that only says
+    there's something to look at (docs/email-policy.md).
     """
 
     def __init__(
@@ -40,11 +44,14 @@ class UpdateMedicalReviewService:
         medical_state_repository: ChildMedicalStateRepository,
         child_repository: ChildProfileRepository,
         action_repository: ActionRepository,
+        user_repository: UserRepository,
     ):
         self.db = db
         self.medical_state_repository = medical_state_repository
         self.child_repository = child_repository
         self.action_repository = action_repository
+        self.user_repository = user_repository
+        self.emails = EmailOutbox(db)
 
     @transactional
     def decide(
@@ -73,6 +80,15 @@ class UpdateMedicalReviewService:
             documentation_request=body.message if requesting else None,
         )
 
+        # Staff outrank the family, so RLS lets them read the account holder.
+        family = self.user_repository.get_by_id(id=child.user_id)
+        recipient = dict(
+            location_id=child.location_id,
+            user_id=family.id,
+            to_email=family.email,
+            first_name=family.first_name,
+        )
+
         if requesting:
             self.action_repository.create(
                 user_id=child.user_id,
@@ -83,6 +99,11 @@ class UpdateMedicalReviewService:
                 title=f"Documents needed for {child.first_name}",
                 message=body.message,
             )
+            self.emails.queue(DocumentsRequestedEmail(
+                **recipient,
+                child_id=child.id,
+                child_first_name=child.first_name,
+            ))
         # Approving again changes nothing, so there's nothing to tell.
         elif not already_approved:
             self.action_repository.create(
@@ -94,6 +115,10 @@ class UpdateMedicalReviewService:
                 title=f"{child.first_name} is cleared for bookings",
                 message=f"The centre has reviewed {child.first_name}'s medical details. You can now book sessions.",
             )
+            self.emails.queue(ChildApprovedEmail(
+                **recipient,
+                child_first_name=child.first_name,
+            ))
 
         logger.info(
             "Medical review decided",

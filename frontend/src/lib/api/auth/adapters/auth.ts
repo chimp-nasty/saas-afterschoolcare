@@ -28,9 +28,10 @@ export function createAuthApi(
 			);
 		},
 
-		forgotPassword(body: ForgotPasswordRequest) {
+		// Per location, like login: the email comes from that centre.
+		forgotPassword(locationCode: string, body: ForgotPasswordRequest) {
 			return apiWrapper<null>(
-				`${baseUrl}/forgot-password`,
+				`${baseUrl}/forgot-password/${locationCode}`,
 				{
 					method: 'POST',
 					body,

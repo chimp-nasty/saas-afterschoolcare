@@ -196,24 +196,6 @@ class Tenant(Base):
 
 
 
-class PasswordResetToken(Base):
-    __tablename__ = 'password_reset_tokens'
-    __table_args__ = (
-        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_password_reset_tokens_user'),
-        PrimaryKeyConstraint('id', name='password_reset_tokens_pkey'),
-        UniqueConstraint('token_hash', name='uq_password_reset_tokens_token_hash'),
-        {'schema': 'auth'}
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
-    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
-    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    used_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-
-
-
 class RolePermission(Base):
     __tablename__ = 'role_permissions'
     __table_args__ = (
@@ -329,6 +311,26 @@ class LocationUserRole(Base):
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class PasswordResetToken(Base):
+    __tablename__ = 'password_reset_tokens'
+    __table_args__ = (
+        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_password_reset_tokens_location'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_password_reset_tokens_user'),
+        PrimaryKeyConstraint('id', name='password_reset_tokens_pkey'),
+        UniqueConstraint('token_hash', name='uq_password_reset_tokens_token_hash'),
+        {'schema': 'auth'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    used_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 

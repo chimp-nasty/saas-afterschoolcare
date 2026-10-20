@@ -21,12 +21,14 @@ def configure_middleware(app: FastAPI) -> None:
         route_limits={
             r"/auth/v1/login/[^/]+/?": (10, 60),
             r"/customer/v1/onboard/[^/]+/?": (5, 60),
-            r"/auth/v1/forgot-password/?": (5, 60),
+            r"/auth/v1/forgot-password/[^/]+/?": (5, 60),
             r"/auth/v1/reset-password/?": (10, 60),
         },
         exempt_paths={
             "/api/v1/webhooks/stripe",
             "/api/v1/webhooks/stripe/",
+            "/api/v1/webhooks/ses",
+            "/api/v1/webhooks/ses/",
         },
     )
 

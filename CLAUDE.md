@@ -46,12 +46,18 @@ Mind the file order: a SQL-language function body is checked when it's created, 
 - Staff-only fields on family-owned rows (medical review status, pickup ID checks and kiosk PINs) are enforced by triggers, not the API. Writes with no user session are trusted server code.
 - Families own their children and pickup people; staff and admins don't create them. Logins are per location, and a session only counts at its own location.
 
+### Email
+
+- What may go in an email is set by `docs/email-policy.md`: generic subjects, a child's first name at most, no health details, staff messages stay in the app. Add a new email to its table first.
+- Each email is a message class in `app/integrations/email/messages.py` holding only what that email may show; its wording and locked parts live in `catalogue.py` and `templates/`.
+- Services never send. They queue a message inside the transaction where the change happens (`self.emails = EmailOutbox(db)`, then `self.emails.queue(...)`); it's sent after that transaction commits and dropped if it rolls back (`app/integrations/email/outbox.py`). Queue only on a real change of state (webhooks repeat), and read the recipient through repositories so RLS applies.
 ### Tests
 
 - Integration tests run the real app against a real (disposable) database; each test makes its own users through `tests/factories.py`, so tests don't depend on each other. Shared rows (services, configs) changed by a test are put back afterwards.
 - Every test has a plain-English comment above it saying what it proves.
 - Stripe is replaced by `FakeStripe` in every test (`tests/conftest.py`); a new service that uses `StripeClient` must be added to its patch list.
+- Emails are recorded by `FakeEmail` through the outbox (one patch point); assert on them with the `sent_emails` fixture.
 
 ## Not built yet (MVP order)
 
-Documents + staff medical review → email (a real provider behind the stubbed `EmailClient`; kiosk PINs are emailed) → kiosk (sign in/out, PIN login/change/forgot, staff ID check and approval) → rest of the staff dashboard (including service day management) → tenant configuration and Stripe Connect.
+Kiosk (sign in/out, PIN login/change/forgot, staff ID check and approval) → rest of the staff dashboard (including service day management) → tenant configuration and Stripe Connect. Staff screens follow `docs/staff-platform.md`; email deployment steps (webhook subscription, SES tenants) are in `infra/email/ses/README.md`.

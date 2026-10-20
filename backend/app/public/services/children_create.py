@@ -4,7 +4,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.db.transaction import transactional
-from app.integrations.email.client import EmailClient
+from app.integrations.email.messages import KioskPinEmail
+from app.integrations.email.outbox import EmailOutbox
 from app.errors.auth import UserNotFoundError
 from app.errors.children import ChildAgeOutOfRangeError
 from app.errors.customer import (
@@ -39,7 +40,7 @@ class CreateChildService:
         self.db = db
         self.child_repository = child_repository
         self.pickup_repository = pickup_repository
-        self.email = EmailClient()
+        self.emails = EmailOutbox(db)
         self.customer_profile_repository = customer_profile_repository
         self.location_service_repository = location_service_repository
         self.user_repository = user_repository
@@ -89,11 +90,13 @@ class CreateChildService:
         )
 
         if holder and holder.pin_hash is None:
-            self.email.send_kiosk_pin(
+            self.emails.queue(KioskPinEmail(
+                location_id=holder.location_id,
+                pickup_person_id=holder.id,
                 to_email=holder.email,
                 first_name=holder.first_name,
                 pin=self.pickup_repository.issue_pin(person=holder),
-            )
+            ))
 
         self.db.flush()
 

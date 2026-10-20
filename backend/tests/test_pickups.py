@@ -5,6 +5,7 @@ login (phone and an emailed PIN), so a phone number and an email each belong
 to one family.
 """
 
+from app.integrations.email.messages import KioskPinEmail
 from tests.factories import Api, new_email, new_phone
 
 
@@ -77,7 +78,11 @@ def _pin_matches(api: Api, pickup_id: str, pin: str) -> bool:
 
 
 def _pins_sent_to(fake_email, email: str) -> list[str]:
-    return [sent["pin"] for sent in fake_email.state.kiosk_pins if sent["to_email"] == email]
+    return [
+        sent.pin
+        for sent in fake_email.state.messages
+        if isinstance(sent, KioskPinEmail) and sent.to_email == email
+    ]
 
 
 def _holder(customer) -> dict:

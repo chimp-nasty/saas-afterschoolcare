@@ -7,6 +7,7 @@ the session; staff and above until the end of the session day.
 from datetime import date
 
 from app.errors.payments import PaymentProviderError
+from app.integrations.email.messages import RefundConfirmationEmail
 from tests.factories import Api
 
 
@@ -243,3 +244,28 @@ def test_stripe_failure_leaves_a_refund_that_can_be_retried(api: Api, customer, 
     assert _line(customer, line["booking_group_id"])["refund_status"] == "FAILED"
 
     assert _refund(customer.client, line["id"]).status_code == 201
+
+
+# A completed refund emails the family once, even when Stripe repeats the
+# event.
+def test_completed_refund_emails_the_family_once(api: Api, customer, fake_stripe, sent_emails):
+    line, _ = _paid_booking(api, customer)
+    _refund(customer.client, line["id"])
+    stripe_refund_id = _stripe_refund_id(fake_stripe, line["id"])
+
+    api.refund_webhook("refund.updated", stripe_refund_id, status="succeeded")
+    api.refund_webhook("refund.updated", stripe_refund_id, status="succeeded")
+
+    [email] = sent_emails(RefundConfirmationEmail)
+    assert email.to_email == customer.email
+    assert email.reference.startswith("RF-")
+
+
+# A failed refund sends no confirmation.
+def test_failed_refund_sends_no_email(api: Api, customer, fake_stripe, sent_emails):
+    line, _ = _paid_booking(api, customer)
+    _refund(customer.client, line["id"])
+
+    api.refund_webhook("refund.failed", _stripe_refund_id(fake_stripe, line["id"]), status="failed")
+
+    assert sent_emails(RefundConfirmationEmail) == []

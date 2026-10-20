@@ -1,4 +1,5 @@
 from tests.factories import COMPLETE_PROFILE, Api
+from app.integrations.email.messages import WelcomeEmail
 
 
 # Signing up with an email that already has an account is refused (409).
@@ -69,3 +70,29 @@ def test_update_profile_rejects_unknown_state(customer):
     )
 
     assert response.status_code == 422
+
+
+# Signing up sends one welcome email to the new account.
+def test_signup_sends_a_welcome_email(api: Api, sent_emails):
+    customer = api.new_customer(complete_profile=False)
+
+    [email] = sent_emails(WelcomeEmail)
+    assert email.to_email == customer.email
+
+
+# A refused sign-up (email already taken) sends no welcome email.
+def test_refused_signup_sends_nothing(api: Api, customer, sent_emails):
+    before = len(sent_emails(WelcomeEmail))
+
+    api.client().post(
+        "/customer/v1/onboard/location1",
+        json={
+            "email": customer.email,
+            "password": "Password123",
+            "first_name": "Again",
+            "last_name": "Customer",
+            "terms_accepted": True,
+        },
+    )
+
+    assert len(sent_emails(WelcomeEmail)) == before

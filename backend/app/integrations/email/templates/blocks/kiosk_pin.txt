@@ -1,0 +1,3 @@
+Your PIN: {{ pin }}
+
+To collect a child, enter your mobile number and this PIN at the kiosk. It stops working if it isn't used within 30 days; if that happens, choose "Forgot PIN" at the kiosk for a new one. Don't share your PIN with anyone.

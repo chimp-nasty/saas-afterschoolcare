@@ -5,6 +5,7 @@ through an action, and uploading a document sends the child back to staff.
 A child with medical details can't be booked until approved.
 """
 
+from app.integrations.email.messages import ChildApprovedEmail, DocumentsRequestedEmail
 from tests.factories import Api, FakeStorage
 
 
@@ -226,3 +227,49 @@ def test_removed_child_cannot_be_reviewed(api: Api, customer, admin):
 
     response = _decide(admin, child["id"], "approved")
     assert response.status_code == 409, response.text
+
+
+# Approving emails the family that the child can be booked: to the account
+# holder, as the child's centre, with the child's first name only.
+def test_approval_emails_the_family(api: Api, customer, admin, sent_emails):
+    child = api.new_child(customer, medical_info="Asthma")
+
+    _decide(admin, child["id"], "approved")
+
+    [email] = sent_emails(ChildApprovedEmail)
+    assert email.to_email == customer.email
+    assert email.child_first_name == child["first_name"]
+    assert str(email.location_id) == child["location_id"]
+
+
+# Requesting documents emails the family a link to the child's documents,
+# without the staff message (it stays in the app).
+def test_documentation_request_emails_without_the_message(api: Api, customer, admin, sent_emails):
+    child = api.new_child(customer, medical_info="Asthma")
+
+    _decide(admin, child["id"], "documentation_requested", "Please upload the asthma plan.")
+
+    [email] = sent_emails(DocumentsRequestedEmail)
+    assert str(email.child_id) == child["id"]
+    assert "asthma" not in repr(email).lower()
+
+
+# Approving an approved child again sends nothing new.
+def test_approving_again_emails_nothing_new(api: Api, customer, admin, sent_emails):
+    child = api.new_child(customer, medical_info="Asthma")
+
+    _decide(admin, child["id"], "approved")
+    _decide(admin, child["id"], "approved")
+
+    assert len(sent_emails(ChildApprovedEmail)) == 1
+
+
+# A decision the database refuses (a request with no message) emails
+# nobody.
+def test_refused_decision_emails_nobody(api: Api, customer, admin, sent_emails):
+    child = api.new_child(customer, medical_info="Asthma")
+
+    response = _decide(admin, child["id"], "documentation_requested", "   ")
+    assert response.status_code == 400, response.text
+
+    assert sent_emails(ChildApprovedEmail, DocumentsRequestedEmail) == []

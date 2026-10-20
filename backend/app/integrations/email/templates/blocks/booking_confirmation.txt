@@ -1,0 +1,4 @@
+Booking reference: {{ reference }}
+Total paid: {{ total }}
+
+View booking: {{ bookings_url }}

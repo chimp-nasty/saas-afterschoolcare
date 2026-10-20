@@ -8,6 +8,8 @@ from app.core.security import hash_password, verify_password, hash_token
 from app.auth.jwt.tokens import TokenService
 from app.auth.jwt.context import PermissionMap
 from app.db.transaction import transactional
+from app.integrations.email.messages import PasswordChangedEmail, PasswordResetEmail
+from app.integrations.email.outbox import EmailOutbox
 from app.auth.repositories.user import UserRepository
 from app.auth.repositories.permission import PermissionRepository
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
@@ -50,6 +52,7 @@ class AuthService:
         self.password_reset_tokens = password_reset_tokens
         self.rls_context = rls_context
         self.locations = locations
+        self.emails = EmailOutbox(db)
 
     def get_session(
         self,
@@ -215,17 +218,28 @@ class AuthService:
             token=reset_token,
         )
 
+        # From the centre the reset was requested at.
+        self.emails.queue(PasswordChangedEmail(
+            location_id=reset_token.location_id,
+            user_id=user.id,
+            to_email=user.email,
+            first_name=user.first_name,
+        ))
+
     @transactional
     def request_password_reset(
         self,
         *,
-        body: ForgotPasswordRequest
+        body: ForgotPasswordRequest,
+        location_id: UUID,
     ) -> None:
         """
-        Create a password reset token for an existing user.
+        Email a reset link to a user who can log in at this location.
 
-        Stores only the hashed token and leaves delivery of the raw
-        token to the email integration.
+        Anyone else (an unknown email, or a user of another location) gets
+        nothing, and the caller can't tell the difference: the route answers
+        the same either way. Only the token's hash is stored; the raw token
+        exists only in the email.
         """
         # RLS hides users until the lookup email is set (see login).
         self.rls_context.set_login_email(
@@ -239,6 +253,17 @@ class AuthService:
         if not user:
             return
 
+        self.rls_context.set_user_id(
+            user_id=user.id,
+        )
+
+        # Logins are per location, so a reset is too.
+        if not self.location_user_roles.list_roles_by_user_and_location(
+            user_id=user.id,
+            location_id=location_id,
+        ):
+            return
+
         raw_token = token_urlsafe(32)
 
         token_hash = hash_token(
@@ -247,9 +272,18 @@ class AuthService:
 
         self.password_reset_tokens.create(
             user_id=user.id,
+            location_id=location_id,
             token_hash=token_hash,
             expires_at=(
                 datetime.now(timezone.utc)
                 + timedelta(minutes=30)
             ),
         )
+
+        self.emails.queue(PasswordResetEmail(
+            location_id=location_id,
+            user_id=user.id,
+            to_email=user.email,
+            first_name=user.first_name,
+            token=raw_token,
+        ))

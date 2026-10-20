@@ -90,19 +90,31 @@ def fake_stripe(monkeypatch) -> type[FakeStripe]:
 @pytest.fixture(autouse=True)
 def fake_email(monkeypatch) -> type[FakeEmail]:
     """
-    Every service that sends email records it on the fake instead, with
-    fresh state per test.
+    Every email is recorded on the fake instead of sent, with fresh state
+    per test. Queued emails are all sent through the outbox, so that's the
+    one place to patch.
     """
     monkeypatch.setattr(FakeEmail, "state", FakeEmailState())
-
-    for module in (
-        "app.public.services.pickups_create",
-        "app.public.services.pickups_update",
-        "app.public.services.children_create",
-    ):
-        monkeypatch.setattr(f"{module}.EmailClient", FakeEmail)
+    monkeypatch.setattr("app.integrations.email.outbox.EmailClient", FakeEmail)
 
     return FakeEmail
+
+
+@pytest.fixture
+def sent_emails(fake_email):
+    """
+    The emails sent so far in this test (messages, oldest first), or only
+    those of the given message types: sent_emails(ChildApprovedEmail). A
+    customer fixture has already been sent a welcome email.
+    """
+    def sent(*types):
+        return [
+            message
+            for message in fake_email.state.messages
+            if not types or isinstance(message, types)
+        ]
+
+    return sent
 
 
 @pytest.fixture(autouse=True)

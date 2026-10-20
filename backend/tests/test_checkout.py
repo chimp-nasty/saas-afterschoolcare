@@ -6,6 +6,7 @@ webhook moves payment state (see tests.factories.FakeStripe).
 import uuid
 
 from app.core.config import settings
+from app.integrations.email.messages import BookingConfirmationEmail
 from tests.factories import Api
 
 
@@ -333,3 +334,28 @@ def test_stripe_failures_become_a_502(api: Api, customer, fake_stripe, monkeypat
 
     assert response.status_code == 502
     assert response.json()["msg"] == "Payment provider error. Please try again."
+
+
+# A paid booking emails the family one confirmation (even when Stripe
+# repeats the event), with the total and a reference, and nothing about the
+# children or the days.
+def test_paid_booking_emails_a_confirmation(api: Api, customer, sent_emails):
+    data, _ = _booked(api, customer)
+    session_id = api.session_id(data["checkout_url"])
+
+    api.webhook("checkout.session.completed", session_id)
+    api.webhook("checkout.session.completed", session_id)
+
+    [email] = sent_emails(BookingConfirmationEmail)
+    assert email.to_email == customer.email
+    assert email.total_cents == data["amount"]
+    assert email.reference.startswith("BK-")
+
+
+# A checkout that expires unpaid sends no confirmation.
+def test_expired_checkout_sends_no_confirmation(api: Api, customer, sent_emails):
+    data, _ = _booked(api, customer)
+
+    api.webhook("checkout.session.expired", api.session_id(data["checkout_url"]))
+
+    assert sent_emails(BookingConfirmationEmail) == []

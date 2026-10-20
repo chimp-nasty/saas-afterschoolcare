@@ -27,10 +27,13 @@ CREATE TABLE auth.users (
 -- PASSWORD RESET TOKENS
 -- =====================================================
 
+-- A reset is requested at one location (the user must have a role there):
+-- its emails go out as that centre, linking back to its site.
 CREATE TABLE auth.password_reset_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     user_id UUID NOT NULL,
+    location_id UUID NOT NULL,
 
     token_hash TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -41,6 +44,11 @@ CREATE TABLE auth.password_reset_tokens (
     CONSTRAINT fk_password_reset_tokens_user
         FOREIGN KEY (user_id)
         REFERENCES auth.users (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_password_reset_tokens_location
+        FOREIGN KEY (location_id)
+        REFERENCES tenancy.locations (id)
         ON DELETE CASCADE,
 
     CONSTRAINT uq_password_reset_tokens_token_hash

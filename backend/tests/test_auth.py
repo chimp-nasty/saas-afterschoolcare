@@ -1,4 +1,5 @@
 from tests.factories import Api
+from app.integrations.email.messages import PasswordChangedEmail, PasswordResetEmail
 
 
 # After logging in, the session endpoint reports who you are and where: the
@@ -53,7 +54,7 @@ def test_no_session_without_login(api: Api):
 # reset token for that user.
 def test_forgot_password_creates_token_for_known_email(api: Api, customer):
     response = api.client().post(
-        "/auth/v1/forgot-password",
+        "/auth/v1/forgot-password/location1",
         json={"email": customer.email},
     )
 
@@ -76,11 +77,11 @@ def test_forgot_password_creates_token_for_known_email(api: Api, customer):
 def test_forgot_password_does_not_reveal_unknown_email(api: Api, customer):
     # Separate clients: the endpoint is rate limited per client.
     known = api.client().post(
-        "/auth/v1/forgot-password",
+        "/auth/v1/forgot-password/location1",
         json={"email": customer.email},
     )
     unknown = api.client().post(
-        "/auth/v1/forgot-password",
+        "/auth/v1/forgot-password/location1",
         json={"email": "nobody@test.com"},
     )
 
@@ -128,7 +129,7 @@ def test_forgot_password_is_rate_limited(api: Api):
 
     statuses = [
         client.post(
-            "/auth/v1/forgot-password",
+            "/auth/v1/forgot-password/location1",
             json={"email": "nobody@test.com"},
         ).status_code
         for _ in range(6)
@@ -136,3 +137,69 @@ def test_forgot_password_is_rate_limited(api: Api):
 
     # 5 per minute per client.
     assert statuses == [200] * 5 + [429]
+
+
+def _location_id(api: Api, tenant: str = "tenant1", location: str = "location1") -> str:
+    [(location_id,)] = api.sql(
+        "SELECT l.id::text FROM tenancy.locations l JOIN tenancy.tenants t ON t.id = l.tenant_id "
+        "WHERE t.code = :tenant AND l.code = :location",
+        tenant=tenant,
+        location=location,
+    )
+
+    return location_id
+
+
+# Forgetting a password at your centre emails you a reset link from that
+# centre, and the token in it sets a new password.
+def test_forgot_password_emails_a_working_reset_link(api: Api, customer, sent_emails):
+    api.client().post("/auth/v1/forgot-password/location1", json={"email": customer.email})
+
+    [email] = sent_emails(PasswordResetEmail)
+    assert email.to_email == customer.email
+    assert str(email.location_id) == _location_id(api)
+
+    response = api.client().post(
+        "/auth/v1/reset-password",
+        json={"token": email.token, "password": "NewPassword456"},
+    )
+    assert response.status_code == 200
+    api.login(customer.email, "NewPassword456")
+
+
+# Someone without an account at this centre (here, a customer of another
+# tenant) gets no token and no email, and the same answer as anyone else.
+def test_forgot_password_at_another_centre_sends_nothing(api: Api, customer, sent_emails):
+    outsider = api.new_customer(tenant="tenant2", location="location2")
+
+    known = api.client().post("/auth/v1/forgot-password/location1", json={"email": customer.email})
+    other = api.client().post("/auth/v1/forgot-password/location1", json={"email": outsider.email})
+
+    assert other.json() == known.json()
+    assert [email.to_email for email in sent_emails(PasswordResetEmail)] == [customer.email]
+
+    [(tokens,)] = api.sql(
+        "SELECT count(*) FROM auth.password_reset_tokens t JOIN auth.users u ON u.id = t.user_id "
+        "WHERE u.email = :email",
+        email=outsider.email,
+    )
+    assert tokens == 0
+
+
+# Resetting a password tells the account holder, from the centre where the
+# reset was asked for.
+def test_reset_password_sends_a_password_changed_email(api: Api, customer, sent_emails):
+    token = api.reset_token(customer.email)
+
+    api.client().post("/auth/v1/reset-password", json={"token": token, "password": "NewPassword456"})
+
+    [email] = sent_emails(PasswordChangedEmail)
+    assert email.to_email == customer.email
+    assert str(email.location_id) == _location_id(api)
+
+
+# A refused reset (bad token) sends nothing.
+def test_failed_reset_sends_nothing(api: Api, sent_emails):
+    api.client().post("/auth/v1/reset-password", json={"token": "not-a-real-token", "password": "Password123"})
+
+    assert sent_emails(PasswordChangedEmail) == []

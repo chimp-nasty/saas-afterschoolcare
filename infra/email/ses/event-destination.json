@@ -1,0 +1,7 @@
+{
+  "Enabled": true,
+  "MatchingEventTypes": ["BOUNCE", "COMPLAINT", "DELIVERY", "REJECT", "RENDERING_FAILURE"],
+  "SnsDestination": {
+    "TopicArn": "arn:aws:sns:ap-southeast-2:<ACCOUNT_ID>:oshc-ses-events"
+  }
+}

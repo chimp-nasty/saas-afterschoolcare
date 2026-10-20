@@ -1,0 +1,46 @@
+{#-
+    Every email's HTML: the centre's name in its colour, the heading, the
+    body, the email's locked block, the sign-off and the footer. Tables and
+    inline styles so it renders the same in Outlook, Gmail and phone mail
+    apps. No images or tracking.
+-#}
+{%- import "macros.html" as ui -%}
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;">
+        <tr>
+          <td style="padding:20px 28px;border-bottom:4px solid {{ colour }};font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:{{ colour }};">
+            {{ centre.name }}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#18181b;">
+            <h1 style="margin:0 0 16px;font-size:22px;line-height:28px;color:#18181b;">{{ heading }}</h1>
+            {%- for paragraph in paragraphs %}
+            <p style="margin:0 0 16px;">{{ paragraph | replace("\n", "<br>" | safe) }}</p>
+            {%- endfor %}
+            {% include "blocks/" ~ email_type ~ ".html" %}
+            <p style="margin:24px 0 0;">{{ sign_off }}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 28px;border-top:1px solid #e4e4e7;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#71717a;">
+            {{ footer_reason }}<br>
+            {{ centre.name }}{% if centre.email %} &middot; {{ centre.email }}{% endif %}{% if centre.phone %} &middot; {{ centre.phone }}{% endif %}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

@@ -36,18 +36,17 @@ def new_email(name: str = "pickup") -> str:
 class FakeEmailState:
     """Emails the app would have sent, for tests to inspect."""
 
-    kiosk_pins: list[dict] = field(default_factory=list)
+    # Messages sent after their transaction committed (EmailOutbox).
+    messages: list = field(default_factory=list)
 
 
 class FakeEmail:
-    """Stands in for EmailClient in every service (patched in conftest)."""
+    """Stands in for EmailClient (patched in conftest), so no test sends."""
 
     state = FakeEmailState()
 
-    def send_kiosk_pin(self, *, to_email, first_name, pin):
-        self.state.kiosk_pins.append(
-            {"to_email": to_email, "first_name": first_name, "pin": pin}
-        )
+    def send(self, message):
+        self.state.messages.append(message)
 
 
 @dataclass
@@ -471,18 +470,21 @@ class Api:
         return checkout_url.rsplit("/", 1)[-1]
 
     def reset_token(self, email: str) -> str:
-        """Issue a password reset token (email delivery isn't built yet)."""
+        """Issue a password reset token at the user's location, as the
+        forgot-password email would carry."""
         raw_token = uuid.uuid4().hex
 
         with self.admin_db.begin() as conn:
             conn.execute(
                 text("""
                     INSERT INTO auth.password_reset_tokens (
-                        user_id, token_hash, expires_at
+                        user_id, location_id, token_hash, expires_at
                     )
-                    SELECT id, :token_hash, now() + interval '30 minutes'
-                    FROM auth.users
-                    WHERE email = :email;
+                    SELECT u.id, lur.location_id, :token_hash, now() + interval '30 minutes'
+                    FROM auth.users u
+                    JOIN auth.location_user_roles lur ON lur.user_id = u.id
+                    WHERE u.email = :email
+                    LIMIT 1;
                 """),
                 {"token_hash": hash_token(token=raw_token), "email": email},
             )

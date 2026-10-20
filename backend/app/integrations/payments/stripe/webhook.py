@@ -6,8 +6,15 @@ import stripe
 from sqlalchemy.orm import Session
 
 from app.auth.repositories.rls_context import RlsContextRepository
+from app.auth.repositories.user import UserRepository
 from app.db.transaction import transactional
 from app.errors.payments import InvalidWebhookError, PaymentProviderError
+from app.integrations.email.messages import (
+    BookingConfirmationEmail,
+    RefundConfirmationEmail,
+    short_reference,
+)
+from app.integrations.email.outbox import EmailOutbox
 from app.integrations.payments.stripe.client import StripeClient
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
@@ -33,13 +40,16 @@ class StripeWebhookService:
         payment_attempt_repository: PaymentAttemptRepository,
         booking_repository: BookingRepository,
         refund_repository: RefundRepository,
+        user_repository: UserRepository,
     ):
         self.db = db
         self.rls_context = rls_context
         self.payment_attempt_repository = payment_attempt_repository
         self.booking_repository = booking_repository
         self.refund_repository = refund_repository
+        self.user_repository = user_repository
         self.stripe = StripeClient()
+        self.emails = EmailOutbox(db)
 
     def handle(
         self,
@@ -155,6 +165,22 @@ class StripeWebhookService:
                     },
                 )
 
+                return
+
+            # Only here once per payment: a repeated event finds the attempt
+            # no longer pending and stops above.
+            family = self.user_repository.get_by_id(id=attempt.user_id)
+
+            self.emails.queue(BookingConfirmationEmail(
+                location_id=attempt.location_id,
+                user_id=family.id,
+                to_email=family.email,
+                first_name=family.first_name,
+                reference=short_reference("BK", attempt.booking_group_id),
+                total_cents=attempt.total_cents,
+                currency=attempt.currency,
+            ))
+
             return
 
         # A resumed checkout makes a newer attempt for the same bookings;
@@ -250,6 +276,19 @@ class StripeWebhookService:
                     "reason": f"refund_id={refund.id}; booking_id={refund.booking_id}",
                 },
             )
+
+            # Once per refund: a repeated event finds it no longer pending.
+            family = self.user_repository.get_by_id(id=refund.user_id)
+
+            self.emails.queue(RefundConfirmationEmail(
+                location_id=refund.location_id,
+                user_id=family.id,
+                to_email=family.email,
+                first_name=family.first_name,
+                reference=short_reference("RF", refund.id),
+                amount_cents=refund.amount_cents,
+                currency=refund.currency,
+            ))
 
         elif status in ("failed", "canceled"):
             self.refund_repository.mark_failed(

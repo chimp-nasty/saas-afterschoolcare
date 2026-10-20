@@ -84,9 +84,14 @@ def logout(
     )
 
 
-@router.post("/forgot-password")
+# Per location, like login: the reset email comes from that centre and
+# links back to its site.
+@router.post("/forgot-password/{location_code}")
 def forgot_password(
     body: ForgotPasswordRequest,
+    location_id: UUID = Depends(
+        resolve_location_id,
+    ),
     service: AuthService = Depends(
         get_service(
             AuthService,
@@ -95,7 +100,8 @@ def forgot_password(
     ),
 ) -> ApiResponse[None]:
     service.request_password_reset(
-        body=body
+        body=body,
+        location_id=location_id,
     )
 
     return ApiResponse(

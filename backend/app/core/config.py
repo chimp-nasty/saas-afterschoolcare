@@ -39,21 +39,31 @@ class Settings(BaseSettings):
     DOCUMENT_BUCKET: str
     S3_REGION: str = "ap-southeast-2"
 
-    # AWS SES
-    AWS_REGION: str
+    # Email (app/integrations/email, docs/email-policy.md). "log" writes
+    # emails to the app log instead of sending (dev and tests); "ses" sends
+    # through Amazon SES in Sydney.
+    EMAIL_PROVIDER: Literal["log", "ses"] = "log"
+    SES_REGION: str = "ap-southeast-2"
+    SES_FROM_ADDRESS: str = "no-reply@jnb-digital.com.au"
+    # Both without open/click tracking; the TLS one requires an encrypted
+    # connection (password reset and kiosk PIN emails).
+    SES_CONFIGURATION_SET: str | None = None
+    SES_TLS_CONFIGURATION_SET: str | None = None
+    # Send as the tenant's SES tenant (one per tenant). Off until the SES
+    # tenants exist.
+    SES_USE_TENANTS: bool = True
+    # The SNS topic the configuration sets publish bounces, complaints and
+    # deliveries to; the webhook only accepts messages from it.
+    SES_EVENTS_TOPIC_ARN: str | None = None
+    # Optional: values in .env don't reach boto3 on their own; in Cloud Run
+    # they come from Secret Manager as environment variables.
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
 
-    SES_FROM_EMAIL: str
-    SES_FROM_NAME: str
-    SES_SUPPORT_EMAIL: str
-
-    SES_TEMPLATE_PASSWORD_RESET: str
-    SES_TEMPLATE_BOOKING_CONFIRMATION: str
-    SES_TEMPLATE_REFUND_CONFIRMATION: str
-    SES_TEMPLATE_ACCOUNT_REGISTRATION: str
-    SES_TEMPLATE_MEDICAL_REVIEW_REQUIRED: str
-    SES_TEMPLATE_MEDICAL_DOCUMENTS_REQUIRED: str
-    SES_TEMPLATE_CHILD_APPROVED: str
-    SES_TEMPLATE_CHILD_REJECTED: str
+    # Links in emails: the tenant's site. {tenant} is the tenant code, e.g.
+    # "http://{tenant}.localhost:5173" in dev. Defaults to
+    # https://{tenant}.<BASE_DOMAIN>; a tenant's custom domain wins.
+    FRONTEND_URL_TEMPLATE: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -20,6 +20,7 @@ from app.public.routes.medical_reviews import router as medical_reviews_router
 
 # integrations
 from app.integrations.payments.stripe.router import router as stripe_webhook_router
+from app.integrations.email.router import router as ses_webhook_router
 
 
 api_router = APIRouter()
@@ -44,3 +45,4 @@ api_router.include_router(medical_reviews_router)
 
 # integrations
 api_router.include_router(stripe_webhook_router)
+api_router.include_router(ses_webhook_router)

@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.db.models import AuthorizedPickupPerson
 from app.db.transaction import transactional
-from app.integrations.email.client import EmailClient
+from app.integrations.email.messages import KioskPinEmail
+from app.integrations.email.outbox import EmailOutbox
 from app.errors.pickups import AccountHolderPickupError, PickupNotFoundError
 from app.public.repositories.authorized_pickup_person import AuthorizedPickupPersonRepository
 from app.public.schemas.enums import PickupRelation
@@ -33,7 +34,7 @@ class UpdatePickupService:
     ):
         self.db = db
         self.pickup_repository = pickup_repository
-        self.email = EmailClient()
+        self.emails = EmailOutbox(db)
 
     @transactional
     def update(
@@ -59,11 +60,13 @@ class UpdatePickupService:
             )
 
         if person.email.lower() != old_email.lower():
-            self.email.send_kiosk_pin(
+            self.emails.queue(KioskPinEmail(
+                location_id=person.location_id,
+                pickup_person_id=person.id,
                 to_email=person.email,
                 first_name=person.first_name,
                 pin=self.pickup_repository.issue_pin(person=person),
-            )
+            ))
 
         return to_pickup_response(person)
 

@@ -4,7 +4,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.db.transaction import transactional
-from app.integrations.email.client import EmailClient
+from app.integrations.email.messages import KioskPinEmail
+from app.integrations.email.outbox import EmailOutbox
 from app.public.repositories.authorized_pickup_person import AuthorizedPickupPersonRepository
 from app.public.schemas.pickups import CreatePickupRequest, PickupResponse
 from app.public.services.pickups_read import to_pickup_response
@@ -25,7 +26,7 @@ class CreatePickupService:
     ):
         self.db = db
         self.pickup_repository = pickup_repository
-        self.email = EmailClient()
+        self.emails = EmailOutbox(db)
 
     @transactional
     def create(
@@ -51,11 +52,13 @@ class CreatePickupService:
             adult_confirmed_at=confirmed_at,
         )
 
-        # Sent to them, never shown in the app.
-        self.email.send_kiosk_pin(
+        # Emailed to them once this is saved, never shown in the app.
+        self.emails.queue(KioskPinEmail(
+            location_id=person.location_id,
+            pickup_person_id=person.id,
             to_email=person.email,
             first_name=person.first_name,
             pin=self.pickup_repository.issue_pin(person=person),
-        )
+        ))
 
         return to_pickup_response(person)

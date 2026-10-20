@@ -7,6 +7,8 @@ from app.core.security import hash_password
 from app.db.transaction import transactional
 from app.errors.auth import RoleNotFoundError
 from app.errors.customer import CustomerProfileNotFoundError
+from app.integrations.email.messages import WelcomeEmail
+from app.integrations.email.outbox import EmailOutbox
 
 from app.auth.repositories.user import UserRepository
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
@@ -39,6 +41,7 @@ class CustomerService:
         self.roles = roles
         self.customer_profiles = customer_profiles
         self.rls_context = rls_context
+        self.emails = EmailOutbox(db)
 
     @transactional
     def onboard(
@@ -83,6 +86,13 @@ class CustomerService:
         self.customer_profiles.create(
             user_id=user.id
         )
+
+        self.emails.queue(WelcomeEmail(
+            location_id=location_id,
+            user_id=user.id,
+            to_email=user.email,
+            first_name=user.first_name,
+        ))
 
     def get(
         self,

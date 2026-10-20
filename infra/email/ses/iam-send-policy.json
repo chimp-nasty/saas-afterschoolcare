@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SendAsThePlatformThroughOurConfigurationSetsOnly",
+      "Effect": "Allow",
+      "Action": "ses:SendEmail",
+      "Resource": [
+        "arn:aws:ses:ap-southeast-2:<ACCOUNT_ID>:identity/jnb-digital.com.au",
+        "arn:aws:ses:ap-southeast-2:<ACCOUNT_ID>:configuration-set/oshc-standard",
+        "arn:aws:ses:ap-southeast-2:<ACCOUNT_ID>:configuration-set/oshc-tls"
+      ],
+      "Condition": {
+        "StringEquals": { "ses:FromAddress": "no-reply@jnb-digital.com.au" }
+      }
+    }
+  ]
+}
