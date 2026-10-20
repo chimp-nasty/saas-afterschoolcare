@@ -21,6 +21,12 @@ export const actionTabs = {
 	OLDER: 'older'
 } as const;
 
+// Staff medical review list: waiting on staff, or on the family.
+export const reviewTabs = {
+	PENDING: 'pending',
+	REQUESTED: 'requested'
+} as const;
+
 export type AccountTab =
 	typeof accountTabs[keyof typeof accountTabs];
 

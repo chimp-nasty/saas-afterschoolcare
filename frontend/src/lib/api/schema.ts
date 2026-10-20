@@ -537,6 +537,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/child-documents/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Child Documents */
+        get: operations["list_child_documents_child_documents_v1__get"];
+        put?: never;
+        /** Start Child Document Upload */
+        post: operations["start_child_document_upload_child_documents_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/child-documents/v1/{document_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Child Document Upload */
+        post: operations["complete_child_document_upload_child_documents_v1__document_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/child-documents/v1/{document_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Child Document Download */
+        get: operations["get_child_document_download_child_documents_v1__document_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/child-documents/v1/{document_id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Child Document */
+        post: operations["remove_child_document_child_documents_v1__document_id__remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/medical-reviews/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Medical Reviews */
+        get: operations["list_medical_reviews_medical_reviews_v1__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/medical-reviews/v1/{child_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Medical Review */
+        get: operations["get_medical_review_medical_reviews_v1__child_id__get"];
+        put?: never;
+        /** Decide Medical Review */
+        post: operations["decide_medical_review_medical_reviews_v1__child_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/stripe": {
         parameters: {
             query?: never;
@@ -631,6 +735,30 @@ export interface components {
             msg: string;
             data?: components["schemas"]["CheckoutUrlResponse"] | null;
         };
+        /** ApiResponse[ChildDocumentDownloadResponse] */
+        ApiResponse_ChildDocumentDownloadResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["ChildDocumentDownloadResponse"] | null;
+        };
+        /** ApiResponse[ChildDocumentResponse] */
+        ApiResponse_ChildDocumentResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["ChildDocumentResponse"] | null;
+        };
+        /** ApiResponse[ChildDocumentUploadResponse] */
+        ApiResponse_ChildDocumentUploadResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["ChildDocumentUploadResponse"] | null;
+        };
         /** ApiResponse[ChildResponse] */
         ApiResponse_ChildResponse_: {
             /** Ok */
@@ -662,6 +790,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["LocationServiceSelectionResponse"] | null;
+        };
+        /** ApiResponse[MedicalReviewResponse] */
+        ApiResponse_MedicalReviewResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["MedicalReviewResponse"] | null;
         };
         /** ApiResponse[NoneType] */
         ApiResponse_NoneType_: {
@@ -749,6 +885,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["BookingTableResponse"][] | null;
         };
+        /** ApiResponse[list[ChildDocumentResponse]] */
+        ApiResponse_list_ChildDocumentResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["ChildDocumentResponse"][] | null;
+        };
         /** ApiResponse[list[ChildTableResponse]] */
         ApiResponse_list_ChildTableResponse__: {
             /** Ok */
@@ -775,6 +920,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["LocationServiceSelectionResponse"][] | null;
+        };
+        /** ApiResponse[list[MedicalReviewSummaryResponse]] */
+        ApiResponse_list_MedicalReviewSummaryResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["MedicalReviewSummaryResponse"][] | null;
         };
         /** ApiResponse[list[PickupResponse]] */
         ApiResponse_list_PickupResponse__: {
@@ -1101,6 +1255,65 @@ export interface components {
             /** Checkout Url */
             checkout_url: string;
         };
+        /**
+         * ChildDocumentDownloadResponse
+         * @description A link to view the file. It stops working at `expires_at`.
+         */
+        ChildDocumentDownloadResponse: {
+            /** Url */
+            url: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /**
+         * ChildDocumentResponse
+         * @description A document as families and staff see it; where it's stored stays server-side.
+         */
+        ChildDocumentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            document_type: components["schemas"]["ChildDocumentType"];
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string | null;
+            /** Size Bytes */
+            size_bytes: number | null;
+            upload_status: components["schemas"]["ChildDocumentUploadStatus"];
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ChildDocumentType
+         * @enum {string}
+         */
+        ChildDocumentType: "medical_action_plan" | "asthma_action_plan" | "allergy_anaphylaxis_plan" | "other";
+        /** ChildDocumentUploadResponse */
+        ChildDocumentUploadResponse: {
+            document: components["schemas"]["ChildDocumentResponse"];
+            upload: components["schemas"]["SignedUploadResponse"];
+        };
+        /**
+         * ChildDocumentUploadStatus
+         * @enum {string}
+         */
+        ChildDocumentUploadStatus: "pending" | "uploaded" | "failed";
         /** ChildResponse */
         ChildResponse: {
             /**
@@ -1136,6 +1349,8 @@ export interface components {
             /** Is Active */
             is_active: boolean;
             review_status: components["schemas"]["MedicalReviewStatus"];
+            /** Documentation Request */
+            documentation_request: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1197,6 +1412,26 @@ export interface components {
             booking_group_id: string;
             /** Checkout Url */
             checkout_url: string | null;
+        };
+        /**
+         * CreateChildDocumentRequest
+         * @description Start uploading one file. The type and size are what the browser
+         *     reports: the database checks them now (PDF, JPEG, PNG or HEIC, at most
+         *     10 MB), and the stored file is checked again when the upload completes.
+         */
+        CreateChildDocumentRequest: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            document_type: components["schemas"]["ChildDocumentType"];
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
         };
         /** CreateChildRequest */
         CreateChildRequest: {
@@ -1384,10 +1619,112 @@ export interface components {
             password: string;
         };
         /**
+         * MedicalReviewDecision
+         * @enum {string}
+         */
+        MedicalReviewDecision: "approved" | "documentation_requested";
+        /**
+         * MedicalReviewDecisionRequest
+         * @description Approve the child, or ask the family for documentation. A request needs
+         *     a message saying what's needed; it's shown to the family.
+         */
+        MedicalReviewDecisionRequest: {
+            decision: components["schemas"]["MedicalReviewDecision"];
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * MedicalReviewResponse
+         * @description Everything staff need to review one child, apart from the documents.
+         */
+        MedicalReviewResponse: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Dob
+             * Format: date
+             */
+            dob: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Medical Info */
+            medical_info: string | null;
+            /** Allergy Info */
+            allergy_info: string | null;
+            /** Medication Info */
+            medication_info: string | null;
+            review_status: components["schemas"]["MedicalReviewStatus"];
+            /** Documentation Request */
+            documentation_request: string | null;
+            /**
+             * Status Since
+             * Format: date-time
+             */
+            status_since: string;
+            /** Reviewed By User Id */
+            reviewed_by_user_id: string | null;
+            /**
+             * Family User Id
+             * Format: uuid
+             */
+            family_user_id: string;
+            /** Family First Name */
+            family_first_name: string;
+            /** Family Last Name */
+            family_last_name: string;
+            /** Family Email */
+            family_email: string;
+            /** Family Phone */
+            family_phone: string | null;
+        };
+        /**
          * MedicalReviewStatus
          * @enum {string}
          */
         MedicalReviewStatus: "not_required" | "pending" | "documentation_requested" | "approved";
+        /**
+         * MedicalReviewSummaryResponse
+         * @description A child in the staff review list.
+         */
+        MedicalReviewSummaryResponse: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Dob
+             * Format: date
+             */
+            dob: string;
+            review_status: components["schemas"]["MedicalReviewStatus"];
+            /** Documentation Request */
+            documentation_request: string | null;
+            /**
+             * Status Since
+             * Format: date-time
+             */
+            status_since: string;
+            /** Family First Name */
+            family_first_name: string;
+            /** Family Last Name */
+            family_last_name: string;
+            /** Family Phone */
+            family_phone: string | null;
+            /** Document Count */
+            document_count: number;
+        };
         /**
          * PaymentStatus
          * @enum {string}
@@ -1566,6 +1903,25 @@ export interface components {
             location_name: string | null;
         };
         /**
+         * SignedUploadResponse
+         * @description Post `fields` and then the file (as the last form field, named "file")
+         *     to `url` as multipart/form-data, before `expires_at`. Then call
+         *     complete.
+         */
+        SignedUploadResponse: {
+            /** Url */
+            url: string;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /**
          * StripeStatus
          * @enum {string}
          */
@@ -1673,10 +2029,14 @@ export type ApiResponseBookingGroupResponse = components['schemas']['ApiResponse
 export type ApiResponseBookingResponse = components['schemas']['ApiResponse_BookingResponse_'];
 export type ApiResponseCheckoutStatusResponse = components['schemas']['ApiResponse_CheckoutStatusResponse_'];
 export type ApiResponseCheckoutUrlResponse = components['schemas']['ApiResponse_CheckoutUrlResponse_'];
+export type ApiResponseChildDocumentDownloadResponse = components['schemas']['ApiResponse_ChildDocumentDownloadResponse_'];
+export type ApiResponseChildDocumentResponse = components['schemas']['ApiResponse_ChildDocumentResponse_'];
+export type ApiResponseChildDocumentUploadResponse = components['schemas']['ApiResponse_ChildDocumentUploadResponse_'];
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
 export type ApiResponseLocationServiceSelectionResponse = components['schemas']['ApiResponse_LocationServiceSelectionResponse_'];
+export type ApiResponseMedicalReviewResponse = components['schemas']['ApiResponse_MedicalReviewResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
 export type ApiResponsePublicLocationResponse = components['schemas']['ApiResponse_PublicLocationResponse_'];
@@ -1687,9 +2047,11 @@ export type ApiResponseListActionResponse = components['schemas']['ApiResponse_l
 export type ApiResponseListBookingConflictRow = components['schemas']['ApiResponse_list_BookingConflictRow__'];
 export type ApiResponseListBookingGroupSummaryResponse = components['schemas']['ApiResponse_list_BookingGroupSummaryResponse__'];
 export type ApiResponseListBookingTableResponse = components['schemas']['ApiResponse_list_BookingTableResponse__'];
+export type ApiResponseListChildDocumentResponse = components['schemas']['ApiResponse_list_ChildDocumentResponse__'];
 export type ApiResponseListChildTableResponse = components['schemas']['ApiResponse_list_ChildTableResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
+export type ApiResponseListMedicalReviewSummaryResponse = components['schemas']['ApiResponse_list_MedicalReviewSummaryResponse__'];
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
 export type AustralianState = components['schemas']['AustralianState'];
@@ -1704,10 +2066,16 @@ export type BookingStatus = components['schemas']['BookingStatus'];
 export type BookingTableResponse = components['schemas']['BookingTableResponse'];
 export type CheckoutStatusResponse = components['schemas']['CheckoutStatusResponse'];
 export type CheckoutUrlResponse = components['schemas']['CheckoutUrlResponse'];
+export type ChildDocumentDownloadResponse = components['schemas']['ChildDocumentDownloadResponse'];
+export type ChildDocumentResponse = components['schemas']['ChildDocumentResponse'];
+export type ChildDocumentType = components['schemas']['ChildDocumentType'];
+export type ChildDocumentUploadResponse = components['schemas']['ChildDocumentUploadResponse'];
+export type ChildDocumentUploadStatus = components['schemas']['ChildDocumentUploadStatus'];
 export type ChildResponse = components['schemas']['ChildResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
+export type CreateChildDocumentRequest = components['schemas']['CreateChildDocumentRequest'];
 export type CreateChildRequest = components['schemas']['CreateChildRequest'];
 export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
 export type CreateRefundRequest = components['schemas']['CreateRefundRequest'];
@@ -1718,7 +2086,11 @@ export type HttpValidationError = components['schemas']['HTTPValidationError'];
 export type LocationServiceDayTableResponse = components['schemas']['LocationServiceDayTableResponse'];
 export type LocationServiceSelectionResponse = components['schemas']['LocationServiceSelectionResponse'];
 export type LoginRequest = components['schemas']['LoginRequest'];
+export type MedicalReviewDecision = components['schemas']['MedicalReviewDecision'];
+export type MedicalReviewDecisionRequest = components['schemas']['MedicalReviewDecisionRequest'];
+export type MedicalReviewResponse = components['schemas']['MedicalReviewResponse'];
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
+export type MedicalReviewSummaryResponse = components['schemas']['MedicalReviewSummaryResponse'];
 export type PaymentStatus = components['schemas']['PaymentStatus'];
 export type PickupRelation = components['schemas']['PickupRelation'];
 export type PickupResponse = components['schemas']['PickupResponse'];
@@ -1728,6 +2100,7 @@ export type RefundStatus = components['schemas']['RefundStatus'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type SessionResponse = components['schemas']['SessionResponse'];
+export type SignedUploadResponse = components['schemas']['SignedUploadResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
@@ -2982,6 +3355,276 @@ export interface operations {
             };
         };
     };
+    list_child_documents_child_documents_v1__get: {
+        parameters: {
+            query: {
+                child_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ChildDocumentResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_child_document_upload_child_documents_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChildDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildDocumentUploadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_child_document_upload_child_documents_v1__document_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildDocumentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_child_document_download_child_documents_v1__document_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildDocumentDownloadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_child_document_child_documents_v1__document_id__remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildDocumentResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_medical_reviews_medical_reviews_v1__get: {
+        parameters: {
+            query?: {
+                review_status?: components["schemas"]["MedicalReviewStatus"][];
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_MedicalReviewSummaryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_medical_review_medical_reviews_v1__child_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                child_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MedicalReviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_medical_review_medical_reviews_v1__child_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                child_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedicalReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MedicalReviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     stripe_webhook_api_v1_webhooks_stripe_post: {
         parameters: {
             query?: never;
@@ -3025,7 +3668,10 @@ type ReadonlyArray<T> = [
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingGroupScope"]> = ["upcoming", "history"];
 export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingStatus"]> = ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"];
+export const childDocumentTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentType"]> = ["medical_action_plan", "asthma_action_plan", "allergy_anaphylaxis_plan", "other"];
+export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentUploadStatus"]> = ["pending", "uploaded", "failed"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
+export const medicalReviewDecisionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewDecision"]> = ["approved", "documentation_requested"];
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
 export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
 export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];

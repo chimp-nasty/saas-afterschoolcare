@@ -118,6 +118,7 @@ class ChildProfileRepository(Repository):
                 ChildProfile.updated_at,
 
                 ChildMedicalState.review_status,
+                ChildMedicalState.documentation_request,
             )
             .join(
                 ChildMedicalState,

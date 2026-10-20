@@ -51,13 +51,26 @@
 		void goto(route(path));
 	}
 
+	// Only screens that are built (docs/staff-platform.md lists the rest).
+	const staffItems = $derived.by((): SidebarItem[] => [
+		{
+			label: 'Reviews',
+			onclick: () => navigate('/staff/reviews'),
+			isActive: isActive('/staff/reviews')
+		}
+	]);
+
 	const adminItems = $derived.by((): SidebarItem[] => [
 		// admin items
 	]);
 
-	const staffItems = $derived.by((): SidebarItem[] => [
-		// staff items
-	]);
+	const isStaff = $derived(
+		['staff', 'admin', 'superadmin'].some((role) => $auth.roles.includes(role))
+	);
+
+	const isAdmin = $derived(
+		['admin', 'superadmin'].some((role) => $auth.roles.includes(role))
+	);
 
 	const customerItems = $derived.by((): SidebarItem[] => [
 		{
@@ -81,12 +94,13 @@
 			}
 		];
 
-		if ($auth.roles.includes('admin')) {
-			result.push(...adminItems);
+		// Admins see every staff screen, then their own.
+		if (isStaff) {
+			result.push(...staffItems);
 		}
 
-		if ($auth.roles.includes('staff')) {
-			result.push(...staffItems);
+		if (isAdmin) {
+			result.push(...adminItems);
 		}
 
 		if ($auth.roles.includes('customer')) {
@@ -103,9 +117,7 @@
 
 	// Customers (only) navigate with a bottom bar on mobile.
 	const isCustomerOnly = $derived(
-		$auth.roles.includes('customer') &&
-		!$auth.roles.includes('admin') &&
-		!$auth.roles.includes('staff')
+		$auth.roles.includes('customer') && !isStaff
 	);
 
 	const bottomNavItems = $derived.by((): BottomNavItem[] => [

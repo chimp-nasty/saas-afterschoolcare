@@ -5,7 +5,8 @@
 
 	let { children } = $props();
 
-    const roles = ["admin"]
+    // Location configuration (/admin/...): docs/staff-platform.md.
+    const roles = ["admin", "superadmin"]
 </script>
 
 <Authorize locationCode={page.data.locationCode} {roles}>

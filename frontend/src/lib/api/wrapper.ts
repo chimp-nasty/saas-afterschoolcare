@@ -27,6 +27,9 @@ type ApiWrapperOptions = {
 	headers?: Record<string, string>;
 	onSuccess?: () => void | Promise<void>;
 	fetcher?: typeof fetch;
+	// No success toast, for a step inside a longer action (e.g. starting an
+	// upload); errors still toast.
+	quiet?: boolean;
 };
 
 // The backend returns 422s as { data: [{ field, message }] }; key them by field.
@@ -54,7 +57,8 @@ export async function apiWrapper<T>(
 		body,
 		headers = {},
 		onSuccess,
-		fetcher = fetch
+		fetcher = fetch,
+		quiet = false
 	} = options;
 
 	function finalizeResponse(
@@ -62,6 +66,8 @@ export async function apiWrapper<T>(
 	): ApiResponse<T> {
 		if (method !== 'GET') {
 			if (response.ok) {
+				if (quiet) return response;
+
 				toast.success(response.msg);
 			} else {
 				toast.error(response.msg);

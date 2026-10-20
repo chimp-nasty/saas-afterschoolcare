@@ -40,6 +40,26 @@ class CurrencyCodeEnum(str, enum.Enum):
     USD = 'USD'
 
 
+class EmailStatusEnum(str, enum.Enum):
+    QUEUED = 'queued'
+    SENT = 'sent'
+    FAILED = 'failed'
+    DELIVERED = 'delivered'
+    BOUNCED = 'bounced'
+    COMPLAINED = 'complained'
+
+
+class EmailTypeEnum(str, enum.Enum):
+    PASSWORD_RESET = 'password_reset'
+    PASSWORD_CHANGED = 'password_changed'
+    WELCOME = 'welcome'
+    BOOKING_CONFIRMATION = 'booking_confirmation'
+    REFUND_CONFIRMATION = 'refund_confirmation'
+    DOCUMENTS_REQUESTED = 'documents_requested'
+    CHILD_APPROVED = 'child_approved'
+    KIOSK_PIN = 'kiosk_pin'
+
+
 class MedicalReviewStatusEnum(str, enum.Enum):
     NOT_REQUIRED = 'not_required'
     PENDING = 'pending'
@@ -68,6 +88,11 @@ class RefundStatusEnum(str, enum.Enum):
     PENDING = 'PENDING'
     SUCCEEDED = 'SUCCEEDED'
     FAILED = 'FAILED'
+
+
+class StorageProviderEnum(str, enum.Enum):
+    GCS = 'gcs'
+    S3 = 's3'
 
 
 class StripeStatusEnum(str, enum.Enum):
@@ -229,6 +254,30 @@ class CustomerProfile(Base):
 
 
 
+class EmailTemplateOverride(Base):
+    __tablename__ = 'email_template_overrides'
+    __table_args__ = (
+        CheckConstraint('body IS NULL OR char_length(body) <= 2000', name='ck_email_template_overrides_body_length'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_email_template_overrides_tenant'),
+        ForeignKeyConstraint(['updated_by_user_id'], ['auth.users.id'], ondelete='SET NULL', name='fk_email_template_overrides_updated_by'),
+        PrimaryKeyConstraint('id', name='email_template_overrides_pkey'),
+        UniqueConstraint('tenant_id', 'email_type', name='uq_email_template_overrides_tenant_type'),
+        {'schema': 'tenancy'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    email_type: Mapped[EmailTypeEnum] = mapped_column(Enum(EmailTypeEnum, values_callable=lambda cls: [member.value for member in cls], name='email_type_enum'), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    subject: Mapped[Optional[str]] = mapped_column(String(150))
+    heading: Mapped[Optional[str]] = mapped_column(String(150))
+    body: Mapped[Optional[str]] = mapped_column(Text)
+    sign_off: Mapped[Optional[str]] = mapped_column(String(150))
+    updated_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+
+
 class Location(Base):
     __tablename__ = 'locations'
     __table_args__ = (
@@ -324,6 +373,7 @@ class AuthorizedPickupPerson(Base):
     staff_approved_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     staff_approved_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
     pin_hash: Mapped[Optional[str]] = mapped_column(Text)
+    pin_issued_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     pin_locked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     pin_reset_requested_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
@@ -462,9 +512,14 @@ class Action(Base):
 class ChildDocument(Base):
     __tablename__ = 'child_documents'
     __table_args__ = (
+        CheckConstraint("content_type IS NULL OR (content_type::text = ANY (ARRAY['application/pdf'::character varying, 'image/jpeg'::character varying, 'image/png'::character varying, 'image/heic'::character varying]::text[]))", name='ck_child_documents_content_type'),
+        CheckConstraint('size_bytes IS NULL OR size_bytes >= 1 AND size_bytes <= 10485760', name='ck_child_documents_size'),
+        CheckConstraint("upload_status <> 'uploaded'::child_document_upload_status_enum OR content_type IS NOT NULL AND size_bytes IS NOT NULL", name='ck_child_documents_uploaded_details'),
         ForeignKeyConstraint(['child_id'], ['public.child_profile.id'], ondelete='CASCADE', name='fk_child_documents_child'),
         ForeignKeyConstraint(['uploaded_by_user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_child_documents_uploaded_by'),
         PrimaryKeyConstraint('id', name='child_documents_pkey'),
+        UniqueConstraint('storage_provider', 'storage_bucket', 'storage_object_key', name='uq_child_documents_storage_object'),
+        Index('idx_child_documents_child', 'child_id', postgresql_where='is_active'),
         {'schema': 'public'}
     )
 
@@ -473,6 +528,7 @@ class ChildDocument(Base):
     uploaded_by_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     document_type: Mapped[ChildDocumentTypeEnum] = mapped_column(Enum(ChildDocumentTypeEnum, values_callable=lambda cls: [member.value for member in cls], name='child_document_type_enum'), nullable=False)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    storage_provider: Mapped[StorageProviderEnum] = mapped_column(Enum(StorageProviderEnum, values_callable=lambda cls: [member.value for member in cls], name='storage_provider_enum'), nullable=False)
     storage_bucket: Mapped[str] = mapped_column(String(255), nullable=False)
     storage_object_key: Mapped[str] = mapped_column(Text, nullable=False)
     upload_status: Mapped[ChildDocumentUploadStatusEnum] = mapped_column(Enum(ChildDocumentUploadStatusEnum, values_callable=lambda cls: [member.value for member in cls], name='child_document_upload_status_enum'), nullable=False, server_default=text("'pending'::child_document_upload_status_enum"))
@@ -487,6 +543,8 @@ class ChildDocument(Base):
 class ChildMedicalState(Base):
     __tablename__ = 'child_medical_state'
     __table_args__ = (
+        CheckConstraint("(review_status <> ALL (ARRAY['approved'::medical_review_status_enum, 'not_required'::medical_review_status_enum])) OR documentation_request IS NULL", name='ck_child_medical_state_request_cleared'),
+        CheckConstraint("review_status <> 'documentation_requested'::medical_review_status_enum OR NULLIF(btrim(documentation_request), ''::text) IS NOT NULL", name='ck_child_medical_state_documentation_request'),
         ForeignKeyConstraint(['child_id'], ['public.child_profile.id'], ondelete='CASCADE', name='fk_child_medical_state_child'),
         ForeignKeyConstraint(['updated_by_user_id'], ['auth.users.id'], name='fk_child_medical_state_updated_by'),
         PrimaryKeyConstraint('child_id', name='child_medical_state_pkey'),
@@ -495,6 +553,7 @@ class ChildMedicalState(Base):
 
     child_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     review_status: Mapped[MedicalReviewStatusEnum] = mapped_column(Enum(MedicalReviewStatusEnum, values_callable=lambda cls: [member.value for member in cls], name='medical_review_status_enum'), nullable=False, server_default=text("'not_required'::medical_review_status_enum"))
+    documentation_request: Mapped[Optional[str]] = mapped_column(Text)
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     updated_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
@@ -514,6 +573,38 @@ class ChildNote(Base):
     note: Mapped[str] = mapped_column(Text, nullable=False)
     created_by_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class EmailMessage(Base):
+    __tablename__ = 'email_messages'
+    __table_args__ = (
+        CheckConstraint('recipient_user_id IS NULL OR recipient_pickup_person_id IS NULL', name='ck_email_messages_one_recipient'),
+        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_email_messages_location'),
+        ForeignKeyConstraint(['recipient_pickup_person_id'], ['public.authorized_pickup_persons.id'], ondelete='SET NULL', name='fk_email_messages_recipient_pickup_person'),
+        ForeignKeyConstraint(['recipient_user_id'], ['auth.users.id'], ondelete='SET NULL', name='fk_email_messages_recipient_user'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_email_messages_tenant'),
+        PrimaryKeyConstraint('id', name='email_messages_pkey'),
+        UniqueConstraint('provider_message_id', name='uq_email_messages_provider_message'),
+        Index('idx_email_messages_location_created', 'location_id', 'created_at'),
+        Index('idx_email_messages_tenant_created', 'tenant_id', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    email_type: Mapped[EmailTypeEnum] = mapped_column(Enum(EmailTypeEnum, values_callable=lambda cls: [member.value for member in cls], name='email_type_enum'), nullable=False)
+    status: Mapped[EmailStatusEnum] = mapped_column(Enum(EmailStatusEnum, values_callable=lambda cls: [member.value for member in cls], name='email_status_enum'), nullable=False, server_default=text("'queued'::email_status_enum"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    recipient_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    recipient_pickup_person_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    recipient_masked: Mapped[Optional[str]] = mapped_column(String(255))
+    recipient_cleared_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    provider_message_id: Mapped[Optional[str]] = mapped_column(String(255))
+    error_code: Mapped[Optional[str]] = mapped_column(String(100))
+    sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    status_updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 

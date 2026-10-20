@@ -21,6 +21,8 @@ class ChildResponse(BaseModel):
 
     is_active: bool
     review_status: MedicalReviewStatus
+    # What the centre asked the family for, while it's outstanding.
+    documentation_request: str | None
 
     created_at: datetime
     updated_at: datetime

@@ -15,6 +15,8 @@ from app.public.routes.location_services import router as location_service_route
 from app.public.routes.actions import router as actions_router
 from app.public.routes.pickups import router as pickups_router
 from app.public.routes.refunds import router as refunds_router
+from app.public.routes.child_documents import router as child_documents_router
+from app.public.routes.medical_reviews import router as medical_reviews_router
 
 # integrations
 from app.integrations.payments.stripe.router import router as stripe_webhook_router
@@ -37,6 +39,8 @@ api_router.include_router(location_service_router)
 api_router.include_router(actions_router)
 api_router.include_router(pickups_router)
 api_router.include_router(refunds_router)
+api_router.include_router(child_documents_router)
+api_router.include_router(medical_reviews_router)
 
 # integrations
 api_router.include_router(stripe_webhook_router)

@@ -349,6 +349,7 @@ def reset() -> None:
                 DROP SCHEMA IF EXISTS public CASCADE;
                 DROP SCHEMA IF EXISTS auth CASCADE;
                 DROP SCHEMA IF EXISTS tenancy CASCADE;
+                DROP SCHEMA IF EXISTS reporting CASCADE;
                 DROP SCHEMA IF EXISTS migrations CASCADE;
 
                 CREATE SCHEMA public;

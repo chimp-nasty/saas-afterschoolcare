@@ -1,4 +1,5 @@
 import { createBookingApi } from "$lib/api/public/adapters/bookings";
+import { createMedicalReviewsApi } from "$lib/api/public/adapters/medicalReviews";
 
 import type { PageLoad } from "./$types";
 
@@ -29,10 +30,24 @@ export const load: PageLoad = async ({
 }) => {
     depends("app:home-bookings");
 
-    // Only the customer home shows bookings; skip the call for staff/admin.
     const { session } = await parent();
+    const roles = session?.roles ?? [];
 
-    if (!session?.roles.includes("customer")) {
+    // Staff, admins and superadmins get the staff home: what needs
+    // attention at the location.
+    if (["staff", "admin", "superadmin"].some((role) => roles.includes(role))) {
+        const reviewsResponse = await createMedicalReviewsApi(fetch).list();
+        const reviews = reviewsResponse.data ?? [];
+
+        return {
+            bookings: [],
+            reviewsWaiting: reviews.filter((review) => review.review_status === "pending").length,
+            reviewsRequested: reviews.filter((review) => review.review_status === "documentation_requested").length,
+        };
+    }
+
+    // Only the customer home shows bookings.
+    if (!roles.includes("customer")) {
         return {
             bookings: [],
         };

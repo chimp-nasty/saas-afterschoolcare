@@ -83,3 +83,10 @@ class MedicalReviewStatus(StrEnum):
     PENDING = "pending"
     DOCUMENTATION_REQUESTED = "documentation_requested"
     APPROVED = "approved"
+
+
+# What staff decide on a review. The other statuses follow the child's
+# details (trg_child_medical_state_rules, schema/0004).
+class MedicalReviewDecision(StrEnum):
+    APPROVED = "approved"
+    DOCUMENTATION_REQUESTED = "documentation_requested"

@@ -70,7 +70,8 @@ export const load: LayoutLoad = async ({
 
 	let uncitedActionCount = 0;
 
-	if (session) {
+	// Actions are messages to families; staff and admins don't get them.
+	if (session?.roles.includes('customer')) {
 		const actionsApi = createActionsApi(fetch);
 
 		const actionCountResponse =

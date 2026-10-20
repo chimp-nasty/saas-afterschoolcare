@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,8 +32,12 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str
     STRIPE_WEBHOOK_SECRET: str
 
-    # Document storage
+    # Document storage (app/integrations/storage). Australian regions only:
+    # docs/child-document-retention-policy.md. GCS credentials come from
+    # Application Default Credentials; S3's from the standard AWS chain.
+    STORAGE_PROVIDER: Literal["gcs", "s3"] = "gcs"
     DOCUMENT_BUCKET: str
+    S3_REGION: str = "ap-southeast-2"
 
     # AWS SES
     AWS_REGION: str

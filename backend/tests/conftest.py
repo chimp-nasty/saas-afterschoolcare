@@ -50,7 +50,15 @@ os.environ.update(
 os.environ["APP_ENV"] = "test"
 
 
-from tests.factories import Api, FakeEmail, FakeEmailState, FakeStripe, FakeStripeState  # noqa: E402  (needs the env above)
+from tests.factories import (  # noqa: E402  (needs the env above)
+    Api,
+    FakeEmail,
+    FakeEmailState,
+    FakeStorage,
+    FakeStorageState,
+    FakeStripe,
+    FakeStripeState,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -95,6 +103,23 @@ def fake_email(monkeypatch) -> type[FakeEmail]:
         monkeypatch.setattr(f"{module}.EmailClient", FakeEmail)
 
     return FakeEmail
+
+
+@pytest.fixture(autouse=True)
+def fake_storage(monkeypatch) -> type[FakeStorage]:
+    """
+    Every service that stores files uses the fake bucket instead, empty for
+    each test.
+    """
+    monkeypatch.setattr(FakeStorage, "state", FakeStorageState())
+
+    for module in (
+        "app.public.services.child_documents_create",
+        "app.public.services.child_documents_read",
+    ):
+        monkeypatch.setattr(f"{module}.StorageClient", FakeStorage)
+
+    return FakeStorage
 
 
 @pytest.fixture(scope="session")

@@ -322,7 +322,13 @@ CREATE TABLE public.child_medical_state (
     review_status public.medical_review_status_enum
         NOT NULL DEFAULT 'not_required',
 
+    -- What staff asked the family for. Kept while the child is back in
+    -- review (so staff can see what they asked), cleared on approval.
+    documentation_request TEXT,
+
     updated_at TIMESTAMPTZ,
+    -- The staff member who made the latest decision. NULL while the child
+    -- waits for review (trg_child_profile_medical_review clears it).
     updated_by_user_id UUID,
 
     CONSTRAINT fk_child_medical_state_child
@@ -332,12 +338,101 @@ CREATE TABLE public.child_medical_state (
 
     CONSTRAINT fk_child_medical_state_updated_by
         FOREIGN KEY (updated_by_user_id)
-        REFERENCES auth.users (id)
+        REFERENCES auth.users (id),
+
+    -- Asking for documentation means saying what's needed.
+    CONSTRAINT ck_child_medical_state_documentation_request
+        CHECK (
+            review_status <> 'documentation_requested'
+            OR NULLIF(btrim(documentation_request), '') IS NOT NULL
+        ),
+
+    -- Nothing is outstanding once a child is approved or needs no review.
+    CONSTRAINT ck_child_medical_state_request_cleared
+        CHECK (
+            review_status NOT IN ('approved', 'not_required')
+            OR documentation_request IS NULL
+        )
 );
 
 CREATE TRIGGER trg_child_medical_state_updated_at
     BEFORE UPDATE ON public.child_medical_state
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- Who may move a child's review where. RLS already limits writes to staff
+-- (schema/0005); this pins down what each side may do:
+--
+--   * staff decide: approve, or request documentation (from pending,
+--     documentation_requested or approved, e.g. an action plan has
+--     expired). The decision is recorded against them, and approval
+--     clears the request.
+--   * the child's details decide when a review is needed: only
+--     trg_child_profile_medical_review and trg_child_documents_medical_review
+--     send a child back to pending, from a family's session.
+--   * not_required is only ever set when a child is added.
+--
+-- Writes with no user session are trusted server code (migrations,
+-- maintenance) and aren't limited.
+--
+-- SECURITY DEFINER: reads the child's location past RLS.
+CREATE FUNCTION public.enforce_medical_review_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_user_id UUID := auth.current_user_id();
+    v_is_staff BOOLEAN;
+BEGIN
+    IF v_user_id IS NULL
+       OR (
+           NEW.review_status IS NOT DISTINCT FROM OLD.review_status
+           AND NEW.documentation_request IS NOT DISTINCT FROM OLD.documentation_request
+       )
+    THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT auth.is_location_staff(cp.location_id)
+    INTO v_is_staff
+    FROM public.child_profile cp
+    WHERE cp.id = NEW.child_id;
+
+    IF v_is_staff THEN
+        IF NEW.review_status NOT IN ('approved', 'documentation_requested') THEN
+            RAISE EXCEPTION 'Staff can only approve child % or request documentation', NEW.child_id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_child_medical_state_staff_decision',
+                      TABLE = 'child_medical_state',
+                      SCHEMA = 'public';
+        END IF;
+
+        IF NEW.review_status = 'approved' THEN
+            NEW.documentation_request := NULL;
+        ELSE
+            NEW.documentation_request := NULLIF(btrim(NEW.documentation_request), '');
+        END IF;
+
+        NEW.updated_by_user_id := v_user_id;
+
+    ELSIF NEW.review_status <> 'pending'
+       OR NEW.documentation_request IS DISTINCT FROM OLD.documentation_request
+    THEN
+        RAISE EXCEPTION 'Only staff can decide child %''s medical review', NEW.child_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_child_medical_state_staff_decision',
+                  TABLE = 'child_medical_state',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_child_medical_state_rules
+    BEFORE UPDATE ON public.child_medical_state
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_medical_review_rules();
 
 -- A child's medical review follows their medical details, so it can't be
 -- skipped or set by the family (who can only read child_medical_state,
@@ -347,6 +442,8 @@ CREATE TRIGGER trg_child_medical_state_updated_at
 --     medication details were given, otherwise not_required
 --   * any change to those details (adding, editing or clearing them) sends
 --     the child back to pending for staff to review again
+--   * so does uploading or removing a document
+--     (trg_child_documents_medical_review, below)
 --
 -- Blank text counts as no details. Existing bookings are kept; the booking
 -- rules (schema/0009) only stop new ones until staff approve.
@@ -444,7 +541,9 @@ CREATE TABLE public.child_notes (
 -- after their first child is added. Only its hash is stored. pin_hash NULL
 -- means none issued yet. An issued PIN must be changed at the next kiosk
 -- login (pin_change_required); after that, changes and "forgot PIN" happen
--- only at the kiosk (a new PIN emailed). Five wrong PINs lock the person
+-- only at the kiosk (a new PIN emailed). An issued PIN that's never used
+-- stops working 30 days after pin_issued_at (checked by the kiosk login;
+-- docs/email-policy.md, section 4). Five wrong PINs lock the person
 -- (pin_locked_at), not the device, until a reset.
 CREATE TABLE public.authorized_pickup_persons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -480,6 +579,9 @@ CREATE TABLE public.authorized_pickup_persons (
 
     pin_hash TEXT,
     pin_change_required BOOLEAN NOT NULL DEFAULT TRUE,
+    -- When the current PIN was issued (emailed), for the 30-day limit on
+    -- a setup PIN that's never been used.
+    pin_issued_at TIMESTAMPTZ,
     failed_pin_attempts SMALLINT NOT NULL DEFAULT 0,
     pin_locked_at TIMESTAMPTZ,
     -- The last "forgot PIN" at the kiosk, for rate limiting resets.
@@ -613,12 +715,14 @@ BEGIN
         IF TG_OP = 'INSERT' THEN
             NEW.pin_hash := NULL;
             NEW.pin_change_required := TRUE;
+            NEW.pin_issued_at := NULL;
             NEW.failed_pin_attempts := 0;
             NEW.pin_locked_at := NULL;
             NEW.pin_reset_requested_at := NULL;
         ELSE
             NEW.pin_hash := OLD.pin_hash;
             NEW.pin_change_required := OLD.pin_change_required;
+            NEW.pin_issued_at := OLD.pin_issued_at;
             NEW.failed_pin_attempts := OLD.failed_pin_attempts;
             NEW.pin_locked_at := OLD.pin_locked_at;
             NEW.pin_reset_requested_at := OLD.pin_reset_requested_at;
@@ -641,6 +745,7 @@ BEGIN
         IF lower(NEW.email) IS DISTINCT FROM lower(OLD.email) THEN
             NEW.pin_hash := NULL;
             NEW.pin_change_required := TRUE;
+            NEW.pin_issued_at := NULL;
             NEW.failed_pin_attempts := 0;
             NEW.pin_locked_at := NULL;
         END IF;
@@ -725,6 +830,7 @@ BEGIN
     UPDATE public.authorized_pickup_persons
     SET pin_hash = crypt(v_pin, gen_salt('bf')),
         pin_change_required = TRUE,
+        pin_issued_at = now(),
         failed_pin_attempts = 0,
         pin_locked_at = NULL
     WHERE id = p_pickup_id;
@@ -878,15 +984,28 @@ CREATE TABLE public.child_documents (
     uploaded_by_user_id UUID NOT NULL,
 
     document_type public.child_document_type_enum NOT NULL,
+    -- The family's file name, for display only. Never part of the object
+    -- key (docs/child-document-retention-policy.md, section 4).
     filename VARCHAR(255) NOT NULL,
+
+    -- Where the file lives. The provider and bucket are kept per row so
+    -- files can move (another provider, or a tenant's own bucket) without
+    -- a schema change. The key holds only IDs:
+    --   pending/tenants/{tenant}/{document}                         uploading
+    --   documents/tenants/{tenant}/locations/{location}/children/{child}/{document}
+    storage_provider public.storage_provider_enum NOT NULL,
     storage_bucket VARCHAR(255) NOT NULL,
     storage_object_key TEXT NOT NULL,
+
+    -- Checked against the stored file when the upload completes.
     content_type VARCHAR(100),
     size_bytes INTEGER,
 
     upload_status public.child_document_upload_status_enum
         NOT NULL DEFAULT 'pending',
 
+    -- FALSE once the family removes it. The record (and file) is kept for
+    -- the retention period either way.
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -899,12 +1018,175 @@ CREATE TABLE public.child_documents (
     CONSTRAINT fk_child_documents_uploaded_by
         FOREIGN KEY (uploaded_by_user_id)
         REFERENCES auth.users (id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_child_documents_storage_object
+        UNIQUE (storage_provider, storage_bucket, storage_object_key),
+
+    -- PDFs and photos only (iPhones save photos as HEIC).
+    CONSTRAINT ck_child_documents_content_type
+        CHECK (
+            content_type IS NULL
+            OR content_type IN ('application/pdf', 'image/jpeg', 'image/png', 'image/heic')
+        ),
+
+    -- At most 10 MB.
+    CONSTRAINT ck_child_documents_size
+        CHECK (size_bytes IS NULL OR size_bytes BETWEEN 1 AND 10485760),
+
+    -- An accepted file's type and size are known.
+    CONSTRAINT ck_child_documents_uploaded_details
+        CHECK (
+            upload_status <> 'uploaded'
+            OR (content_type IS NOT NULL AND size_bytes IS NOT NULL)
+        )
 );
+
+CREATE INDEX idx_child_documents_child
+    ON public.child_documents (child_id)
+    WHERE is_active;
 
 CREATE TRIGGER trg_child_documents_updated_at
     BEFORE UPDATE ON public.child_documents
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- The rules every write to a document goes through. SECURITY DEFINER:
+-- reads the child past RLS.
+--
+-- From a user session:
+--   * only the child's family adds or removes documents; staff and admins
+--     read them (they review, they don't manage the family's records)
+--   * a document is added to a current child, and recorded as uploaded by
+--     whoever is adding it
+--   * an upload finishes once: pending becomes uploaded or failed, and only
+--     then may its file move (from pending/ to documents/)
+--   * removing a document is final; the family uploads it again instead
+--   * what it is and whose it is never change
+--
+-- Writes with no user session are trusted server code (maintenance, moving
+-- files between buckets, the retention job) and aren't limited.
+CREATE FUNCTION public.enforce_child_document_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_user_id UUID := auth.current_user_id();
+    v_owner_id UUID;
+    v_child_active BOOLEAN;
+    v_child_found BOOLEAN;
+BEGIN
+    IF v_user_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    SELECT cp.user_id, cp.is_active
+    INTO v_owner_id, v_child_active
+    FROM public.child_profile cp
+    WHERE cp.id = NEW.child_id;
+
+    v_child_found := FOUND;
+
+    -- An unknown child is left to fk_child_documents_child.
+    IF v_child_found AND v_owner_id <> v_user_id THEN
+        RAISE EXCEPTION 'Only the family can add or remove child %''s documents', NEW.child_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_child_documents_family_only',
+                  TABLE = 'child_documents',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        IF v_child_found AND NOT v_child_active THEN
+            RAISE EXCEPTION 'Child % has been removed', NEW.child_id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_child_documents_child_active',
+                      TABLE = 'child_documents',
+                      SCHEMA = 'public';
+        END IF;
+
+        NEW.uploaded_by_user_id := v_user_id;
+        NEW.is_active := TRUE;
+
+        RETURN NEW;
+    END IF;
+
+    IF NEW.child_id IS DISTINCT FROM OLD.child_id
+       OR NEW.uploaded_by_user_id IS DISTINCT FROM OLD.uploaded_by_user_id
+       OR NEW.document_type IS DISTINCT FROM OLD.document_type
+       OR NEW.filename IS DISTINCT FROM OLD.filename
+       OR NEW.storage_provider IS DISTINCT FROM OLD.storage_provider
+       OR NEW.created_at IS DISTINCT FROM OLD.created_at
+       -- An upload finishes once, and a removed document stays removed.
+       OR (NEW.upload_status IS DISTINCT FROM OLD.upload_status AND OLD.upload_status <> 'pending')
+       OR (NEW.is_active AND NOT OLD.is_active)
+       -- The file only moves (and its details are only filled in) as the
+       -- upload finishes.
+       OR (
+           OLD.upload_status <> 'pending'
+           AND (
+               NEW.storage_bucket IS DISTINCT FROM OLD.storage_bucket
+               OR NEW.storage_object_key IS DISTINCT FROM OLD.storage_object_key
+               OR NEW.content_type IS DISTINCT FROM OLD.content_type
+               OR NEW.size_bytes IS DISTINCT FROM OLD.size_bytes
+           )
+       )
+    THEN
+        RAISE EXCEPTION 'Document % can''t be changed that way', NEW.id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_child_documents_change',
+                  TABLE = 'child_documents',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_child_documents_rules
+    BEFORE INSERT OR UPDATE ON public.child_documents
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_child_document_rules();
+
+-- Documents count as medical details: when one is accepted, or an
+-- accepted one is removed, the child goes back to pending for staff to
+-- review again (see sync_child_medical_review above). This is also how a
+-- family answers a documentation request. Uploads still in progress, and
+-- failed ones, don't count.
+--
+-- SECURITY DEFINER: writes child_medical_state past its staff-only write
+-- policy.
+CREATE FUNCTION public.sync_child_document_medical_review()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_counts BOOLEAN := NEW.is_active AND NEW.upload_status = 'uploaded';
+    v_counted BOOLEAN := FALSE;
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        v_counted := OLD.is_active AND OLD.upload_status = 'uploaded';
+    END IF;
+
+    IF v_counts IS DISTINCT FROM v_counted THEN
+        -- Not reviewed by anyone yet, so no reviewer.
+        UPDATE public.child_medical_state
+        SET review_status = 'pending',
+            updated_by_user_id = NULL
+        WHERE child_id = NEW.child_id
+          AND review_status <> 'pending';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_child_documents_medical_review
+    AFTER INSERT OR UPDATE OF upload_status, is_active
+    ON public.child_documents
+    FOR EACH ROW EXECUTE FUNCTION public.sync_child_document_medical_review();
 
 
 -- =====================================================
@@ -1331,3 +1613,168 @@ CREATE TABLE public.actions (
         FOREIGN KEY (created_by_user_id)
         REFERENCES auth.users (id)
 );
+
+
+-- =====================================================
+-- EMAIL MESSAGES
+-- =====================================================
+
+-- One row per email sent (docs/email-policy.md, section 6): what was sent,
+-- to whom (by reference, plus a masked address for support), and what
+-- happened to it. Never the body, the template variables or the full
+-- address. Written only by the email service (app/integrations/email),
+-- which sets app.email_writer (schema/0005); location admins can read
+-- their location's rows.
+--
+-- After 2 years the recipient is cleared (recipient_cleared_at) and the
+-- row kept for usage counts (reporting.email_usage_monthly).
+CREATE TABLE public.email_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- Set from the location by trg_email_messages_tenant.
+    tenant_id UUID NOT NULL,
+    location_id UUID NOT NULL,
+
+    email_type public.email_type_enum NOT NULL,
+
+    -- Who it went to: a user, or a pickup person (kiosk PINs). The masked
+    -- address ("j***@gmail.com") is enough for support to recognise it.
+    recipient_user_id UUID,
+    recipient_pickup_person_id UUID,
+    recipient_masked VARCHAR(255),
+    recipient_cleared_at TIMESTAMPTZ,
+
+    status public.email_status_enum NOT NULL DEFAULT 'queued',
+    -- The provider's message id (SES MessageId): how bounce, complaint and
+    -- delivery events find the row.
+    provider_message_id VARCHAR(255),
+    -- A provider or app error code only. Provider messages can quote the
+    -- address, so they aren't stored.
+    error_code VARCHAR(100),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    sent_at TIMESTAMPTZ,
+    status_updated_at TIMESTAMPTZ,
+
+    CONSTRAINT fk_email_messages_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_email_messages_location
+        FOREIGN KEY (location_id)
+        REFERENCES tenancy.locations (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_email_messages_recipient_user
+        FOREIGN KEY (recipient_user_id)
+        REFERENCES auth.users (id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_email_messages_recipient_pickup_person
+        FOREIGN KEY (recipient_pickup_person_id)
+        REFERENCES public.authorized_pickup_persons (id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT uq_email_messages_provider_message
+        UNIQUE (provider_message_id),
+
+    -- One kind of recipient per email.
+    CONSTRAINT ck_email_messages_one_recipient
+        CHECK (recipient_user_id IS NULL OR recipient_pickup_person_id IS NULL)
+);
+
+CREATE INDEX idx_email_messages_tenant_created
+    ON public.email_messages (tenant_id, created_at);
+
+CREATE INDEX idx_email_messages_location_created
+    ON public.email_messages (location_id, created_at);
+
+CREATE FUNCTION public.set_email_message_tenant()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    SELECT l.tenant_id
+    INTO NEW.tenant_id
+    FROM tenancy.locations l
+    WHERE l.id = NEW.location_id;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_email_messages_tenant
+    BEFORE INSERT OR UPDATE OF location_id ON public.email_messages
+    FOR EACH ROW EXECUTE FUNCTION public.set_email_message_tenant();
+
+
+-- =====================================================
+-- EMAIL TEMPLATE OVERRIDES
+-- =====================================================
+
+-- A tenant's own wording for one email type. Only the editable slots
+-- (docs/email-policy.md, section 5); an empty slot uses the platform's
+-- default. Plain text with whitelisted placeholders, checked by the API
+-- when saved; the locked parts (links, the PIN block, the footer) can't be
+-- changed. Edited from tenant configuration (not built yet).
+CREATE TABLE tenancy.email_template_overrides (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    tenant_id UUID NOT NULL,
+    email_type public.email_type_enum NOT NULL,
+
+    subject VARCHAR(150),
+    heading VARCHAR(150),
+    body TEXT,
+    sign_off VARCHAR(150),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by_user_id UUID,
+
+    CONSTRAINT fk_email_template_overrides_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_email_template_overrides_updated_by
+        FOREIGN KEY (updated_by_user_id)
+        REFERENCES auth.users (id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT uq_email_template_overrides_tenant_type
+        UNIQUE (tenant_id, email_type),
+
+    CONSTRAINT ck_email_template_overrides_body_length
+        CHECK (body IS NULL OR char_length(body) <= 2000)
+);
+
+CREATE TRIGGER trg_email_template_overrides_updated_at
+    BEFORE UPDATE ON tenancy.email_template_overrides
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+-- =====================================================
+-- REPORTING: EMAIL USAGE
+-- =====================================================
+
+-- Emails per tenant per month (Sydney time) and type, with how many
+-- failed, bounced or drew complaints. For the platform owner: the app's
+-- runtime role can't read the reporting schema.
+CREATE VIEW reporting.email_usage_monthly AS
+SELECT
+    t.id AS tenant_id,
+    t.code AS tenant_code,
+    date_trunc('month', m.created_at AT TIME ZONE 'Australia/Sydney')::date AS month,
+    m.email_type,
+    count(*) AS emails,
+    count(*) FILTER (WHERE m.status = 'failed') AS failed,
+    count(*) FILTER (WHERE m.status = 'bounced') AS bounced,
+    count(*) FILTER (WHERE m.status = 'complained') AS complained
+FROM public.email_messages m
+JOIN tenancy.tenants t
+    ON t.id = m.tenant_id
+GROUP BY t.id, t.code, 3, m.email_type;

@@ -466,3 +466,33 @@ CREATE POLICY attendance_records_scope_policy
               AND auth.can_access_location_row(b.location_id, b.user_id)
         )
     );
+
+
+-- =====================================================
+-- EMAIL
+-- =====================================================
+
+ALTER TABLE public.email_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.email_template_overrides ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.email_template_overrides FORCE ROW LEVEL SECURITY;
+
+-- Only the email service writes the log, in its own transaction with
+-- app.email_writer on (app/integrations/email). It's how the log is kept
+-- apart from every request's own RLS session, including the webhooks that
+-- have none.
+CREATE POLICY email_messages_writer_policy
+    ON public.email_messages FOR ALL
+    USING (current_setting('app.email_writer', true) = 'on')
+    WITH CHECK (current_setting('app.email_writer', true) = 'on');
+
+-- Location admins see what was sent from their location.
+CREATE POLICY email_messages_admin_read_policy
+    ON public.email_messages FOR SELECT
+    USING (auth.is_location_admin(location_id));
+
+-- Read when rendering emails. Not personal information, and like the
+-- rest of tenancy, readable; writes come with tenant configuration.
+CREATE POLICY email_template_overrides_read_policy
+    ON tenancy.email_template_overrides FOR SELECT
+    USING (true);

@@ -4,6 +4,7 @@
     import Button from "$lib/components/actions/Button.svelte";
 	import { goto } from "$app/navigation";
 
+    import { REVIEW_STATUS_LABELS } from "$lib/features/children/review";
     import { formatDateOfBirth } from "$lib/utils/helpers";
 
     let { 
@@ -23,8 +24,7 @@
             data={[
                 {
                     label: "Medical review",
-                    value: child.review_status,
-                    format: 'enum'
+                    value: REVIEW_STATUS_LABELS[child.review_status]
                 },
                 {
                     label: "Date of birth",

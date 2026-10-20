@@ -16,7 +16,20 @@ from app.errors.bookings import (
     ServiceNotOfferedError,
     ServiceDayNotInFutureError,
 )
-from app.errors.children import ChildProfileCollisionError
+from app.errors.child_documents import (
+    ChildDocumentChangeNotAllowedError,
+    ChildDocumentFamilyOnlyError,
+    ChildDocumentTooLargeError,
+    ChildDocumentTypeNotAllowedError,
+)
+from app.errors.children import (
+    ChildProfileCollisionError,
+    ChildProfileInactiveError,
+)
+from app.errors.medical_reviews import (
+    DocumentationRequestMessageRequiredError,
+    MedicalReviewDecisionNotAllowedError,
+)
 from app.errors.services import LocationServiceNotPricedError
 from app.errors.refunds import (
     RefundAlreadyRequestedError,
@@ -71,6 +84,16 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_refunds_booking_refundable": RefundNotAllowedError,
     "uq_refunds_active_booking": RefundAlreadyRequestedError,
     "ck_location_service_config_active_priced": LocationServiceNotPricedError,
+    # Child documents (schema/0004): the table's checks and
+    # trg_child_documents_rules.
+    "ck_child_documents_family_only": ChildDocumentFamilyOnlyError,
+    "ck_child_documents_child_active": ChildProfileInactiveError,
+    "ck_child_documents_change": ChildDocumentChangeNotAllowedError,
+    "ck_child_documents_content_type": ChildDocumentTypeNotAllowedError,
+    "ck_child_documents_size": ChildDocumentTooLargeError,
+    # Medical review (schema/0004): trg_child_medical_state_rules.
+    "ck_child_medical_state_staff_decision": MedicalReviewDecisionNotAllowedError,
+    "ck_child_medical_state_documentation_request": DocumentationRequestMessageRequiredError,
 }
 
 

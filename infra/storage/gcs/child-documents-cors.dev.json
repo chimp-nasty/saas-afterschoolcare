@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "http://localhost:5173",
+      "http://tenant1.localhost:5173",
+      "http://tenant2.localhost:5173"
+    ],
+    "method": ["POST", "GET"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]

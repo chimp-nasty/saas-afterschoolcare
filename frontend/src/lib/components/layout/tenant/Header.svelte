@@ -38,48 +38,51 @@
 				Logged in as {$auth.firstName ?? $auth.email}
 			</p>
 
-			<Button
-				variant="ghost"
-				class="group relative"
-				aria-label="Notifications"
-				onclick={() => goto(`/${page.params.location_code}/actions`)}
-			>
-				<span
-					class="
-						inline-flex
-						origin-top
-						group-hover:animate-[bell-ring_0.5s_ease-in-out]
-					"
+			<!-- Actions are messages to families, so only customers get the bell. -->
+			{#if $auth.roles.includes('customer')}
+				<Button
+					variant="ghost"
+					class="group relative"
+					aria-label="Notifications"
+					onclick={() => goto(`/${page.params.location_code}/actions`)}
 				>
-					<Bell size={20} />
-				</span>
-
-				{#if page.data.uncitedActionCount > 0}
 					<span
 						class="
-							absolute
-							right-0.5
-							bottom-0.5
-							flex
-							min-h-4
-							min-w-4
-							items-center
-							justify-center
-							rounded-full
-							bg-(--danger)
-							px-1
-							text-[10px]
-							font-extrabold
-							leading-none
-							text-white
+							inline-flex
+							origin-top
+							group-hover:animate-[bell-ring_0.5s_ease-in-out]
 						"
 					>
-						{page.data.uncitedActionCount > 99
-							? '99+'
-							: page.data.uncitedActionCount}
+						<Bell size={20} />
 					</span>
-				{/if}
-			</Button>
+
+					{#if page.data.uncitedActionCount > 0}
+						<span
+							class="
+								absolute
+								right-0.5
+								bottom-0.5
+								flex
+								min-h-4
+								min-w-4
+								items-center
+								justify-center
+								rounded-full
+								bg-(--danger)
+								px-1
+								text-[10px]
+								font-extrabold
+								leading-none
+								text-white
+							"
+						>
+							{page.data.uncitedActionCount > 99
+								? '99+'
+								: page.data.uncitedActionCount}
+						</span>
+					{/if}
+				</Button>
+			{/if}
 
 			{#if onMenu}
 				<div class="md:hidden">

@@ -6,6 +6,9 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE SCHEMA tenancy;
 CREATE SCHEMA auth;
+-- Platform-owner reports across tenants. The app's runtime role has no
+-- access (views here bypass RLS); read with an owner connection.
+CREATE SCHEMA reporting;
 
 
 -- =====================================================
@@ -53,6 +56,37 @@ CREATE TYPE public.child_document_upload_status_enum AS ENUM (
     'pending',
     'uploaded',
     'failed'
+);
+
+-- Where a document's file is stored (app/integrations/storage).
+CREATE TYPE public.storage_provider_enum AS ENUM (
+    'gcs',
+    's3'
+);
+
+-- The emails the platform sends: a fixed catalogue
+-- (app/integrations/email/catalogue.py, docs/email-policy.md section 3).
+CREATE TYPE public.email_type_enum AS ENUM (
+    'password_reset',
+    'password_changed',
+    'welcome',
+    'booking_confirmation',
+    'refund_confirmation',
+    'documents_requested',
+    'child_approved',
+    'kiosk_pin'
+);
+
+-- queued: logged, not yet handed to the provider. sent: accepted by the
+-- provider. failed: the provider refused it, or we couldn't reach it.
+-- delivered / bounced / complained: reported back by SES afterwards.
+CREATE TYPE public.email_status_enum AS ENUM (
+    'queued',
+    'sent',
+    'failed',
+    'delivered',
+    'bounced',
+    'complained'
 );
 
 CREATE TYPE public.stripe_status_enum AS ENUM (

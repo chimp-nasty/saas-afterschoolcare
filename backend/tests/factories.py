@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, text
 from app.core.config import settings
 from app.core.security import hash_token
 from app.integrations.payments.stripe.client import StripeCheckout, StripeRefund
+from app.integrations.storage.base import SignedUpload, StoredObject
 from app.main import app
 
 
@@ -47,6 +48,88 @@ class FakeEmail:
         self.state.kiosk_pins.append(
             {"to_email": to_email, "first_name": first_name, "pin": pin}
         )
+
+
+@dataclass
+class FakeStorageState:
+    """What's in the fake bucket, and what the app asked of it."""
+
+    # (bucket, key) -> {"content", "content_type", "metadata"}
+    objects: dict[tuple[str, str], dict] = field(default_factory=dict)
+    # Policies handed out for browser uploads, by key.
+    uploads: dict[str, dict] = field(default_factory=dict)
+    download_links: list[dict] = field(default_factory=list)
+
+
+class FakeStorage:
+    """
+    Stands in for StorageClient in every service (patched in conftest), so
+    no test talks to GCS or S3. `receive` plays the browser's upload,
+    enforcing the signed policy the way the provider would.
+    """
+
+    state = FakeStorageState()
+    provider = "gcs"
+    bucket = "test-documents"
+
+    def create_upload(self, *, key, content_type, max_size_bytes, metadata, expires_in):
+        self.state.uploads[key] = {
+            "content_type": content_type,
+            "max_size_bytes": max_size_bytes,
+            "metadata": metadata,
+        }
+
+        return SignedUpload(
+            url=f"https://storage.test/{self.bucket}",
+            fields={"key": key, "Content-Type": content_type},
+        )
+
+    def get_object(self, *, bucket, key):
+        stored = self.state.objects.get((bucket, key))
+
+        if stored is None:
+            return None
+
+        return StoredObject(size_bytes=len(stored["content"]), content_type=stored["content_type"])
+
+    def read_start(self, *, bucket, key, length):
+        return self.state.objects[(bucket, key)]["content"][:length]
+
+    def copy(self, *, bucket, source_key, target_key):
+        self.state.objects[(bucket, target_key)] = dict(self.state.objects[(bucket, source_key)])
+
+    def delete(self, *, bucket, key):
+        self.state.objects.pop((bucket, key), None)
+
+    def create_download_url(self, *, bucket, key, content_type, filename, expires_in):
+        self.state.download_links.append({"bucket": bucket, "key": key, "content_type": content_type})
+
+        return f"https://storage.test/{bucket}/{key}?signed"
+
+    @classmethod
+    def receive(cls, upload: dict, content: bytes) -> bool:
+        """
+        The browser posting a file with the signed fields from an upload
+        response. Like the provider, refuses a file over the policy's size
+        and stores the policy's content type whatever the file is.
+        """
+        key = upload["fields"]["key"]
+        policy = cls.state.uploads[key]
+
+        if not 1 <= len(content) <= policy["max_size_bytes"]:
+            return False
+
+        cls.state.objects[(cls.bucket, key)] = {
+            "content": content,
+            "content_type": policy["content_type"],
+            "metadata": policy["metadata"],
+        }
+
+        return True
+
+    @classmethod
+    def keys(cls) -> set[str]:
+        return {key for (_, key) in cls.state.objects}
 
 
 def new_phone() -> str:
