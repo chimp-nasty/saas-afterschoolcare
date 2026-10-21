@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.errors.children import ChildProfileNotFoundError
 from app.public.repositories.child_profile import ChildProfileRepository
 from app.public.schemas.children import (
+    ChildSearchResultResponse,
     ChildResponse,
     ChildTableResponse,
     ListChildrenFilterRequest,
@@ -54,4 +55,16 @@ class ReadChildService:
                 from_attributes=True,
             )
             for row in rows
+        ]
+
+    def search(
+        self,
+        *,
+        location_id: UUID,
+        text: str,
+    ) -> list[ChildSearchResultResponse]:
+        """Children whose first or last name starts with `text`, with their family (staff finding a family)."""
+        return [
+            ChildSearchResultResponse.model_validate(row, from_attributes=True)
+            for row in self.child_repository.search(location_id=location_id, text=text.strip())
         ]

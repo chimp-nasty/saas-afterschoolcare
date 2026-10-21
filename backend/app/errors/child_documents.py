@@ -49,3 +49,9 @@ class ChildDocumentUploadFailedError(ApplicationError):
     status_code = status.HTTP_409_CONFLICT
     message = "This upload didn't go through. Upload the file again."
     result = "failed"
+
+
+class ChildDocumentPrintStaffOnlyError(ApplicationError):
+    status_code = status.HTTP_403_FORBIDDEN
+    message = "Only staff on shift at the staff kiosk can mark a plan printed."
+    result = "denied"

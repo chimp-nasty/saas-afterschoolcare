@@ -394,7 +394,8 @@ BEGIN
         RETURN NEW;
     END IF;
 
-    SELECT auth.is_location_staff(cp.location_id)
+    -- Medical approval is an admin responsibility (docs/portals.md).
+    SELECT auth.is_location_admin(cp.location_id)
     INTO v_is_staff
     FROM public.child_profile cp
     WHERE cp.id = NEW.child_id;
@@ -672,10 +673,12 @@ CREATE TRIGGER trg_authorized_pickup_persons_updated_at
 -- counts the family's rows and checks the writer's role past RLS.
 --
 -- Who may set what (writes with no user session are trusted server code:
--- migrations, maintenance, and the kiosk endpoints still to be built):
---   * ID check and staff approval: staff only
---   * PIN fields: only issue_pickup_pin() (and, later, the kiosk), never a
---     family or staff member directly
+-- migrations, maintenance, and the kiosk functions):
+--   * ID check and staff approval: only by staff at the staff kiosk (the
+--     kiosk channel, docs/portals.md), never from the website, admins
+--     included
+--   * PIN fields: only issue_pickup_pin() and the kiosk, never a family or
+--     staff member directly
 CREATE FUNCTION public.enforce_pickup_person_rules()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -695,8 +698,27 @@ BEGIN
     NEW.phone := regexp_replace(NEW.phone, '\D', '', 'g');
     NEW.email := btrim(NEW.email);
 
-    -- ID check and approval: a non-staff write can't set or change them.
-    IF v_user_session AND NOT auth.is_location_staff(NEW.location_id) THEN
+    -- ID check and approval at the staff kiosk need the staff member to be
+    -- on shift (docs/portals.md); refused rather than ignored, so the kiosk
+    -- can say why.
+    IF TG_OP = 'UPDATE'
+       AND v_user_session
+       AND auth.current_channel() = 'kiosk'
+       AND (NEW.identity_verified_at, NEW.staff_approved_at)
+           IS DISTINCT FROM (OLD.identity_verified_at, OLD.staff_approved_at)
+       AND NOT public.staff_on_shift(NEW.location_id, auth.current_user_id()) THEN
+        RAISE EXCEPTION 'Staff must be on shift to check ID'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_staff_kiosk_on_shift',
+                  TABLE = 'authorized_pickup_persons',
+                  SCHEMA = 'public';
+    END IF;
+
+    -- ID check and approval: only staff at the staff kiosk set them.
+    IF v_user_session AND NOT (
+        auth.current_channel() = 'kiosk'
+        AND auth.is_location_staff(NEW.location_id)
+    ) THEN
         IF TG_OP = 'INSERT' THEN
             NEW.identity_verified_at := NULL;
             NEW.identity_verified_by_user_id := NULL;
@@ -1007,8 +1029,22 @@ CREATE TABLE public.child_documents (
     -- FALSE once the family removes it. The record (and file) is kept for
     -- the retention period either way.
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    -- Staff at the staff kiosk confirm they've printed it for the centre's
+    -- action plan folder (public.set_document_printed). A new upload is a
+    -- new document, so it starts unprinted.
+    printed_at TIMESTAMPTZ,
+    printed_by_user_id UUID,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_child_documents_printed_by
+        FOREIGN KEY (printed_by_user_id)
+        REFERENCES auth.users (id),
+
+    CONSTRAINT ck_child_documents_printed_by
+        CHECK ((printed_at IS NULL) = (printed_by_user_id IS NULL)),
 
     CONSTRAINT fk_child_documents_child
         FOREIGN KEY (child_id)
@@ -1062,6 +1098,9 @@ CREATE TRIGGER trg_child_documents_updated_at
 --     then may its file move (from pending/ to documents/)
 --   * removing a document is final; the family uploads it again instead
 --   * what it is and whose it is never change
+--   * whether it's been printed is set only by staff at the staff kiosk,
+--     through public.set_document_printed (app.print_writer), which may
+--     change nothing else
 --
 -- Writes with no user session are trusted server code (maintenance, moving
 -- files between buckets, the retention job) and aren't limited.
@@ -1078,6 +1117,19 @@ DECLARE
     v_child_found BOOLEAN;
 BEGIN
     IF v_user_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    IF TG_OP = 'UPDATE' AND current_setting('app.print_writer', true) = 'on' THEN
+        IF (to_jsonb(NEW) - ARRAY['printed_at', 'printed_by_user_id', 'updated_at'])
+           IS DISTINCT FROM (to_jsonb(OLD) - ARRAY['printed_at', 'printed_by_user_id', 'updated_at']) THEN
+            RAISE EXCEPTION 'Document % can''t be changed that way', NEW.id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_child_documents_change',
+                      TABLE = 'child_documents',
+                      SCHEMA = 'public';
+        END IF;
+
         RETURN NEW;
     END IF;
 
@@ -1108,6 +1160,8 @@ BEGIN
 
         NEW.uploaded_by_user_id := v_user_id;
         NEW.is_active := TRUE;
+        NEW.printed_at := NULL;
+        NEW.printed_by_user_id := NULL;
 
         RETURN NEW;
     END IF;
@@ -1118,6 +1172,8 @@ BEGIN
        OR NEW.filename IS DISTINCT FROM OLD.filename
        OR NEW.storage_provider IS DISTINCT FROM OLD.storage_provider
        OR NEW.created_at IS DISTINCT FROM OLD.created_at
+       OR NEW.printed_at IS DISTINCT FROM OLD.printed_at
+       OR NEW.printed_by_user_id IS DISTINCT FROM OLD.printed_by_user_id
        -- An upload finishes once, and a removed document stays removed.
        OR (NEW.upload_status IS DISTINCT FROM OLD.upload_status AND OLD.upload_status <> 'pending')
        OR (NEW.is_active AND NOT OLD.is_active)
@@ -1147,6 +1203,58 @@ $$;
 CREATE TRIGGER trg_child_documents_rules
     BEFORE INSERT OR UPDATE ON public.child_documents
     FOR EACH ROW EXECUTE FUNCTION public.enforce_child_document_rules();
+
+-- A staff member at the staff kiosk, on shift, ticks (or unticks, to
+-- correct a mistake) that they've printed a current document for the
+-- folder. Recorded against them. Only these two fields change.
+CREATE FUNCTION public.set_document_printed(p_document_id UUID, p_printed BOOLEAN)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_user_id UUID := auth.current_user_id();
+    v_location_id UUID;
+BEGIN
+    SELECT cp.location_id
+    INTO v_location_id
+    FROM public.child_documents d
+    JOIN public.child_profile cp
+        ON cp.id = d.child_id
+    WHERE d.id = p_document_id
+      AND d.is_active
+      AND d.upload_status = 'uploaded';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Document % not found', p_document_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_child_documents_printed_document',
+                  TABLE = 'child_documents',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF v_user_id IS NULL
+       OR auth.current_channel() <> 'kiosk'
+       OR NOT auth.is_location_staff(v_location_id)
+       OR NOT public.staff_on_shift(v_location_id, v_user_id) THEN
+        RAISE EXCEPTION 'Only staff on shift at the staff kiosk mark documents printed'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_child_documents_printed_by_staff',
+                  TABLE = 'child_documents',
+                  SCHEMA = 'public';
+    END IF;
+
+    PERFORM set_config('app.print_writer', 'on', true);
+
+    UPDATE public.child_documents
+    SET printed_at = CASE WHEN p_printed THEN now() END,
+        printed_by_user_id = CASE WHEN p_printed THEN v_user_id END
+    WHERE id = p_document_id;
+
+    PERFORM set_config('app.print_writer', '', true);
+END;
+$$;
 
 -- Documents count as medical details: when one is accepted, or an
 -- accepted one is removed, the child goes back to pending for staff to
@@ -1193,13 +1301,20 @@ CREATE TRIGGER trg_child_documents_medical_review
 -- LOCATION KIOSK DEVICES
 -- =====================================================
 
+-- A tablet at the centre's entrance. An admin adds it and gets a one-time
+-- setup code (only its SHA-256 is kept, for 15 minutes); entering the code
+-- on the tablet pairs it (kiosk_pair), and the tablet then holds a cookie
+-- naming the device and its token_version. Revoking (is_active false) or
+-- issuing a new code (token_version + 1) makes old cookies stop working.
 CREATE TABLE public.location_kiosk_devices (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     location_id UUID NOT NULL,
 
+    kind public.kiosk_kind_enum NOT NULL,
     name TEXT NOT NULL,
     setup_secret_hash TEXT,
+    setup_code_expires_at TIMESTAMPTZ,
     token_version INTEGER NOT NULL DEFAULT 1,
 
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -1211,6 +1326,11 @@ CREATE TABLE public.location_kiosk_devices (
         FOREIGN KEY (location_id)
         REFERENCES tenancy.locations (id)
 );
+
+-- One active kiosk of each kind per location; a revoked one doesn't count.
+CREATE UNIQUE INDEX uq_location_kiosk_devices_active_kind
+    ON public.location_kiosk_devices (location_id, kind)
+    WHERE is_active;
 
 
 -- =====================================================
@@ -1484,9 +1604,11 @@ BEGIN
                   SCHEMA = 'public';
     END IF;
 
+    -- Admins (on the website or at the staff kiosk) can refund up to and
+    -- including the session day; families until their cutoff.
     IF NOT public.booking_is_refundable(
         NEW.booking_id,
-        COALESCE(auth.is_location_staff(NEW.location_id), FALSE)
+        COALESCE(auth.is_location_admin(NEW.location_id), FALSE)
     ) THEN
         RAISE EXCEPTION 'Booking % can''t be refunded', NEW.booking_id
             USING ERRCODE = 'check_violation',
@@ -1504,11 +1626,13 @@ BEGIN
        AND pa.stripe_payment_intent_id IS NOT NULL
     WHERE b.id = NEW.booking_id;
 
-    -- Paid, but with nothing in Stripe to refund against.
+    -- Paid, but with nothing in Stripe to refund against (e.g. marked paid
+    -- without a card payment). Its own name, so it isn't reported as the
+    -- refund window.
     IF NEW.payment_attempt_id IS NULL THEN
         RAISE EXCEPTION 'Booking % has no refundable payment', NEW.booking_id
             USING ERRCODE = 'check_violation',
-                  CONSTRAINT = 'ck_refunds_booking_refundable',
+                  CONSTRAINT = 'ck_refunds_card_payment',
                   TABLE = 'refunds',
                   SCHEMA = 'public';
     END IF;
@@ -1522,6 +1646,77 @@ CREATE TRIGGER trg_refunds_rules
     FOR EACH ROW EXECUTE FUNCTION public.enforce_refund_rules();
 
 
+-- When children can be signed in and out for a session, at either kiosk:
+-- from 2 hours before it starts to 2 hours after it ends, on its day, at
+-- the location's time. NULLs when the location doesn't enforce it
+-- (tenancy.locations.kiosk_enforce_service_times). Used by the attendance
+-- trigger (the rule) and both kiosks (what they show).
+CREATE FUNCTION public.service_day_signing_window(
+    p_location_service_day_id UUID,
+    OUT opens_at TIMESTAMPTZ,
+    OUT closes_at TIMESTAMPTZ
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT
+        CASE WHEN l.kiosk_enforce_service_times
+            THEN ((d.service_date + lsc.start_time) AT TIME ZONE l.timezone) - interval '2 hours'
+        END,
+        CASE WHEN l.kiosk_enforce_service_times
+            THEN ((d.service_date + lsc.end_time) AT TIME ZONE l.timezone) + interval '2 hours'
+        END
+    FROM public.location_service_days d
+    JOIN public.location_service_config lsc
+        ON lsc.location_service_id = d.location_service_id
+    JOIN tenancy.locations l
+        ON l.id = d.location_id
+    WHERE d.id = p_location_service_day_id;
+$$;
+
+-- The same, for a booking's session.
+CREATE FUNCTION public.booking_signing_window(
+    p_booking_id UUID,
+    OUT opens_at TIMESTAMPTZ,
+    OUT closes_at TIMESTAMPTZ
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT w.opens_at, w.closes_at
+    FROM public.bookings b
+    CROSS JOIN LATERAL public.service_day_signing_window(b.location_service_day_id) w
+    WHERE b.id = p_booking_id;
+$$;
+
+-- An admin switches the family kiosk's service times on or off for their
+-- location. Only that column: admins don't otherwise write locations.
+CREATE FUNCTION public.set_kiosk_enforce_service_times(p_location_id UUID, p_enabled BOOLEAN)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT auth.is_location_admin(p_location_id) THEN
+        RAISE EXCEPTION 'Only the location''s admins can change kiosk settings'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_locations_kiosk_settings_admin',
+                  TABLE = 'locations',
+                  SCHEMA = 'tenancy';
+    END IF;
+
+    UPDATE tenancy.locations
+    SET kiosk_enforce_service_times = p_enabled
+    WHERE id = p_location_id;
+END;
+$$;
+
+
 -- =====================================================
 -- ATTENDANCE RECORDS
 -- =====================================================
@@ -1531,10 +1726,24 @@ CREATE TABLE public.attendance_records (
 
     booking_id UUID NOT NULL,
 
+    -- Arrival: signed in by a staff member, or by someone on the family's
+    -- pickup list at the kiosk.
     signed_in_at TIMESTAMPTZ,
-    signed_out_at TIMESTAMPTZ,
     signed_in_by_user_id UUID,
+    signed_in_by_pickup_person_id UUID,
+    signed_in_kiosk_device_id UUID,
+
+    -- Departure: recorded by a staff member or at the kiosk, and collected
+    -- by an approved pickup person, or (staff only) released to someone
+    -- else after checking with the account holder (a one-off release), or
+    -- (staff only, before school care) sent to school.
+    signed_out_at TIMESTAMPTZ,
     signed_out_by_user_id UUID,
+    signed_out_kiosk_device_id UUID,
+    collected_by_pickup_person_id UUID,
+    released_to_name VARCHAR(200),
+    release_note TEXT,
+    sent_to_school BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1551,6 +1760,64 @@ CREATE TABLE public.attendance_records (
     CONSTRAINT fk_attendance_records_signed_out_by
         FOREIGN KEY (signed_out_by_user_id)
         REFERENCES auth.users (id),
+
+    CONSTRAINT fk_attendance_records_signed_in_by_pickup_person
+        FOREIGN KEY (signed_in_by_pickup_person_id)
+        REFERENCES public.authorized_pickup_persons (id),
+
+    CONSTRAINT fk_attendance_records_collected_by
+        FOREIGN KEY (collected_by_pickup_person_id)
+        REFERENCES public.authorized_pickup_persons (id),
+
+    CONSTRAINT fk_attendance_records_signed_in_kiosk
+        FOREIGN KEY (signed_in_kiosk_device_id)
+        REFERENCES public.location_kiosk_devices (id),
+
+    CONSTRAINT fk_attendance_records_signed_out_kiosk
+        FOREIGN KEY (signed_out_kiosk_device_id)
+        REFERENCES public.location_kiosk_devices (id),
+
+    -- Signed in at a kiosk, by exactly one: a staff member (staff kiosk)
+    -- or a pickup person (family kiosk).
+    CONSTRAINT ck_attendance_records_signed_in_by
+        CHECK (
+            CASE WHEN signed_in_at IS NULL
+                THEN num_nonnulls(signed_in_by_user_id, signed_in_by_pickup_person_id, signed_in_kiosk_device_id) = 0
+                ELSE num_nonnulls(signed_in_by_user_id, signed_in_by_pickup_person_id) = 1
+                     AND signed_in_kiosk_device_id IS NOT NULL
+            END
+        ),
+
+    -- Signed out at a kiosk (by a staff member at the staff kiosk, or the
+    -- collector themselves at the family kiosk), and gone by exactly one
+    -- way: an approved pickup person, a named one-off release, or sent to
+    -- school.
+    CONSTRAINT ck_attendance_records_signed_out_by
+        CHECK (
+            CASE WHEN signed_out_at IS NULL
+                THEN num_nonnulls(signed_out_by_user_id, signed_out_kiosk_device_id, collected_by_pickup_person_id, released_to_name, release_note) = 0
+                     AND NOT sent_to_school
+                ELSE signed_out_kiosk_device_id IS NOT NULL
+            END
+        ),
+
+    CONSTRAINT ck_attendance_records_collected_by
+        CHECK (
+            signed_out_at IS NULL
+            OR num_nonnulls(
+                collected_by_pickup_person_id,
+                NULLIF(btrim(released_to_name), ''),
+                NULLIF(sent_to_school, FALSE)
+            ) = 1
+        ),
+
+    -- Only staff send a child to school.
+    CONSTRAINT ck_attendance_records_to_school_by_staff
+        CHECK (NOT sent_to_school OR signed_out_by_user_id IS NOT NULL),
+
+    -- Only staff release a child to someone who isn't on the list.
+    CONSTRAINT ck_attendance_records_release_by_staff
+        CHECK (released_to_name IS NULL OR signed_out_by_user_id IS NOT NULL),
 
     CONSTRAINT uq_attendance_records_booking
         UNIQUE (booking_id),
@@ -1571,6 +1838,561 @@ CREATE TABLE public.attendance_records (
 CREATE TRIGGER trg_attendance_records_updated_at
     BEFORE UPDATE ON public.attendance_records
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- The rules every attendance write goes through. SECURITY DEFINER: reads
+-- the booking, its day, the device and the family's pickup people past RLS.
+--
+--   * attendance is only written at a kiosk (docs/portals.md): by a staff
+--     member at the location's staff kiosk (the kiosk channel, their PIN
+--     checked for the request; recorded against them and the device), or
+--     by a pickup person at the family kiosk (the kiosk_* functions, no
+--     user session). Never from the website, admins included.
+--   * a pickup person signs at the family kiosk; staff at the staff kiosk
+--   * only a confirmed booking is signed in or out, never before the
+--     session's day (the family kiosk only offers today's; staff can also
+--     fix earlier days)
+--   * pickup people are on this family's list at this location, and only
+--     an approved one (staff_approved_at) collects a child
+CREATE FUNCTION public.enforce_attendance_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_user_id UUID := auth.current_user_id();
+    v_device_id UUID := auth.current_kiosk_device_id();
+    v_booking_status public.booking_status_enum;
+    v_family_id UUID;
+    v_location_id UUID;
+    v_service_date DATE;
+    v_service_code TEXT;
+    v_today DATE;
+    v_opens_at TIMESTAMPTZ;
+    v_closes_at TIMESTAMPTZ;
+BEGIN
+    SELECT b.booking_status, b.user_id, b.location_id, d.service_date, st.code,
+           (now() AT TIME ZONE l.timezone)::date
+    INTO v_booking_status, v_family_id, v_location_id, v_service_date, v_service_code, v_today
+    FROM public.bookings b
+    JOIN public.location_service_days d
+        ON d.id = b.location_service_day_id
+    JOIN public.location_services ls
+        ON ls.id = d.location_service_id
+    JOIN public.service_types st
+        ON st.id = ls.service_type_id
+    JOIN tenancy.locations l
+        ON l.id = b.location_id
+    WHERE b.id = NEW.booking_id;
+
+    -- An unknown booking is left to fk_attendance_records_booking.
+    IF NOT FOUND THEN
+        RETURN NEW;
+    END IF;
+
+    IF v_user_id IS NOT NULL THEN
+        IF auth.current_channel() <> 'kiosk'
+           OR v_device_id IS NULL
+           OR NOT auth.is_location_staff(v_location_id) THEN
+            RAISE EXCEPTION 'Attendance for booking % is only recorded at a kiosk', NEW.booking_id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_attendance_records_kiosk_only',
+                      TABLE = 'attendance_records',
+                      SCHEMA = 'public';
+        END IF;
+
+        IF NOT public.staff_on_shift(v_location_id, v_user_id) THEN
+            RAISE EXCEPTION 'Staff must be on shift to record attendance'
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_staff_kiosk_on_shift',
+                      TABLE = 'attendance_records',
+                      SCHEMA = 'public';
+        END IF;
+
+        -- Who did it, and where: the staff member and their kiosk.
+        IF NEW.signed_in_at IS DISTINCT FROM (CASE WHEN TG_OP = 'UPDATE' THEN OLD.signed_in_at END)
+           AND NEW.signed_in_at IS NOT NULL THEN
+            NEW.signed_in_by_user_id := v_user_id;
+            NEW.signed_in_by_pickup_person_id := NULL;
+            NEW.signed_in_kiosk_device_id := v_device_id;
+        END IF;
+
+        IF NEW.signed_out_at IS DISTINCT FROM (CASE WHEN TG_OP = 'UPDATE' THEN OLD.signed_out_at END)
+           AND NEW.signed_out_at IS NOT NULL THEN
+            NEW.signed_out_by_user_id := v_user_id;
+            NEW.signed_out_kiosk_device_id := v_device_id;
+        END IF;
+    END IF;
+
+    IF v_booking_status <> 'CONFIRMED' THEN
+        RAISE EXCEPTION 'Booking % is not confirmed', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_booking_confirmed',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF v_service_date > v_today THEN
+        RAISE EXCEPTION 'Booking % is on a later day', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_service_day',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    -- Signing in and out only around the session, at either kiosk (when
+    -- the location enforces it), by the time recorded: staff correcting an
+    -- earlier day give when it happened.
+    SELECT w.opens_at, w.closes_at
+    INTO v_opens_at, v_closes_at
+    FROM public.booking_signing_window(NEW.booking_id) w;
+
+    IF v_opens_at IS NOT NULL AND EXISTS (
+        SELECT 1
+        FROM (VALUES
+            (NEW.signed_in_at, NEW.signed_in_at IS DISTINCT FROM (CASE WHEN TG_OP = 'UPDATE' THEN OLD.signed_in_at END)),
+            (NEW.signed_out_at, NEW.signed_out_at IS DISTINCT FROM (CASE WHEN TG_OP = 'UPDATE' THEN OLD.signed_out_at END))
+        ) AS signing(at, changed)
+        WHERE signing.changed
+          AND signing.at IS NOT NULL
+          AND NOT signing.at BETWEEN v_opens_at AND v_closes_at
+    ) THEN
+        RAISE EXCEPTION 'Booking % is outside its kiosk sign in and out times', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_service_window',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    -- Children are sent to school only from before school care.
+    IF NEW.sent_to_school
+       AND NOT (TG_OP = 'UPDATE' AND OLD.sent_to_school)
+       AND v_service_code <> 'before_school_care' THEN
+        RAISE EXCEPTION 'Booking % is not before school care', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_to_school_service',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    -- Each kiosk does its own kind of signing, at its own location.
+    IF EXISTS (
+        SELECT 1
+        FROM (VALUES
+            (NEW.signed_in_kiosk_device_id, NEW.signed_in_by_user_id IS NOT NULL),
+            (NEW.signed_out_kiosk_device_id, NEW.signed_out_by_user_id IS NOT NULL)
+        ) AS signing(device_id, by_staff)
+        WHERE signing.device_id IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM public.location_kiosk_devices k
+              WHERE k.id = signing.device_id
+                AND k.location_id = v_location_id
+                AND k.kind = CASE WHEN signing.by_staff THEN 'staff' ELSE 'family' END::public.kiosk_kind_enum
+          )
+    ) THEN
+        RAISE EXCEPTION 'Wrong kiosk for booking %', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_kiosk_kind',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM unnest(ARRAY[NEW.signed_in_by_pickup_person_id, NEW.collected_by_pickup_person_id]) AS person(id)
+        WHERE person.id IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM public.authorized_pickup_persons p
+              WHERE p.id = person.id
+                AND p.user_id = v_family_id
+                AND p.location_id = v_location_id
+                AND p.is_active
+          )
+    ) THEN
+        RAISE EXCEPTION 'Not on the pickup list for booking %', NEW.booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_family_person',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF NEW.collected_by_pickup_person_id IS DISTINCT FROM (CASE WHEN TG_OP = 'UPDATE' THEN OLD.collected_by_pickup_person_id END)
+       AND NEW.collected_by_pickup_person_id IS NOT NULL
+       AND NOT EXISTS (
+           SELECT 1
+           FROM public.authorized_pickup_persons p
+           WHERE p.id = NEW.collected_by_pickup_person_id
+             AND p.staff_approved_at IS NOT NULL
+       ) THEN
+        RAISE EXCEPTION 'Pickup person % is not approved to collect children', NEW.collected_by_pickup_person_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_collector_approved',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_attendance_records_rules
+    BEFORE INSERT OR UPDATE ON public.attendance_records
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_attendance_rules();
+
+
+-- =====================================================
+-- KIOSK
+-- =====================================================
+-- The kiosk tablet has no user session, so RLS shows it nothing. These
+-- functions are its only way in, each doing one thing for one location
+-- (from the device's cookie) and one pickup person (from their PIN login).
+-- SECURITY DEFINER: they read and write past RLS, within those limits.
+-- The API checks the device and the person's session before calling them.
+
+-- Pair a tablet with its one-time setup code (15 minutes, single use).
+-- Returns the device, its kind and the token version its cookie must carry.
+CREATE FUNCTION public.kiosk_pair(p_location_id UUID, p_code TEXT)
+RETURNS TABLE (device_id UUID, kind public.kiosk_kind_enum, token_version INTEGER)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    UPDATE public.location_kiosk_devices d
+    SET paired_at = now(),
+        last_used = now(),
+        setup_secret_hash = NULL,
+        setup_code_expires_at = NULL
+    WHERE d.location_id = p_location_id
+      AND d.is_active
+      AND d.setup_secret_hash = encode(digest(upper(btrim(p_code)), 'sha256'), 'hex')
+      AND d.setup_code_expires_at > now()
+    RETURNING d.id, d.kind, d.token_version;
+$$;
+
+-- The location and kind of a paired, active device whose cookie is
+-- current; no row otherwise. Records when it was last used.
+CREATE FUNCTION public.kiosk_device(p_device_id UUID, p_token_version INTEGER)
+RETURNS TABLE (location_id UUID, kind public.kiosk_kind_enum)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    UPDATE public.location_kiosk_devices d
+    SET last_used = now()
+    WHERE d.id = p_device_id
+      AND d.token_version = p_token_version
+      AND d.is_active
+      AND d.paired_at IS NOT NULL
+    RETURNING d.location_id, d.kind;
+$$;
+
+-- A pickup person logging in with their mobile and PIN.
+--   ok        logged in (pin_change_required: choose a new PIN first)
+--   invalid   wrong number or PIN (the same either way)
+--   locked    5 wrong PINs in a row; "Forgot PIN" unlocks
+--   expired   a setup PIN not used within 30 days; "Forgot PIN" for a new one
+CREATE FUNCTION public.kiosk_login(p_location_id UUID, p_phone TEXT, p_pin TEXT)
+RETURNS TABLE (result TEXT, pickup_person_id UUID, first_name TEXT, pin_change_required BOOLEAN)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_person public.authorized_pickup_persons%ROWTYPE;
+    v_failures SMALLINT;
+BEGIN
+    SELECT *
+    INTO v_person
+    FROM public.authorized_pickup_persons p
+    WHERE p.location_id = p_location_id
+      AND p.phone = regexp_replace(p_phone, '\D', '', 'g')
+      AND p.is_active
+    FOR UPDATE;
+
+    IF NOT FOUND OR v_person.pin_hash IS NULL THEN
+        RETURN QUERY SELECT 'invalid'::text, NULL::uuid, NULL::text, NULL::boolean;
+        RETURN;
+    END IF;
+
+    IF v_person.pin_locked_at IS NOT NULL THEN
+        RETURN QUERY SELECT 'locked'::text, NULL::uuid, NULL::text, NULL::boolean;
+        RETURN;
+    END IF;
+
+    PERFORM set_config('app.pin_writer', 'on', true);
+
+    IF crypt(p_pin, v_person.pin_hash) <> v_person.pin_hash THEN
+        v_failures := v_person.failed_pin_attempts + 1;
+
+        UPDATE public.authorized_pickup_persons
+        SET failed_pin_attempts = v_failures,
+            pin_locked_at = CASE WHEN v_failures >= 5 THEN now() END
+        WHERE id = v_person.id;
+
+        PERFORM set_config('app.pin_writer', 'off', true);
+
+        RETURN QUERY SELECT
+            CASE WHEN v_failures >= 5 THEN 'locked' ELSE 'invalid' END,
+            NULL::uuid, NULL::text, NULL::boolean;
+        RETURN;
+    END IF;
+
+    UPDATE public.authorized_pickup_persons
+    SET failed_pin_attempts = 0
+    WHERE id = v_person.id;
+
+    PERFORM set_config('app.pin_writer', 'off', true);
+
+    IF v_person.pin_change_required
+       AND v_person.pin_issued_at < now() - interval '30 days' THEN
+        RETURN QUERY SELECT 'expired'::text, NULL::uuid, NULL::text, NULL::boolean;
+        RETURN;
+    END IF;
+
+    RETURN QUERY SELECT
+        'ok'::text, v_person.id, v_person.first_name::text, v_person.pin_change_required;
+END;
+$$;
+
+-- A logged-in pickup person choosing their own PIN: 4 digits, not the
+-- one they have. Clears the change-required flag.
+CREATE FUNCTION public.kiosk_change_pin(p_location_id UUID, p_pickup_person_id UUID, p_new_pin TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_pin_hash TEXT;
+BEGIN
+    IF p_new_pin IS NULL OR p_new_pin !~ '^\d{4}$' THEN
+        RAISE EXCEPTION 'A PIN is 4 digits'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_authorized_pickup_persons_pin_format',
+                  TABLE = 'authorized_pickup_persons',
+                  SCHEMA = 'public';
+    END IF;
+
+    SELECT p.pin_hash
+    INTO v_pin_hash
+    FROM public.authorized_pickup_persons p
+    WHERE p.id = p_pickup_person_id
+      AND p.location_id = p_location_id
+      AND p.is_active
+      AND p.pin_locked_at IS NULL
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Pickup person % not found', p_pickup_person_id
+            USING ERRCODE = 'no_data_found';
+    END IF;
+
+    IF v_pin_hash IS NOT NULL AND crypt(p_new_pin, v_pin_hash) = v_pin_hash THEN
+        RAISE EXCEPTION 'The new PIN is the current one'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_authorized_pickup_persons_pin_reused',
+                  TABLE = 'authorized_pickup_persons',
+                  SCHEMA = 'public';
+    END IF;
+
+    PERFORM set_config('app.pin_writer', 'on', true);
+
+    UPDATE public.authorized_pickup_persons
+    SET pin_hash = crypt(p_new_pin, gen_salt('bf')),
+        pin_change_required = FALSE,
+        failed_pin_attempts = 0
+    WHERE id = p_pickup_person_id;
+
+    PERFORM set_config('app.pin_writer', 'off', true);
+END;
+$$;
+
+-- "Forgot PIN" at the kiosk: a new setup PIN for the person with this
+-- mobile, returned once so the API can email it (KioskPinEmail). Nothing is
+-- returned for an unknown number, or within 20 minutes of the last reset
+-- (about 3 an hour); the kiosk says the same either way. A reset also
+-- clears a lock (issue_pickup_pin).
+CREATE FUNCTION public.kiosk_forgot_pin(p_location_id UUID, p_phone TEXT)
+RETURNS TABLE (pickup_person_id UUID, email TEXT, first_name TEXT, pin TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_person public.authorized_pickup_persons%ROWTYPE;
+BEGIN
+    SELECT *
+    INTO v_person
+    FROM public.authorized_pickup_persons p
+    WHERE p.location_id = p_location_id
+      AND p.phone = regexp_replace(p_phone, '\D', '', 'g')
+      AND p.is_active
+    FOR UPDATE;
+
+    IF NOT FOUND
+       OR v_person.pin_reset_requested_at > now() - interval '20 minutes' THEN
+        RETURN;
+    END IF;
+
+    PERFORM set_config('app.pin_writer', 'on', true);
+
+    UPDATE public.authorized_pickup_persons
+    SET pin_reset_requested_at = now()
+    WHERE id = v_person.id;
+
+    PERFORM set_config('app.pin_writer', 'off', true);
+
+    RETURN QUERY SELECT
+        v_person.id,
+        v_person.email::text,
+        v_person.first_name::text,
+        public.issue_pickup_pin(v_person.id);
+END;
+$$;
+
+-- Today's sessions for the children a pickup person may collect: their
+-- family's confirmed bookings at this location for today (the location's
+-- timezone), with where each one is up to. Children by first name and
+-- initial only: the screen is in a public entrance.
+CREATE FUNCTION public.kiosk_family_today(p_location_id UUID, p_pickup_person_id UUID)
+RETURNS TABLE (
+    booking_id UUID,
+    child_first_name TEXT,
+    child_last_initial TEXT,
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    signed_in_at TIMESTAMPTZ,
+    signed_out_at TIMESTAMPTZ,
+    can_collect BOOLEAN,
+    -- When this person can sign the child in and out here (NULLs: any
+    -- time today).
+    signing_opens_at TIMESTAMPTZ,
+    signing_closes_at TIMESTAMPTZ
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT
+        b.id,
+        cp.first_name::text,
+        left(cp.last_name, 1),
+        st.name::text,
+        lsc.start_time,
+        lsc.end_time,
+        ar.signed_in_at,
+        ar.signed_out_at,
+        p.staff_approved_at IS NOT NULL,
+        w.opens_at,
+        w.closes_at
+    FROM public.authorized_pickup_persons p
+    JOIN public.bookings b
+        ON b.user_id = p.user_id
+       AND b.location_id = p.location_id
+    JOIN public.location_service_days d
+        ON d.id = b.location_service_day_id
+    JOIN public.location_services ls
+        ON ls.id = d.location_service_id
+    JOIN public.service_types st
+        ON st.id = ls.service_type_id
+    JOIN public.location_service_config lsc
+        ON lsc.location_service_id = ls.id
+    JOIN public.child_profile cp
+        ON cp.id = b.child_id
+    JOIN tenancy.locations l
+        ON l.id = b.location_id
+    LEFT JOIN public.attendance_records ar
+        ON ar.booking_id = b.id
+    CROSS JOIN LATERAL public.booking_signing_window(b.id) w
+    WHERE p.id = p_pickup_person_id
+      AND p.location_id = p_location_id
+      AND p.is_active
+      AND b.booking_status = 'CONFIRMED'
+      AND d.service_date = (now() AT TIME ZONE l.timezone)::date
+    ORDER BY lsc.start_time, cp.first_name, b.id;
+$$;
+
+-- A pickup person signing one of today's sessions in or out at the kiosk.
+-- Only bookings kiosk_family_today shows them; signing out needs the child
+-- signed in first (if not, staff should check: the child may not be here)
+-- and the person approved (trg_attendance_records_rules). Signing in twice
+-- changes nothing.
+CREATE FUNCTION public.kiosk_sign(
+    p_location_id UUID,
+    p_device_id UUID,
+    p_pickup_person_id UUID,
+    p_booking_id UUID,
+    p_action TEXT
+)
+RETURNS TABLE (signed_in_at TIMESTAMPTZ, signed_out_at TIMESTAMPTZ)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM public.location_kiosk_devices d
+        WHERE d.id = p_device_id
+          AND d.location_id = p_location_id
+          AND d.kind = 'family'
+          AND d.is_active
+    ) OR NOT EXISTS (
+        SELECT 1
+        FROM public.kiosk_family_today(p_location_id, p_pickup_person_id) t
+        WHERE t.booking_id = p_booking_id
+    ) THEN
+        RAISE EXCEPTION 'Booking % is not one of today''s for this person', p_booking_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_attendance_records_kiosk_booking',
+                  TABLE = 'attendance_records',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF p_action = 'in' THEN
+        INSERT INTO public.attendance_records (
+            booking_id, signed_in_at, signed_in_by_pickup_person_id, signed_in_kiosk_device_id
+        )
+        VALUES (p_booking_id, now(), p_pickup_person_id, p_device_id)
+        ON CONFLICT (booking_id) DO NOTHING;
+
+    ELSIF p_action = 'out' THEN
+        UPDATE public.attendance_records ar
+        SET signed_out_at = now(),
+            signed_out_kiosk_device_id = p_device_id,
+            collected_by_pickup_person_id = p_pickup_person_id
+        WHERE ar.booking_id = p_booking_id
+          AND ar.signed_in_at IS NOT NULL
+          AND ar.signed_out_at IS NULL;
+
+        IF NOT FOUND AND NOT EXISTS (
+            SELECT 1
+            FROM public.attendance_records ar
+            WHERE ar.booking_id = p_booking_id
+              AND ar.signed_out_at IS NOT NULL
+        ) THEN
+            RAISE EXCEPTION 'Booking % has not been signed in', p_booking_id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_attendance_records_not_signed_in',
+                      TABLE = 'attendance_records',
+                      SCHEMA = 'public';
+        END IF;
+
+    ELSE
+        RAISE EXCEPTION 'Unknown kiosk action %', p_action
+            USING ERRCODE = 'invalid_parameter_value';
+    END IF;
+
+    RETURN QUERY
+        SELECT ar.signed_in_at, ar.signed_out_at
+        FROM public.attendance_records ar
+        WHERE ar.booking_id = p_booking_id;
+END;
+$$;
 
 
 -- =====================================================
@@ -1614,6 +2436,695 @@ CREATE TABLE public.actions (
         REFERENCES auth.users (id)
 );
 
+
+-- =====================================================
+-- STAFF SHIFTS
+-- =====================================================
+
+-- A staff member's shift at a location, started and ended at the staff
+-- kiosk. One open shift per person per location. Written only by the staff
+-- member themselves on the kiosk channel (schema/0005), which records the
+-- device (trg_staff_shifts_device); staff see their own, admins their
+-- location's.
+CREATE TABLE public.staff_shifts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    location_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+
+    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    started_kiosk_device_id UUID NOT NULL,
+    ended_at TIMESTAMPTZ,
+    ended_kiosk_device_id UUID,
+
+    CONSTRAINT fk_staff_shifts_location
+        FOREIGN KEY (location_id)
+        REFERENCES tenancy.locations (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_staff_shifts_user
+        FOREIGN KEY (user_id)
+        REFERENCES auth.users (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_staff_shifts_started_kiosk
+        FOREIGN KEY (started_kiosk_device_id)
+        REFERENCES public.location_kiosk_devices (id),
+
+    CONSTRAINT fk_staff_shifts_ended_kiosk
+        FOREIGN KEY (ended_kiosk_device_id)
+        REFERENCES public.location_kiosk_devices (id),
+
+    CONSTRAINT ck_staff_shifts_ended_after_started
+        CHECK (ended_at IS NULL OR ended_at >= started_at),
+
+    CONSTRAINT ck_staff_shifts_ended_by
+        CHECK ((ended_at IS NULL) = (ended_kiosk_device_id IS NULL))
+);
+
+CREATE UNIQUE INDEX uq_staff_shifts_open
+    ON public.staff_shifts (location_id, user_id)
+    WHERE ended_at IS NULL;
+
+-- The kiosk a shift was started or ended at is the request's.
+CREATE FUNCTION public.set_staff_shift_device()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        NEW.started_kiosk_device_id := COALESCE(auth.current_kiosk_device_id(), NEW.started_kiosk_device_id);
+    ELSIF NEW.ended_at IS NOT NULL AND OLD.ended_at IS NULL THEN
+        NEW.ended_kiosk_device_id := COALESCE(auth.current_kiosk_device_id(), NEW.ended_kiosk_device_id);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_staff_shifts_device
+    BEFORE INSERT OR UPDATE ON public.staff_shifts
+    FOR EACH ROW EXECUTE FUNCTION public.set_staff_shift_device();
+
+-- Whether someone is on shift at a location: an open shift that started on
+-- the location's today. A shift left open from an earlier day (a forgotten
+-- clock-out) doesn't count; it's closed with the time they left when they
+-- next clock in. Only people on shift can act at the staff kiosk: the API
+-- checks it for every PIN action except clocking in or out, and the
+-- attendance and pickup ID triggers check it for the writes.
+CREATE FUNCTION public.staff_on_shift(p_location_id UUID, p_user_id UUID)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.staff_shifts s
+        JOIN tenancy.locations l
+            ON l.id = s.location_id
+        WHERE s.location_id = p_location_id
+          AND s.user_id = p_user_id
+          AND s.ended_at IS NULL
+          AND (s.started_at AT TIME ZONE l.timezone)::date = (now() AT TIME ZONE l.timezone)::date
+    );
+$$;
+
+-- "Sam L." (or "Pat L." from a typed "Pat Lee"): how the staff kiosk names
+-- people before anyone enters a PIN.
+CREATE FUNCTION public.short_name(p_first_name TEXT, p_last_name TEXT)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+AS $$
+    SELECT btrim(btrim(p_first_name) || COALESCE(' ' || NULLIF(left(btrim(p_last_name), 1), '') || '.', ''));
+$$;
+
+-- "Sam L." for a staff member (staff, admin or superadmin) at the session's
+-- location, e.g. who printed a plan. Staff can't read each other's user
+-- rows, so this gives only the short name, only for colleagues.
+CREATE FUNCTION public.staff_short_name(p_user_id UUID)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT public.short_name(u.first_name, u.last_name)
+    FROM auth.users u
+    WHERE u.id = p_user_id
+      AND EXISTS (
+          SELECT 1
+          FROM auth.location_user_roles lur
+          JOIN auth.roles r
+              ON r.id = lur.role_id
+          WHERE lur.user_id = u.id
+            AND lur.location_id = NULLIF(current_setting('app.location_id', true), '')::uuid
+            AND r.code IN ('staff', 'admin', 'superadmin')
+      );
+$$;
+
+
+-- =====================================================
+-- STAFF KIOSK
+-- =====================================================
+-- The staff kiosk is a paired tablet like the family kiosk, and nobody is
+-- ever logged in to it (docs/portals.md). These functions cover what the
+-- tablet needs before anyone is identified: the staff list, checking a
+-- PIN, and the run sheet without personal details. Every action is a
+-- separate request carrying the staff member and their PIN; once checked,
+-- the API runs it as them on the kiosk channel through the normal services,
+-- so RLS and the triggers above apply.
+
+-- A staff member (staff, admin or superadmin) at the location.
+CREATE FUNCTION public.is_staff_at(p_location_id UUID, p_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        JOIN auth.users u
+            ON u.id = lur.user_id
+        WHERE lur.location_id = p_location_id
+          AND lur.user_id = p_user_id
+          AND r.code IN ('staff', 'admin', 'superadmin')
+    );
+$$;
+
+-- Refuse unless the device is this location's active staff kiosk and (if
+-- given) the user is staff here.
+CREATE FUNCTION public.assert_staff_kiosk(p_location_id UUID, p_device_id UUID, p_staff_user_id UUID DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM public.location_kiosk_devices d
+        WHERE d.id = p_device_id
+          AND d.location_id = p_location_id
+          AND d.kind = 'staff'
+          AND d.is_active
+    ) OR (
+        p_staff_user_id IS NOT NULL
+        AND NOT public.is_staff_at(p_location_id, p_staff_user_id)
+    ) THEN
+        RAISE EXCEPTION 'Not the staff kiosk, or not staff here'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_staff_kiosk_access',
+                  TABLE = 'location_kiosk_devices',
+                  SCHEMA = 'public';
+    END IF;
+END;
+$$;
+
+-- Set or change the logged-in staff member's PIN (from the website; the
+-- API checks their password first). 4 digits. Clears a lock.
+CREATE FUNCTION public.set_staff_pin(p_pin TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_user_id UUID := auth.current_user_id();
+BEGIN
+    IF v_user_id IS NULL OR NOT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        WHERE lur.user_id = v_user_id
+          AND r.code IN ('staff', 'admin', 'superadmin')
+    ) THEN
+        RAISE EXCEPTION 'Only staff have a staff PIN'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_staff_pins_staff_only',
+                  TABLE = 'staff_pins',
+                  SCHEMA = 'auth';
+    END IF;
+
+    IF p_pin IS NULL OR p_pin !~ '^\d{4}$' THEN
+        RAISE EXCEPTION 'A PIN is 4 digits'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_staff_pins_pin_format',
+                  TABLE = 'staff_pins',
+                  SCHEMA = 'auth';
+    END IF;
+
+    INSERT INTO auth.staff_pins (user_id, pin_hash)
+    VALUES (v_user_id, crypt(p_pin, gen_salt('bf')))
+    ON CONFLICT (user_id) DO UPDATE
+    SET pin_hash = EXCLUDED.pin_hash,
+        failed_pin_attempts = 0,
+        pin_locked_at = NULL,
+        set_at = now();
+END;
+$$;
+
+-- The staff a staff kiosk offers to log in as: everyone with a staff
+-- role at the location, whether they've set a PIN, and whether they're on
+-- shift.
+CREATE FUNCTION public.staff_kiosk_staff(p_location_id UUID, p_device_id UUID)
+RETURNS TABLE (
+    user_id UUID,
+    first_name TEXT,
+    last_name TEXT,
+    is_admin BOOLEAN,
+    has_pin BOOLEAN,
+    on_shift BOOLEAN,
+    -- Today's open shift.
+    shift_started_at TIMESTAMPTZ,
+    -- A shift left open from an earlier day (they forgot to clock out).
+    unclosed_shift_started_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    PERFORM public.assert_staff_kiosk(p_location_id, p_device_id);
+
+    RETURN QUERY
+        SELECT
+            u.id,
+            u.first_name::text,
+            u.last_name::text,
+            bool_or(r.code IN ('admin', 'superadmin')),
+            bool_or(sp.user_id IS NOT NULL),
+            public.staff_on_shift(p_location_id, u.id),
+            CASE WHEN public.staff_on_shift(p_location_id, u.id) THEN open_shift.started_at END,
+            CASE WHEN NOT public.staff_on_shift(p_location_id, u.id) THEN open_shift.started_at END
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        JOIN auth.users u
+            ON u.id = lur.user_id
+        LEFT JOIN auth.staff_pins sp
+            ON sp.user_id = u.id
+        -- At most one (uq_staff_shifts_open).
+        LEFT JOIN public.staff_shifts open_shift
+            ON open_shift.location_id = p_location_id
+           AND open_shift.user_id = u.id
+           AND open_shift.ended_at IS NULL
+        WHERE lur.location_id = p_location_id
+          AND r.code IN ('staff', 'admin', 'superadmin')
+        GROUP BY u.id, u.first_name, u.last_name, open_shift.started_at
+        ORDER BY 2, 3;
+END;
+$$;
+
+-- A staff member's PIN for one staff kiosk request.
+--   ok        it's them
+--   invalid   wrong PIN
+--   locked    5 wrong PINs in a row; set a new PIN on the website
+--   no_pin    they haven't set one yet (on the website)
+CREATE FUNCTION public.staff_kiosk_verify_pin(p_location_id UUID, p_device_id UUID, p_user_id UUID, p_pin TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_pin auth.staff_pins%ROWTYPE;
+    v_failures SMALLINT;
+BEGIN
+    PERFORM public.assert_staff_kiosk(p_location_id, p_device_id, p_user_id);
+
+    SELECT *
+    INTO v_pin
+    FROM auth.staff_pins sp
+    WHERE sp.user_id = p_user_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RETURN 'no_pin';
+    END IF;
+
+    IF v_pin.pin_locked_at IS NOT NULL THEN
+        RETURN 'locked';
+    END IF;
+
+    IF crypt(p_pin, v_pin.pin_hash) <> v_pin.pin_hash THEN
+        v_failures := v_pin.failed_pin_attempts + 1;
+
+        UPDATE auth.staff_pins
+        SET failed_pin_attempts = v_failures,
+            pin_locked_at = CASE WHEN v_failures >= 5 THEN now() END
+        WHERE staff_pins.user_id = p_user_id;
+
+        RETURN CASE WHEN v_failures >= 5 THEN 'locked' ELSE 'invalid' END;
+    END IF;
+
+    UPDATE auth.staff_pins
+    SET failed_pin_attempts = 0
+    WHERE staff_pins.user_id = p_user_id;
+
+    RETURN 'ok';
+END;
+$$;
+
+-- A location's roll for a day: every confirmed booking, with where it's
+-- up to, who did it, and whether the child is late being collected (still
+-- signed in after the session ended). Shared by the staff kiosk and the
+-- admin run sheet. With no user session it's the API acting for a checked
+-- kiosk; with one, only admins of this location (any channel) or staff at
+-- its staff kiosk (the kiosk channel) get rows (docs/portals.md). auth.*
+-- helpers aren't defined yet in this file, so the session settings are read
+-- directly.
+CREATE FUNCTION public.attendance_roll(p_location_id UUID, p_date DATE)
+RETURNS TABLE (
+    booking_id UUID,
+    child_id UUID,
+    child_first_name TEXT,
+    child_last_name TEXT,
+    family_user_id UUID,
+    family_first_name TEXT,
+    family_last_name TEXT,
+    family_phone TEXT,
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    signed_in_at TIMESTAMPTZ,
+    signed_in_by TEXT,
+    signed_out_at TIMESTAMPTZ,
+    signed_out_by TEXT,
+    collected_by TEXT,
+    collector_id_sighted BOOLEAN,
+    released_to_name TEXT,
+    release_note TEXT,
+    sent_to_school BOOLEAN,
+    is_late BOOLEAN
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT
+        b.id,
+        cp.id,
+        cp.first_name::text,
+        cp.last_name::text,
+        fu.id,
+        fu.first_name::text,
+        fu.last_name::text,
+        cpr.phone::text,
+        st.name::text,
+        lsc.start_time,
+        lsc.end_time,
+        ar.signed_in_at,
+        COALESCE(
+            si_staff.first_name || ' ' || si_staff.last_name,
+            si_person.first_name || ' ' || si_person.last_name
+        ),
+        ar.signed_out_at,
+        so_staff.first_name || ' ' || so_staff.last_name,
+        collector.first_name || ' ' || collector.last_name,
+        -- Whether the collector's photo ID had been sighted by then (a later
+        -- check doesn't change what happened at this sign-out).
+        CASE
+            WHEN collector.id IS NOT NULL THEN
+                collector.identity_verified_at IS NOT NULL
+                AND collector.identity_verified_at <= ar.signed_out_at
+        END,
+        ar.released_to_name::text,
+        ar.release_note,
+        COALESCE(ar.sent_to_school, FALSE),
+        ar.signed_in_at IS NOT NULL
+            AND ar.signed_out_at IS NULL
+            AND now() > ((d.service_date + lsc.end_time) AT TIME ZONE l.timezone)
+    FROM public.bookings b
+    JOIN public.location_service_days d
+        ON d.id = b.location_service_day_id
+    JOIN public.location_services ls
+        ON ls.id = d.location_service_id
+    JOIN public.service_types st
+        ON st.id = ls.service_type_id
+    JOIN public.location_service_config lsc
+        ON lsc.location_service_id = ls.id
+    JOIN public.child_profile cp
+        ON cp.id = b.child_id
+    JOIN auth.users fu
+        ON fu.id = b.user_id
+    LEFT JOIN public.customer_profile cpr
+        ON cpr.user_id = b.user_id
+    JOIN tenancy.locations l
+        ON l.id = b.location_id
+    LEFT JOIN public.attendance_records ar
+        ON ar.booking_id = b.id
+    LEFT JOIN auth.users si_staff
+        ON si_staff.id = ar.signed_in_by_user_id
+    LEFT JOIN public.authorized_pickup_persons si_person
+        ON si_person.id = ar.signed_in_by_pickup_person_id
+    LEFT JOIN auth.users so_staff
+        ON so_staff.id = ar.signed_out_by_user_id
+    LEFT JOIN public.authorized_pickup_persons collector
+        ON collector.id = ar.collected_by_pickup_person_id
+    WHERE b.location_id = p_location_id
+      AND b.booking_status = 'CONFIRMED'
+      AND d.service_date = p_date
+      AND (
+          NULLIF(current_setting('app.user_id', true), '') IS NULL
+          OR (
+              p_location_id = NULLIF(current_setting('app.location_id', true), '')::uuid
+              AND EXISTS (
+                  SELECT 1
+                  FROM auth.location_user_roles lur
+                  JOIN auth.roles r
+                      ON r.id = lur.role_id
+                  WHERE lur.user_id = NULLIF(current_setting('app.user_id', true), '')::uuid
+                    AND lur.location_id = p_location_id
+                    AND (
+                        r.code IN ('admin', 'superadmin')
+                        OR (r.code = 'staff' AND current_setting('app.channel', true) = 'kiosk')
+                    )
+              )
+          )
+      )
+    ORDER BY lsc.start_time, st.name, cp.first_name, cp.last_name, b.id;
+$$;
+
+-- What the staff kiosk shows before anyone enters a PIN (docs/portals.md,
+-- section 1.3): the day's children by name, their session and where they're
+-- up to, and a medical marker without details. Family contacts, pickup
+-- lists, medical details and documents need a staff member's PIN (they're
+-- read through the normal services, on the kiosk channel).
+-- The run sheet's rows, shared by the staff kiosk (before anyone enters a
+-- PIN: staff_kiosk_board) and the admin run sheet on the website. Its rows
+-- come from attendance_roll, which decides who gets any: the kiosk (no
+-- user session), admins on the website, staff only at the kiosk.
+CREATE FUNCTION public.run_sheet_board(p_location_id UUID, p_date DATE)
+RETURNS TABLE (
+    booking_id UUID,
+    child_id UUID,
+    child_first_name TEXT,
+    child_last_name TEXT,
+    family_user_id UUID,
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    signed_in_at TIMESTAMPTZ,
+    -- Who, as "Sam L." (a staff member, or someone on the family's list).
+    signed_in_by TEXT,
+    signed_out_at TIMESTAMPTZ,
+    -- Who took the child, as "Gran T.", and whether their ID had been
+    -- sighted; or the one-off release's person.
+    collected_by TEXT,
+    collector_id_sighted BOOLEAN,
+    released_to TEXT,
+    sent_to_school BOOLEAN,
+    is_late BOOLEAN,
+    has_medical BOOLEAN,
+    medical_review_status TEXT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+            r.booking_id,
+            r.child_id,
+            r.child_first_name,
+            r.child_last_name,
+            r.family_user_id,
+            r.service_name,
+            r.start_time,
+            r.end_time,
+            r.signed_in_at,
+            COALESCE(
+                public.short_name(si_staff.first_name, si_staff.last_name),
+                public.short_name(si_person.first_name, si_person.last_name)
+            ),
+            r.signed_out_at,
+            public.short_name(collector.first_name, collector.last_name),
+            r.collector_id_sighted,
+            public.short_name(
+                split_part(btrim(ar.released_to_name), ' ', 1),
+                regexp_replace(btrim(ar.released_to_name), '^\S+\s*', '')
+            ),
+            r.sent_to_school,
+            r.is_late,
+            NULLIF(btrim(cp.medical_info), '') IS NOT NULL
+                OR NULLIF(btrim(cp.allergy_info), '') IS NOT NULL
+                OR NULLIF(btrim(cp.medication_info), '') IS NOT NULL
+                OR EXISTS (
+                    SELECT 1
+                    FROM public.child_documents doc
+                    WHERE doc.child_id = cp.id
+                      AND doc.is_active
+                      AND doc.upload_status = 'uploaded'
+                ),
+            ms.review_status::text
+        FROM public.attendance_roll(p_location_id, p_date) r
+        JOIN public.child_profile cp
+            ON cp.id = r.child_id
+        LEFT JOIN public.child_medical_state ms
+            ON ms.child_id = cp.id
+        LEFT JOIN public.attendance_records ar
+            ON ar.booking_id = r.booking_id
+        LEFT JOIN auth.users si_staff
+            ON si_staff.id = ar.signed_in_by_user_id
+        LEFT JOIN public.authorized_pickup_persons si_person
+            ON si_person.id = ar.signed_in_by_pickup_person_id
+        LEFT JOIN public.authorized_pickup_persons collector
+            ON collector.id = ar.collected_by_pickup_person_id;
+END;
+$$;
+
+CREATE FUNCTION public.staff_kiosk_board(p_location_id UUID, p_device_id UUID, p_date DATE)
+RETURNS TABLE (
+    booking_id UUID,
+    child_id UUID,
+    child_first_name TEXT,
+    child_last_name TEXT,
+    family_user_id UUID,
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    signed_in_at TIMESTAMPTZ,
+    -- Who, as "Sam L." (a staff member, or someone on the family's list).
+    signed_in_by TEXT,
+    signed_out_at TIMESTAMPTZ,
+    -- Who took the child, as "Gran T.", and whether their ID had been
+    -- sighted; or the one-off release's person.
+    collected_by TEXT,
+    collector_id_sighted BOOLEAN,
+    released_to TEXT,
+    sent_to_school BOOLEAN,
+    is_late BOOLEAN,
+    has_medical BOOLEAN,
+    medical_review_status TEXT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    PERFORM public.assert_staff_kiosk(p_location_id, p_device_id);
+
+    RETURN QUERY SELECT * FROM public.run_sheet_board(p_location_id, p_date);
+END;
+$$;
+
+-- The day's sessions on the staff kiosk's run sheet, one per service day
+-- (its own tab), with places: capacity, places left (the booking rules'
+-- count, service_day_places_left), and the places held by bookings still
+-- awaiting payment, which aren't on the run sheet. A closed day is listed
+-- only while it still has bookings. No personal details, so no PIN.
+-- plpgsql: service_day_places_left is in schema/0009.
+-- The day's sessions and places, shared by the staff kiosk
+-- (staff_kiosk_sessions) and the admin run sheet. No personal details.
+CREATE FUNCTION public.run_sheet_sessions(p_location_id UUID, p_date DATE)
+RETURNS TABLE (
+    location_service_day_id UUID,
+    service_code TEXT,
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    is_open BOOLEAN,
+    capacity INTEGER,
+    booked INTEGER,
+    places_left INTEGER,
+    awaiting_payment INTEGER,
+    -- When signing in and out opens and closes (NULLs: no limit).
+    signing_opens_at TIMESTAMPTZ,
+    signing_closes_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+            day.id,
+            day.service_code,
+            day.service_name,
+            day.start_time,
+            day.end_time,
+            day.is_open,
+            day.capacity,
+            day.booked,
+            day.places_left,
+            GREATEST(day.capacity - day.places_left - day.booked, 0),
+            w.opens_at,
+            w.closes_at
+        FROM (
+            SELECT
+                d.id,
+                st.code::text AS service_code,
+                st.name::text AS service_name,
+                lsc.start_time,
+                lsc.end_time,
+                d.is_open,
+                d.capacity,
+                (
+                    SELECT count(*)::integer
+                    FROM public.bookings b
+                    WHERE b.location_service_day_id = d.id
+                      AND b.booking_status = 'CONFIRMED'
+                ) AS booked,
+                public.service_day_places_left(d.id) AS places_left
+            FROM public.location_service_days d
+            JOIN public.location_services ls
+                ON ls.id = d.location_service_id
+            JOIN public.service_types st
+                ON st.id = ls.service_type_id
+            JOIN public.location_service_config lsc
+                ON lsc.location_service_id = ls.id
+            WHERE d.location_id = p_location_id
+              AND d.service_date = p_date
+        ) day
+        CROSS JOIN LATERAL public.service_day_signing_window(day.id) w
+        WHERE day.is_open OR day.booked > 0
+        ORDER BY day.start_time, day.service_name;
+END;
+$$;
+
+CREATE FUNCTION public.staff_kiosk_sessions(p_location_id UUID, p_device_id UUID, p_date DATE)
+RETURNS TABLE (
+    location_service_day_id UUID,
+    service_code TEXT,
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    is_open BOOLEAN,
+    capacity INTEGER,
+    booked INTEGER,
+    places_left INTEGER,
+    awaiting_payment INTEGER,
+    -- When signing in and out opens and closes (NULLs: no limit).
+    signing_opens_at TIMESTAMPTZ,
+    signing_closes_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    PERFORM public.assert_staff_kiosk(p_location_id, p_device_id);
+
+    RETURN QUERY SELECT * FROM public.run_sheet_sessions(p_location_id, p_date);
+END;
+$$;
 
 -- =====================================================
 -- EMAIL MESSAGES

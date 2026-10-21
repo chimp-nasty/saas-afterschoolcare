@@ -1,7 +1,24 @@
 from fastapi import status
 from sqlalchemy.exc import IntegrityError
 
+from app.errors.attendance import (
+    AttendanceOutsideServiceWindowError,
+    KioskSettingsAdminOnlyError,
+    AttendanceToSchoolServiceError,
+    AttendanceBookingNotConfirmedError,
+    AttendanceCollectorNotApprovedError,
+    AttendanceCollectorRequiredError,
+    AttendanceNotOnPickupListError,
+    AttendanceNotSignedInError,
+    AttendanceKioskOnlyError,
+    AttendanceWrongDayError,
+    AttendanceWrongKioskError,
+    KioskBookingNotFoundError,
+    StaffKioskAccessError,
+    StaffPinStaffOnlyError,
+)
 from app.errors.auth import UserCollisionError
+from app.errors.kiosk import KioskKindTakenError, StaffKioskNotOnShiftError
 from app.errors.base import ApplicationError
 from app.errors.bookings import (
     BookingAttemptFinishedError,
@@ -19,6 +36,8 @@ from app.errors.bookings import (
 from app.errors.child_documents import (
     ChildDocumentChangeNotAllowedError,
     ChildDocumentFamilyOnlyError,
+    ChildDocumentNotFoundError,
+    ChildDocumentPrintStaffOnlyError,
     ChildDocumentTooLargeError,
     ChildDocumentTypeNotAllowedError,
 )
@@ -33,6 +52,7 @@ from app.errors.medical_reviews import (
 from app.errors.services import LocationServiceNotPricedError
 from app.errors.refunds import (
     RefundAlreadyRequestedError,
+    RefundNoCardPaymentError,
     RefundNotAllowedError,
 )
 from app.errors.pickups import (
@@ -43,6 +63,8 @@ from app.errors.pickups import (
     PickupPhoneInvalidError,
     PickupPhoneOnListError,
     PickupPhoneTakenError,
+    PinFormatError,
+    PinReusedError,
 )
 
 
@@ -82,6 +104,7 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_child_profile_pickup_consent": PickupConsentRequiredError,
     # Refunds (schema/0004): the window and one active refund per booking.
     "ck_refunds_booking_refundable": RefundNotAllowedError,
+    "ck_refunds_card_payment": RefundNoCardPaymentError,
     "uq_refunds_active_booking": RefundAlreadyRequestedError,
     "ck_location_service_config_active_priced": LocationServiceNotPricedError,
     # Child documents (schema/0004): the table's checks and
@@ -94,6 +117,32 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     # Medical review (schema/0004): trg_child_medical_state_rules.
     "ck_child_medical_state_staff_decision": MedicalReviewDecisionNotAllowedError,
     "ck_child_medical_state_documentation_request": DocumentationRequestMessageRequiredError,
+    # Attendance (schema/0004): trg_attendance_records_rules, the table's
+    # checks and the kiosk functions.
+    "ck_attendance_records_kiosk_only": AttendanceKioskOnlyError,
+    "ck_attendance_records_kiosk_kind": AttendanceWrongKioskError,
+    "ck_staff_kiosk_access": StaffKioskAccessError,
+    "ck_staff_kiosk_on_shift": StaffKioskNotOnShiftError,
+    "ck_attendance_records_booking_confirmed": AttendanceBookingNotConfirmedError,
+    "ck_attendance_records_service_day": AttendanceWrongDayError,
+    "ck_attendance_records_family_person": AttendanceNotOnPickupListError,
+    "ck_attendance_records_collector_approved": AttendanceCollectorNotApprovedError,
+    "ck_attendance_records_collected_by": AttendanceCollectorRequiredError,
+    "ck_attendance_records_not_signed_in": AttendanceNotSignedInError,
+    "ck_attendance_records_to_school_service": AttendanceToSchoolServiceError,
+    "ck_child_documents_printed_document": ChildDocumentNotFoundError,
+    "ck_child_documents_printed_by_staff": ChildDocumentPrintStaffOnlyError,
+    "ck_attendance_records_service_window": AttendanceOutsideServiceWindowError,
+    "ck_locations_kiosk_settings_admin": KioskSettingsAdminOnlyError,
+    "ck_attendance_records_kiosk_booking": KioskBookingNotFoundError,
+    # Kiosk PINs (schema/0004): kiosk_change_pin.
+    "ck_authorized_pickup_persons_pin_format": PinFormatError,
+    "ck_authorized_pickup_persons_pin_reused": PinReusedError,
+    # One active kiosk of each kind per location (schema/0004).
+    "uq_location_kiosk_devices_active_kind": KioskKindTakenError,
+    # Staff PINs (schema/0004): set_staff_pin.
+    "ck_staff_pins_staff_only": StaffPinStaffOnlyError,
+    "ck_staff_pins_pin_format": PinFormatError,
 }
 
 

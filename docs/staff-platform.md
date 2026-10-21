@@ -9,7 +9,8 @@
 | `staff` | Staff screens | Runs the day: roll, reviews, families, bookings |
 | `admin` | Staff screens + Admin screens | Configures the location |
 | `superadmin` | Same as admin, at the location they're logged into | Tenant tools (locations, Stripe Connect) come with tenant configuration |
-| Kiosk | Kiosk screens only | A registered device, not a person (kiosk slice) |
+| Family kiosk | Sign in / out | A paired tablet at the entrance; pickup people log in with mobile + PIN |
+| Staff kiosk | Roll corrections, ID checks, shifts | A paired tablet; staff pick their name and enter their staff PIN. **The only place attendance is corrected, pickup people are approved, and shifts are started and ended.** |
 
 Staff and admin accounts are created by SQL or the dev seed until the Admin › Staff screen exists. Invites need the email slice.
 
@@ -29,7 +30,7 @@ Everyone logs in at `/{location}/login` and lands on `/{location}/home`, which s
 /{loc}/home          role-based home: CustomerHome, or StaffHome for staff/admin/superadmin
 /{loc}/staff/...     (staff) route group: staff, admin, superadmin
 /{loc}/admin/...     (admin) route group: admin, superadmin
-/{loc}/kiosk/...     kiosk device (kiosk slice)
+/{loc}/kiosk/...     family kiosk and staff kiosk tablets (kiosk slice)
 ```
 
 The prefixes keep staff and admin pages clear of customer routes (`/account/children/...`). Each route group's layout checks the role with `Authorize`.
@@ -44,9 +45,10 @@ Sidebar on desktop, drawer on tablet and phone. Home, then the Staff section, th
 
 | Screen | URL | Purpose | Slice |
 |---|---|---|---|
-| Home | `/home` | Today's sessions with counts; "needs attention" cards (reviews waiting, ID checks, late pickups). Starts with reviews and grows each slice. | Slice 2 onwards |
-| Reviews | `/staff/reviews`, `/staff/reviews/{child}` | Medical review list (Pending, Requested); detail with medical details, documents, family contact, Approve and Request documents | Slice 2 |
-| Today | `/staff/today` | The roll per session: booked, signed in, signed out; staff sign in/out as a fallback; ID-check approval at pickup | Kiosk |
+| Home | `/home` | Today's sessions with counts; "needs attention" cards (reviews waiting, ID checks, late pickups). Has medical reviews and late pickups so far; grows each slice. | Slice 2 onwards |
+| Reviews | `/admin/reviews`, `/admin/reviews/{child}` (moved from `/staff`, docs/portals.md) | Medical review list (Pending, Requested); detail with medical details, documents, family contact, Approve and Request documents | Slice 2 (**built**) |
+| Run sheet | `/admin/run-sheet` (moved from `/staff/today`, any day; the staff kiosk's run sheet view, read-only) | The roll per session, **read-only**: booked, signed in, signed out, who did it, late pickups. Changes happen at the staff kiosk. | Kiosk (**built**) |
+| My account | `/staff/account` (replaces `/staff/pin`) | Your details and where you work (read-only), your staff kiosk PIN (re-enter your password) and changing your password | Kiosk (**built**) |
 | Children | `/staff/children`, `/staff/children/{child}` | Search every child. Tabs: Profile & medical (read-only), Documents, Pickups, Bookings, Notes | Staff dashboard |
 | Families | `/staff/families`, `/staff/families/{user}` | Search families; contact, children, pickup people, bookings, messages sent; refunds | Staff dashboard |
 | Bookings | `/staff/bookings` | By day or family; cancel or refund (staff can refund until the session day) | Staff dashboard |
@@ -58,7 +60,7 @@ Sidebar on desktop, drawer on tablet and phone. Home, then the Staff section, th
 | Sessions | `/admin/sessions` | Calendar of service days: open or close a day, capacity | Staff dashboard |
 | Services | `/admin/services` | Prices, times, ages, late fees | Staff dashboard / tenant config |
 | Staff | `/admin/staff` | Invite, deactivate and change the role of staff accounts | Tenant config (after email) |
-| Kiosks | `/admin/kiosks` | Register and revoke kiosk devices | Kiosk |
+| Kiosks | `/admin/kiosks` | Add, re-pair and revoke the location's two tablets (one family kiosk, one staff kiosk) | Kiosk (**built**) |
 | Settings | `/admin/settings` | Location details, branding, contact, policies | Tenant config |
 
 ## Shared UI

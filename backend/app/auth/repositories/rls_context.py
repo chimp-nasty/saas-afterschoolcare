@@ -49,3 +49,15 @@ class RlsContextRepository(Repository):
                 )
             )
         )
+    def set_kiosk_channel(
+        self,
+        *,
+        device_id: UUID,
+    ) -> None:
+        """
+        This request comes from the location's staff kiosk (docs/portals.md):
+        RLS then treats the staff role as location staff, and attendance and
+        ID checks are allowed, recorded against this device.
+        """
+        self.db.execute(select(func.set_config("app.channel", "kiosk", True)))
+        self.db.execute(select(func.set_config("app.kiosk_device_id", str(device_id), True)))

@@ -162,3 +162,63 @@ def customer(api: Api):
 def other_customer(api: Api):
     """A second, unrelated customer at the same location."""
     return api.new_customer()
+
+
+# ---------------------------------------------------------------------------
+# Kiosk service times (tenancy.locations.kiosk_enforce_service_times)
+# ---------------------------------------------------------------------------
+
+LOCATION1 = (
+    "FROM tenancy.locations l JOIN tenancy.tenants t ON t.id = l.tenant_id "
+    "WHERE t.code = 'tenant1' AND l.code = 'location1'"
+)
+
+AFTER_SCHOOL_LOCATION1 = """
+    FROM public.location_services ls
+    JOIN public.service_types st ON st.id = ls.service_type_id
+    JOIN tenancy.locations l ON l.id = ls.location_id
+    JOIN tenancy.tenants t ON t.id = l.tenant_id
+    WHERE t.code = 'tenant1' AND l.code = 'location1' AND st.code = 'after_school_care'
+"""
+
+
+@pytest.fixture
+def service_times(api: Api):
+    """
+    Switches location1's kiosk service times on, and returns a way to
+    move after school care's session to start some hours from now (an hour
+    long). Both are put back afterwards. Skipped late at night, when moving
+    the session by up to 4 hours would cross midnight.
+    """
+    [(hour,)] = api.sql(f"SELECT extract(hour FROM now() AT TIME ZONE l.timezone)::int {LOCATION1}")
+    if not 4 <= hour < 20:
+        pytest.skip("moving the session up to 4 hours from now would cross midnight")
+
+    [(service_id, start, end)] = api.sql(
+        "SELECT lsc.location_service_id::text, lsc.start_time, lsc.end_time "
+        "FROM public.location_service_config lsc "
+        f"WHERE lsc.location_service_id = (SELECT ls.id {AFTER_SCHOOL_LOCATION1})"
+    )
+    api.sql(f"UPDATE tenancy.locations SET kiosk_enforce_service_times = TRUE WHERE id = (SELECT l.id {LOCATION1})")
+
+    def move(start_hours_from_now: int):
+        api.sql(
+            "UPDATE public.location_service_config lsc "
+            "SET start_time = ((now() AT TIME ZONE l.timezone) + make_interval(hours => :h))::time, "
+            "    end_time = ((now() AT TIME ZONE l.timezone) + make_interval(hours => :h + 1))::time "
+            "FROM tenancy.locations l WHERE l.id = lsc.location_id AND lsc.location_service_id = CAST(:id AS uuid)",
+            h=start_hours_from_now,
+            id=service_id,
+        )
+
+    try:
+        yield move
+    finally:
+        api.sql(
+            "UPDATE public.location_service_config SET start_time = :s, end_time = :e "
+            "WHERE location_service_id = CAST(:id AS uuid)",
+            s=start,
+            e=end,
+            id=service_id,
+        )
+        api.sql(f"UPDATE tenancy.locations SET kiosk_enforce_service_times = FALSE WHERE id = (SELECT l.id {LOCATION1})")

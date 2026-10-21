@@ -10,6 +10,14 @@ CREATE SCHEMA auth;
 -- access (views here bypass RLS); read with an owner connection.
 CREATE SCHEMA reporting;
 
+-- Where a request comes from (docs/portals.md, section 3): 'web' (a normal
+-- login) or 'kiosk' (the location's staff kiosk, with a staff member's PIN
+-- for that request). Permissions are granted per channel.
+CREATE TYPE auth.permission_channel_enum AS ENUM (
+    'web',
+    'kiosk'
+);
+
 
 -- =====================================================
 -- updated_at
@@ -56,6 +64,14 @@ CREATE TYPE public.child_document_upload_status_enum AS ENUM (
     'pending',
     'uploaded',
     'failed'
+);
+
+-- A location has at most one active kiosk of each kind: the family kiosk
+-- (pickup people sign their children in and out) and the staff kiosk
+-- (staff correct attendance, check ID, start and end shifts).
+CREATE TYPE public.kiosk_kind_enum AS ENUM (
+    'family',
+    'staff'
 );
 
 -- Where a document's file is stored (app/integrations/storage).

@@ -31,6 +31,6 @@
 	rows={reviews}
 	{columns}
 	rowKey={(review) => review.child_id}
-	rowHref={(review) => `/${locationCode}/staff/reviews/${review.child_id}`}
+	rowHref={(review) => `/${locationCode}/admin/reviews/${review.child_id}`}
 	{empty}
 />

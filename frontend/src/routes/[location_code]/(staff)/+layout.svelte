@@ -5,8 +5,8 @@
 
 	let { children } = $props();
 
-    // Day-to-day staff screens (/staff/...); admins see them too:
-    // docs/staff-platform.md.
+    // The staff portal (/staff/...): every employee's own account, nothing
+    // about children or families (docs/portals.md).
     const roles = ["staff", "admin", "superadmin"]
 </script>
 

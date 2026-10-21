@@ -2,6 +2,8 @@ from fastapi import APIRouter
 
 # auth
 from app.auth.routes.auth import router as auth_router
+from app.auth.routes.staff_pin import router as staff_pin_router
+from app.auth.routes.account import router as account_router
 
 # tenancy
 from app.tenancy.routes.location_branding import router as location_branding_router
@@ -17,6 +19,12 @@ from app.public.routes.pickups import router as pickups_router
 from app.public.routes.refunds import router as refunds_router
 from app.public.routes.child_documents import router as child_documents_router
 from app.public.routes.medical_reviews import router as medical_reviews_router
+from app.public.routes.kiosk_devices import router as kiosk_devices_router
+from app.public.routes.attendance import router as attendance_router
+
+# kiosk
+from app.kiosk.routes.family_kiosk import router as family_kiosk_router
+from app.kiosk.routes.staff_kiosk import router as staff_kiosk_router
 
 # integrations
 from app.integrations.payments.stripe.router import router as stripe_webhook_router
@@ -27,6 +35,8 @@ api_router = APIRouter()
 
 # auth
 api_router.include_router(auth_router)
+api_router.include_router(staff_pin_router)
+api_router.include_router(account_router)
 
 # tenancy
 api_router.include_router(location_branding_router)
@@ -42,6 +52,12 @@ api_router.include_router(pickups_router)
 api_router.include_router(refunds_router)
 api_router.include_router(child_documents_router)
 api_router.include_router(medical_reviews_router)
+api_router.include_router(kiosk_devices_router)
+api_router.include_router(attendance_router)
+
+# kiosk
+api_router.include_router(family_kiosk_router)
+api_router.include_router(staff_kiosk_router)
 
 # integrations
 api_router.include_router(stripe_webhook_router)

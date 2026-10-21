@@ -4,7 +4,9 @@ from datetime import date
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
-from app.db.models import ChildMedicalState, ChildProfile
+from sqlalchemy import or_
+
+from app.db.models import ChildMedicalState, ChildProfile, User
 
 
 class ChildProfileRepository(Repository):
@@ -172,5 +174,35 @@ class ChildProfileRepository(Repository):
                 ChildProfile.first_name,
                 ChildProfile.last_name,
             )
+            .all()
+        )
+
+    def search(
+        self,
+        *,
+        location_id: UUID,
+        text: str,
+        limit: int = 20,
+    ) -> list[Row]:
+        """Active children at the location whose first or last name starts with `text` (RLS applies)."""
+        pattern = text.replace("%", "").replace("_", "") + "%"
+
+        return (
+            self.db.query(
+                ChildProfile.id.label("child_id"),
+                ChildProfile.first_name,
+                ChildProfile.last_name,
+                ChildProfile.user_id.label("family_user_id"),
+                User.first_name.label("family_first_name"),
+                User.last_name.label("family_last_name"),
+            )
+            .join(User, User.id == ChildProfile.user_id)
+            .filter(
+                ChildProfile.location_id == location_id,
+                ChildProfile.is_active.is_(True),
+                or_(ChildProfile.first_name.ilike(pattern), ChildProfile.last_name.ilike(pattern)),
+            )
+            .order_by(ChildProfile.first_name, ChildProfile.last_name)
+            .limit(limit)
             .all()
         )

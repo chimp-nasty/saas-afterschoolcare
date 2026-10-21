@@ -19,7 +19,7 @@
 <Page width="wide">
     <PageHeader
         title="Medical reviews"
-        description="Children with medical details can't be booked until staff approve them. Waiting: ready for staff to review. Requested: waiting on the family for documents. Longest waiting first."
+        description="Children with medical details can't be booked until an admin approves them. Waiting: ready for you to review. Requested: waiting on the family for documents. Longest waiting first."
     />
 
     <TabbedPanels

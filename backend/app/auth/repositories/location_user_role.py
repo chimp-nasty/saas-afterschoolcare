@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.db.models import LocationUserRole
+from app.db.models import Location, LocationUserRole, Role
 
 
 class LocationUserRoleRepository(Repository):
@@ -59,5 +59,24 @@ class LocationUserRoleRepository(Repository):
             .filter(
                 LocationUserRole.user_id == user_id,
             )
+            .all()
+        )
+
+    def list_with_locations(
+        self,
+        *,
+        user_id: UUID,
+        tenant_id: UUID,
+    ) -> list[tuple[Location, Role]]:
+        """A user's roles at a tenant's locations, by location then role."""
+        return (
+            self.db.query(Location, Role)
+            .join(LocationUserRole, LocationUserRole.location_id == Location.id)
+            .join(Role, Role.id == LocationUserRole.role_id)
+            .filter(
+                LocationUserRole.user_id == user_id,
+                Location.tenant_id == tenant_id,
+            )
+            .order_by(Location.name, Location.code, Role.name)
             .all()
         )

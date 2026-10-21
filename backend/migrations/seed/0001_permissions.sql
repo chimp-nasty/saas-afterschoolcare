@@ -14,8 +14,6 @@ VALUES
     ('authorized_pickup_persons', 'r', 'Read authorized pickup persons'),
     ('authorized_pickup_persons', 'u', 'Update authorized pickup persons'),
     ('authorized_pickup_persons', 'd', 'Delete authorized pickup persons'),
-    -- Centre actions on a pickup person: check their ID, reset their kiosk PIN.
-    ('pickup_identity', 'u', 'Check pickup ID and reset kiosk PINs'),
     ('booking_groups', 'c', 'Create booking groups'),
     ('booking_groups', 'r', 'Read booking groups'),
     ('booking_groups', 'u', 'Update booking groups'),
@@ -24,6 +22,7 @@ VALUES
     ('bookings', 'r', 'Read bookings'),
     ('bookings', 'u', 'Update bookings'),
     ('bookings', 'd', 'Delete bookings'),
+    ('child_document_prints', 'u', 'Mark an action plan printed for the folder'),
     ('child_documents', 'c', 'Create child documents'),
     ('child_documents', 'r', 'Read child documents'),
     ('child_documents', 'u', 'Update child documents'),
@@ -56,6 +55,8 @@ VALUES
     ('location_services', 'r', 'Read location services'),
     ('location_services', 'u', 'Update location services'),
     ('location_services', 'd', 'Delete location services'),
+    ('own_account', 'r', 'Read own account'),
+    ('own_account', 'u', 'Change own password'),
     ('payment_attempts', 'c', 'Create payment attempts'),
     ('payment_attempts', 'r', 'Read payment attempts'),
     ('payment_attempts', 'u', 'Update payment attempts'),
@@ -67,4 +68,10 @@ VALUES
     ('service_types', 'c', 'Create service types'),
     ('service_types', 'r', 'Read service types'),
     ('service_types', 'u', 'Update service types'),
-    ('service_types', 'd', 'Delete service types');
+    ('service_types', 'd', 'Delete service types'),
+    -- A staff member setting their own staff kiosk PIN.
+    ('staff_pins', 'u', 'Set own staff PIN'),
+    -- At the staff kiosk: checking a pickup person's ID or approving them.
+    ('pickup_identity', 'u', 'Check ID and approve pickup people'),
+    ('staff_shifts', 'c', 'Start and end own shifts'),
+    ('staff_shifts', 'r', 'Read shifts');

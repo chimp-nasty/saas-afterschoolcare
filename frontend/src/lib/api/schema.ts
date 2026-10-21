@@ -89,6 +89,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff-pin/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Staff Pin Status */
+        get: operations["get_staff_pin_status_staff_pin_v1__get"];
+        /** Set Staff Pin */
+        put: operations["set_staff_pin_staff_pin_v1__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Account */
+        get: operations["get_account_account_v1__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/v1/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password */
+        post: operations["change_password_account_v1_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/location-branding/v1/public": {
         parameters: {
             query?: never;
@@ -641,6 +693,535 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/kiosk-devices/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Kiosk Devices */
+        get: operations["list_kiosk_devices_kiosk_devices_v1__get"];
+        put?: never;
+        /** Create Kiosk Device */
+        post: operations["create_kiosk_device_kiosk_devices_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk-devices/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Kiosk Settings */
+        get: operations["get_kiosk_settings_kiosk_devices_v1_settings_get"];
+        /** Update Kiosk Settings */
+        put: operations["update_kiosk_settings_kiosk_devices_v1_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk-devices/v1/{device_id}/setup-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** New Kiosk Setup Code */
+        post: operations["new_kiosk_setup_code_kiosk_devices_v1__device_id__setup_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk-devices/v1/{device_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke Kiosk Device */
+        post: operations["revoke_kiosk_device_kiosk_devices_v1__device_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendance/v1/roll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Roll */
+        get: operations["get_roll_attendance_v1_roll_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendance/v1/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run Sheet */
+        get: operations["get_run_sheet_attendance_v1_board_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pair Kiosk */
+        post: operations["pair_kiosk_kiosk_v1__location_code__pair_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Kiosk Device */
+        get: operations["get_kiosk_device_kiosk_v1__location_code__device_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kiosk Login */
+        post: operations["kiosk_login_kiosk_v1__location_code__login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kiosk Change Pin */
+        post: operations["kiosk_change_pin_kiosk_v1__location_code__pin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/forgot-pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kiosk Forgot Pin */
+        post: operations["kiosk_forgot_pin_kiosk_v1__location_code__forgot_pin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kiosk Today */
+        get: operations["kiosk_today_kiosk_v1__location_code__today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/kiosk/v1/{location_code}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kiosk Sign */
+        post: operations["kiosk_sign_kiosk_v1__location_code__sign_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Staff Kiosk Device */
+        get: operations["get_staff_kiosk_device_staff_kiosk_v1__location_code__device_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Kiosk Staff */
+        get: operations["list_kiosk_staff_staff_kiosk_v1__location_code__staff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Staff Kiosk Board */
+        get: operations["get_staff_kiosk_board_staff_kiosk_v1__location_code__board_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Staff Pin */
+        post: operations["verify_staff_pin_staff_kiosk_v1__location_code__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/roll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Staff Kiosk Roll */
+        get: operations["get_staff_kiosk_roll_staff_kiosk_v1__location_code__roll_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/families/{family_user_id}/pickups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Family Pickups */
+        get: operations["get_family_pickups_staff_kiosk_v1__location_code__families__family_user_id__pickups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/children/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Children */
+        get: operations["search_children_staff_kiosk_v1__location_code__children_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/families/{family_user_id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Family Bookings */
+        get: operations["list_family_bookings_staff_kiosk_v1__location_code__families__family_user_id__bookings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Kiosk Refund */
+        post: operations["create_kiosk_refund_staff_kiosk_v1__location_code__refunds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/children/{child_id}/medical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Child Medical */
+        get: operations["get_child_medical_staff_kiosk_v1__location_code__children__child_id__medical_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/action-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Action Plans */
+        get: operations["list_action_plans_staff_kiosk_v1__location_code__action_plans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/documents/{document_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Document Download */
+        get: operations["get_document_download_staff_kiosk_v1__location_code__documents__document_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/documents/{document_id}/printed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Document Printed */
+        put: operations["set_document_printed_staff_kiosk_v1__location_code__documents__document_id__printed_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/sign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Staff Kiosk Sign */
+        post: operations["staff_kiosk_sign_staff_kiosk_v1__location_code__sign_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Staff Kiosk Bulk */
+        post: operations["staff_kiosk_bulk_staff_kiosk_v1__location_code__bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Staff Kiosk Undo */
+        post: operations["staff_kiosk_undo_staff_kiosk_v1__location_code__undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/check-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Staff Kiosk Check Id */
+        post: operations["staff_kiosk_check_id_staff_kiosk_v1__location_code__check_id_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-kiosk/v1/{location_code}/shift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Staff Kiosk Shift */
+        post: operations["staff_kiosk_shift_staff_kiosk_v1__location_code__shift_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/stripe": {
         parameters: {
             query?: never;
@@ -658,10 +1239,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/ses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ses Webhook */
+        post: operations["ses_webhook_api_v1_webhooks_ses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccountResponse
+         * @description Your own account, read-only: admins correct names, and email is the login.
+         */
+        AccountResponse: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Roles */
+            roles: components["schemas"]["AccountRoleResponse"][];
+        };
+        /**
+         * AccountRoleResponse
+         * @description One of your roles at one of your locations.
+         */
+        AccountRoleResponse: {
+            /** Location Code */
+            location_code: string;
+            /** Location Name */
+            location_name: string | null;
+            /** Role Code */
+            role_code: string;
+            /** Role Name */
+            role_name: string;
+        };
+        /**
+         * ActionPlanResponse
+         * @description One child's action plan, for the physical folder at the centre.
+         */
+        ActionPlanResponse: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Child First Name */
+            child_first_name: string;
+            /** Child Last Name */
+            child_last_name: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            document_type: components["schemas"]["ChildDocumentType"];
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            review_status: components["schemas"]["MedicalReviewStatus"];
+            /** Is New */
+            is_new: boolean;
+            /** Printed At */
+            printed_at: string | null;
+            /** Printed By */
+            printed_by: string | null;
+        };
         /** ActionResponse */
         ActionResponse: {
             /**
@@ -695,6 +1357,14 @@ export interface components {
             /** Cited At */
             cited_at: string | null;
         };
+        /** ApiResponse[AccountResponse] */
+        ApiResponse_AccountResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["AccountResponse"] | null;
+        };
         /** ApiResponse[ActionResponse] */
         ApiResponse_ActionResponse_: {
             /** Ok */
@@ -702,6 +1372,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["ActionResponse"] | null;
+        };
+        /** ApiResponse[AttendanceTimesResponse] */
+        ApiResponse_AttendanceTimesResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["AttendanceTimesResponse"] | null;
         };
         /** ApiResponse[BookingGroupResponse] */
         ApiResponse_BookingGroupResponse_: {
@@ -759,6 +1437,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["ChildDocumentUploadResponse"] | null;
         };
+        /** ApiResponse[ChildMedicalResponse] */
+        ApiResponse_ChildMedicalResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["ChildMedicalResponse"] | null;
+        };
         /** ApiResponse[ChildResponse] */
         ApiResponse_ChildResponse_: {
             /** Ok */
@@ -782,6 +1468,70 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["CustomerProfileResponse"] | null;
+        };
+        /** ApiResponse[KioskDeviceResponse] */
+        ApiResponse_KioskDeviceResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskDeviceResponse"] | null;
+        };
+        /** ApiResponse[KioskInfoResponse] */
+        ApiResponse_KioskInfoResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskInfoResponse"] | null;
+        };
+        /** ApiResponse[KioskLoginResponse] */
+        ApiResponse_KioskLoginResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskLoginResponse"] | null;
+        };
+        /** ApiResponse[KioskSessionResponse] */
+        ApiResponse_KioskSessionResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskSessionResponse"] | null;
+        };
+        /** ApiResponse[KioskSettingsResponse] */
+        ApiResponse_KioskSettingsResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskSettingsResponse"] | null;
+        };
+        /** ApiResponse[KioskSetupCodeResponse] */
+        ApiResponse_KioskSetupCodeResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskSetupCodeResponse"] | null;
+        };
+        /** ApiResponse[KioskSignResponse] */
+        ApiResponse_KioskSignResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskSignResponse"] | null;
+        };
+        /** ApiResponse[KioskTodayResponse] */
+        ApiResponse_KioskTodayResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["KioskTodayResponse"] | null;
         };
         /** ApiResponse[LocationServiceSelectionResponse] */
         ApiResponse_LocationServiceSelectionResponse_: {
@@ -832,6 +1582,30 @@ export interface components {
             msg: string;
             data?: components["schemas"]["RefundResponse"] | null;
         };
+        /** ApiResponse[RollPickupPersonResponse] */
+        ApiResponse_RollPickupPersonResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["RollPickupPersonResponse"] | null;
+        };
+        /** ApiResponse[RollResponse] */
+        ApiResponse_RollResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["RollResponse"] | null;
+        };
+        /** ApiResponse[RunSheetResponse] */
+        ApiResponse_RunSheetResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["RunSheetResponse"] | null;
+        };
         /** ApiResponse[SessionResponse] */
         ApiResponse_SessionResponse_: {
             /** Ok */
@@ -839,6 +1613,30 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["SessionResponse"] | null;
+        };
+        /** ApiResponse[StaffKioskVerifyResponse] */
+        ApiResponse_StaffKioskVerifyResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["StaffKioskVerifyResponse"] | null;
+        };
+        /** ApiResponse[StaffPinStatusResponse] */
+        ApiResponse_StaffPinStatusResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["StaffPinStatusResponse"] | null;
+        };
+        /** ApiResponse[StaffShiftResponse] */
+        ApiResponse_StaffShiftResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["StaffShiftResponse"] | null;
         };
         /** ApiResponse[int] */
         ApiResponse_int_: {
@@ -849,6 +1647,15 @@ export interface components {
             /** Data */
             data?: number | null;
         };
+        /** ApiResponse[list[ActionPlanResponse]] */
+        ApiResponse_list_ActionPlanResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["ActionPlanResponse"][] | null;
+        };
         /** ApiResponse[list[ActionResponse]] */
         ApiResponse_list_ActionResponse__: {
             /** Ok */
@@ -857,6 +1664,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["ActionResponse"][] | null;
+        };
+        /** ApiResponse[list[AttendanceTimesResponse]] */
+        ApiResponse_list_AttendanceTimesResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["AttendanceTimesResponse"][] | null;
         };
         /** ApiResponse[list[BookingConflictRow]] */
         ApiResponse_list_BookingConflictRow__: {
@@ -894,6 +1710,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["ChildDocumentResponse"][] | null;
         };
+        /** ApiResponse[list[ChildSearchResultResponse]] */
+        ApiResponse_list_ChildSearchResultResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["ChildSearchResultResponse"][] | null;
+        };
         /** ApiResponse[list[ChildTableResponse]] */
         ApiResponse_list_ChildTableResponse__: {
             /** Ok */
@@ -902,6 +1727,24 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["ChildTableResponse"][] | null;
+        };
+        /** ApiResponse[list[FamilyBookingResponse]] */
+        ApiResponse_list_FamilyBookingResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["FamilyBookingResponse"][] | null;
+        };
+        /** ApiResponse[list[KioskDeviceResponse]] */
+        ApiResponse_list_KioskDeviceResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["KioskDeviceResponse"][] | null;
         };
         /** ApiResponse[list[LocationServiceDayTableResponse]] */
         ApiResponse_list_LocationServiceDayTableResponse__: {
@@ -947,6 +1790,39 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["PublicLocationResponse"][] | null;
+        };
+        /** ApiResponse[list[RollPickupPersonResponse]] */
+        ApiResponse_list_RollPickupPersonResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["RollPickupPersonResponse"][] | null;
+        };
+        /** ApiResponse[list[StaffKioskMemberResponse]] */
+        ApiResponse_list_StaffKioskMemberResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["StaffKioskMemberResponse"][] | null;
+        };
+        /**
+         * AttendanceTimesResponse
+         * @description A session's attendance after a change.
+         */
+        AttendanceTimesResponse: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /** Signed In At */
+            signed_in_at: string | null;
+            /** Signed Out At */
+            signed_out_at: string | null;
         };
         /**
          * AustralianState
@@ -1236,6 +2112,13 @@ export interface components {
             price_snapshot_cents: number;
             currency: components["schemas"]["CurrencyCode"];
         };
+        /** ChangePasswordRequest */
+        ChangePasswordRequest: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
         /** CheckoutStatusResponse */
         CheckoutStatusResponse: {
             /**
@@ -1314,6 +2197,37 @@ export interface components {
          * @enum {string}
          */
         ChildDocumentUploadStatus: "pending" | "uploaded" | "failed";
+        /**
+         * ChildMedicalResponse
+         * @description A child's medical details for the staff caring for them: what the family
+         *     entered, where the admin review is up to, and their documents. Shown
+         *     when approved, and while awaiting re-review (marked as not yet reviewed).
+         */
+        ChildMedicalResponse: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Medical Info */
+            medical_info: string | null;
+            /** Allergy Info */
+            allergy_info: string | null;
+            /** Medication Info */
+            medication_info: string | null;
+            review_status: components["schemas"]["MedicalReviewStatus"];
+            /**
+             * Status Since
+             * Format: date-time
+             */
+            status_since: string;
+            /** Documents */
+            documents: components["schemas"]["ChildDocumentResponse"][];
+        };
         /** ChildResponse */
         ChildResponse: {
             /**
@@ -1361,6 +2275,30 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * ChildSearchResultResponse
+         * @description A child found by name, with their family (staff finding a family).
+         */
+        ChildSearchResultResponse: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Family User Id
+             * Format: uuid
+             */
+            family_user_id: string;
+            /** Family First Name */
+            family_first_name: string;
+            /** Family Last Name */
+            family_last_name: string;
         };
         /** ChildTableResponse */
         ChildTableResponse: {
@@ -1456,6 +2394,16 @@ export interface components {
              */
             pickup_consent: boolean;
         };
+        /** CreateKioskDeviceRequest */
+        CreateKioskDeviceRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "family" | "staff";
+            /** Name */
+            name: string;
+        };
         /** CreatePickupRequest */
         CreatePickupRequest: {
             /** First Name */
@@ -1525,6 +2473,71 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * FamilyBookingResponse
+         * @description One of a family's bookings as staff see it (the staff kiosk's child
+         *     panel and refunds): with any refund, and whether an admin can refund it
+         *     now (up to and including its day).
+         */
+        FamilyBookingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Location Id
+             * Format: uuid
+             */
+            location_id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Booking Group Id
+             * Format: uuid
+             */
+            booking_group_id: string;
+            /**
+             * Location Service Day Id
+             * Format: uuid
+             */
+            location_service_day_id: string;
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Child Name */
+            child_name: string;
+            /**
+             * Service Date
+             * Format: date
+             */
+            service_date: string;
+            /** Service Name */
+            service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            booking_status: components["schemas"]["BookingStatus"];
+            payment_status: components["schemas"]["PaymentStatus"];
+            /** Price Snapshot Cents */
+            price_snapshot_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            refund_status: components["schemas"]["RefundStatus"] | null;
+            /** Is Refundable By Admin */
+            is_refundable_by_admin: boolean;
+        };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /** Email */
@@ -1534,6 +2547,181 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * KioskBookingResponse
+         * @description One of today's sessions for a child the person may collect.
+         */
+        KioskBookingResponse: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /** Child First Name */
+            child_first_name: string;
+            /** Child Last Initial */
+            child_last_initial: string;
+            /** Service Name */
+            service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Signed In At */
+            signed_in_at: string | null;
+            /** Signed Out At */
+            signed_out_at: string | null;
+            /** Can Collect */
+            can_collect: boolean;
+            /** Signing Opens At */
+            signing_opens_at: string | null;
+            /** Signing Closes At */
+            signing_closes_at: string | null;
+        };
+        /** KioskChangePinRequest */
+        KioskChangePinRequest: {
+            /** New Pin */
+            new_pin: string;
+        };
+        /** KioskDeviceResponse */
+        KioskDeviceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "family" | "staff";
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Paired At */
+            paired_at: string | null;
+            /** Last Used */
+            last_used: string | null;
+            /** Setup Code Expires At */
+            setup_code_expires_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** KioskForgotPinRequest */
+        KioskForgotPinRequest: {
+            /** Phone */
+            phone: string;
+        };
+        /**
+         * KioskInfoResponse
+         * @description What a paired tablet is: which kind, at which centre.
+         */
+        KioskInfoResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "family" | "staff";
+            /** Location Name */
+            location_name: string;
+        };
+        /** KioskLoginRequest */
+        KioskLoginRequest: {
+            /** Phone */
+            phone: string;
+            /** Pin */
+            pin: string;
+        };
+        /** KioskLoginResponse */
+        KioskLoginResponse: {
+            session: components["schemas"]["KioskSessionResponse"];
+            /** First Name */
+            first_name: string;
+            /** Pin Change Required */
+            pin_change_required: boolean;
+        };
+        /** KioskPairRequest */
+        KioskPairRequest: {
+            /** Code */
+            code: string;
+        };
+        /**
+         * KioskSessionResponse
+         * @description The session token for the person now using the kiosk: send it as the
+         *     X-Kiosk-Session header. It expires at `expires_at` (60 seconds); every
+         *     response that uses it returns a fresh one.
+         */
+        KioskSessionResponse: {
+            /** Token */
+            token: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** KioskSettingsResponse */
+        KioskSettingsResponse: {
+            /** Enforce Service Times */
+            enforce_service_times: boolean;
+        };
+        /**
+         * KioskSetupCodeResponse
+         * @description Type this code into the tablet at /{location}/kiosk before it expires.
+         *     It's shown once and can only be used once.
+         */
+        KioskSetupCodeResponse: {
+            device: components["schemas"]["KioskDeviceResponse"];
+            /** Setup Code */
+            setup_code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** KioskSignRequest */
+        KioskSignRequest: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "in" | "out";
+        };
+        /** KioskSignResponse */
+        KioskSignResponse: {
+            session: components["schemas"]["KioskSessionResponse"];
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /** Signed In At */
+            signed_in_at: string | null;
+            /** Signed Out At */
+            signed_out_at: string | null;
+        };
+        /** KioskTodayResponse */
+        KioskTodayResponse: {
+            session: components["schemas"]["KioskSessionResponse"];
+            /** Bookings */
+            bookings: components["schemas"]["KioskBookingResponse"][];
         };
         /** LocationServiceDayTableResponse */
         LocationServiceDayTableResponse: {
@@ -1876,6 +3064,234 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * RollEntryResponse
+         * @description One child's session on the roll, and where it's up to.
+         */
+        RollEntryResponse: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Child First Name */
+            child_first_name: string;
+            /** Child Last Name */
+            child_last_name: string;
+            /**
+             * Family User Id
+             * Format: uuid
+             */
+            family_user_id: string;
+            /** Family First Name */
+            family_first_name: string;
+            /** Family Last Name */
+            family_last_name: string;
+            /** Family Phone */
+            family_phone: string | null;
+            /** Service Name */
+            service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Signed In At */
+            signed_in_at: string | null;
+            /** Signed In By */
+            signed_in_by: string | null;
+            /** Signed Out At */
+            signed_out_at: string | null;
+            /** Signed Out By */
+            signed_out_by: string | null;
+            /** Collected By */
+            collected_by: string | null;
+            /** Collector Id Sighted */
+            collector_id_sighted: boolean | null;
+            /** Released To Name */
+            released_to_name: string | null;
+            /** Release Note */
+            release_note: string | null;
+            /** Sent To School */
+            sent_to_school: boolean;
+            /** Is Late */
+            is_late: boolean;
+        };
+        /** RollFamilyResponse */
+        RollFamilyResponse: {
+            /**
+             * Family User Id
+             * Format: uuid
+             */
+            family_user_id: string;
+            /** Pickups */
+            pickups: components["schemas"]["RollPickupPersonResponse"][];
+        };
+        /**
+         * RollPickupPersonResponse
+         * @description Someone on a family's pickup list, as staff see it.
+         */
+        RollPickupPersonResponse: {
+            /**
+             * Pickup Person Id
+             * Format: uuid
+             */
+            pickup_person_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Relation */
+            relation: string;
+            /** Phone */
+            phone: string;
+            /** Identity Verified At */
+            identity_verified_at: string | null;
+            /** Staff Approved At */
+            staff_approved_at: string | null;
+        };
+        /**
+         * RollResponse
+         * @description A day's roll at the location: every confirmed booking, and each booked
+         *     family's pickup list (who may collect, and who's approved), so staff
+         *     have what they need if the kiosks are down.
+         */
+        RollResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Entries */
+            entries: components["schemas"]["RollEntryResponse"][];
+            /** Families */
+            families: components["schemas"]["RollFamilyResponse"][];
+        };
+        /**
+         * RunSheetEntryResponse
+         * @description A child on the run sheet (the staff kiosk before anyone enters a PIN,
+         *     and the admin run sheet): name, session and where they're up to, who
+         *     signed them in and out (short names), and whether they have medical
+         *     details or documents (no details).
+         */
+        RunSheetEntryResponse: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Child First Name */
+            child_first_name: string;
+            /** Child Last Name */
+            child_last_name: string;
+            /**
+             * Family User Id
+             * Format: uuid
+             */
+            family_user_id: string;
+            /** Service Name */
+            service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Signed In At */
+            signed_in_at: string | null;
+            /** Signed In By */
+            signed_in_by: string | null;
+            /** Signed Out At */
+            signed_out_at: string | null;
+            /** Collected By */
+            collected_by: string | null;
+            /** Collector Id Sighted */
+            collector_id_sighted: boolean | null;
+            /** Released To */
+            released_to: string | null;
+            /** Sent To School */
+            sent_to_school: boolean;
+            /** Is Late */
+            is_late: boolean;
+            /** Has Medical */
+            has_medical: boolean;
+            /** Medical Review Status */
+            medical_review_status: string | null;
+        };
+        /**
+         * RunSheetResponse
+         * @description A day's run sheet: its sessions (a tab each) and its children.
+         */
+        RunSheetResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Sessions */
+            sessions: components["schemas"]["RunSheetSessionResponse"][];
+            /** Entries */
+            entries: components["schemas"]["RunSheetEntryResponse"][];
+        };
+        /**
+         * RunSheetSessionResponse
+         * @description One service running that day (a tab on the run sheet) and its places.
+         *     Children on the run sheet are matched to it by service and times.
+         */
+        RunSheetSessionResponse: {
+            /**
+             * Location Service Day Id
+             * Format: uuid
+             */
+            location_service_day_id: string;
+            /** Service Code */
+            service_code: string;
+            /** Service Name */
+            service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Is Open */
+            is_open: boolean;
+            /** Capacity */
+            capacity: number;
+            /** Booked */
+            booked: number;
+            /** Places Left */
+            places_left: number;
+            /** Awaiting Payment */
+            awaiting_payment: number;
+            /** Signing Opens At */
+            signing_opens_at: string | null;
+            /** Signing Closes At */
+            signing_closes_at: string | null;
+        };
         /** SessionResponse */
         SessionResponse: {
             /**
@@ -1902,6 +3318,21 @@ export interface components {
             /** Location Name */
             location_name: string | null;
         };
+        /** SetPrintedRequest */
+        SetPrintedRequest: {
+            /** Printed */
+            printed: boolean;
+        };
+        /**
+         * SetStaffPinRequest
+         * @description Your account password (to confirm it's you), and the new 4-digit PIN.
+         */
+        SetStaffPinRequest: {
+            /** Password */
+            password: string;
+            /** Pin */
+            pin: string;
+        };
         /**
          * SignedUploadResponse
          * @description Post `fields` and then the file (as the last form field, named "file")
@@ -1920,6 +3351,156 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /**
+         * StaffKioskBulkRequest
+         * @description One action for several children at once, all or nothing: signing in a
+         *     session's arrivals (after school care), sending a before school session
+         *     to school, or signing out brothers and sisters to the same person (an
+         *     approved pickup person, or a one-off release with how it was confirmed).
+         *     `at` as for one child.
+         */
+        StaffKioskBulkRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "sign_in" | "to_school" | "sign_out";
+            /** Booking Ids */
+            booking_ids: string[];
+            /** At */
+            at?: string | null;
+            /** Collected By Pickup Person Id */
+            collected_by_pickup_person_id?: string | null;
+            /** Released To Name */
+            released_to_name?: string | null;
+            /** Release Note */
+            release_note?: string | null;
+        };
+        /** StaffKioskCheckIdRequest */
+        StaffKioskCheckIdRequest: {
+            /**
+             * Pickup Person Id
+             * Format: uuid
+             */
+            pickup_person_id: string;
+            /** Id Seen */
+            id_seen: boolean;
+        };
+        /**
+         * StaffKioskMemberResponse
+         * @description A staff member the staff kiosk offers to act as.
+         */
+        StaffKioskMemberResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Is Admin */
+            is_admin: boolean;
+            /** Has Pin */
+            has_pin: boolean;
+            /** On Shift */
+            on_shift: boolean;
+            /** Shift Started At */
+            shift_started_at: string | null;
+            /** Unclosed Shift Started At */
+            unclosed_shift_started_at: string | null;
+        };
+        /** StaffKioskShiftRequest */
+        StaffKioskShiftRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "start" | "end";
+            /** Previous Shift Ended At */
+            previous_shift_ended_at?: string | null;
+        };
+        /**
+         * StaffKioskSignRequest
+         * @description Sign a child in or out. `at` is when it happened, for a missed one
+         *     (default now; never in the future). Signing out says how the child
+         *     left: an approved pickup person, a one-off release with the person's
+         *     name and how it was confirmed, or (before school care) sent to school.
+         */
+        StaffKioskSignRequest: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "in" | "out";
+            /** At */
+            at?: string | null;
+            /** Collected By Pickup Person Id */
+            collected_by_pickup_person_id?: string | null;
+            /** Released To Name */
+            released_to_name?: string | null;
+            /** Release Note */
+            release_note?: string | null;
+            /**
+             * Sent To School
+             * @default false
+             */
+            sent_to_school: boolean;
+        };
+        /** StaffKioskUndoRequest */
+        StaffKioskUndoRequest: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Step
+             * @enum {string}
+             */
+            step: "sign_in" | "sign_out";
+        };
+        /**
+         * StaffKioskVerifyResponse
+         * @description The PIN is theirs (for a task that starts with a PIN).
+         */
+        StaffKioskVerifyResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+        };
+        /**
+         * StaffPinStatusResponse
+         * @description Whether you have a staff kiosk PIN. The PIN itself is never shown.
+         */
+        StaffPinStatusResponse: {
+            /** Is Set */
+            is_set: boolean;
+            /** Set At */
+            set_at: string | null;
+            /** Is Locked */
+            is_locked: boolean;
+        };
+        /**
+         * StaffShiftResponse
+         * @description The shift that was started or ended (both empty: there wasn't one to end).
+         */
+        StaffShiftResponse: {
+            /** Started At */
+            started_at: string | null;
+            /** Ended At */
+            ended_at: string | null;
         };
         /**
          * StripeStatus
@@ -1957,6 +3538,11 @@ export interface components {
             state?: components["schemas"]["AustralianState"] | null;
             /** Postcode */
             postcode?: string | null;
+        };
+        /** UpdateKioskSettingsRequest */
+        UpdateKioskSettingsRequest: {
+            /** Enforce Service Times */
+            enforce_service_times: boolean;
         };
         /**
          * UpdateLocationServiceConfigRequest
@@ -2023,8 +3609,13 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type AccountResponse = components['schemas']['AccountResponse'];
+export type AccountRoleResponse = components['schemas']['AccountRoleResponse'];
+export type ActionPlanResponse = components['schemas']['ActionPlanResponse'];
 export type ActionResponse = components['schemas']['ActionResponse'];
+export type ApiResponseAccountResponse = components['schemas']['ApiResponse_AccountResponse_'];
 export type ApiResponseActionResponse = components['schemas']['ApiResponse_ActionResponse_'];
+export type ApiResponseAttendanceTimesResponse = components['schemas']['ApiResponse_AttendanceTimesResponse_'];
 export type ApiResponseBookingGroupResponse = components['schemas']['ApiResponse_BookingGroupResponse_'];
 export type ApiResponseBookingResponse = components['schemas']['ApiResponse_BookingResponse_'];
 export type ApiResponseCheckoutStatusResponse = components['schemas']['ApiResponse_CheckoutStatusResponse_'];
@@ -2032,28 +3623,51 @@ export type ApiResponseCheckoutUrlResponse = components['schemas']['ApiResponse_
 export type ApiResponseChildDocumentDownloadResponse = components['schemas']['ApiResponse_ChildDocumentDownloadResponse_'];
 export type ApiResponseChildDocumentResponse = components['schemas']['ApiResponse_ChildDocumentResponse_'];
 export type ApiResponseChildDocumentUploadResponse = components['schemas']['ApiResponse_ChildDocumentUploadResponse_'];
+export type ApiResponseChildMedicalResponse = components['schemas']['ApiResponse_ChildMedicalResponse_'];
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
+export type ApiResponseKioskDeviceResponse = components['schemas']['ApiResponse_KioskDeviceResponse_'];
+export type ApiResponseKioskInfoResponse = components['schemas']['ApiResponse_KioskInfoResponse_'];
+export type ApiResponseKioskLoginResponse = components['schemas']['ApiResponse_KioskLoginResponse_'];
+export type ApiResponseKioskSessionResponse = components['schemas']['ApiResponse_KioskSessionResponse_'];
+export type ApiResponseKioskSettingsResponse = components['schemas']['ApiResponse_KioskSettingsResponse_'];
+export type ApiResponseKioskSetupCodeResponse = components['schemas']['ApiResponse_KioskSetupCodeResponse_'];
+export type ApiResponseKioskSignResponse = components['schemas']['ApiResponse_KioskSignResponse_'];
+export type ApiResponseKioskTodayResponse = components['schemas']['ApiResponse_KioskTodayResponse_'];
 export type ApiResponseLocationServiceSelectionResponse = components['schemas']['ApiResponse_LocationServiceSelectionResponse_'];
 export type ApiResponseMedicalReviewResponse = components['schemas']['ApiResponse_MedicalReviewResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
 export type ApiResponsePublicLocationResponse = components['schemas']['ApiResponse_PublicLocationResponse_'];
 export type ApiResponseRefundResponse = components['schemas']['ApiResponse_RefundResponse_'];
+export type ApiResponseRollPickupPersonResponse = components['schemas']['ApiResponse_RollPickupPersonResponse_'];
+export type ApiResponseRollResponse = components['schemas']['ApiResponse_RollResponse_'];
+export type ApiResponseRunSheetResponse = components['schemas']['ApiResponse_RunSheetResponse_'];
 export type ApiResponseSessionResponse = components['schemas']['ApiResponse_SessionResponse_'];
+export type ApiResponseStaffKioskVerifyResponse = components['schemas']['ApiResponse_StaffKioskVerifyResponse_'];
+export type ApiResponseStaffPinStatusResponse = components['schemas']['ApiResponse_StaffPinStatusResponse_'];
+export type ApiResponseStaffShiftResponse = components['schemas']['ApiResponse_StaffShiftResponse_'];
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
+export type ApiResponseListActionPlanResponse = components['schemas']['ApiResponse_list_ActionPlanResponse__'];
 export type ApiResponseListActionResponse = components['schemas']['ApiResponse_list_ActionResponse__'];
+export type ApiResponseListAttendanceTimesResponse = components['schemas']['ApiResponse_list_AttendanceTimesResponse__'];
 export type ApiResponseListBookingConflictRow = components['schemas']['ApiResponse_list_BookingConflictRow__'];
 export type ApiResponseListBookingGroupSummaryResponse = components['schemas']['ApiResponse_list_BookingGroupSummaryResponse__'];
 export type ApiResponseListBookingTableResponse = components['schemas']['ApiResponse_list_BookingTableResponse__'];
 export type ApiResponseListChildDocumentResponse = components['schemas']['ApiResponse_list_ChildDocumentResponse__'];
+export type ApiResponseListChildSearchResultResponse = components['schemas']['ApiResponse_list_ChildSearchResultResponse__'];
 export type ApiResponseListChildTableResponse = components['schemas']['ApiResponse_list_ChildTableResponse__'];
+export type ApiResponseListFamilyBookingResponse = components['schemas']['ApiResponse_list_FamilyBookingResponse__'];
+export type ApiResponseListKioskDeviceResponse = components['schemas']['ApiResponse_list_KioskDeviceResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
 export type ApiResponseListMedicalReviewSummaryResponse = components['schemas']['ApiResponse_list_MedicalReviewSummaryResponse__'];
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
+export type ApiResponseListRollPickupPersonResponse = components['schemas']['ApiResponse_list_RollPickupPersonResponse__'];
+export type ApiResponseListStaffKioskMemberResponse = components['schemas']['ApiResponse_list_StaffKioskMemberResponse__'];
+export type AttendanceTimesResponse = components['schemas']['AttendanceTimesResponse'];
 export type AustralianState = components['schemas']['AustralianState'];
 export type BookingConflictRow = components['schemas']['BookingConflictRow'];
 export type BookingGroupLineResponse = components['schemas']['BookingGroupLineResponse'];
@@ -2064,6 +3678,7 @@ export type BookingResponse = components['schemas']['BookingResponse'];
 export type BookingSelection = components['schemas']['BookingSelection'];
 export type BookingStatus = components['schemas']['BookingStatus'];
 export type BookingTableResponse = components['schemas']['BookingTableResponse'];
+export type ChangePasswordRequest = components['schemas']['ChangePasswordRequest'];
 export type CheckoutStatusResponse = components['schemas']['CheckoutStatusResponse'];
 export type CheckoutUrlResponse = components['schemas']['CheckoutUrlResponse'];
 export type ChildDocumentDownloadResponse = components['schemas']['ChildDocumentDownloadResponse'];
@@ -2071,18 +3686,36 @@ export type ChildDocumentResponse = components['schemas']['ChildDocumentResponse
 export type ChildDocumentType = components['schemas']['ChildDocumentType'];
 export type ChildDocumentUploadResponse = components['schemas']['ChildDocumentUploadResponse'];
 export type ChildDocumentUploadStatus = components['schemas']['ChildDocumentUploadStatus'];
+export type ChildMedicalResponse = components['schemas']['ChildMedicalResponse'];
 export type ChildResponse = components['schemas']['ChildResponse'];
+export type ChildSearchResultResponse = components['schemas']['ChildSearchResultResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
 export type CreateChildDocumentRequest = components['schemas']['CreateChildDocumentRequest'];
 export type CreateChildRequest = components['schemas']['CreateChildRequest'];
+export type CreateKioskDeviceRequest = components['schemas']['CreateKioskDeviceRequest'];
 export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
 export type CreateRefundRequest = components['schemas']['CreateRefundRequest'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
+export type FamilyBookingResponse = components['schemas']['FamilyBookingResponse'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
 export type HttpValidationError = components['schemas']['HTTPValidationError'];
+export type KioskBookingResponse = components['schemas']['KioskBookingResponse'];
+export type KioskChangePinRequest = components['schemas']['KioskChangePinRequest'];
+export type KioskDeviceResponse = components['schemas']['KioskDeviceResponse'];
+export type KioskForgotPinRequest = components['schemas']['KioskForgotPinRequest'];
+export type KioskInfoResponse = components['schemas']['KioskInfoResponse'];
+export type KioskLoginRequest = components['schemas']['KioskLoginRequest'];
+export type KioskLoginResponse = components['schemas']['KioskLoginResponse'];
+export type KioskPairRequest = components['schemas']['KioskPairRequest'];
+export type KioskSessionResponse = components['schemas']['KioskSessionResponse'];
+export type KioskSettingsResponse = components['schemas']['KioskSettingsResponse'];
+export type KioskSetupCodeResponse = components['schemas']['KioskSetupCodeResponse'];
+export type KioskSignRequest = components['schemas']['KioskSignRequest'];
+export type KioskSignResponse = components['schemas']['KioskSignResponse'];
+export type KioskTodayResponse = components['schemas']['KioskTodayResponse'];
 export type LocationServiceDayTableResponse = components['schemas']['LocationServiceDayTableResponse'];
 export type LocationServiceSelectionResponse = components['schemas']['LocationServiceSelectionResponse'];
 export type LoginRequest = components['schemas']['LoginRequest'];
@@ -2099,11 +3732,30 @@ export type RefundResponse = components['schemas']['RefundResponse'];
 export type RefundStatus = components['schemas']['RefundStatus'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
+export type RollEntryResponse = components['schemas']['RollEntryResponse'];
+export type RollFamilyResponse = components['schemas']['RollFamilyResponse'];
+export type RollPickupPersonResponse = components['schemas']['RollPickupPersonResponse'];
+export type RollResponse = components['schemas']['RollResponse'];
+export type RunSheetEntryResponse = components['schemas']['RunSheetEntryResponse'];
+export type RunSheetResponse = components['schemas']['RunSheetResponse'];
+export type RunSheetSessionResponse = components['schemas']['RunSheetSessionResponse'];
 export type SessionResponse = components['schemas']['SessionResponse'];
+export type SetPrintedRequest = components['schemas']['SetPrintedRequest'];
+export type SetStaffPinRequest = components['schemas']['SetStaffPinRequest'];
 export type SignedUploadResponse = components['schemas']['SignedUploadResponse'];
+export type StaffKioskBulkRequest = components['schemas']['StaffKioskBulkRequest'];
+export type StaffKioskCheckIdRequest = components['schemas']['StaffKioskCheckIdRequest'];
+export type StaffKioskMemberResponse = components['schemas']['StaffKioskMemberResponse'];
+export type StaffKioskShiftRequest = components['schemas']['StaffKioskShiftRequest'];
+export type StaffKioskSignRequest = components['schemas']['StaffKioskSignRequest'];
+export type StaffKioskUndoRequest = components['schemas']['StaffKioskUndoRequest'];
+export type StaffKioskVerifyResponse = components['schemas']['StaffKioskVerifyResponse'];
+export type StaffPinStatusResponse = components['schemas']['StaffPinStatusResponse'];
+export type StaffShiftResponse = components['schemas']['StaffShiftResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
+export type UpdateKioskSettingsRequest = components['schemas']['UpdateKioskSettingsRequest'];
 export type UpdateLocationServiceConfigRequest = components['schemas']['UpdateLocationServiceConfigRequest'];
 export type UpdatePickupRequest = components['schemas']['UpdatePickupRequest'];
 export type ValidationError = components['schemas']['ValidationError'];
@@ -2254,6 +3906,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_SessionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_pin_status_staff_pin_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffPinStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_staff_pin_staff_pin_v1__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetStaffPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffPinStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_account_account_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_AccountResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_account_v1_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
                 };
             };
             /** @description Validation Error */
@@ -3629,6 +5413,1235 @@ export interface operations {
             };
         };
     };
+    list_kiosk_devices_kiosk_devices_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_KioskDeviceResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_kiosk_device_kiosk_devices_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateKioskDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskSetupCodeResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_kiosk_settings_kiosk_devices_v1_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskSettingsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_kiosk_settings_kiosk_devices_v1_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateKioskSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskSettingsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    new_kiosk_setup_code_kiosk_devices_v1__device_id__setup_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskSetupCodeResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_kiosk_device_kiosk_devices_v1__device_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskDeviceResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_roll_attendance_v1_roll_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RollResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_sheet_attendance_v1_board_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RunSheetResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pair_kiosk_kiosk_v1__location_code__pair_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KioskPairRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskInfoResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_kiosk_device_kiosk_v1__location_code__device_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskInfoResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kiosk_login_kiosk_v1__location_code__login_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KioskLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskLoginResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kiosk_change_pin_kiosk_v1__location_code__pin_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Session"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KioskChangePinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskSessionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kiosk_forgot_pin_kiosk_v1__location_code__forgot_pin_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KioskForgotPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kiosk_today_kiosk_v1__location_code__today_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Session"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskTodayResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kiosk_sign_kiosk_v1__location_code__sign_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Session"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KioskSignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskSignResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_kiosk_device_staff_kiosk_v1__location_code__device_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_KioskInfoResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_kiosk_staff_staff_kiosk_v1__location_code__staff_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_StaffKioskMemberResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_kiosk_board_staff_kiosk_v1__location_code__board_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RunSheetResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_staff_pin_staff_kiosk_v1__location_code__verify_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffKioskVerifyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_kiosk_roll_staff_kiosk_v1__location_code__roll_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RollResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_family_pickups_staff_kiosk_v1__location_code__families__family_user_id__pickups_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                family_user_id: string;
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_RollPickupPersonResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_children_staff_kiosk_v1__location_code__children_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ChildSearchResultResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_family_bookings_staff_kiosk_v1__location_code__families__family_user_id__bookings_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                family_user_id: string;
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_FamilyBookingResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_kiosk_refund_staff_kiosk_v1__location_code__refunds_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RefundResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_child_medical_staff_kiosk_v1__location_code__children__child_id__medical_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                child_id: string;
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildMedicalResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_action_plans_staff_kiosk_v1__location_code__action_plans_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ActionPlanResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_download_staff_kiosk_v1__location_code__documents__document_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                document_id: string;
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildDocumentDownloadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_document_printed_staff_kiosk_v1__location_code__documents__document_id__printed_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                document_id: string;
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPrintedRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_kiosk_sign_staff_kiosk_v1__location_code__sign_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffKioskSignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_AttendanceTimesResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_kiosk_bulk_staff_kiosk_v1__location_code__bulk_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffKioskBulkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_AttendanceTimesResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_kiosk_undo_staff_kiosk_v1__location_code__undo_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffKioskUndoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_AttendanceTimesResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_kiosk_check_id_staff_kiosk_v1__location_code__check_id_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffKioskCheckIdRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RollPickupPersonResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_kiosk_shift_staff_kiosk_v1__location_code__shift_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffKioskShiftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffShiftResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     stripe_webhook_api_v1_webhooks_stripe_post: {
         parameters: {
             query?: never;
@@ -3660,6 +6673,26 @@ export interface operations {
             };
         };
     };
+    ses_webhook_api_v1_webhooks_ses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+        };
+    };
 }
 type FlattenedDeepRequired<T> = {
     [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
@@ -3674,10 +6707,18 @@ export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<compon
 export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingStatus"]> = ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"];
 export const childDocumentTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentType"]> = ["medical_action_plan", "asthma_action_plan", "allergy_anaphylaxis_plan", "other"];
 export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentUploadStatus"]> = ["pending", "uploaded", "failed"];
+export const createKioskDeviceRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreateKioskDeviceRequest"]["kind"]> = ["family", "staff"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
+export const kioskDeviceResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskDeviceResponse"]["kind"]> = ["family", "staff"];
+export const kioskInfoResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskInfoResponse"]["kind"]> = ["family", "staff"];
+export const kioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskSignRequest"]["action"]> = ["in", "out"];
 export const medicalReviewDecisionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewDecision"]> = ["approved", "documentation_requested"];
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
 export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
 export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
 export const refundStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RefundStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
+export const staffKioskBulkRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskBulkRequest"]["action"]> = ["sign_in", "to_school", "sign_out"];
+export const staffKioskShiftRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskShiftRequest"]["action"]> = ["start", "end"];
+export const staffKioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskSignRequest"]["action"]> = ["in", "out"];
+export const staffKioskUndoRequestStepValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskUndoRequest"]["step"]> = ["sign_in", "sign_out"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

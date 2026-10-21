@@ -30,6 +30,9 @@ type ApiWrapperOptions = {
 	// No success toast, for a step inside a longer action (e.g. starting an
 	// upload); errors still toast.
 	quiet?: boolean;
+	// No toasts at all: the caller shows the outcome itself (the kiosk
+	// shows messages large on screen).
+	silent?: boolean;
 };
 
 // The backend returns 422s as { data: [{ field, message }] }; key them by field.
@@ -58,13 +61,14 @@ export async function apiWrapper<T>(
 		headers = {},
 		onSuccess,
 		fetcher = fetch,
-		quiet = false
+		quiet = false,
+		silent = false
 	} = options;
 
 	function finalizeResponse(
 		response: ApiResponse<T>
 	): ApiResponse<T> {
-		if (method !== 'GET') {
+		if (method !== 'GET' && !silent) {
 			if (response.ok) {
 				if (quiet) return response;
 

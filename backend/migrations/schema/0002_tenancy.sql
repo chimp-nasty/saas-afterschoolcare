@@ -53,6 +53,16 @@ CREATE TABLE tenancy.locations (
     phone VARCHAR(50),
     email VARCHAR(255),
 
+    -- "Today" depends on where the location is: session times, booking
+    -- and refund cut-offs and attendance all use it.
+    timezone TEXT NOT NULL DEFAULT 'Australia/Brisbane',
+
+    -- Children can be signed in and out (at either kiosk) only from 2 hours
+    -- before a session to 2 hours after it
+    -- (public.service_day_signing_window); anything outside that is dealt
+    -- with in person. Admins switch it off and on (/admin/kiosks).
+    kiosk_enforce_service_times BOOLEAN NOT NULL DEFAULT TRUE,
+
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 

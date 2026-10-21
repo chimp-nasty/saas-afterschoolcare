@@ -60,6 +60,11 @@ class EmailTypeEnum(str, enum.Enum):
     KIOSK_PIN = 'kiosk_pin'
 
 
+class KioskKindEnum(str, enum.Enum):
+    FAMILY = 'family'
+    STAFF = 'staff'
+
+
 class MedicalReviewStatusEnum(str, enum.Enum):
     NOT_REQUIRED = 'not_required'
     PENDING = 'pending'
@@ -72,6 +77,11 @@ class PaymentStatusEnum(str, enum.Enum):
     PAID = 'PAID'
     REFUNDED = 'REFUNDED'
     FAILED = 'FAILED'
+
+
+class PermissionChannelEnum(str, enum.Enum):
+    WEB = 'web'
+    KIOSK = 'kiosk'
 
 
 class PickupRelationEnum(str, enum.Enum):
@@ -202,14 +212,32 @@ class RolePermission(Base):
         ForeignKeyConstraint(['permission_id'], ['auth.permissions.id'], ondelete='CASCADE', name='fk_role_permissions_permission'),
         ForeignKeyConstraint(['role_id'], ['auth.roles.id'], ondelete='CASCADE', name='fk_role_permissions_role'),
         PrimaryKeyConstraint('id', name='role_permissions_pkey'),
-        UniqueConstraint('role_id', 'permission_id', name='uq_role_permissions_role_permission'),
+        UniqueConstraint('role_id', 'permission_id', 'channel', name='uq_role_permissions_role_permission_channel'),
         {'schema': 'auth'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     permission_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    channel: Mapped[PermissionChannelEnum] = mapped_column(Enum(PermissionChannelEnum, values_callable=lambda cls: [member.value for member in cls], name='permission_channel_enum', schema='auth'), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class StaffPin(Base):
+    __tablename__ = 'staff_pins'
+    __table_args__ = (
+        CheckConstraint('failed_pin_attempts >= 0', name='ck_staff_pins_failed_pin_attempts'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_staff_pins_user'),
+        PrimaryKeyConstraint('user_id', name='staff_pins_pkey'),
+        {'schema': 'auth'}
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    pin_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    failed_pin_attempts: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('0'))
+    set_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    pin_locked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 
@@ -282,9 +310,10 @@ class Location(Base):
     suburb: Mapped[str] = mapped_column(String(100), nullable=False)
     state: Mapped[str] = mapped_column(String(3), nullable=False)
     postcode: Mapped[str] = mapped_column(CHAR(4), nullable=False)
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'Australia/Brisbane'::text"))
+    kiosk_enforce_service_times: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'Australia/Brisbane'::text"))
     name: Mapped[Optional[str]] = mapped_column(String(200))
     address_line_2: Mapped[Optional[str]] = mapped_column(String(255))
     latitude: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(9, 6))
@@ -433,16 +462,19 @@ class LocationKioskDevice(Base):
     __table_args__ = (
         ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], name='fk_location_kiosk_devices_location'),
         PrimaryKeyConstraint('id', name='location_kiosk_devices_pkey'),
+        Index('uq_location_kiosk_devices_active_kind', 'location_id', 'kind', postgresql_where='is_active', unique=True),
         {'schema': 'public'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    kind: Mapped[KioskKindEnum] = mapped_column(Enum(KioskKindEnum, values_callable=lambda cls: [member.value for member in cls], name='kiosk_kind_enum'), nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('1'))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     setup_secret_hash: Mapped[Optional[str]] = mapped_column(Text)
+    setup_code_expires_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     paired_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     last_used: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
@@ -515,9 +547,11 @@ class ChildDocument(Base):
     __tablename__ = 'child_documents'
     __table_args__ = (
         CheckConstraint("content_type IS NULL OR (content_type::text = ANY (ARRAY['application/pdf'::character varying, 'image/jpeg'::character varying, 'image/png'::character varying, 'image/heic'::character varying]::text[]))", name='ck_child_documents_content_type'),
+        CheckConstraint('printed_at IS NULL) = (printed_by_user_id IS NULL', name='ck_child_documents_printed_by'),
         CheckConstraint('size_bytes IS NULL OR size_bytes >= 1 AND size_bytes <= 10485760', name='ck_child_documents_size'),
         CheckConstraint("upload_status <> 'uploaded'::child_document_upload_status_enum OR content_type IS NOT NULL AND size_bytes IS NOT NULL", name='ck_child_documents_uploaded_details'),
         ForeignKeyConstraint(['child_id'], ['public.child_profile.id'], ondelete='CASCADE', name='fk_child_documents_child'),
+        ForeignKeyConstraint(['printed_by_user_id'], ['auth.users.id'], name='fk_child_documents_printed_by'),
         ForeignKeyConstraint(['uploaded_by_user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_child_documents_uploaded_by'),
         PrimaryKeyConstraint('id', name='child_documents_pkey'),
         UniqueConstraint('storage_provider', 'storage_bucket', 'storage_object_key', name='uq_child_documents_storage_object'),
@@ -539,6 +573,8 @@ class ChildDocument(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     content_type: Mapped[Optional[str]] = mapped_column(String(100))
     size_bytes: Mapped[Optional[int]] = mapped_column(Integer)
+    printed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    printed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 
 
@@ -690,6 +726,30 @@ class PaymentAttempt(Base):
 
 
 
+class StaffShift(Base):
+    __tablename__ = 'staff_shifts'
+    __table_args__ = (
+        CheckConstraint('ended_at IS NULL OR ended_at >= started_at', name='ck_staff_shifts_ended_after_started'),
+        CheckConstraint('ended_at IS NULL) = (ended_kiosk_device_id IS NULL', name='ck_staff_shifts_ended_by'),
+        ForeignKeyConstraint(['ended_kiosk_device_id'], ['public.location_kiosk_devices.id'], name='fk_staff_shifts_ended_kiosk'),
+        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_staff_shifts_location'),
+        ForeignKeyConstraint(['started_kiosk_device_id'], ['public.location_kiosk_devices.id'], name='fk_staff_shifts_started_kiosk'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_staff_shifts_user'),
+        PrimaryKeyConstraint('id', name='staff_shifts_pkey'),
+        Index('uq_staff_shifts_open', 'location_id', 'user_id', postgresql_where='(ended_at IS NULL)', unique=True),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    started_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    started_kiosk_device_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    ended_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    ended_kiosk_device_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+
+
 class Booking(Base):
     __tablename__ = 'bookings'
     __table_args__ = (
@@ -724,11 +784,20 @@ class Booking(Base):
 class AttendanceRecord(Base):
     __tablename__ = 'attendance_records'
     __table_args__ = (
+        CheckConstraint('\nCASE\n    WHEN signed_in_at IS NULL THEN num_nonnulls(signed_in_by_user_id, signed_in_by_pickup_person_id, signed_in_kiosk_device_id) = 0\n    ELSE num_nonnulls(signed_in_by_user_id, signed_in_by_pickup_person_id) = 1 AND signed_in_kiosk_device_id IS NOT NULL\nEND', name='ck_attendance_records_signed_in_by'),
+        CheckConstraint('\nCASE\n    WHEN signed_out_at IS NULL THEN num_nonnulls(signed_out_by_user_id, signed_out_kiosk_device_id, collected_by_pickup_person_id, released_to_name, release_note) = 0 AND NOT sent_to_school\n    ELSE signed_out_kiosk_device_id IS NOT NULL\nEND', name='ck_attendance_records_signed_out_by'),
+        CheckConstraint('NOT sent_to_school OR signed_out_by_user_id IS NOT NULL', name='ck_attendance_records_to_school_by_staff'),
+        CheckConstraint('released_to_name IS NULL OR signed_out_by_user_id IS NOT NULL', name='ck_attendance_records_release_by_staff'),
+        CheckConstraint("signed_out_at IS NULL OR num_nonnulls(collected_by_pickup_person_id, NULLIF(btrim(released_to_name::text), ''::text), NULLIF(sent_to_school, false)) = 1", name='ck_attendance_records_collected_by'),
         CheckConstraint('signed_out_at IS NULL OR signed_in_at IS NOT NULL', name='ck_attendance_records_signout_requires_signin'),
         CheckConstraint('signed_out_at IS NULL OR signed_out_at >= signed_in_at', name='ck_attendance_records_signout_after_signin'),
         ForeignKeyConstraint(['booking_id'], ['public.bookings.id'], ondelete='CASCADE', name='fk_attendance_records_booking'),
+        ForeignKeyConstraint(['collected_by_pickup_person_id'], ['public.authorized_pickup_persons.id'], name='fk_attendance_records_collected_by'),
+        ForeignKeyConstraint(['signed_in_by_pickup_person_id'], ['public.authorized_pickup_persons.id'], name='fk_attendance_records_signed_in_by_pickup_person'),
         ForeignKeyConstraint(['signed_in_by_user_id'], ['auth.users.id'], name='fk_attendance_records_signed_in_by'),
+        ForeignKeyConstraint(['signed_in_kiosk_device_id'], ['public.location_kiosk_devices.id'], name='fk_attendance_records_signed_in_kiosk'),
         ForeignKeyConstraint(['signed_out_by_user_id'], ['auth.users.id'], name='fk_attendance_records_signed_out_by'),
+        ForeignKeyConstraint(['signed_out_kiosk_device_id'], ['public.location_kiosk_devices.id'], name='fk_attendance_records_signed_out_kiosk'),
         PrimaryKeyConstraint('id', name='attendance_records_pkey'),
         UniqueConstraint('booking_id', name='uq_attendance_records_booking'),
         {'schema': 'public'}
@@ -736,12 +805,19 @@ class AttendanceRecord(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     booking_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    sent_to_school: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     signed_in_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    signed_out_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     signed_in_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    signed_in_by_pickup_person_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    signed_in_kiosk_device_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    signed_out_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     signed_out_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    signed_out_kiosk_device_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    collected_by_pickup_person_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    released_to_name: Mapped[Optional[str]] = mapped_column(String(200))
+    release_note: Mapped[Optional[str]] = mapped_column(Text)
 
 
 

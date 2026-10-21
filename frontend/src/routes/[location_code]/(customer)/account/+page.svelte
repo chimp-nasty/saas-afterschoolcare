@@ -4,7 +4,7 @@
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
 
-    import ParentProfileForm from "$lib/features/customer/components/ParentProfileForm.svelte";
+    import CustomerProfilePanel from "$lib/features/customer/components/CustomerProfilePanel.svelte";
     import ChildAccountData from "$lib/features/children/components/ChildAccountData.svelte";
     import PickupList from "$lib/features/pickups/components/PickupList.svelte";
 
@@ -13,7 +13,8 @@
     import { accountTabs } from "$lib/navigation/tabs";
     import { logout } from "$lib/auth/logout";
 	import { createCustomerApi } from "$lib/api/public/adapters/customer";
-	import type { UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/schema";
+	import { createAccountApi } from "$lib/api/auth/adapters/account";
+	import type { ChangePasswordRequest, UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/schema";
 
     let { data } = $props();
 
@@ -24,6 +25,7 @@
     let activeTab = $state<string>(accountTabs.PROFILE);
 
     const customerApi = createCustomerApi();
+    const accountApi = createAccountApi();
 
     const tabs = [
         { id: accountTabs.PROFILE, label: "Profile" },
@@ -45,6 +47,10 @@
 
         return response;
     }
+
+    function changePassword(body: ChangePasswordRequest) {
+        return accountApi.changePassword(body);
+    }
 </script>
 
 <Page>
@@ -57,9 +63,10 @@
     >
         {#snippet panel(id)}
             {#if id === accountTabs.PROFILE}
-                <ParentProfileForm
+                <CustomerProfilePanel
                     profile={customerProfile}
                     onsubmit={updateProfile}
+                    onchangepassword={changePassword}
                 />
             {:else if id === accountTabs.CHILDREN}
                 <ChildAccountData

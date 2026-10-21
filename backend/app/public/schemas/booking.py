@@ -171,3 +171,14 @@ class BookingGroupSummaryResponse(BaseModel):
 
     total_cents: int
     currency: CurrencyCode
+
+
+class FamilyBookingResponse(BookingTableResponse):
+    """
+    One of a family's bookings as staff see it (the staff kiosk's child
+    panel and refunds): with any refund, and whether an admin can refund it
+    now (up to and including its day).
+    """
+
+    refund_status: RefundStatus | None
+    is_refundable_by_admin: bool

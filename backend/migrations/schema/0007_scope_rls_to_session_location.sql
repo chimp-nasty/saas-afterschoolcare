@@ -19,6 +19,28 @@ AS $$
 $$;
 
 
+-- The request's channel (docs/portals.md, section 3): 'kiosk' when the API
+-- is acting for a staff member at the location's staff kiosk (their PIN
+-- checked for this request), 'web' otherwise. Set per transaction by the API.
+CREATE FUNCTION auth.current_channel()
+RETURNS text
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT COALESCE(NULLIF(current_setting('app.channel', true), ''), 'web');
+$$;
+
+
+-- The staff kiosk the request came from, on the kiosk channel.
+CREATE FUNCTION auth.current_kiosk_device_id()
+RETURNS uuid
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT NULLIF(current_setting('app.kiosk_device_id', true), '')::uuid;
+$$;
+
+
 -- The current user holds any role at the location, and it's the session's
 -- location.
 CREATE OR REPLACE FUNCTION auth.has_location_role(p_location_id uuid)
@@ -37,7 +59,9 @@ $$;
 
 
 -- The current user is staff or above at the location, and it's the
--- session's location.
+-- session's location. The staff role only counts at the staff kiosk: on the
+-- website, staff manage only themselves (docs/portals.md), so a staff login
+-- reads no children, families, medical or attendance rows.
 CREATE OR REPLACE FUNCTION auth.is_location_staff(p_location_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -51,7 +75,10 @@ AS $$
                ON r.id = lur.role_id
            WHERE lur.user_id = auth.current_user_id()
              AND lur.location_id = p_location_id
-             AND r.code IN ('superadmin', 'admin', 'staff')
+             AND (
+                 r.code IN ('superadmin', 'admin')
+                 OR (r.code = 'staff' AND auth.current_channel() = 'kiosk')
+             )
        );
 $$;
 
@@ -95,7 +122,9 @@ AS $$
            WHERE lur.user_id = auth.current_user_id()
              AND lur.location_id = p_location_id
              AND (
-                 r.code IN ('superadmin', 'admin', 'staff')
+                 r.code IN ('superadmin', 'admin')
+                 -- Staff only at the staff kiosk (see is_location_staff).
+                 OR (r.code = 'staff' AND auth.current_channel() = 'kiosk')
                  OR (
                      r.code = 'customer'
                      AND p_owner_user_id = auth.current_user_id()
@@ -133,7 +162,8 @@ AS $$
               OR current_lur.location_id = p_location_id
           )
           AND (
-              (cr.code = 'staff' AND tr.code = 'customer')
+              -- Staff only at the staff kiosk (see is_location_staff).
+              (cr.code = 'staff' AND tr.code = 'customer' AND auth.current_channel() = 'kiosk')
               OR (cr.code = 'admin' AND tr.code IN ('staff', 'customer'))
               OR (cr.code = 'superadmin' AND tr.code IN ('admin', 'staff', 'customer'))
           )
@@ -153,4 +183,20 @@ CREATE POLICY booking_groups_scope_policy
     WITH CHECK (
         user_id = auth.current_user_id()
         AND location_id = auth.current_location_id()
+    );
+
+
+-- Staff start and end their own shifts, only at the staff kiosk (here
+-- rather than schema/0005: it needs auth.current_channel()).
+CREATE POLICY staff_shifts_kiosk_write_policy
+    ON public.staff_shifts FOR ALL
+    USING (
+        user_id = auth.current_user_id()
+        AND auth.current_channel() = 'kiosk'
+        AND auth.is_location_staff(location_id)
+    )
+    WITH CHECK (
+        user_id = auth.current_user_id()
+        AND auth.current_channel() = 'kiosk'
+        AND auth.is_location_staff(location_id)
     );

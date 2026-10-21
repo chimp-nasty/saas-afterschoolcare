@@ -21,6 +21,21 @@ export const actionTabs = {
 	OLDER: 'older'
 } as const;
 
+// The staff kiosk (docs/portals.md).
+export const kioskTabs = {
+	RUN_SHEET: 'run-sheet',
+	SHIFTS: 'shifts',
+	MEDICAL: 'medical',
+	ADMIN: 'admin'
+} as const;
+
+// A child's task window at the staff kiosk.
+export const kioskChildTabs = {
+	ATTENDANCE: 'attendance',
+	MEDICAL: 'medical',
+	BOOKINGS: 'bookings'
+} as const;
+
 // Staff medical review list: waiting on staff, or on the family.
 export const reviewTabs = {
 	PENDING: 'pending',

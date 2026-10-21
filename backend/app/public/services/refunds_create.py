@@ -58,7 +58,14 @@ class CreateRefundService:
         booking_id: UUID,
         user_id: UUID,
         location_id: UUID,
+        kiosk_device_id: UUID | None = None,
     ) -> RefundResponse:
+        """
+        Refund one booking (one child, one day) in full. From the staff kiosk,
+        `kiosk_device_id` keeps each later step on the kiosk channel too.
+        """
+        self.kiosk_device_id = kiosk_device_id
+
         opened = self._open(
             booking_id=booking_id,
             requested_by_user_id=user_id,
@@ -201,3 +208,6 @@ class CreateRefundService:
         # again for the same user and location.
         self.rls_context.set_user_id(user_id=user_id)
         self.rls_context.set_location_id(location_id=location_id)
+
+        if getattr(self, "kiosk_device_id", None):
+            self.rls_context.set_kiosk_channel(device_id=self.kiosk_device_id)

@@ -315,10 +315,17 @@ CREATE POLICY location_service_config_admin_update_policy
     USING (auth.is_location_admin(location_id))
     WITH CHECK (auth.is_location_admin(location_id));
 
-CREATE POLICY location_kiosk_devices_scope_policy
+-- Staff see their location's kiosks; admins add and revoke them. The
+-- tablets themselves never read this: they go through the kiosk_*
+-- functions (schema/0004).
+CREATE POLICY location_kiosk_devices_staff_read_policy
+    ON public.location_kiosk_devices FOR SELECT
+    USING (auth.is_location_staff(location_id));
+
+CREATE POLICY location_kiosk_devices_admin_write_policy
     ON public.location_kiosk_devices FOR ALL
-    USING (auth.has_location_role(location_id))
-    WITH CHECK (auth.has_location_role(location_id));
+    USING (auth.is_location_admin(location_id))
+    WITH CHECK (auth.is_location_admin(location_id));
 
 CREATE POLICY location_service_days_scope_policy
     ON public.location_service_days FOR ALL
@@ -390,20 +397,21 @@ CREATE POLICY child_medical_state_read_policy
         )
     );
 
-CREATE POLICY child_medical_state_staff_write_policy
+-- Medical approval is an admin responsibility (docs/portals.md).
+CREATE POLICY child_medical_state_admin_write_policy
     ON public.child_medical_state FOR ALL
     USING (
         EXISTS (
             SELECT 1 FROM public.child_profile cp
             WHERE cp.id = child_medical_state.child_id
-              AND auth.is_location_staff(cp.location_id)
+              AND auth.is_location_admin(cp.location_id)
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM public.child_profile cp
             WHERE cp.id = child_medical_state.child_id
-              AND auth.is_location_staff(cp.location_id)
+              AND auth.is_location_admin(cp.location_id)
         )
     );
 
@@ -496,3 +504,28 @@ CREATE POLICY email_messages_admin_read_policy
 CREATE POLICY email_template_overrides_read_policy
     ON tenancy.email_template_overrides FOR SELECT
     USING (true);
+
+
+-- =====================================================
+-- STAFF KIOSK
+-- =====================================================
+
+ALTER TABLE auth.staff_pins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.staff_pins FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.staff_shifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.staff_shifts FORCE ROW LEVEL SECURITY;
+
+-- A staff member sees whether they have a PIN (never anyone else's).
+-- Written only by set_staff_pin and staff_kiosk_login (schema/0004).
+CREATE POLICY staff_pins_own_read_policy
+    ON auth.staff_pins FOR SELECT
+    USING (user_id = auth.current_user_id());
+
+-- Staff see their own shifts at the session's location; admins see the
+-- location's.
+CREATE POLICY staff_shifts_read_policy
+    ON public.staff_shifts FOR SELECT
+    USING (
+        (user_id = auth.current_user_id() AND auth.has_location_role(location_id))
+        OR auth.is_location_admin(location_id)
+    );

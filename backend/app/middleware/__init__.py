@@ -23,6 +23,17 @@ def configure_middleware(app: FastAPI) -> None:
             r"/customer/v1/onboard/[^/]+/?": (5, 60),
             r"/auth/v1/forgot-password/[^/]+/?": (5, 60),
             r"/auth/v1/reset-password/?": (10, 60),
+            # Setting a staff PIN checks a password.
+            r"/staff-pin/v1/?": (10, 60),
+            # Changing your password checks the current one.
+            r"/account/v1/password/?": (10, 60),
+            # Setup codes: slow down guessing.
+            r"/kiosk/v1/[^/]+/pair/?": (10, 60),
+            # Everyone at a centre uses one tablet (one IP), so the kiosk
+            # gets a tablet-sized allowance per endpoint instead of the
+            # per-person limits; PIN locks and the forgot-PIN spacing are
+            # in the database.
+            r"/(staff-)?kiosk/v1/.*": (300, 60),
         },
         exempt_paths={
             "/api/v1/webhooks/stripe",
@@ -59,6 +70,12 @@ def configure_middleware(app: FastAPI) -> None:
         allow_headers=[
             "Authorization",
             "Content-Type",
+            # The family kiosk's per-person session token (app/kiosk/tokens.py).
+            "X-Kiosk-Session",
+            # The staff kiosk's staff member and PIN, sent with each action
+            # (app/kiosk/dependencies.py).
+            "X-Kiosk-Staff",
+            "X-Kiosk-Pin",
         ],
     )
 

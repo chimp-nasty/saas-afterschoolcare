@@ -1,10 +1,11 @@
 from uuid import UUID
 
+from sqlalchemy import func, text
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
-from app.db.models import ChildDocument, ChildProfile, Location
-from app.public.schemas.enums import ChildDocumentUploadStatus
+from app.db.models import ChildDocument, ChildMedicalState, ChildProfile, Location
+from app.public.schemas.enums import ChildDocumentType, ChildDocumentUploadStatus
 
 
 class ChildDocumentRepository(Repository):
@@ -96,6 +97,61 @@ class ChildDocumentRepository(Repository):
                 ChildDocument.id.desc(),
             )
             .all()
+        )
+
+    def list_action_plans(
+        self,
+        *,
+        location_id: UUID,
+    ) -> list[Row]:
+        """
+        Every current action plan of the location's active children (RLS:
+        staff see their location's), by child name, newest plan first.
+        """
+        return (
+            self.db.query(
+                ChildProfile.id.label("child_id"),
+                ChildProfile.first_name.label("child_first_name"),
+                ChildProfile.last_name.label("child_last_name"),
+                ChildDocument.id.label("document_id"),
+                ChildDocument.document_type,
+                ChildDocument.created_at.label("uploaded_at"),
+                ChildMedicalState.review_status,
+                ChildDocument.printed_at,
+                func.public.staff_short_name(ChildDocument.printed_by_user_id).label("printed_by"),
+            )
+            .join(ChildProfile, ChildProfile.id == ChildDocument.child_id)
+            .join(ChildMedicalState, ChildMedicalState.child_id == ChildProfile.id)
+            .filter(
+                ChildProfile.location_id == location_id,
+                ChildProfile.is_active.is_(True),
+                ChildDocument.is_active.is_(True),
+                ChildDocument.upload_status == ChildDocumentUploadStatus.UPLOADED,
+                ChildDocument.document_type.in_([
+                    ChildDocumentType.MEDICAL_ACTION_PLAN,
+                    ChildDocumentType.ASTHMA_ACTION_PLAN,
+                    ChildDocumentType.ALLERGY_ANAPHYLAXIS_PLAN,
+                ]),
+            )
+            .order_by(
+                ChildProfile.first_name,
+                ChildProfile.last_name,
+                ChildProfile.id,
+                ChildDocument.created_at.desc(),
+            )
+            .all()
+        )
+
+    def set_printed(
+        self,
+        *,
+        id: UUID,
+        printed: bool,
+    ) -> None:
+        """public.set_document_printed: staff on shift at the staff kiosk only."""
+        self.db.execute(
+            text("SELECT public.set_document_printed(:id, :printed)"),
+            {"id": id, "printed": printed},
         )
 
     def mark_uploaded(

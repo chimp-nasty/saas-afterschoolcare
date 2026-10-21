@@ -1,3 +1,4 @@
+from datetime import timedelta
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from app.errors.bookings import (
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.schemas.booking import (
+    FamilyBookingResponse,
     BookingGroupLineResponse,
     BookingGroupResponse,
     BookingGroupSummaryResponse,
@@ -21,6 +23,8 @@ from app.public.schemas.booking import (
     ListBookingsFilterRequest
 )
 from app.public.schemas.enums import BookingStatus
+from app.public.services.attendance import location_today
+from app.tenancy.repositories.location import LocationRepository
 
 
 # A group's bookings are settled together, but a group can still mix
@@ -197,3 +201,41 @@ class ReadBookingService:
             )
             for row in rows
         ]
+
+
+# How far ahead staff see a family's bookings (plus anything unpaid).
+FAMILY_BOOKINGS_DAYS = 14
+
+
+class ReadFamilyBookingsService:
+    """
+    A family's bookings for staff at the staff kiosk: today to 2 weeks
+    ahead, and anything still awaiting payment. Read-only; refunds are the
+    admins' (CreateRefundService).
+    """
+
+    def __init__(
+        self,
+        *,
+        db: Session,
+        booking_repository: BookingRepository,
+        location_repository: LocationRepository,
+    ):
+        self.db = db
+        self.booking_repository = booking_repository
+        self.location_repository = location_repository
+
+    def list(
+        self,
+        *,
+        location_id: UUID,
+        family_user_id: UUID,
+    ) -> list[FamilyBookingResponse]:
+        today = location_today(self.location_repository.get_by_id(id=location_id))
+        rows = self.booking_repository.list_family_for_staff(
+            user_id=family_user_id,
+            date_from=today,
+            date_to=today + timedelta(days=FAMILY_BOOKINGS_DAYS),
+        )
+
+        return [FamilyBookingResponse.model_validate(row, from_attributes=True) for row in rows]

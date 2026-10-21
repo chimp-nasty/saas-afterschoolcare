@@ -36,8 +36,13 @@ class PermissionRepository(Repository):
 
     def list_by_role_ids(
         self,
-        role_ids: list[UUID]
+        role_ids: list[UUID],
+        channel: str = "web",
     ) -> list[Permission]:
+        """
+        The roles' permissions on one channel (docs/portals.md, section 2):
+        "web" for a login, "kiosk" for a staff member at the staff kiosk.
+        """
         return (
             self.db.query(Permission)
             .join(
@@ -46,6 +51,7 @@ class PermissionRepository(Repository):
             )
             .filter(
                 RolePermission.role_id.in_(role_ids),
+                RolePermission.channel == channel,
             )
             .distinct()
             .all()

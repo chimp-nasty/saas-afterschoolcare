@@ -51,17 +51,32 @@
 		void goto(route(path));
 	}
 
-	// Only screens that are built (docs/staff-platform.md lists the rest).
+	// Only screens that are built (docs/portals.md). The staff portal is
+	// every employee's own account; the admin portal runs the business.
 	const staffItems = $derived.by((): SidebarItem[] => [
 		{
-			label: 'Reviews',
-			onclick: () => navigate('/staff/reviews'),
-			isActive: isActive('/staff/reviews')
+			label: 'My account',
+			onclick: () => navigate('/staff/account'),
+			isActive: isActive('/staff/account')
 		}
 	]);
 
 	const adminItems = $derived.by((): SidebarItem[] => [
-		// admin items
+		{
+			label: 'Run sheet',
+			onclick: () => navigate('/admin/run-sheet'),
+			isActive: isActive('/admin/run-sheet')
+		},
+		{
+			label: 'Medical reviews',
+			onclick: () => navigate('/admin/reviews'),
+			isActive: isActive('/admin/reviews')
+		},
+		{
+			label: 'Kiosks',
+			onclick: () => navigate('/admin/kiosks'),
+			isActive: isActive('/admin/kiosks')
+		}
 	]);
 
 	const isStaff = $derived(
@@ -86,21 +101,24 @@
 	]);
 
 	const items = $derived.by(() => {
-		const result: SidebarItem[] = [
-			{
+		const result: SidebarItem[] = [];
+
+		// A staff-role login's home is their account, so they get no Home.
+		if (isAdmin || !isStaff) {
+			result.push({
 				label: 'Home',
 				onclick: () => navigate('/home'),
 				isActive: isActive('/home')
-			}
-		];
-
-		// Admins see every staff screen, then their own.
-		if (isStaff) {
-			result.push(...staffItems);
+			});
 		}
 
 		if (isAdmin) {
 			result.push(...adminItems);
+		}
+
+		// Everyone who works here, admins included, has their own account.
+		if (isStaff) {
+			result.push(...staffItems);
 		}
 
 		if ($auth.roles.includes('customer')) {
@@ -114,6 +132,12 @@
 
 		return result;
 	});
+
+	// Kiosk tablets (/{location}/kiosk) are full screen: no header,
+	// navigation or footer, and no website login involved.
+	const isKiosk = $derived(
+		page.url.pathname === route('/kiosk') || page.url.pathname.startsWith(`${route('/kiosk')}/`)
+	);
 
 	// Customers (only) navigate with a bottom bar on mobile.
 	const isCustomerOnly = $derived(
@@ -151,6 +175,14 @@
 	<BottomNav items={bottomNavItems} />
 {/snippet}
 
+{#if isKiosk}
+	<Layout
+		primaryColor={data.location.primary_color}
+		secondaryColor={data.location.secondary_color}
+	>
+		{@render children()}
+	</Layout>
+{:else}
 <Layout
 	primaryColor={data.location.primary_color}
 	secondaryColor={data.location.secondary_color}
@@ -171,7 +203,9 @@
 	{/snippet}
 </Layout>
 
-{#if $auth.authenticated && !isCustomerOnly}
+{/if}
+
+{#if $auth.authenticated && !isCustomerOnly && !isKiosk}
 	<Drawer
 		open={sidebarOpen}
 		onclose={() => sidebarOpen = false}

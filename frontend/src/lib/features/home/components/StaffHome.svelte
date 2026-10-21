@@ -1,7 +1,7 @@
 <!--
-    The staff and admin home: what needs attention at the location. Starts
-    with medical reviews; each slice adds its own cards
-    (docs/staff-platform.md).
+    The admin home: what needs attention at the location, linking into the
+    admin portal. Staff-role logins never see it; their home is their
+    account (docs/portals.md).
 -->
 <script lang="ts">
 	import Card from '$lib/components/layout/Card.svelte';
@@ -10,12 +10,15 @@
 	let {
 		locationCode,
 		reviewsWaiting,
-		reviewsRequested
+		reviewsRequested,
+		latePickups
 	}: {
 		locationCode: string;
 		// Children waiting for staff, and waiting on their family.
 		reviewsWaiting: number;
 		reviewsRequested: number;
+		// Children still signed in after their session ended today.
+		latePickups: number;
 	} = $props();
 </script>
 
@@ -27,7 +30,23 @@
 	</h2>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-		<Card border href={`/${locationCode}/staff/reviews`}>
+		<Card border href={`/${locationCode}/admin/run-sheet`}>
+			<div class="flex flex-col gap-1">
+				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+					Late pickups
+				</p>
+
+				<p class={['text-2xl font-extrabold', latePickups ? 'text-(--danger-text)' : 'text-(--text)']}>
+					{latePickups}
+				</p>
+
+				<p class="text-sm text-(--text-muted)">
+					{latePickups === 1 ? 'child' : 'children'} still here after their session ended
+				</p>
+			</div>
+		</Card>
+
+		<Card border href={`/${locationCode}/admin/reviews`}>
 			<div class="flex flex-col gap-1">
 				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
 					Medical reviews

@@ -8,12 +8,13 @@
 
 	let { data } = $props();
 
-	const STAFF_ROLES = ['staff', 'admin', 'superadmin'];
+	// Staff are sent to their account from +page.ts.
+	const ADMIN_ROLES = ['admin', 'superadmin'];
 </script>
 
 <Authorize
     locationCode={page.data.locationCode}
-    roles={STAFF_ROLES}
+    roles={ADMIN_ROLES}
     redirect={false}
 >
     <Page width="wide">
@@ -21,6 +22,7 @@
             locationCode={data.locationCode}
             reviewsWaiting={data.reviewsWaiting ?? 0}
             reviewsRequested={data.reviewsRequested ?? 0}
+            latePickups={data.latePickups ?? 0}
         />
     </Page>
 </Authorize>
@@ -28,7 +30,7 @@
 <Authorize
     locationCode={page.data.locationCode}
     roles={['customer']}
-    excludeRoles={STAFF_ROLES}
+    excludeRoles={[...ADMIN_ROLES, 'staff']}
     redirect={false}
 >
     <Page>

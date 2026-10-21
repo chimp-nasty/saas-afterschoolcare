@@ -13,3 +13,9 @@ class RefundAlreadyRequestedError(ApplicationError):
     status_code = status.HTTP_409_CONFLICT
     message = "A refund has already been requested for this session."
     result = "failed"
+
+
+class RefundNoCardPaymentError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "This booking has no card payment to refund (it was marked paid another way)."
+    result = "denied"

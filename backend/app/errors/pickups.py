@@ -55,3 +55,15 @@ class PickupConsentRequiredError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "Confirm that the people on your pickup list may collect this child."
     result = "denied"
+
+
+class PinFormatError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Your PIN must be 4 digits."
+    result = "failed"
+
+
+class PinReusedError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Choose a different PIN from the one you were sent."
+    result = "failed"

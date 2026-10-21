@@ -1,5 +1,8 @@
+import { redirect } from "@sveltejs/kit";
+
 import { createBookingApi } from "$lib/api/public/adapters/bookings";
 import { createMedicalReviewsApi } from "$lib/api/public/adapters/medicalReviews";
+import { createAttendanceApi } from "$lib/api/public/adapters/attendance";
 
 import type { PageLoad } from "./$types";
 
@@ -26,6 +29,7 @@ function daysFromToday(days: number): string {
 export const load: PageLoad = async ({
     depends,
     fetch,
+    params,
     parent,
 }) => {
     depends("app:home-bookings");
@@ -33,17 +37,28 @@ export const load: PageLoad = async ({
     const { session } = await parent();
     const roles = session?.roles ?? [];
 
-    // Staff, admins and superadmins get the staff home: what needs
-    // attention at the location.
-    if (["staff", "admin", "superadmin"].some((role) => roles.includes(role))) {
-        const reviewsResponse = await createMedicalReviewsApi(fetch).list();
+    // Admins and superadmins get the admin home: what needs attention at
+    // the location.
+    if (["admin", "superadmin"].some((role) => roles.includes(role))) {
+        const [reviewsResponse, rollResponse] = await Promise.all([
+            createMedicalReviewsApi(fetch).list(),
+            createAttendanceApi(fetch).roll(),
+        ]);
         const reviews = reviewsResponse.data ?? [];
 
         return {
             bookings: [],
             reviewsWaiting: reviews.filter((review) => review.review_status === "pending").length,
             reviewsRequested: reviews.filter((review) => review.review_status === "documentation_requested").length,
+            // Still signed in after their session ended today.
+            latePickups: (rollResponse.data?.entries ?? []).filter((entry) => entry.is_late).length,
         };
+    }
+
+    // Staff have no location data on the website (docs/portals.md): their
+    // home is their own account.
+    if (roles.includes("staff")) {
+        redirect(307, `/${params.location_code}/staff/account`);
     }
 
     // Only the customer home shows bookings.

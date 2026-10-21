@@ -81,6 +81,11 @@ def _is_refundable_by_family():
     return func.public.booking_is_refundable(Booking.id, False)
 
 
+def _is_refundable_by_admin():
+    """Whether an admin can refund it now: up to and including its day."""
+    return func.public.booking_is_refundable(Booking.id, True)
+
+
 def _latest_refund_status():
     return (
         select(Refund.status)
@@ -426,6 +431,39 @@ class BookingRepository(Repository):
             .first()
         )
 
+    def list_family_for_staff(
+        self,
+        *,
+        user_id: UUID,
+        date_from: date,
+        date_to: date,
+    ) -> list[Row]:
+        """
+        A family's bookings for staff (RLS: the location's): those between
+        the dates, and any still awaiting payment, whatever the date.
+        """
+        effective_status = _effective_status()
+
+        query = (
+            self._context_query(effective_status)
+            .add_columns(_is_refundable_by_admin().label("is_refundable_by_admin"))
+            .filter(
+                Booking.user_id == user_id,
+                or_(
+                    and_(
+                        LocationServiceDay.service_date >= date_from,
+                        LocationServiceDay.service_date <= date_to,
+                    ),
+                    effective_status == "PENDING",
+                ),
+            )
+        )
+
+        return query.order_by(
+            LocationServiceDay.service_date.asc(),
+            ChildProfile.first_name.asc(),
+        ).all()
+
     def list_context_with_filters(
         self,
         *,
@@ -437,8 +475,44 @@ class BookingRepository(Repository):
         pagination: Pagination | None = None,
     ) -> list[Row]:
         effective_status = _effective_status()
+        query = self._context_query(effective_status)
 
-        query = (
+        if booking_status:
+            query = query.filter(
+                effective_status.in_(booking_status)
+            )
+
+        if payment_status:
+            query = query.filter(
+                Booking.payment_status.in_(payment_status)
+            )
+
+        if date_from:
+            query = query.filter(
+                LocationServiceDay.service_date >= date_from
+            )
+
+        if date_to:
+            query = query.filter(
+                LocationServiceDay.service_date <= date_to
+            )
+
+        if booking_group_id:
+            query = query.filter(
+                Booking.booking_group_id == booking_group_id
+            )
+
+        return self._all(
+            query.order_by(
+                LocationServiceDay.service_date.asc(),
+                ChildProfile.first_name.asc(),
+            ),
+            pagination,
+        )
+
+    def _context_query(self, effective_status):
+        """Bookings with their child, session and refund details (RLS applies)."""
+        return (
             self.db.query(
                 Booking.id,
                 Booking.location_id,
@@ -482,37 +556,4 @@ class BookingRepository(Repository):
                 Location,
                 Location.id == Booking.location_id,
             )
-        )
-
-        if booking_status:
-            query = query.filter(
-                effective_status.in_(booking_status)
-            )
-
-        if payment_status:
-            query = query.filter(
-                Booking.payment_status.in_(payment_status)
-            )
-
-        if date_from:
-            query = query.filter(
-                LocationServiceDay.service_date >= date_from
-            )
-
-        if date_to:
-            query = query.filter(
-                LocationServiceDay.service_date <= date_to
-            )
-
-        if booking_group_id:
-            query = query.filter(
-                Booking.booking_group_id == booking_group_id
-            )
-
-        return self._all(
-            query.order_by(
-                LocationServiceDay.service_date.asc(),
-                ChildProfile.first_name.asc(),
-            ),
-            pagination,
         )

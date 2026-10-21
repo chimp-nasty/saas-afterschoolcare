@@ -24,6 +24,33 @@ CREATE TABLE auth.users (
 
 
 -- =====================================================
+-- STAFF PINS
+-- =====================================================
+
+-- A staff member's 4-digit PIN for the staff kiosk, where it records who
+-- did what. One per person, used at every location they work at. Set or
+-- changed only on the website, after re-entering their password
+-- (public.set_staff_pin); only its hash is kept. Five wrong PINs at the
+-- kiosk lock it until they set a new one.
+CREATE TABLE auth.staff_pins (
+    user_id UUID PRIMARY KEY,
+
+    pin_hash TEXT NOT NULL,
+    failed_pin_attempts SMALLINT NOT NULL DEFAULT 0,
+    pin_locked_at TIMESTAMPTZ,
+    set_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_staff_pins_user
+        FOREIGN KEY (user_id)
+        REFERENCES auth.users (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT ck_staff_pins_failed_pin_attempts
+        CHECK (failed_pin_attempts >= 0)
+);
+
+
+-- =====================================================
 -- PASSWORD RESET TOKENS
 -- =====================================================
 
@@ -104,11 +131,14 @@ CREATE TABLE auth.permissions (
 -- ROLE PERMISSIONS
 -- =====================================================
 
+-- A role's permission on one channel (docs/portals.md, section 2): the
+-- same role can do different things on the website and at the staff kiosk.
 CREATE TABLE auth.role_permissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     role_id UUID NOT NULL,
     permission_id UUID NOT NULL,
+    channel auth.permission_channel_enum NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -122,8 +152,8 @@ CREATE TABLE auth.role_permissions (
         REFERENCES auth.permissions (id)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_role_permissions_role_permission
-        UNIQUE (role_id, permission_id)
+    CONSTRAINT uq_role_permissions_role_permission_channel
+        UNIQUE (role_id, permission_id, channel)
 );
 
 

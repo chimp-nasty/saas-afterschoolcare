@@ -103,3 +103,13 @@ class UpdateChildRequest(BaseModel):
     @classmethod
     def _medical_blank_to_none(cls, value: str | None) -> str | None:
         return _blank_to_none(value)
+
+class ChildSearchResultResponse(BaseModel):
+    """A child found by name, with their family (staff finding a family)."""
+
+    child_id: UUID
+    first_name: str
+    last_name: str
+    family_user_id: UUID
+    family_first_name: str
+    family_last_name: str

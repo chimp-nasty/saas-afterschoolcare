@@ -25,7 +25,7 @@
     const documentsApi = createChildDocumentsApi();
 
     const review = $derived(data.review);
-    const listHref = $derived(`/${data.locationCode}/staff/reviews`);
+    const listHref = $derived(`/${data.locationCode}/admin/reviews`);
 
     // A removed child can't be reviewed (the API refuses too).
     const canDecide = $derived(review.is_active);

@@ -269,3 +269,20 @@ def test_failed_refund_sends_no_email(api: Api, customer, fake_stripe, sent_emai
     api.refund_webhook("refund.failed", _stripe_refund_id(fake_stripe, line["id"]), status="failed")
 
     assert sent_emails(RefundConfirmationEmail) == []
+
+
+# A booking marked paid without a card payment (nothing in Stripe to refund)
+# is refused with its own reason, not as past the refund window.
+def test_booking_without_a_card_payment_says_so(api: Api, customer, admin):
+    line, _ = _paid_booking(api, customer)
+    booking_id = line["id"]
+    api.sql(
+        "UPDATE public.payment_attempts pa SET stripe_payment_intent_id = NULL "
+        "FROM public.bookings b WHERE b.id = CAST(:id AS uuid) AND pa.booking_group_id = b.booking_group_id",
+        id=booking_id,
+    )
+
+    response = _refund(admin, booking_id)
+
+    assert response.status_code == 409
+    assert "no card payment" in response.json()["msg"]

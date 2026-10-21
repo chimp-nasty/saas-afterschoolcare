@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 
 from app.core.config import settings
-from app.core.security import hash_token
+from app.core.security import hash_password, hash_token
 from app.integrations.payments.stripe.client import StripeCheckout, StripeRefund
 from app.integrations.storage.base import SignedUpload, StoredObject
 from app.main import app
@@ -142,6 +142,16 @@ class Customer:
     email: str
     password: str
     phone: str | None = None
+
+
+@dataclass
+class StaffMember:
+    """A staff-role user: their website login and their staff kiosk PIN."""
+
+    client: TestClient
+    email: str
+    user_id: str
+    pin: str | None
 
 
 @dataclass
@@ -312,6 +322,49 @@ class Api:
 
         return Customer(client=client, email=email, password=PASSWORD, phone=phone)
 
+    def new_staff(
+        self,
+        *,
+        pin: str | None = "2580",
+        role: str = "staff",
+        tenant: str = "tenant1",
+        location: str = "location1",
+    ) -> StaffMember:
+        """
+        A staff member (the staff role, or `role`) at the location, logged in on the
+        website, with a staff kiosk PIN set there (unless pin is None).
+        Staff accounts have no sign-up, so the user is inserted directly.
+        """
+        email = f"staff-{uuid.uuid4().hex[:12]}@test.com"
+
+        [(user_id,)] = self.sql(
+            """
+            WITH new_user AS (
+                INSERT INTO auth.users (email, password_hash, first_name, last_name, terms_accepted_at, is_active)
+                VALUES (:email, :password_hash, 'Staff', 'Member', now(), TRUE)
+                RETURNING id
+            )
+            INSERT INTO auth.location_user_roles (user_id, location_id, role_id)
+            SELECT new_user.id, l.id, r.id
+            FROM new_user, tenancy.locations l, tenancy.tenants t, auth.roles r
+            WHERE l.tenant_id = t.id AND t.code = :tenant AND l.code = :location AND r.code = :role
+            RETURNING user_id::text
+            """,
+            email=email,
+            password_hash=hash_password(password=PASSWORD),
+            tenant=tenant,
+            location=location,
+            role=role,
+        )
+
+        client = self.login(email, PASSWORD, tenant=tenant, location=location)
+
+        if pin:
+            response = client.put("/staff-pin/v1/", json={"password": PASSWORD, "pin": pin})
+            assert response.status_code == 200, response.text
+
+        return StaffMember(client=client, email=email, user_id=user_id, pin=pin)
+
     def new_child(self, customer: Customer, **overrides) -> dict:
         # Ten years old: inside the dev seed's 8-17 age range now and on the
         # factory's service days (~13 months out).
@@ -327,6 +380,35 @@ class Api:
 
         response = customer.client.post("/children/v1/", json=body)
         assert response.status_code == 201, response.text
+
+        return response.json()["data"]
+
+    def upload_document(
+        self,
+        customer: Customer,
+        child_id: str,
+        *,
+        document_type: str = "asthma_action_plan",
+    ) -> dict:
+        """A PDF uploaded and accepted for the child, the way the frontend does it (sends them to review)."""
+        content = b"%PDF-1.7\n" + b"0" * 200
+        response = customer.client.post(
+            "/child-documents/v1/",
+            json={
+                "child_id": child_id,
+                "document_type": document_type,
+                "filename": "plan.pdf",
+                "content_type": "application/pdf",
+                "size_bytes": len(content),
+            },
+        )
+        assert response.status_code == 201, response.text
+
+        started = response.json()["data"]
+        assert FakeStorage.receive(started["upload"], content)
+
+        response = customer.client.post(f"/child-documents/v1/{started['document']['id']}/complete")
+        assert response.status_code == 200, response.text
 
         return response.json()["data"]
 
@@ -405,6 +487,97 @@ class Api:
                     },
                 ).scalar_one()
             )
+
+    def booking_today(self, customer: Customer, child_id: str, **options) -> str:
+        """A confirmed booking for today, at the location's own date. Returns its id."""
+        return self.booking_on(customer, child_id, days_from_today=0, **options)
+
+    def booking_on(
+        self,
+        customer: Customer,
+        child_id: str,
+        *,
+        days_from_today: int,
+        service: str = "after_school_care",
+        tenant: str = "tenant1",
+        location: str = "location1",
+    ) -> str:
+        """
+        A confirmed booking for today or an earlier day (days_from_today 0
+        or negative), at the location's own date. Bookings can only be made
+        for later days, so this books and pays for a new future day, then
+        moves the booking (the booking rules only run on insert). Returns
+        the booking id.
+        """
+        response = self.book(customer, {child_id: [self.service_day(service=service, tenant=tenant, location=location)]})
+        assert response.status_code == 201, response.text
+
+        data = response.json()["data"]
+        self.webhook("checkout.session.completed", self.session_id(data["checkout_url"]))
+
+        [(booking_id,)] = self.sql(
+            """
+            WITH today AS (
+                INSERT INTO public.location_service_days (
+                    location_service_id, location_id, service_date, capacity, is_open
+                )
+                SELECT d.location_service_id, d.location_id,
+                       (now() AT TIME ZONE l.timezone)::date + :days, 100, TRUE
+                FROM public.bookings b
+                JOIN public.location_service_days d ON d.id = b.location_service_day_id
+                JOIN tenancy.locations l ON l.id = b.location_id
+                WHERE b.booking_group_id = :group_id
+                ON CONFLICT (location_service_id, service_date) DO UPDATE SET is_open = TRUE
+                RETURNING id
+            )
+            UPDATE public.bookings
+            SET location_service_day_id = (SELECT id FROM today)
+            WHERE booking_group_id = :group_id
+            RETURNING id::text
+            """,
+            group_id=data["booking_group_id"],
+            days=days_from_today,
+        )
+
+        return booking_id
+
+    def kiosk(
+        self,
+        admin: TestClient,
+        kind: str = "family",
+        *,
+        tenant: str = "tenant1",
+        location: str = "location1",
+    ) -> TestClient:
+        """
+        A tablet paired as the location's kiosk of this kind, by its admin.
+        A location has one active kiosk of each kind, so any earlier one
+        (from another test) is revoked first.
+        """
+        self.sql(
+            """
+            UPDATE public.location_kiosk_devices d
+            SET is_active = FALSE
+            FROM tenancy.locations l
+            JOIN tenancy.tenants t ON t.id = l.tenant_id
+            WHERE d.location_id = l.id
+              AND d.kind = CAST(:kind AS public.kiosk_kind_enum)
+              AND l.code = :location
+              AND t.code = :tenant
+            """,
+            kind=kind,
+            location=location,
+            tenant=tenant,
+        )
+
+        response = admin.post("/kiosk-devices/v1/", json={"kind": kind, "name": f"{kind} kiosk"})
+        assert response.status_code == 201, response.text
+
+        tablet = self.client(tenant=tenant)
+        response = tablet.post(f"/kiosk/v1/{location}/pair", json={"code": response.json()["data"]["setup_code"]})
+        assert response.status_code == 200, response.text
+
+        return tablet
 
     # ---------------------------------------------------------------------
     # Stripe

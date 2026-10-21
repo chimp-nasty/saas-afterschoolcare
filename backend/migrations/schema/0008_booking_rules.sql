@@ -16,11 +16,6 @@
 -- app/errors/database.py maps to an API error.
 
 
--- "Today" depends on where the location is.
-ALTER TABLE tenancy.locations
-    ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Australia/Brisbane';
-
-
 -- SECURITY DEFINER: reads the service day and medical state without RLS,
 -- so a booking for another family's child reaches the composite foreign
 -- key (and its "invalid child" error) instead of failing here on a row
