@@ -196,6 +196,9 @@ CREATE TABLE public.location_service_days (
     is_open BOOLEAN NOT NULL DEFAULT TRUE,
     capacity INTEGER NOT NULL,
 
+    -- Why a closed day is closed (e.g. "Staff training"), for admins.
+    closed_reason VARCHAR(200),
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     -- The day's location must be its service's location.
@@ -211,8 +214,111 @@ CREATE TABLE public.location_service_days (
         UNIQUE (id, location_id),
 
     CONSTRAINT ck_location_service_days_capacity_non_negative
-        CHECK (capacity >= 0)
+        CHECK (capacity >= 0),
+
+    -- Only a closed day has a reason.
+    CONSTRAINT ck_location_service_days_closed_reason
+        CHECK (is_open = FALSE OR closed_reason IS NULL)
 );
+
+-- The places a service day's bookings hold: every family's live bookings
+-- (pending or confirmed; a lapsed hold doesn't count), as the booking rules
+-- count them. plpgsql: booking_hold_lapsed is in schema/0009.
+CREATE FUNCTION public.service_day_places_held(p_location_service_day_id UUID)
+RETURNS integer
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN (
+        SELECT count(*)::integer
+        FROM public.bookings b
+        WHERE b.location_service_day_id = p_location_service_day_id
+          AND b.booking_status IN ('PENDING', 'CONFIRMED')
+          AND NOT public.booking_hold_lapsed(b.booking_status, b.created_at)
+    );
+END;
+$$;
+
+-- Changing service days never strands a booking. From a user session:
+--   * days are added for today or later (location time), never the past
+--   * capacity can't go below the places its bookings hold
+--   * a day with bookings holding places can't be closed (refund first)
+--   * a day that has ever had a booking can't be deleted (close it instead)
+-- Writes with no user session are trusted server code (seeds, tests).
+CREATE FUNCTION public.enforce_service_day_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_held INTEGER;
+BEGIN
+    IF auth.current_user_id() IS NULL THEN
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.service_date < (
+            SELECT (now() AT TIME ZONE l.timezone)::date
+            FROM tenancy.locations l
+            WHERE l.id = NEW.location_id
+        ) THEN
+            RAISE EXCEPTION 'Service day % is in the past', NEW.service_date
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_location_service_days_not_past',
+                      TABLE = 'location_service_days',
+                      SCHEMA = 'public';
+        END IF;
+
+        RETURN NEW;
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN
+        IF EXISTS (SELECT 1 FROM public.bookings b WHERE b.location_service_day_id = OLD.id) THEN
+            RAISE EXCEPTION 'Service day % has had bookings', OLD.id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_location_service_days_delete_booked',
+                      TABLE = 'location_service_days',
+                      SCHEMA = 'public';
+        END IF;
+
+        RETURN OLD;
+    END IF;
+
+    v_held := public.service_day_places_held(NEW.id);
+
+    IF NEW.capacity < OLD.capacity AND NEW.capacity < v_held THEN
+        RAISE EXCEPTION 'Service day % has % places booked', NEW.id, v_held
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_service_days_capacity_held',
+                  TABLE = 'location_service_days',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF OLD.is_open AND NOT NEW.is_open AND v_held > 0 THEN
+        RAISE EXCEPTION 'Service day % has % places booked', NEW.id, v_held
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_service_days_close_booked',
+                  TABLE = 'location_service_days',
+                  SCHEMA = 'public';
+    END IF;
+
+    -- Reopening clears the reason.
+    IF NEW.is_open THEN
+        NEW.closed_reason := NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_location_service_days_rules
+    BEFORE INSERT OR UPDATE OR DELETE ON public.location_service_days
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_service_day_rules();
 
 
 -- =====================================================

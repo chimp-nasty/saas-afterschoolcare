@@ -148,6 +148,12 @@ def admin(api: Api):
 
 
 @pytest.fixture
+def superadmin(api: Api):
+    """A superadmin at tenant1/location1 (business settings), logged in on the website."""
+    return api.new_staff(role="superadmin", pin=None).client
+
+
+@pytest.fixture
 def tenant2_admin(api: Api):
     return api.login("t2user@test.com", "123", tenant="tenant2", location="location2")
 

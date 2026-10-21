@@ -410,11 +410,64 @@ export interface paths {
         /** List Location Service Days */
         get: operations["list_location_service_days_location_service_days_v1__get"];
         put?: never;
+        /** Create Service Days */
+        post: operations["create_service_days_location_service_days_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/location-service-days/v1/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Service Day Overview */
+        get: operations["get_service_day_overview_location_service_days_v1_overview_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/location-service-days/v1/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set Service Day Capacity */
+        patch: operations["set_service_day_capacity_location_service_days_v1_capacity_patch"];
+        trace?: never;
+    };
+    "/location-service-days/v1/{day_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Service Day */
+        delete: operations["delete_service_day_location_service_days_v1__day_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Service Day */
+        patch: operations["update_service_day_location_service_days_v1__day_id__patch"];
         trace?: never;
     };
     "/location-services/v1/public/{location_code}": {
@@ -426,6 +479,23 @@ export interface paths {
         };
         /** List Public Location Services */
         get: operations["list_public_location_services_location_services_v1_public__location_code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/location-services/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Location Service Settings */
+        get: operations["list_location_service_settings_location_services_v1_settings_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1461,6 +1531,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["CreateBookingResponse"] | null;
         };
+        /** ApiResponse[CreateServiceDaysResponse] */
+        ApiResponse_CreateServiceDaysResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["CreateServiceDaysResponse"] | null;
+        };
         /** ApiResponse[CustomerProfileResponse] */
         ApiResponse_CustomerProfileResponse_: {
             /** Ok */
@@ -1533,13 +1611,13 @@ export interface components {
             msg: string;
             data?: components["schemas"]["KioskTodayResponse"] | null;
         };
-        /** ApiResponse[LocationServiceSelectionResponse] */
-        ApiResponse_LocationServiceSelectionResponse_: {
+        /** ApiResponse[LocationServiceSettingsResponse] */
+        ApiResponse_LocationServiceSettingsResponse_: {
             /** Ok */
             ok: boolean;
             /** Msg */
             msg: string;
-            data?: components["schemas"]["LocationServiceSelectionResponse"] | null;
+            data?: components["schemas"]["LocationServiceSettingsResponse"] | null;
         };
         /** ApiResponse[MedicalReviewResponse] */
         ApiResponse_MedicalReviewResponse_: {
@@ -1606,6 +1684,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["RunSheetResponse"] | null;
         };
+        /** ApiResponse[ServiceDayOverviewResponse] */
+        ApiResponse_ServiceDayOverviewResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["ServiceDayOverviewResponse"] | null;
+        };
         /** ApiResponse[SessionResponse] */
         ApiResponse_SessionResponse_: {
             /** Ok */
@@ -1613,6 +1699,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["SessionResponse"] | null;
+        };
+        /** ApiResponse[SetServiceDayCapacityResponse] */
+        ApiResponse_SetServiceDayCapacityResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["SetServiceDayCapacityResponse"] | null;
         };
         /** ApiResponse[StaffKioskVerifyResponse] */
         ApiResponse_StaffKioskVerifyResponse_: {
@@ -1764,6 +1858,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["LocationServiceSelectionResponse"][] | null;
         };
+        /** ApiResponse[list[LocationServiceSettingsResponse]] */
+        ApiResponse_list_LocationServiceSettingsResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["LocationServiceSettingsResponse"][] | null;
+        };
         /** ApiResponse[list[MedicalReviewSummaryResponse]] */
         ApiResponse_list_MedicalReviewSummaryResponse__: {
             /** Ok */
@@ -1799,6 +1902,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["RollPickupPersonResponse"][] | null;
+        };
+        /** ApiResponse[list[ServiceDayOverviewResponse]] */
+        ApiResponse_list_ServiceDayOverviewResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["ServiceDayOverviewResponse"][] | null;
         };
         /** ApiResponse[list[StaffKioskMemberResponse]] */
         ApiResponse_list_StaffKioskMemberResponse__: {
@@ -2440,6 +2552,39 @@ export interface components {
             booking_id: string;
         };
         /**
+         * CreateServiceDaysRequest
+         * @description Add a service's days: every chosen weekday from date_from to date_to
+         *     (one day: the same date for both). Days that already exist are skipped.
+         */
+        CreateServiceDaysRequest: {
+            /**
+             * Location Service Id
+             * Format: uuid
+             */
+            location_service_id: string;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Weekdays */
+            weekdays?: number[];
+            /** Capacity */
+            capacity: number;
+        };
+        /** CreateServiceDaysResponse */
+        CreateServiceDaysResponse: {
+            /** Created */
+            created: string[];
+            /** Skipped */
+            skipped: string[];
+        };
+        /**
          * CurrencyCode
          * @enum {string}
          */
@@ -2795,6 +2940,55 @@ export interface components {
             late_fee_cents: number;
             /** Late Fee Grace Minutes */
             late_fee_grace_minutes: number;
+        };
+        /**
+         * LocationServiceSettingsResponse
+         * @description A service as the admin's settings show it: everything families see,
+         *     plus whether it's offered (families only see offered ones) and when it
+         *     was last changed.
+         */
+        LocationServiceSettingsResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Service Type Id */
+            service_type_id: number;
+            /** Service Name */
+            service_name: string;
+            /** Description */
+            description: string | null;
+            /** Current Price Cents */
+            current_price_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Min Child Age */
+            min_child_age: number;
+            /** Max Child Age */
+            max_child_age: number;
+            /** Refund Cutoff Days */
+            refund_cutoff_days: number;
+            /** Late Fee Cents */
+            late_fee_cents: number;
+            /** Late Fee Grace Minutes */
+            late_fee_grace_minutes: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -3292,6 +3486,38 @@ export interface components {
             /** Signing Closes At */
             signing_closes_at: string | null;
         };
+        /**
+         * ServiceDayOverviewResponse
+         * @description One service day as admins see it: open or closed, and its places.
+         */
+        ServiceDayOverviewResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Service Date
+             * Format: date
+             */
+            service_date: string;
+            /** Is Open */
+            is_open: boolean;
+            /** Closed Reason */
+            closed_reason: string | null;
+            /** Capacity */
+            capacity: number;
+            /** Booked */
+            booked: number;
+            /** Awaiting Payment */
+            awaiting_payment: number;
+            /** Places Left */
+            places_left: number;
+            /** Ever Booked */
+            ever_booked: boolean;
+            /** Is Past */
+            is_past: boolean;
+        };
         /** SessionResponse */
         SessionResponse: {
             /**
@@ -3322,6 +3548,34 @@ export interface components {
         SetPrintedRequest: {
             /** Printed */
             printed: boolean;
+        };
+        /**
+         * SetServiceDayCapacityRequest
+         * @description The same places for every day of a service in a date range.
+         */
+        SetServiceDayCapacityRequest: {
+            /**
+             * Location Service Id
+             * Format: uuid
+             */
+            location_service_id: string;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /** Capacity */
+            capacity: number;
+        };
+        /** SetServiceDayCapacityResponse */
+        SetServiceDayCapacityResponse: {
+            /** Updated */
+            updated: number;
         };
         /**
          * SetStaffPinRequest
@@ -3589,6 +3843,18 @@ export interface components {
             /** Relation Other */
             relation_other?: string | null;
         };
+        /**
+         * UpdateServiceDayRequest
+         * @description Change one day: its places, open or closed, and why it's closed.
+         */
+        UpdateServiceDayRequest: {
+            /** Capacity */
+            capacity?: number | null;
+            /** Is Open */
+            is_open?: boolean | null;
+            /** Closed Reason */
+            closed_reason?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -3626,6 +3892,7 @@ export type ApiResponseChildDocumentUploadResponse = components['schemas']['ApiR
 export type ApiResponseChildMedicalResponse = components['schemas']['ApiResponse_ChildMedicalResponse_'];
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
+export type ApiResponseCreateServiceDaysResponse = components['schemas']['ApiResponse_CreateServiceDaysResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
 export type ApiResponseKioskDeviceResponse = components['schemas']['ApiResponse_KioskDeviceResponse_'];
 export type ApiResponseKioskInfoResponse = components['schemas']['ApiResponse_KioskInfoResponse_'];
@@ -3635,7 +3902,7 @@ export type ApiResponseKioskSettingsResponse = components['schemas']['ApiRespons
 export type ApiResponseKioskSetupCodeResponse = components['schemas']['ApiResponse_KioskSetupCodeResponse_'];
 export type ApiResponseKioskSignResponse = components['schemas']['ApiResponse_KioskSignResponse_'];
 export type ApiResponseKioskTodayResponse = components['schemas']['ApiResponse_KioskTodayResponse_'];
-export type ApiResponseLocationServiceSelectionResponse = components['schemas']['ApiResponse_LocationServiceSelectionResponse_'];
+export type ApiResponseLocationServiceSettingsResponse = components['schemas']['ApiResponse_LocationServiceSettingsResponse_'];
 export type ApiResponseMedicalReviewResponse = components['schemas']['ApiResponse_MedicalReviewResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
@@ -3644,7 +3911,9 @@ export type ApiResponseRefundResponse = components['schemas']['ApiResponse_Refun
 export type ApiResponseRollPickupPersonResponse = components['schemas']['ApiResponse_RollPickupPersonResponse_'];
 export type ApiResponseRollResponse = components['schemas']['ApiResponse_RollResponse_'];
 export type ApiResponseRunSheetResponse = components['schemas']['ApiResponse_RunSheetResponse_'];
+export type ApiResponseServiceDayOverviewResponse = components['schemas']['ApiResponse_ServiceDayOverviewResponse_'];
 export type ApiResponseSessionResponse = components['schemas']['ApiResponse_SessionResponse_'];
+export type ApiResponseSetServiceDayCapacityResponse = components['schemas']['ApiResponse_SetServiceDayCapacityResponse_'];
 export type ApiResponseStaffKioskVerifyResponse = components['schemas']['ApiResponse_StaffKioskVerifyResponse_'];
 export type ApiResponseStaffPinStatusResponse = components['schemas']['ApiResponse_StaffPinStatusResponse_'];
 export type ApiResponseStaffShiftResponse = components['schemas']['ApiResponse_StaffShiftResponse_'];
@@ -3662,10 +3931,12 @@ export type ApiResponseListFamilyBookingResponse = components['schemas']['ApiRes
 export type ApiResponseListKioskDeviceResponse = components['schemas']['ApiResponse_list_KioskDeviceResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
+export type ApiResponseListLocationServiceSettingsResponse = components['schemas']['ApiResponse_list_LocationServiceSettingsResponse__'];
 export type ApiResponseListMedicalReviewSummaryResponse = components['schemas']['ApiResponse_list_MedicalReviewSummaryResponse__'];
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
 export type ApiResponseListRollPickupPersonResponse = components['schemas']['ApiResponse_list_RollPickupPersonResponse__'];
+export type ApiResponseListServiceDayOverviewResponse = components['schemas']['ApiResponse_list_ServiceDayOverviewResponse__'];
 export type ApiResponseListStaffKioskMemberResponse = components['schemas']['ApiResponse_list_StaffKioskMemberResponse__'];
 export type AttendanceTimesResponse = components['schemas']['AttendanceTimesResponse'];
 export type AustralianState = components['schemas']['AustralianState'];
@@ -3697,6 +3968,8 @@ export type CreateChildRequest = components['schemas']['CreateChildRequest'];
 export type CreateKioskDeviceRequest = components['schemas']['CreateKioskDeviceRequest'];
 export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
 export type CreateRefundRequest = components['schemas']['CreateRefundRequest'];
+export type CreateServiceDaysRequest = components['schemas']['CreateServiceDaysRequest'];
+export type CreateServiceDaysResponse = components['schemas']['CreateServiceDaysResponse'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
 export type FamilyBookingResponse = components['schemas']['FamilyBookingResponse'];
@@ -3718,6 +3991,7 @@ export type KioskSignResponse = components['schemas']['KioskSignResponse'];
 export type KioskTodayResponse = components['schemas']['KioskTodayResponse'];
 export type LocationServiceDayTableResponse = components['schemas']['LocationServiceDayTableResponse'];
 export type LocationServiceSelectionResponse = components['schemas']['LocationServiceSelectionResponse'];
+export type LocationServiceSettingsResponse = components['schemas']['LocationServiceSettingsResponse'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MedicalReviewDecision = components['schemas']['MedicalReviewDecision'];
 export type MedicalReviewDecisionRequest = components['schemas']['MedicalReviewDecisionRequest'];
@@ -3739,8 +4013,11 @@ export type RollResponse = components['schemas']['RollResponse'];
 export type RunSheetEntryResponse = components['schemas']['RunSheetEntryResponse'];
 export type RunSheetResponse = components['schemas']['RunSheetResponse'];
 export type RunSheetSessionResponse = components['schemas']['RunSheetSessionResponse'];
+export type ServiceDayOverviewResponse = components['schemas']['ServiceDayOverviewResponse'];
 export type SessionResponse = components['schemas']['SessionResponse'];
 export type SetPrintedRequest = components['schemas']['SetPrintedRequest'];
+export type SetServiceDayCapacityRequest = components['schemas']['SetServiceDayCapacityRequest'];
+export type SetServiceDayCapacityResponse = components['schemas']['SetServiceDayCapacityResponse'];
 export type SetStaffPinRequest = components['schemas']['SetStaffPinRequest'];
 export type SignedUploadResponse = components['schemas']['SignedUploadResponse'];
 export type StaffKioskBulkRequest = components['schemas']['StaffKioskBulkRequest'];
@@ -3758,6 +4035,7 @@ export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomer
 export type UpdateKioskSettingsRequest = components['schemas']['UpdateKioskSettingsRequest'];
 export type UpdateLocationServiceConfigRequest = components['schemas']['UpdateLocationServiceConfigRequest'];
 export type UpdatePickupRequest = components['schemas']['UpdatePickupRequest'];
+export type UpdateServiceDayRequest = components['schemas']['UpdateServiceDayRequest'];
 export type ValidationError = components['schemas']['ValidationError'];
 export type $defs = Record<string, never>;
 export interface operations {
@@ -4737,6 +5015,181 @@ export interface operations {
             };
         };
     };
+    create_service_days_location_service_days_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateServiceDaysRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CreateServiceDaysResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_service_day_overview_location_service_days_v1_overview_get: {
+        parameters: {
+            query: {
+                location_service_id: string;
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ServiceDayOverviewResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_service_day_capacity_location_service_days_v1_capacity_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetServiceDayCapacityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SetServiceDayCapacityResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_service_day_location_service_days_v1__day_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                day_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_service_day_location_service_days_v1__day_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                day_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateServiceDayRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ServiceDayOverviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_public_location_services_location_services_v1_public__location_code__get: {
         parameters: {
             query?: never;
@@ -4757,6 +5210,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_list_LocationServiceSelectionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_location_service_settings_location_services_v1_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_LocationServiceSettingsResponse__"];
                 };
             };
             /** @description Validation Error */
@@ -4793,7 +5277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse_LocationServiceSelectionResponse_"];
+                    "application/json": components["schemas"]["ApiResponse_LocationServiceSettingsResponse_"];
                 };
             };
             /** @description Validation Error */

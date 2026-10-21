@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import datetime, time
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -61,3 +61,14 @@ class UpdateLocationServiceConfigRequest(BaseModel):
             self.description = self.description.strip() or None
 
         return self
+
+
+class LocationServiceSettingsResponse(LocationServiceSelectionResponse):
+    """
+    A service as the admin's settings show it: everything families see,
+    plus whether it's offered (families only see offered ones) and when it
+    was last changed.
+    """
+
+    is_active: bool
+    updated_at: datetime

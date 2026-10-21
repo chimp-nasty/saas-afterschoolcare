@@ -683,6 +683,7 @@ class LocationServiceDay(Base):
     __tablename__ = 'location_service_days'
     __table_args__ = (
         CheckConstraint('capacity >= 0', name='ck_location_service_days_capacity_non_negative'),
+        CheckConstraint('is_open = false OR closed_reason IS NULL', name='ck_location_service_days_closed_reason'),
         ForeignKeyConstraint(['location_service_id', 'location_id'], ['public.location_services.id', 'public.location_services.location_id'], name='fk_location_service_days_location_service'),
         PrimaryKeyConstraint('id', name='location_service_days_pkey'),
         UniqueConstraint('id', 'location_id', name='uq_location_service_days_id_location'),
@@ -697,6 +698,7 @@ class LocationServiceDay(Base):
     is_open: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    closed_reason: Mapped[Optional[str]] = mapped_column(String(200))
 
 
 

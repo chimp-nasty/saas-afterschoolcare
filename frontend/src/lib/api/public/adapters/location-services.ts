@@ -5,6 +5,7 @@ import { apiWrapper } from '$lib/api/wrapper';
 import type {
     UpdateLocationServiceConfigRequest,
     LocationServiceSelectionResponse,
+    LocationServiceSettingsResponse,
 } from '$lib/api/schema';
 
 
@@ -36,12 +37,23 @@ export function createLocationServicesApi(
             );
         },
 
+        // Admins: every service the location has, offered or not.
+        settings() {
+            return apiWrapper<LocationServiceSettingsResponse[]>(
+                `${baseUrl}/settings`,
+                {
+                    method: 'GET',
+                    fetcher
+                }
+            );
+        },
+
         // Admins: price, times, description, policies.
         updateConfig(
             location_service_id: string,
             body: UpdateLocationServiceConfigRequest
         ) {
-            return apiWrapper<LocationServiceSelectionResponse>(
+            return apiWrapper<LocationServiceSettingsResponse>(
                 `${baseUrl}/${location_service_id}/config`,
                 {
                     method: 'PATCH',

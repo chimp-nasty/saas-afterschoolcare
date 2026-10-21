@@ -65,6 +65,7 @@ VALUES
     ('refunds', 'r', 'Read refunds'),
     ('refunds', 'u', 'Update refunds'),
     ('refunds', 'd', 'Delete refunds'),
+    ('service_day_overview', 'r', 'See service days with their bookings and places'),
     ('service_types', 'c', 'Create service types'),
     ('service_types', 'r', 'Read service types'),
     ('service_types', 'u', 'Update service types'),

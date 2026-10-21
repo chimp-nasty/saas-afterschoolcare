@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import date
 
-from sqlalchemy import Date, String, cast, func, literal, select
+from sqlalchemy import Date, Integer, String, cast, exists, func, literal, select, text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.engine import Row
 
@@ -189,3 +189,157 @@ class LocationServiceDayRepository(Repository):
                 LocationServiceDay.id.asc(),
             )
         )
+
+    def overview(
+        self,
+        *,
+        location_service_id: UUID,
+        date_from: date,
+        date_to: date,
+    ) -> list[Row]:
+        """A service's days in a range, with their places (RLS: the location's)."""
+        held = func.public.service_day_places_held(LocationServiceDay.id)
+        booked = (
+            select(func.count(Booking.id))
+            .where(
+                Booking.location_service_day_id == LocationServiceDay.id,
+                Booking.booking_status == "CONFIRMED",
+            )
+            .correlate(LocationServiceDay)
+            .scalar_subquery()
+        )
+        ever_booked = exists().where(Booking.location_service_day_id == LocationServiceDay.id)
+        location_today = cast(func.timezone(Location.timezone, func.now()), Date)
+
+        return (
+            self.db.query(
+                LocationServiceDay.id,
+                LocationServiceDay.service_date,
+                LocationServiceDay.is_open,
+                LocationServiceDay.closed_reason,
+                LocationServiceDay.capacity,
+                cast(booked, Integer).label("booked"),
+                func.greatest(held - cast(booked, Integer), 0).label("awaiting_payment"),
+                func.public.service_day_places_left(LocationServiceDay.id).label("places_left"),
+                ever_booked.label("ever_booked"),
+                (LocationServiceDay.service_date < location_today).label("is_past"),
+            )
+            .join(Location, Location.id == LocationServiceDay.location_id)
+            .filter(
+                LocationServiceDay.location_service_id == location_service_id,
+                LocationServiceDay.service_date >= date_from,
+                LocationServiceDay.service_date <= date_to,
+            )
+            .order_by(LocationServiceDay.service_date)
+            .all()
+        )
+
+    def create_many(
+        self,
+        *,
+        location_service_id: UUID,
+        location_id: UUID,
+        dates: list[date],
+        capacity: int,
+    ) -> list[date]:
+        """Adds these days; ones that already exist are left alone. Returns the dates added."""
+        if not dates:
+            return []
+
+        rows = self.db.execute(
+            text("""
+                INSERT INTO public.location_service_days (location_service_id, location_id, service_date, capacity)
+                SELECT :location_service_id, :location_id, day, :capacity
+                FROM unnest(CAST(:dates AS date[])) AS day
+                ON CONFLICT (location_service_id, service_date) DO NOTHING
+                RETURNING service_date
+            """),
+            {
+                "location_service_id": location_service_id,
+                "location_id": location_id,
+                "dates": dates,
+                "capacity": capacity,
+            },
+        ).all()
+
+        return sorted(row.service_date for row in rows)
+
+    def places_held(
+        self,
+        *,
+        id: UUID,
+    ) -> int:
+        return self.db.execute(
+            text("SELECT public.service_day_places_held(:id)"),
+            {"id": id},
+        ).scalar_one()
+
+    def update(
+        self,
+        *,
+        day: LocationServiceDay,
+        values: dict,
+    ) -> LocationServiceDay:
+        for field, value in values.items():
+            setattr(day, field, value)
+
+        self.db.flush()
+        self.db.refresh(day)
+
+        return day
+
+    def held_above(
+        self,
+        *,
+        location_service_id: UUID,
+        date_from: date,
+        date_to: date,
+        capacity: int,
+    ) -> list[Row]:
+        """The range's days whose bookings hold more places than `capacity`."""
+        held = func.public.service_day_places_held(LocationServiceDay.id)
+
+        return (
+            self.db.query(LocationServiceDay.service_date, held.label("held"))
+            .filter(
+                LocationServiceDay.location_service_id == location_service_id,
+                LocationServiceDay.service_date >= date_from,
+                LocationServiceDay.service_date <= date_to,
+                held > capacity,
+            )
+            .order_by(LocationServiceDay.service_date)
+            .all()
+        )
+
+    def set_capacity(
+        self,
+        *,
+        location_service_id: UUID,
+        date_from: date,
+        date_to: date,
+        capacity: int,
+    ) -> int:
+        result = self.db.execute(
+            text("""
+                UPDATE public.location_service_days
+                SET capacity = :capacity
+                WHERE location_service_id = :location_service_id
+                  AND service_date BETWEEN :date_from AND :date_to
+            """),
+            {
+                "location_service_id": location_service_id,
+                "date_from": date_from,
+                "date_to": date_to,
+                "capacity": capacity,
+            },
+        )
+
+        return result.rowcount
+
+    def delete(
+        self,
+        *,
+        day: LocationServiceDay,
+    ) -> None:
+        self.db.delete(day)
+        self.db.flush()

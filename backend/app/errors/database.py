@@ -49,7 +49,15 @@ from app.errors.medical_reviews import (
     DocumentationRequestMessageRequiredError,
     MedicalReviewDecisionNotAllowedError,
 )
-from app.errors.services import LocationServiceNotPricedError
+from app.errors.services import (
+    LocationServiceAgeRangeError,
+    LocationServiceNotPricedError,
+    LocationServiceTimesError,
+    ServiceDayCapacityBelowBookedError,
+    ServiceDayCloseBookedError,
+    ServiceDayDeleteBookedError,
+    ServiceDayInPastError,
+)
 from app.errors.refunds import (
     RefundAlreadyRequestedError,
     RefundNoCardPaymentError,
@@ -107,6 +115,12 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_refunds_card_payment": RefundNoCardPaymentError,
     "uq_refunds_active_booking": RefundAlreadyRequestedError,
     "ck_location_service_config_active_priced": LocationServiceNotPricedError,
+    "ck_location_service_config_times": LocationServiceTimesError,
+    "ck_location_service_config_child_age_range": LocationServiceAgeRangeError,
+    "ck_location_service_days_not_past": ServiceDayInPastError,
+    "ck_location_service_days_capacity_held": ServiceDayCapacityBelowBookedError,
+    "ck_location_service_days_close_booked": ServiceDayCloseBookedError,
+    "ck_location_service_days_delete_booked": ServiceDayDeleteBookedError,
     # Child documents (schema/0004): the table's checks and
     # trg_child_documents_rules.
     "ck_child_documents_family_only": ChildDocumentFamilyOnlyError,

@@ -11,6 +11,7 @@ from app.dependencies.service import get_service
 from app.public.services.location_service import LocationServiceService
 from app.public.schemas.location_service import (
     LocationServiceSelectionResponse,
+    LocationServiceSettingsResponse,
     UpdateLocationServiceConfigRequest,
 )
 
@@ -45,6 +46,16 @@ def list_public_location_services(
     )
 
 
+# Every service the location has, offered or not, for the superadmin's settings
+# (location_services u: only superadmins change them, so only they need this).
+@router.get("/settings")
+def list_location_service_settings(
+    ctx: TokenContext = Depends(require_permission(resource="location_services", action="u")),
+    service: LocationServiceService = Depends(get_service(LocationServiceService, db_dependency=get_rls_db)),
+) -> ApiResponse[list[LocationServiceSettingsResponse]]:
+    return ApiResponse(ok=True, msg="Fetched service settings", data=service.list_settings(location_id=ctx.location_id))
+
+
 @router.patch("/{location_service_id}/config")
 def update_location_service_config(
     location_service_id: UUID,
@@ -61,7 +72,7 @@ def update_location_service_config(
             db_dependency=get_rls_db,
         )
     ),
-) -> ApiResponse[LocationServiceSelectionResponse]:
+) -> ApiResponse[LocationServiceSettingsResponse]:
     result = service.update_config(
         location_service_id=location_service_id,
         location_id=ctx.location_id,

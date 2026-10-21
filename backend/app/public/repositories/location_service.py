@@ -98,6 +98,8 @@ class LocationServiceRepository(Repository):
                 LocationServiceConfig.refund_cutoff_days,
                 LocationServiceConfig.late_fee_cents,
                 LocationServiceConfig.late_fee_grace_minutes,
+                LocationServiceConfig.is_active,
+                LocationServiceConfig.updated_at,
             )
             .join(
                 ServiceType,

@@ -68,10 +68,25 @@
 			isActive: isActive('/admin/run-sheet')
 		},
 		{
+			label: 'Service days',
+			onclick: () => navigate('/admin/sessions'),
+			isActive: isActive('/admin/sessions')
+		},
+		{
 			label: 'Medical reviews',
 			onclick: () => navigate('/admin/reviews'),
 			isActive: isActive('/admin/reviews')
 		},
+		// Business settings: superadmins only (the API refuses admins too).
+		...(isSuperadmin
+			? [
+					{
+						label: 'Service settings',
+						onclick: () => navigate('/admin/settings'),
+						isActive: isActive('/admin/settings')
+					}
+				]
+			: []),
 		{
 			label: 'Kiosks',
 			onclick: () => navigate('/admin/kiosks'),
@@ -82,6 +97,8 @@
 	const isStaff = $derived(
 		['staff', 'admin', 'superadmin'].some((role) => $auth.roles.includes(role))
 	);
+
+	const isSuperadmin = $derived($auth.roles.includes('superadmin'));
 
 	const isAdmin = $derived(
 		['admin', 'superadmin'].some((role) => $auth.roles.includes(role))

@@ -19,7 +19,8 @@ def _service(client, name: str) -> dict:
 def _restored_config(api: Api, service_id: str):
     """Put a service's config back after a test (every test shares it)."""
     [row] = api.sql(
-        "SELECT is_active, current_price_cents, start_time, end_time, description, late_fee_cents "
+        "SELECT is_active, current_price_cents, start_time, end_time, description, late_fee_cents, "
+        "refund_cutoff_days, min_child_age, max_child_age, late_fee_grace_minutes "
         "FROM public.location_service_config WHERE location_service_id = :id",
         id=service_id,
     )
@@ -29,7 +30,9 @@ def _restored_config(api: Api, service_id: str):
         api.sql(
             "UPDATE public.location_service_config SET is_active = :is_active, "
             "current_price_cents = :price, start_time = :start_time, end_time = :end_time, "
-            "description = :description, late_fee_cents = :late_fee "
+            "description = :description, late_fee_cents = :late_fee, "
+            "refund_cutoff_days = :cutoff, min_child_age = :min_age, max_child_age = :max_age, "
+            "late_fee_grace_minutes = :grace "
             "WHERE location_service_id = :id",
             is_active=row.is_active,
             price=row.current_price_cents,
@@ -37,6 +40,10 @@ def _restored_config(api: Api, service_id: str):
             end_time=row.end_time,
             description=row.description,
             late_fee=row.late_fee_cents,
+            cutoff=row.refund_cutoff_days,
+            min_age=row.min_child_age,
+            max_age=row.max_child_age,
+            grace=row.late_fee_grace_minutes,
             id=service_id,
         )
 
@@ -95,13 +102,13 @@ def test_new_location_gets_its_services(api: Api):
     assert all(not is_active and price == 0 and default_times for _, is_active, price, default_times in rows)
 
 
-# An admin can change a service's price, times, description and late fee;
+# A superadmin can change a service's price, times, description and late fee;
 # the list shows the change.
-def test_admin_updates_service_config(api: Api, admin):
-    service = _service(admin, "Weekend Care")
+def test_superadmin_updates_service_config(api: Api, superadmin):
+    service = _service(superadmin, "Weekend Care")
 
     with _restored_config(api, service["id"]):
-        response = admin.patch(
+        response = superadmin.patch(
             f"/location-services/v1/{service['id']}/config",
             json={
                 "current_price_cents": 7500,
@@ -113,7 +120,7 @@ def test_admin_updates_service_config(api: Api, admin):
         )
 
         assert response.status_code == 200, response.text
-        updated = _service(admin, "Weekend Care")
+        updated = _service(superadmin, "Weekend Care")
         assert updated["current_price_cents"] == 7500
         assert (updated["start_time"], updated["end_time"]) == ("09:00:00", "16:00:00")
         assert updated["description"] == "Sport and games"
@@ -121,34 +128,42 @@ def test_admin_updates_service_config(api: Api, admin):
 
 
 # A service can't be offered for $0, and can't end before it starts.
-def test_service_config_rules(api: Api, admin):
-    service = _service(admin, "Weekend Care")
+def test_service_config_rules(api: Api, superadmin):
+    service = _service(superadmin, "Weekend Care")
 
     with _restored_config(api, service["id"]):
-        response = admin.patch(
+        response = superadmin.patch(
             f"/location-services/v1/{service['id']}/config",
             json={"current_price_cents": 0},
         )
         assert response.status_code == 400
         assert "price above $0" in response.json()["msg"]
 
-        response = admin.patch(
+        response = superadmin.patch(
             f"/location-services/v1/{service['id']}/config",
             json={"start_time": "17:00", "end_time": "09:00"},
         )
         assert response.status_code == 400
+        assert "finish after it starts" in response.json()["msg"]
+
+        response = superadmin.patch(
+            f"/location-services/v1/{service['id']}/config",
+            json={"min_child_age": 12, "max_child_age": 6},
+        )
+        assert response.status_code == 400
+        assert "youngest age" in response.json()["msg"]
 
 
 # A service that isn't offered disappears from the list and can't be booked.
-def test_service_not_offered_cannot_be_booked(api: Api, admin, customer):
-    service = _service(admin, "After School Care")
+def test_service_not_offered_cannot_be_booked(api: Api, superadmin, customer):
+    service = _service(superadmin, "After School Care")
     child = api.new_child(customer)
     day = api.service_day()
 
     with _restored_config(api, service["id"]):
-        admin.patch(f"/location-services/v1/{service['id']}/config", json={"is_active": False})
+        superadmin.patch(f"/location-services/v1/{service['id']}/config", json={"is_active": False})
 
-        assert service["id"] not in [s["id"] for s in admin.get("/location-services/v1/").json()["data"]]
+        assert service["id"] not in [s["id"] for s in superadmin.get("/location-services/v1/").json()["data"]]
 
         response = api.book(customer, {child["id"]: [day]})
         assert response.status_code == 400
@@ -156,8 +171,8 @@ def test_service_not_offered_cannot_be_booked(api: Api, admin, customer):
 
 
 # Changing a service that doesn't exist (or is another location's) is 404.
-def test_update_unknown_service_config(admin):
-    response = admin.patch(
+def test_update_unknown_service_config(superadmin):
+    response = superadmin.patch(
         "/location-services/v1/00000000-0000-0000-0000-000000000000/config",
         json={"current_price_cents": 7500},
     )
@@ -222,3 +237,60 @@ def test_list_service_days_is_not_capped(customer):
 
     assert response.status_code == 200
     assert len(response.json()["data"]) > 25
+
+
+# The superadmin's settings list every service, offered or not, so a service
+# that's been switched off can be switched back on; families can't see it.
+def test_superadmin_settings_list_every_service(api: Api, superadmin, customer):
+    service = _service(superadmin, "Weekend Care")
+
+    with _restored_config(api, service["id"]):
+        superadmin.patch(f"/location-services/v1/{service['id']}/config", json={"is_active": False})
+
+        settings = superadmin.get("/location-services/v1/settings").json()["data"]
+        [weekend] = [s for s in settings if s["id"] == service["id"]]
+        assert weekend["is_active"] is False
+
+        response = superadmin.patch(f"/location-services/v1/{service['id']}/config", json={"is_active": True})
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["is_active"] is True
+
+    assert customer.client.get("/location-services/v1/settings").status_code == 403
+
+
+# Every setting a superadmin can change is saved: price, times, description,
+# refund cutoff, ages and the late fee.
+def test_superadmin_changes_every_setting(api: Api, superadmin):
+    service = _service(superadmin, "Vacation Care")
+
+    with _restored_config(api, service["id"]):
+        response = superadmin.patch(
+            f"/location-services/v1/{service['id']}/config",
+            json={
+                "current_price_cents": 7500,
+                "start_time": "07:30:00",
+                "end_time": "17:30:00",
+                "description": "  Excursions most days  ",
+                "refund_cutoff_days": 5,
+                "min_child_age": 5,
+                "max_child_age": 12,
+                "late_fee_cents": 1500,
+                "late_fee_grace_minutes": 10,
+            },
+        )
+        assert response.status_code == 200, response.text
+
+        data = response.json()["data"]
+        assert (data["current_price_cents"], data["start_time"], data["end_time"]) == (7500, "07:30:00", "17:30:00")
+        assert data["description"] == "Excursions most days"
+        assert (data["refund_cutoff_days"], data["min_child_age"], data["max_child_age"]) == (5, 5, 12)
+        assert (data["late_fee_cents"], data["late_fee_grace_minutes"]) == (1500, 10)
+
+
+# Service settings are the business's: a centre admin can't see or change
+# them, only a superadmin.
+def test_admins_cannot_change_service_settings(api: Api, admin):
+    service = _service(admin, "After School Care")
+
+    assert admin.get("/location-services/v1/settings").status_code == 403
+    assert admin.patch(f"/location-services/v1/{service['id']}/config", json={"description": "x"}).status_code == 403

@@ -16,6 +16,9 @@ TENANT_1_USER_PASSWORD = DEV_PASSWORD
 TENANT_2_USER_EMAIL = "t2user@test.com"
 TENANT_2_USER_PASSWORD = DEV_PASSWORD
 
+# Tenant 1's superadmin (business settings such as services and prices).
+TENANT_1_SUPERADMIN_EMAIL = "sa1user@test.com"
+
 
 def up(conn: Connection) -> None:
     password_hash = hash_password(
@@ -517,5 +520,33 @@ def up(conn: Connection) -> None:
         """),
         {
             "location_id": tenant_2_location_2_id,
+        },
+    )
+
+    # =========================
+    # TENANT 1 SUPERADMIN (location 1)
+    # =========================
+
+    conn.execute(
+        text("""
+            WITH superadmin AS (
+                INSERT INTO auth.users (
+                    email, password_hash, first_name, last_name,
+                    terms_accepted_at, terms_version, is_active
+                )
+                VALUES (:email, :password_hash, 'Super', 'Admin', now(), 'v1', TRUE)
+                ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+                RETURNING id
+            )
+            INSERT INTO auth.location_user_roles (user_id, location_id, role_id)
+            SELECT superadmin.id, :location_id, r.id
+            FROM superadmin, auth.roles r
+            WHERE r.code = 'superadmin'
+            ON CONFLICT (user_id, location_id, role_id) DO NOTHING;
+        """),
+        {
+            "email": TENANT_1_SUPERADMIN_EMAIL,
+            "password_hash": password_hash,
+            "location_id": tenant_1_location_1_id,
         },
     )

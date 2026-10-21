@@ -7,6 +7,7 @@ from app.errors.services import LocationServiceNotFoundError
 from app.public.repositories.location_service import LocationServiceRepository
 from app.public.schemas.location_service import (
     LocationServiceSelectionResponse,
+    LocationServiceSettingsResponse,
     UpdateLocationServiceConfigRequest,
 )
 
@@ -29,11 +30,12 @@ class LocationServiceService:
         location_id: UUID,
         user_id: UUID,
         body: UpdateLocationServiceConfigRequest,
-    ) -> LocationServiceSelectionResponse:
+    ) -> LocationServiceSettingsResponse:
         """
-        An admin changing what a service costs and when it runs. Prices live
+        A superadmin changing what a service costs and when it runs. Prices live
         only in our database; nothing is sent to Stripe until a booking is
-        paid. Only admins can write the config (RLS, schema/0005).
+        paid. Only superadmins hold the permission (location_services u);
+        RLS also limits writes to the location's admins (schema/0005).
         """
         config = self.location_service_repository.get_config(
             location_service_id=location_service_id,
@@ -65,10 +67,21 @@ class LocationServiceService:
             if row.id == location_service_id
         ]
 
-        return LocationServiceSelectionResponse.model_validate(
+        return LocationServiceSettingsResponse.model_validate(
             row,
             from_attributes=True,
         )
+
+    def list_settings(
+        self,
+        *,
+        location_id: UUID,
+    ) -> list[LocationServiceSettingsResponse]:
+        """Every service the location has, offered or not (the admin's settings)."""
+        return [
+            LocationServiceSettingsResponse.model_validate(row, from_attributes=True)
+            for row in self.location_service_repository.list_with_context(location_id=location_id)
+        ]
 
     def list_offered(
         self,
