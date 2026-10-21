@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 
 from app.db.repository import Repository
 from app.db.models import StaffShift
@@ -67,9 +67,12 @@ class StaffShiftRepository(Repository):
         device_id: UUID,
         at: datetime | None = None,
     ) -> StaffShift:
-        shift.ended_at = at or datetime.now(timezone.utc)
+        # The database's clock unless a time was given: the start is the
+        # database's too (ck_staff_shifts_ended_after_started).
+        shift.ended_at = at or func.now()
         shift.ended_kiosk_device_id = device_id
 
         self.db.flush()
+        self.db.refresh(shift)
 
         return shift

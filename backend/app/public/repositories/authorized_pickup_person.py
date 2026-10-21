@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import case, func, select
@@ -102,9 +102,10 @@ class AuthorizedPickupPersonRepository(Repository):
         Photo ID seen (which also approves them), or approved without ID.
         Only takes effect at the staff kiosk (trg_authorized_pickup_persons_rules
         ignores it from any other session). Already-approved people are left
-        as they are.
+        as they are. Stamped with the database's clock, like the sign-outs
+        it's compared with (collector_id_sighted).
         """
-        now = datetime.now(timezone.utc)
+        now = func.now()
 
         if id_seen and person.identity_verified_at is None:
             person.identity_verified_at = now

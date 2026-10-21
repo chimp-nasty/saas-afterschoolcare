@@ -87,7 +87,9 @@ Refunds and one-off releases at the kiosk are role-controlled grants, so a tenan
 2. **Backend:** permissions by channel; channel-aware RLS helpers; staff kiosk requests run as the staff member with a per-request PIN (no kiosk staff sessions); attendance and ID triggers check the channel; tests that a staff login on the web sees no child data.
 3. **Move screens:** medical reviews and the run sheet to `/admin`; the staff home becomes the account page; staff role web permissions stripped. Every login also gets its own account (`/account/v1`: read-only details, change password with the current one, then the "password changed" email); families change their password on their account page.
 4. **Expand the staff kiosk:** pre-PIN view tightened, medical alerts and details, action plans, collection sheet, booking and payment info, refunds.
-5. **Full scenario tests** across the three portals and the family kiosk.
+5. **Full scenario tests** across the three portals and the family kiosk (`backend/tests/test_scenarios.py`).
+
+**Status:** steps 1–5 done (21 October 2026); 380 tests passing.
 
 ## 5. Decisions recorded
 

@@ -251,7 +251,7 @@ class UpdateAttendanceService:
 
         return self._times(booking_id=booking_id)
 
-    def _sign_in(self, *, booking_id: UUID, at: datetime) -> AttendanceTimesResponse:
+    def _sign_in(self, *, booking_id: UUID, at: datetime | None) -> AttendanceTimesResponse:
         self.attendance_repository.sign_in(booking_id=booking_id, at=at)
         self._log("attendance_sign_in", booking_id)
 
@@ -261,7 +261,7 @@ class UpdateAttendanceService:
         self,
         *,
         booking_id: UUID,
-        at: datetime,
+        at: datetime | None,
         collected_by_pickup_person_id: UUID | None = None,
         released_to_name: str | None = None,
         release_note: str | None = None,
@@ -332,11 +332,11 @@ class UpdateAttendanceService:
 
         return booking
 
-    def _when(self, at: datetime | None) -> datetime:
-        # When it happened (a missed one), never in the future.
-        now = datetime.now(timezone.utc)
-
-        return min(at, now) if at else now
+    def _when(self, at: datetime | None) -> datetime | None:
+        # When it happened (a missed one), never in the future. None means
+        # now, stamped by the database's clock (as the family kiosk is), so
+        # sign-ins, sign-outs and ID checks compare on one clock.
+        return min(at, datetime.now(timezone.utc)) if at else None
 
     def _times(self, *, booking_id: UUID) -> AttendanceTimesResponse:
         row = self.attendance_repository.get_times(booking_id=booking_id)

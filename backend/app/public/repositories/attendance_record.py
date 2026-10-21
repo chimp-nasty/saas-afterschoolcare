@@ -54,13 +54,16 @@ class AttendanceRecordRepository(Repository):
         self,
         *,
         booking_id: UUID,
-        at: datetime,
+        at: datetime | None,
     ) -> None:
-        """Signed in at `at`, unless it already is (who and where: the trigger)."""
+        """
+        Signed in at `at` (None: now, by the database's clock, like the
+        family kiosk's), unless it already is (who and where: the trigger).
+        """
         self.db.execute(
             text("""
                 INSERT INTO public.attendance_records (booking_id, signed_in_at)
-                VALUES (:booking_id, :at)
+                VALUES (:booking_id, COALESCE(CAST(:at AS timestamptz), now()))
                 ON CONFLICT (booking_id) DO UPDATE
                 SET signed_in_at = EXCLUDED.signed_in_at
                 WHERE attendance_records.signed_in_at IS NULL
@@ -72,7 +75,7 @@ class AttendanceRecordRepository(Repository):
         self,
         *,
         booking_id: UUID,
-        at: datetime,
+        at: datetime | None,
         collected_by_pickup_person_id: UUID | None,
         released_to_name: str | None,
         release_note: str | None,
@@ -82,7 +85,7 @@ class AttendanceRecordRepository(Repository):
         result = self.db.execute(
             text("""
                 UPDATE public.attendance_records
-                SET signed_out_at = :at,
+                SET signed_out_at = COALESCE(CAST(:at AS timestamptz), now()),
                     collected_by_pickup_person_id = :collected_by,
                     released_to_name = :released_to,
                     release_note = :note,
