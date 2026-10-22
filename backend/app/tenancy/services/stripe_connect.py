@@ -10,6 +10,7 @@ from app.db.transaction import transactional
 from app.errors.base import ApplicationError
 from app.errors.payments import (
     PaymentProviderError,
+    StripeAccountLinkedError,
     StripeAccountNotFoundError,
     StripeOAuthUnavailableError,
 )
@@ -69,6 +70,7 @@ class StripeConnectService:
         return StripeAccountStatusResponse(
             connected=account is not None,
             stripe_account_id=account.stripe_account_id if account else None,
+            is_linked=bool(account and account.is_linked),
             details_submitted=bool(account and account.details_submitted),
             charges_enabled=bool(account and account.charges_enabled),
             payouts_enabled=bool(account and account.payouts_enabled),
@@ -157,6 +159,7 @@ class StripeConnectService:
             charges_enabled=stripe_account.charges_enabled,
             payouts_enabled=stripe_account.payouts_enabled,
             details_submitted=stripe_account.details_submitted,
+            is_linked=True,
         )
         self._log("stripe_account_linked", location.tenant_id, account_id)
 
@@ -176,6 +179,11 @@ class StripeConnectService:
         tenant = self.tenant_repository.get_by_id(id=location.tenant_id)
         site_url = location_site_url(location=location, tenant=tenant, origin=origin)
         account = self.stripe_account_repository.get_for_tenant(tenant_id=tenant.id)
+
+        # A business's own linked account isn't ours to onboard: it finishes
+        # setup in its Stripe dashboard (Stripe refuses our link for it).
+        if account and account.is_linked and not account.revoked_at:
+            raise StripeAccountLinkedError()
 
         # Plain values only past this point: creating the account commits,
         # and the next transaction has no RLS settings to read rows with.

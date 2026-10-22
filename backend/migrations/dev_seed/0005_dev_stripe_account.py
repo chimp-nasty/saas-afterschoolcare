@@ -35,7 +35,8 @@ def up(conn: Connection) -> None:
                 payouts_enabled = TRUE,
                 details_submitted = TRUE,
                 disconnected_at = NULL,
-                revoked_at = NULL;
+                revoked_at = NULL,
+                is_linked = FALSE;
         """),
         {"account_id": settings.STRIPE_DEV_ACCOUNT_ID},
     )

@@ -33,11 +33,16 @@ class TenantStripeAccountRepository(Repository):
         charges_enabled: bool,
         payouts_enabled: bool,
         details_submitted: bool,
+        is_linked: bool = False,
     ) -> TenantStripeAccount:
-        """A new connected account for the tenant, replacing a revoked one."""
+        """
+        The tenant's connected account: one we created, or (is_linked) the
+        business's own existing one. Replaces whatever it had before.
+        """
         account = self.get_for_tenant(tenant_id=tenant_id) or TenantStripeAccount(tenant_id=tenant_id)
 
         account.stripe_account_id = stripe_account_id
+        account.is_linked = is_linked
         account.charges_enabled = charges_enabled
         account.payouts_enabled = payouts_enabled
         account.details_submitted = details_submitted

@@ -147,6 +147,11 @@ CREATE TABLE tenancy.tenant_stripe_accounts (
     tenant_id UUID PRIMARY KEY,
 
     stripe_account_id VARCHAR(255) NOT NULL,
+    -- The business linked an account it already had ("Connect with
+    -- Stripe", OAuth) rather than us creating one. A linked account
+    -- finishes any setup in its own Stripe dashboard; only accounts we
+    -- created use our onboarding link.
+    is_linked BOOLEAN NOT NULL DEFAULT FALSE,
 
     charges_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     payouts_enabled BOOLEAN NOT NULL DEFAULT FALSE,

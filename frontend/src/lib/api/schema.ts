@@ -4668,6 +4668,8 @@ export interface components {
             connected: boolean;
             /** Stripe Account Id */
             stripe_account_id: string | null;
+            /** Is Linked */
+            is_linked: boolean;
             /** Details Submitted */
             details_submitted: boolean;
             /** Charges Enabled */

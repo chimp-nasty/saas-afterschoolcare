@@ -39,14 +39,15 @@ With direct charges, a family's checkout and refunds happen in the centre's acco
 ## 3. Dev
 
 1. Rebuild, log in as the superadmin (`sa1user@test.com`, password `123`) and open **Admin › Payments → Connect Stripe**. In test mode, Stripe's onboarding accepts test data ("Use test data" / phone `000 000 0000`, code `000000`).
-2. Forward both kinds of events to the local API with the Stripe CLI (two terminals). Put each `whsec_…` it prints in `backend/.env`:
+2. Forward both kinds of events to the local API with the Stripe CLI ([install](https://docs.stripe.com/stripe-cli); `stripe login` once, into the platform's account). One command, in its own terminal, while the API runs:
 
    ```powershell
-   stripe listen --forward-to localhost:8000/api/v1/webhooks/stripe            # STRIPE_WEBHOOK_SECRET
-   stripe listen --forward-connect-to localhost:8000/api/v1/webhooks/stripe/connect  # STRIPE_CONNECT_WEBHOOK_SECRET
+   stripe listen --forward-to localhost:8000/api/v1/webhooks/stripe --forward-connect-to localhost:8000/api/v1/webhooks/stripe/connect
    ```
 
-   Without the CLI, **Refresh status** on Admin › Payments reads the account's state from Stripe instead.
+   Your account's events go to the first endpoint and connected accounts' events (a family's checkout and refunds, `account.updated`) to the second. It prints one signing secret (`whsec_…`) for the session: put it in `backend/.env` as **both** `STRIPE_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET`, then restart the API. The secret stays the same on later runs from the same machine, so this is needed once (until the CLI login expires, about 90 days). Each forwarded event and the API's response code is printed in that terminal; a `400` usually means the secret in `.env` doesn't match.
+
+   Without the CLI, **Refresh status** on Admin › Payments reads the account's state from Stripe instead, but paid checkouts and refunds are only recorded through the webhook, so bookings stay pending.
 3. Copy the connected account's id (`acct_…`, shown in your platform dashboard under **Connected accounts**) into `backend/.env` as `STRIPE_DEV_ACCOUNT_ID`. From then on, every rebuild links it to tenant1 again (`migrations/dev_seed/0005_dev_stripe_account.py`), so onboarding is only needed once.
 
 ## What each state means

@@ -52,6 +52,10 @@
             return { tone: "warning", text: "Online payments are turned off, so families can't book. Past payments can still be refunded." };
         }
 
+        if (!account.takes_payments && account.is_linked) {
+            return { tone: "warning", text: "Your Stripe account isn't ready to take payments yet. Finish setting it up in your Stripe dashboard, then refresh the status here." };
+        }
+
         if (!account.takes_payments) {
             return { tone: "warning", text: "Stripe setup isn't finished. Families can book once Stripe has everything it needs." };
         }
@@ -167,8 +171,10 @@
                         {:else}
                             <Button isLoading={isBusy} onclick={() => connect()}>Connect Stripe</Button>
                         {/if}
-                    {:else if !account.details_submitted || !account.charges_enabled}
+                    {:else if (!account.details_submitted || !account.charges_enabled) && !account.is_linked}
                         <Button isLoading={isBusy} onclick={() => connect()}>Continue setup</Button>
+                    {:else if !account.details_submitted || !account.charges_enabled}
+                        <!-- A linked account is finished in its own Stripe dashboard. -->
                     {:else if account.disconnected}
                         <Button isLoading={isBusy} onclick={() => run(() => stripeApi.reconnect())}>Turn on online payments</Button>
                     {:else}

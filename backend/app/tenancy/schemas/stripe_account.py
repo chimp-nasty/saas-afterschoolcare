@@ -10,6 +10,9 @@ class StripeAccountStatusResponse(BaseModel):
     connected: bool
     # Its id (acct_...), to find it in Stripe's dashboard.
     stripe_account_id: str | None
+    # The business linked its own existing account: any unfinished setup is
+    # done in its Stripe dashboard, not through our onboarding link.
+    is_linked: bool
     # Stripe's own flags: onboarding finished, card payments on, payouts on.
     details_submitted: bool
     charges_enabled: bool

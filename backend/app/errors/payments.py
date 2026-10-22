@@ -49,3 +49,9 @@ class StripeOAuthStateError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "This Stripe link has expired. Start again from Admin › Payments."
     result = "denied"
+
+
+class StripeAccountLinkedError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "This is your own Stripe account. Finish setting it up in your Stripe dashboard, then refresh the status here."
+    result = "denied"

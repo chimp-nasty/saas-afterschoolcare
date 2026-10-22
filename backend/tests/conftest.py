@@ -84,7 +84,8 @@ def database():
                 payouts_enabled = TRUE,
                 details_submitted = TRUE,
                 disconnected_at = NULL,
-                revoked_at = NULL
+                revoked_at = NULL,
+                is_linked = FALSE
         """))
 
 

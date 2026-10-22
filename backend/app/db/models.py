@@ -355,6 +355,7 @@ class TenantStripeAccount(Base):
 
     tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     stripe_account_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_linked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     charges_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     payouts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     details_submitted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))

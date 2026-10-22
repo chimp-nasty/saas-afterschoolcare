@@ -43,7 +43,7 @@ def _account_changed(api: Api, tenant: str):
             ON CONFLICT (tenant_id) DO UPDATE
             SET stripe_account_id = EXCLUDED.stripe_account_id,
                 charges_enabled = TRUE, payouts_enabled = TRUE, details_submitted = TRUE,
-                disconnected_at = NULL, revoked_at = NULL
+                disconnected_at = NULL, revoked_at = NULL, is_linked = FALSE
             """,
             tenant=tenant,
         )
@@ -228,7 +228,26 @@ def test_link_an_existing_account(api: Api, superadmin, fake_stripe, oauth_enabl
         assert response.headers["location"].endswith("/location1/admin/payments?stripe=connected")
 
         status = superadmin.get(f"{BASE}/").json()["data"]
-        assert (status["stripe_account_id"], status["takes_payments"]) == ("acct_existing", True)
+        assert (status["stripe_account_id"], status["is_linked"], status["takes_payments"]) == ("acct_existing", True, True)
+
+
+# A linked account that isn't ready yet is finished in the business's own
+# Stripe dashboard: our onboarding link isn't offered for it.
+def test_linked_account_finishes_setup_in_stripe(api: Api, superadmin, fake_stripe, oauth_enabled):
+    fake_stripe.state.accounts["acct_unfinished"] = StripeAccount(
+        account_id="acct_unfinished", charges_enabled=False, payouts_enabled=False, details_submitted=False
+    )
+    fake_stripe.state.oauth_codes["ac_unfinished"] = "acct_unfinished"
+
+    with _account_changed(api, "tenant1"):
+        _finish_oauth(api, code="ac_unfinished", state=_start_oauth(superadmin, fake_stripe))
+
+        status = superadmin.get(f"{BASE}/").json()["data"]
+        assert (status["is_linked"], status["takes_payments"]) == (True, False)
+
+        response = superadmin.post(f"{BASE}/onboarding")
+        assert response.status_code == 409
+        assert "Stripe dashboard" in response.json()["msg"]
 
 
 # Declining at Stripe, or a code that fails, sends them back saying so;
