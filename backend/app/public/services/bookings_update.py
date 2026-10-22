@@ -8,6 +8,9 @@ from app.errors.bookings import (
     BookingAttemptFinishedError,
     BookingGroupAlreadyPaidError,
     BookingGroupNotFoundError,
+    BookingNotCancellableError,
+    BookingNotFoundError,
+    BookingNotReinstatableError,
 )
 from app.integrations.payments.stripe.client import StripeClient
 from app.public.repositories.booking import BookingRepository
@@ -91,3 +94,52 @@ class UpdateBookingService:
             payment_status=PaymentStatus.FAILED,
             cancelled_at=datetime.now(timezone.utc),
         )
+
+
+    @transactional
+    def cancel_booking(
+        self,
+        *,
+        booking_id: UUID,
+    ) -> None:
+        """
+        Cancel one paid booking without a refund (the family, or an admin
+        for them): once the refund window has closed, until the session
+        starts. Its place goes back; it stays paid, so it can be reinstated.
+        The database decides whether it may (public.booking_is_cancellable).
+        """
+        moved = self.booking_repository.set_paid_status(
+            booking_id=booking_id,
+            from_status=BookingStatus.CONFIRMED,
+            to_status=BookingStatus.CANCELLED,
+        )
+
+        if not moved:
+            self._refuse(booking_id, BookingNotCancellableError)
+
+    @transactional
+    def reinstate_booking(
+        self,
+        *,
+        booking_id: UUID,
+    ) -> None:
+        """
+        Put back a booking cancelled without a refund, until its session
+        starts, if there's still a place and the booking rules pass (all in
+        the database: public.booking_is_reinstatable and the booking rules).
+        """
+        moved = self.booking_repository.set_paid_status(
+            booking_id=booking_id,
+            from_status=BookingStatus.CANCELLED,
+            to_status=BookingStatus.CONFIRMED,
+        )
+
+        if not moved:
+            self._refuse(booking_id, BookingNotReinstatableError)
+
+    def _refuse(self, booking_id: UUID, error: type[Exception]) -> None:
+        """Nothing moved: not this user's booking, or not one that can move this way."""
+        if not self.booking_repository.get_by_id(id=booking_id):
+            raise BookingNotFoundError()
+
+        raise error()

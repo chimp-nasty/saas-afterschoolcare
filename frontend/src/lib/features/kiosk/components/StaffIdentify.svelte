@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import Button from '$lib/components/actions/Button.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
 	import PinEntry from './PinEntry.svelte';
 
 	import type { StaffKioskMemberResponse } from '$lib/api/schema';
@@ -50,9 +51,10 @@
 
 {#if !chosen}
 	<div class="flex flex-col gap-6">
+		<!-- A subtitle under the task window's title, never bigger than it. -->
 		<div class="flex flex-col gap-1 text-center">
-			<h2 class="text-2xl font-extrabold text-(--text)">Who are you?</h2>
-			<p class="text-base text-(--text-muted)">For {task}</p>
+			<p class="text-lg font-semibold text-(--text)">Who are you?</p>
+			<p class="text-lg text-(--text-muted)">For {task}</p>
 		</div>
 
 		<div class="grid grid-cols-2 gap-3">
@@ -68,13 +70,13 @@
 					<span class="text-lg font-extrabold text-(--text)">{member.first_name} {member.last_name}</span>
 				</button>
 			{:else}
-				<p class="col-span-2 text-center text-lg text-(--text-muted)">
-					{adminsOnly ? 'No admin is clocked in.' : 'Nobody is clocked in.'}
-				</p>
+				<div class="col-span-2">
+					<EmptyState size="kiosk" message={adminsOnly ? 'No admin is clocked in.' : 'Nobody is clocked in.'} />
+				</div>
 			{/each}
 		</div>
 
-		<p class="text-center text-base text-(--text-muted)">Not listed? Clock in on the Shifts tab.</p>
+		<p class="text-center text-lg text-(--text-muted)">Not listed? Clock in on the Shifts tab.</p>
 
 		<Button variant="ghost" fullWidth onclick={oncancel}>Cancel</Button>
 	</div>

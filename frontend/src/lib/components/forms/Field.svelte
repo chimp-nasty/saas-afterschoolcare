@@ -25,12 +25,12 @@
 		<div class="flex items-center gap-2">
 			{@render children(id)}
 
-			<label for={id} class="mb-0">
+			<label for={id} class="field-label mb-0">
 				{label}
 			</label>
 		</div>
 	{:else}
-		<label for={id}>
+		<label for={id} class="field-label">
 			{label}
 		</label>
 

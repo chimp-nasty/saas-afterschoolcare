@@ -8,6 +8,8 @@
 
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import EmptyState from "$lib/components/text/EmptyState.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import ServiceSettingsForm from "$lib/features/services/components/ServiceSettingsForm.svelte";
 
     import { createLocationServicesApi } from "$lib/api/public/adapters/location-services";
@@ -38,17 +40,15 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {#each data.services as service (service.id)}
             <section class="flex flex-col gap-3">
-                <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 class="text-lg font-extrabold text-(--text)">{service.service_name}</h2>
-                    <p class="text-sm text-(--text-muted)">
-                        {service.is_active ? "Offered" : "Not offered"} · last changed {formatTimestamp(service.updated_at)}
-                    </p>
-                </div>
+                <SectionHeading
+                    title={service.service_name}
+                    description={`${service.is_active ? "Offered" : "Not offered"} · last changed ${formatTimestamp(service.updated_at)}`}
+                />
 
                 <ServiceSettingsForm {service} onsubmit={(body) => save(service.id, body)} />
             </section>
         {:else}
-            <p class="text-base text-(--text-muted)">This location has no services.</p>
+            <EmptyState message="This location has no services." />
         {/each}
     </div>
 </Page>

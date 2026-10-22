@@ -5,6 +5,7 @@
 	import type { Snippet } from 'svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 	import NumberPad from './NumberPad.svelte';
 	import { formatTypedPhone } from '../kiosk';
 
@@ -35,7 +36,9 @@
 	</p>
 
 	{#if error}
-		<p class="max-w-md text-center text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
+		<div class="max-w-md text-center">
+			<ErrorText size="kiosk" message={error} />
+		</div>
 	{/if}
 
 	<NumberPad

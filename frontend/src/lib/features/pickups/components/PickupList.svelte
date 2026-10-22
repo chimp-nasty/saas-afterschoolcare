@@ -8,6 +8,7 @@
 
     import Button from "$lib/components/actions/Button.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
+    import EmptyState from "$lib/components/text/EmptyState.svelte";
 
     import type { PickupResponse } from "$lib/api/schema";
     import { formatPhone } from "$lib/utils/helpers";
@@ -48,9 +49,7 @@
             ]}
         />
     {:else}
-        <p class="text-sm text-(--text-muted)">
-            Add your phone number in Profile to appear on your pickup list.
-        </p>
+        <EmptyState message="Add your phone number in Profile to appear on your pickup list." />
     {/each}
 
     {#if addedCount < PICKUP_LIMIT}

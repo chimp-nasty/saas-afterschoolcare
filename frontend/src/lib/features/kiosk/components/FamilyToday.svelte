@@ -10,6 +10,7 @@
 
 	import Button from '$lib/components/actions/Button.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
 
 	import type { KioskBookingResponse } from '$lib/api/schema';
 	import { formatTimeRange } from '$lib/utils/helpers';
@@ -53,7 +54,7 @@
 					<p class="text-2xl font-extrabold text-(--text)">
 						{booking.child_first_name} {booking.child_last_initial}.
 					</p>
-					<p class="text-base text-(--text-muted)">
+					<p class="text-lg text-(--text-muted)">
 						{booking.service_name} · {formatTimeRange(booking.start_time, booking.end_time)}
 					</p>
 
@@ -104,8 +105,6 @@
 			</div>
 		</Card>
 	{:else}
-		<p class="text-center text-xl text-(--text-muted)">
-			There are no sessions booked for your children today.
-		</p>
+		<EmptyState size="kiosk" message="There are no sessions booked for your children today." />
 	{/each}
 </div>

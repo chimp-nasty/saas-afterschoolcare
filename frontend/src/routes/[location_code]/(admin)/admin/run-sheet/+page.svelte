@@ -12,6 +12,7 @@
     import Button from "$lib/components/actions/Button.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import ErrorText from "$lib/components/text/ErrorText.svelte";
     import PrintableRunSheet, { type PrintSession } from "$lib/features/attendance/components/PrintableRunSheet.svelte";
     import StaffRoll from "$lib/features/kiosk/components/StaffRoll.svelte";
     import { ROLL_REFRESH_MS } from "$lib/features/kiosk/kiosk";
@@ -88,7 +89,7 @@
         <Button variant="ghost" isDisabled={!date} onclick={() => show(shift(date, -1))}>Previous day</Button>
 
         <label class="flex flex-col gap-1">
-            <span class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Day</span>
+            <span class="label-text">Day</span>
             <input type="date" value={date} onchange={(event) => show(event.currentTarget.value)} />
         </label>
 
@@ -100,7 +101,7 @@
     </div>
 
     {#if data.boardError}
-        <p class="text-sm text-(--danger-text)" role="alert">{data.boardError}</p>
+        <ErrorText message={data.boardError} />
     {:else if data.board}
         <!-- A new day picks its default session tab again. -->
         {#key date}
@@ -110,6 +111,7 @@
                 isToday={!!today && date === today}
                 isPast={!!today && date < today}
                 onprint={print}
+                size="web"
             />
         {/key}
     {/if}

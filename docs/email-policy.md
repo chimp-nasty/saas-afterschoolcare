@@ -32,7 +32,7 @@ Rules for every email:
 2. **Words like "medical", "allergy" and "anaphylaxis" never appear** in a subject or body. "Action needed in your account" is enough.
 3. **Staff's free-text messages stay in the app.** They often name a condition ("please upload the asthma plan"). The email only says there's something to look at.
 4. **Links open the app and need a login.** The only exception is the password reset link, which carries a single-use token.
-5. **The only secrets ever emailed** are the password reset link and the kiosk setup PIN (section 4), each with its own controls.
+5. **The only secrets ever emailed** are the password reset link, the staff invite link (the same single-use link, valid 7 days) and the kiosk setup PIN (section 4), each with its own controls.
 6. **No marketing, promotions or upsells** in service emails. Under the Spam Act they would turn a service email into a commercial message.
 7. **Sent as the centre:** the From name is the centre's, and replies go to the centre's contact email.
 
@@ -42,11 +42,13 @@ Rules for every email:
 |---|---|---|---|
 | Password reset | Reset your password | Single-use link, valid 30 minutes; "if this wasn't you, ignore this email" | Whether other accounts exist, any account details |
 | Password changed | Your password was changed | When; "if this wasn't you, contact {centre}" | — |
+| Staff invite | You've been added to {centre} | Recipient's first name; single-use link to set their password, valid 7 days; "if you weren't expecting this, ignore this email" | Who added them, their role, other staff |
 | Welcome | Welcome to {centre} | Recipient's first name; next steps (add children, pickup people); link | — |
 | Booking confirmation | Your booking is confirmed | "Your booking at {centre} is confirmed. Reference {ref}, total {amount}." Link to the booking | Children, dates, sessions |
 | Refund confirmation | Your refund has been processed | Amount, reference; link to the receipt | Children, dates |
 | Documents requested | Action needed in your account | "{centre} has asked for documents for {child first name}. Log in to see what's needed." | The staff message, any condition |
 | Child approved | Your child's profile has been approved | "{child first name} can now be booked." | Any medical detail |
+| New message | You have a new message | "{centre} has sent you a message. Log in to read it." Link to their messages | The message's title and text, which child it's about |
 | Kiosk PIN | Your kiosk PIN | "Your kiosk PIN for {centre} is {PIN}. You'll choose your own the first time you use the kiosk." | Children, phone number, centre address |
 
 New emails are added to this table, with each item checked against section 2, before they're built.

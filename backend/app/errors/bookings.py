@@ -100,3 +100,15 @@ class BookingNotFoundError(ApplicationError):
     status_code = status.HTTP_404_NOT_FOUND
     message = "Booking not found"
     result = "failed"
+
+
+class BookingNotCancellableError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "This booking can't be cancelled now. Before the refund cutoff, refund it instead; after the session starts, nothing can change."
+    result = "denied"
+
+
+class BookingNotReinstatableError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "This booking can't be reinstated now"
+    result = "denied"

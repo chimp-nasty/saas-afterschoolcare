@@ -1,0 +1,4 @@
+Set your password:
+{{ invite_url }}
+
+This link expires in 7 days and can only be used once. If you weren't expecting this, you can ignore this email.

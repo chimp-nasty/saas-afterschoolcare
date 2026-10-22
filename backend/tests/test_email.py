@@ -43,7 +43,10 @@ BLOCKS = {
     EmailType.REFUND_CONFIRMATION: {"reference": "RF-1234", "amount": "$30.00", "bookings_url": "https://t.test/l/bookings"},
     EmailType.DOCUMENTS_REQUESTED: {"child_url": "https://t.test/l/account/children/x?state=manage-documents"},
     EmailType.CHILD_APPROVED: {"book_url": "https://t.test/l/bookings/new"},
+    EmailType.NEW_MESSAGE: {"messages_url": "https://t.test/l/actions"},
     EmailType.KIOSK_PIN: {"pin": "4821"},
+    # One query value: the HTML escapes "&" between values (correctly).
+    EmailType.STAFF_INVITE: {"invite_url": "https://t.test/l/reset-password?invite=TOKEN123"},
 }
 
 # Never in an email (docs/email-policy.md, section 2).
@@ -117,9 +120,14 @@ def test_locked_block_and_footer_always_present(email_type):
         assert "Sunshine OSHC" in part
 
 
-# Only the reset and PIN emails carry a secret, and only they require TLS.
+# Only the reset, staff invite and PIN emails carry a secret, and only they
+# require TLS.
 def test_only_emails_with_a_secret_require_tls():
-    assert {t for t, d in CATALOGUE.items() if d.requires_tls} == {EmailType.PASSWORD_RESET, EmailType.KIOSK_PIN}
+    assert {t for t, d in CATALOGUE.items() if d.requires_tls} == {
+        EmailType.PASSWORD_RESET,
+        EmailType.STAFF_INVITE,
+        EmailType.KIOSK_PIN,
+    }
 
 
 # ---------------------------------------------------------------------------

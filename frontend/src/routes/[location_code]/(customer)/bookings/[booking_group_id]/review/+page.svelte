@@ -2,7 +2,9 @@
     Review a booking group. Pending: continue to Stripe, or cancel it and
     release the places. Confirmed: refund single days still inside their
     refund window (the webhook finishes each refund, so it shows as
-    processing for a few seconds). Other statuses explain where it is.
+    processing for a few seconds); after it, until the session starts,
+    cancel a day without a refund, and put it back while there's a place.
+    Other statuses explain where it is.
 -->
 <script lang="ts">
     import { goto, invalidate } from "$app/navigation";
@@ -14,6 +16,7 @@
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import { confirmAction } from "$lib/components/overlays/confirm.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import ReviewBooking, { type ReviewChild } from "$lib/features/bookings/components/ReviewBooking.svelte";
     import CentreCard from "$lib/features/location/components/CentreCard.svelte";
 
@@ -72,6 +75,12 @@
         },
     };
 
+    // Cancelled after the refund cutoff: paid, so days can still be put back.
+    const CANCELLED_PAID_MESSAGE = {
+        title: "This booking was cancelled",
+        body: "It was cancelled after the refund cutoff, so it wasn't refunded. You can put a session back until it starts, if there's still a place.",
+    };
+
     const REFUNDED_MESSAGE = {
         title: "This booking was refunded",
         body: "The money has gone back to your card, and the places were released.",
@@ -94,6 +103,10 @@
     const statusMessage = $derived.by(() => {
         if (isFullyRefunded) {
             return REFUNDED_MESSAGE;
+        }
+
+        if (group.status === "CANCELLED" && group.bookings.some((booking) => booking.payment_status === "PAID")) {
+            return CANCELLED_PAID_MESSAGE;
         }
 
         const message = STATUS_MESSAGES[group.status];
@@ -163,6 +176,33 @@
         });
     }
 
+    // --- Cancelling without a refund, and putting back ----------------------
+
+    async function cancelDay(booking: BookingGroupLineResponse) {
+        await confirmAction({
+            title: "Cancel this session?",
+            message: `${booking.child_name} on ${formatDate(booking.service_date)}. It's after the refund cutoff, so you won't get a refund. You can put it back until the session starts, if there's still a place.`,
+            confirmLabel: "Cancel session",
+            tone: "danger",
+            action: async () => {
+                await bookingApi.cancel(booking.id);
+                await invalidate("app:booking-group");
+            },
+        });
+    }
+
+    async function reinstateDay(booking: BookingGroupLineResponse) {
+        await confirmAction({
+            title: "Put this session back?",
+            message: `${booking.child_name} on ${formatDate(booking.service_date)}, if there's still a place. You've already paid for it.`,
+            confirmLabel: "Put back",
+            action: async () => {
+                await bookingApi.reinstate(booking.id);
+                await invalidate("app:booking-group");
+            },
+        });
+    }
+
     async function cancelBooking() {
         await confirmAction({
             title: "Cancel this booking?",
@@ -191,13 +231,10 @@
 
     {#if group.status !== "PENDING"}
         <Card border>
-            <h2 class="text-lg font-extrabold text-(--text)">
-                {statusMessage?.title ?? "This booking can't be changed"}
-            </h2>
-
-            <p class="text-sm text-(--text-muted)">
-                {statusMessage?.body ?? ""}
-            </p>
+            <SectionHeading
+                title={statusMessage?.title ?? "This booking can't be changed"}
+                description={statusMessage?.body}
+            />
 
             {#if group.receipt_url}
                 <HyperTextLink href={group.receipt_url} external>
@@ -236,6 +273,32 @@
                     {booking.refund_status === "FAILED"
                         ? "Last refund didn't go through"
                         : `Until ${formatDate(booking.refundable_until)}`}
+                </span>
+            {:else if booking?.is_cancellable}
+                <Button
+                    variant="ghost"
+                    onclick={() => cancelDay(booking)}
+                >
+                    Cancel
+                </Button>
+
+                <span class="text-sm text-(--text-muted)">
+                    No refund
+                </span>
+            {:else if booking?.is_reinstatable}
+                <Button
+                    variant="ghost"
+                    onclick={() => reinstateDay(booking)}
+                >
+                    Put back
+                </Button>
+
+                <span class="text-sm text-(--text-muted)">
+                    Cancelled
+                </span>
+            {:else if booking?.booking_status === "CANCELLED" && booking.payment_status === "PAID"}
+                <span class="text-sm text-(--text-muted)">
+                    Cancelled
                 </span>
             {:else if booking?.booking_status === "CONFIRMED"}
                 <span class="text-sm text-(--text-muted)">

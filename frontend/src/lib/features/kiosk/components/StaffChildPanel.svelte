@@ -1,7 +1,9 @@
 <!--
     One child at the staff kiosk, once a staff member has entered their PIN
     for this task: where they're up to, and the staff actions for it
-    (docs/kiosk-procedures.md, section 5). Signing out shows the family's
+    (docs/kiosk-procedures.md, section 5). The family's phone and their
+    emergency contact (for when the parent can't be reached; not someone
+    who may collect) are at the top. Signing out shows the family's
     pickup list with each person's photo ID status. Someone whose ID hasn't
     been sighted can still collect (approved without ID the first time), but
     every such sign-out asks first, until their ID is checked. Anyone else
@@ -16,12 +18,15 @@
 	import { untrack } from 'svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
+	import CheckboxRow from '$lib/components/forms/CheckboxRow.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
 	import { confirmAction } from '$lib/components/overlays/confirm.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 	import PickupIdPill from './PickupIdPill.svelte';
 
 	import type { RollEntryResponse, RollPickupPersonResponse } from '$lib/api/schema';
 	import { formatEnum, formatPhone, formatTimestamp } from '$lib/utils/helpers';
+	import { emergencyRelationLabel } from '$lib/features/customer/emergency';
 	import { formatClock } from '../kiosk';
 	import { pickupIdStatus } from '../roll';
 
@@ -130,10 +135,17 @@
 
 <div class="flex flex-col gap-5">
 	<div class="flex flex-col gap-1">
-		<p class="text-base text-(--text-muted)">
+		<p class="text-lg text-(--text-muted)">
 			Family: {entry.family_first_name} {entry.family_last_name}
 			{#if entry.family_phone}· {formatPhone(entry.family_phone)}{/if}
 		</p>
+
+		{#if entry.emergency_contact_name}
+			<p class="text-lg text-(--text-muted)">
+				Emergency contact: {entry.emergency_contact_name} ({emergencyRelationLabel(entry)})
+				{#if entry.emergency_contact_phone}· {formatPhone(entry.emergency_contact_phone)}{/if}
+			</p>
+		{/if}
 
 		{#if entry.signed_in_at}
 			<p class="text-lg text-(--text)">Signed in {formatClock(entry.signed_in_at)} by {entry.signed_in_by}</p>
@@ -162,9 +174,7 @@
 		</Field>
 	{/if}
 
-	{#if error}
-		<p class="text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
-	{/if}
+	<ErrorText size="kiosk" message={error} />
 
 	{#if !entry.signed_in_at}
 		<Button fullWidth isLoading={busy} isDisabled={busy} onclick={() => onsignin(at())}>
@@ -186,27 +196,23 @@
 			<div class="flex flex-col gap-3">
 				{#if siblings.length}
 					<div class="flex flex-col gap-2">
-						<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Going with {entry.child_first_name}</p>
+						<p class="label-text">Going with {entry.child_first_name}</p>
 						<ul class="flex flex-col rounded-lg border border-(--border)">
 							{#each siblings as sibling (sibling.booking_id)}
-								<li class="border-b border-(--border) last:border-b-0">
-									<label class="flex min-h-12 items-center gap-3 px-4 py-2">
-										<input
-											type="checkbox"
-											class="size-5"
-											checked={also.includes(sibling.booking_id)}
-											onchange={() => toggleSibling(sibling.booking_id)}
-										/>
-										<span class="text-base font-semibold text-(--text)">{sibling.child_first_name} {sibling.child_last_name}</span>
-										<span class="text-sm text-(--text-muted)">{sibling.service_name}</span>
-									</label>
+								<li class="border-b border-(--border) px-4 py-1 last:border-b-0">
+									<CheckboxRow
+										checked={also.includes(sibling.booking_id)}
+										title={`${sibling.child_first_name} ${sibling.child_last_name}`}
+										help={sibling.service_name}
+										onchange={() => toggleSibling(sibling.booking_id)}
+									/>
 								</li>
 							{/each}
 						</ul>
 					</div>
 				{/if}
 
-				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Collected by</p>
+				<p class="label-text">Collected by</p>
 
 				{#each pickups as person (person.pickup_person_id)}
 					{@const status = pickupIdStatus(person)}
@@ -214,7 +220,7 @@
 						<div class="flex flex-col gap-1">
 							<p class="text-lg font-semibold text-(--text)">{person.first_name} {person.last_name}</p>
 							<p class="text-sm text-(--text-muted)">{formatEnum(person.relation)} · {formatPhone(person.phone)}</p>
-							<PickupIdPill {person} />
+							<PickupIdPill {person} size="kiosk" />
 							{#if status === 'not_sighted' && person.staff_approved_at}
 								<p class="text-sm text-(--text-muted)">Approved without ID {formatTimestamp(person.staff_approved_at)}</p>
 							{/if}

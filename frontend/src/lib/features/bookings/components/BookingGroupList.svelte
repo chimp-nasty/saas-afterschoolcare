@@ -5,6 +5,7 @@
 <script lang="ts">
     import Button from "$lib/components/actions/Button.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
+    import EmptyState from "$lib/components/text/EmptyState.svelte";
 
     import type { BookingGroupSummaryResponse } from "$lib/api/schema";
     import { BOOKING_STATUS_LABELS } from "$lib/features/bookings/status";
@@ -51,9 +52,7 @@
             ]}
         />
     {:else}
-        <p class="px-1 py-4 text-sm text-(--text-muted)">
-            {emptyMessage}
-        </p>
+        <EmptyState message={emptyMessage} />
     {/each}
 
     {#if hasMore}

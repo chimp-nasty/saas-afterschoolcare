@@ -86,6 +86,21 @@ def _is_refundable_by_admin():
     return func.public.booking_is_refundable(Booking.id, True)
 
 
+def _is_cancellable():
+    """
+    Whether it can be cancelled without a refund now: once the family's
+    refund window has closed, until the session starts. The rule lives in
+    the database (public.booking_is_cancellable, schema/0004), where the
+    booking trigger uses it too; the same for families and admins.
+    """
+    return func.public.booking_is_cancellable(Booking.id)
+
+
+def _is_reinstatable():
+    """Whether a booking cancelled without a refund can be put back (until its session starts)."""
+    return func.public.booking_is_reinstatable(Booking.id)
+
+
 def _latest_refund_status():
     return (
         select(Refund.status)
@@ -354,6 +369,33 @@ class BookingRepository(Repository):
 
         return result.rowcount
 
+    def set_paid_status(
+        self,
+        *,
+        booking_id: UUID,
+        from_status: BookingStatus,
+        to_status: BookingStatus,
+    ) -> int:
+        """
+        Cancel a paid booking without a refund (CONFIRMED -> CANCELLED), or
+        reinstate it (CANCELLED -> CONFIRMED); RLS: the family's own, or the
+        location's for admins. Only a paid booking in from_status moves (0
+        rows otherwise). Whether it may now, and when it was cancelled, are
+        the database's (trg_bookings_cancel_rules; a reinstated booking
+        passes the booking rules again).
+        """
+        result = self.db.execute(
+            update(Booking)
+            .where(
+                Booking.id == booking_id,
+                Booking.booking_status == from_status,
+                Booking.payment_status == PaymentStatus.PAID,
+            )
+            .values(booking_status=to_status)
+        )
+
+        return result.rowcount
+
     def settle_pending_for_group(
         self,
         *,
@@ -530,6 +572,8 @@ class BookingRepository(Repository):
                 *_session_times(),
                 _refundable_until().label("refundable_until"),
                 _is_refundable_by_family().label("is_refundable"),
+                _is_cancellable().label("is_cancellable"),
+                _is_reinstatable().label("is_reinstatable"),
                 _latest_refund_status().label("refund_status"),
             )
             .join(

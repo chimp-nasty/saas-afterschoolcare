@@ -127,7 +127,7 @@
 			border-none
 			bg-transparent
 			p-0
-			font-normal
+			font-semibold
 			tracking-normal
 			cursor-pointer
 			text-(--hyperlink)

@@ -6,6 +6,10 @@
 -->
 <script lang="ts">
 	import Button from '$lib/components/actions/Button.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
+	import LabelValueList from '$lib/components/text/LabelValueList.svelte';
+	import Notice from '$lib/components/text/Notice.svelte';
 
 	import type { ChildMedicalResponse } from '$lib/api/schema';
 	import { DOCUMENT_TYPE_LABELS } from '$lib/features/children/documents';
@@ -34,32 +38,27 @@
 </script>
 
 {#if error}
-	<p class="text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
+	<ErrorText size="kiosk" message={error} />
 {:else if !medical}
-	<p class="text-base text-(--text-muted)">Loading medical details…</p>
+	<p class="text-lg text-(--text-muted)">Loading medical details…</p>
 {:else}
 	{@const status = KIOSK_REVIEW_STATUS[medical.review_status]}
 	<div class="flex flex-col gap-5">
-		<p
-			class={[
-				'rounded-lg px-4 py-3 text-base font-semibold',
-				status.reviewed ? 'bg-(--success-soft) text-(--success-text)' : 'bg-(--warning-soft) text-(--warning-text)'
-			]}
-		>
+		<Notice tone={status.reviewed ? 'success' : 'warning'} size="kiosk">
 			{status.reviewed ? '✓' : '⚠'} {status.label} · {formatTimestamp(medical.status_since)}
-		</p>
+		</Notice>
 
-		{#each sections as section (section.label)}
-			<div class="flex flex-col gap-1">
-				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">{section.label}</p>
-				<p class="text-base whitespace-pre-line text-(--text)">{section.value}</p>
+		{#if sections.length}
+			<!-- The family's own line breaks are kept. -->
+			<div class="[&_dd]:whitespace-pre-line">
+				<LabelValueList items={sections} />
 			</div>
 		{:else}
-			<p class="text-base text-(--text-muted)">No medical details entered.</p>
-		{/each}
+			<EmptyState size="kiosk" message="No medical details entered." />
+		{/if}
 
 		<div class="flex flex-col gap-2">
-			<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Documents</p>
+			<p class="label-text">Documents</p>
 
 			{#each medical.documents as document (document.id)}
 				<div class="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-(--border) pb-2 last:border-b-0">
@@ -70,7 +69,7 @@
 					<Button variant="ghost" onclick={() => onview(document.id)}>View</Button>
 				</div>
 			{:else}
-				<p class="text-base text-(--text-muted)">No documents.</p>
+				<EmptyState size="kiosk" message="No documents." />
 			{/each}
 
 			{#if medical.documents.length}

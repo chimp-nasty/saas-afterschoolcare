@@ -5,11 +5,13 @@
 
     import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Button from "$lib/components/actions/Button.svelte";
+    import CheckboxRow from "$lib/components/forms/CheckboxRow.svelte";
     import Card from "$lib/components/layout/Card.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import Modal from "$lib/components/overlays/Modal.svelte";
     import { confirmAction } from "$lib/components/overlays/confirm.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import KioskDeviceCard from "$lib/features/kiosk/components/KioskDeviceCard.svelte";
     import { KIOSK_KINDS, type KioskKind } from "$lib/features/kiosk/devices";
 
@@ -138,38 +140,29 @@
 
     {#if data.settings}
         <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-extrabold text-(--text)">Kiosk rules</h2>
+            <SectionHeading title="Kiosk rules" />
 
             <Card border>
-                <label class="flex min-h-12 items-start gap-3">
-                    <input
-                        type="checkbox"
-                        class="mt-1 size-5 shrink-0"
-                        checked={data.settings.enforce_service_times}
-                        disabled={savingSettings}
-                        onchange={(event) => setServiceTimes(event.currentTarget.checked)}
-                    />
-                    <span class="flex flex-col gap-1">
-                        <span class="text-base font-semibold text-(--text) mb-2">
-                            Enforce Service Times
-                        </span>
-                        <span class="text-sm text-(--text-muted)">
-                            Applies at both kiosks. Outside those times, children can't be signed in or out on the kiosks; staff deal with it in person.
-                        </span>
-                    </span>
-                </label>
+                <CheckboxRow
+                    checked={data.settings.enforce_service_times}
+                    title="Enforce service times"
+                    help="Applies at both kiosks. Outside those times, children can't be signed in or out on the kiosks; staff deal with it in person."
+                    disabled={savingSettings}
+                    onchange={setServiceTimes}
+                />
             </Card>
         </section>
     {/if}
 </Page>
 
-<Modal bind:this={codeModal} title="Set up the tablet" onclose={closeCode}>
+<Modal
+    bind:this={codeModal}
+    title="Set up the tablet"
+    description={`On the tablet, open ${kioskUrl} and type this code:`}
+    onclose={closeCode}
+>
     {#if setup}
         <div class="flex flex-col gap-4">
-            <p class="text-base text-(--text)">
-                On the tablet, open <span class="font-semibold break-all">{kioskUrl}</span> and type this code:
-            </p>
-
             <p class="text-center text-4xl font-extrabold tracking-[0.3em] text-(--text)">{setup.setup_code}</p>
 
             <p class="text-center text-sm text-(--text-muted)">

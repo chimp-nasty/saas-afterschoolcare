@@ -4,6 +4,8 @@ from fastapi import APIRouter
 from app.auth.routes.auth import router as auth_router
 from app.auth.routes.staff_pin import router as staff_pin_router
 from app.auth.routes.account import router as account_router
+from app.auth.routes.staff_accounts import router as staff_accounts_router
+from app.public.routes.families import router as families_router
 
 # tenancy
 from app.tenancy.routes.location_branding import router as location_branding_router
@@ -37,6 +39,8 @@ api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(staff_pin_router)
 api_router.include_router(account_router)
+api_router.include_router(staff_accounts_router)
+api_router.include_router(families_router)
 
 # tenancy
 api_router.include_router(location_branding_router)

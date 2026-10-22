@@ -40,3 +40,15 @@ class ChildAgeOutOfRangeError(ApplicationError):
         super().__init__(
             message=f"Children must be aged {min_age} to {max_age}"
         )
+
+
+class ChildNoteNotFoundError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Note not found"
+    result = "failed"
+
+
+class ChildNoteFixedError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "A note can't be changed once saved. Delete it and write it again."
+    result = "denied"

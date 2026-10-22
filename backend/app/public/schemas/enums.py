@@ -57,6 +57,18 @@ class RefundStatus(StrEnum):
 
 class PickupRelation(StrEnum):
     ACCOUNT_HOLDER = "account_holder"
+    PARENT_GUARDIAN = "parent_guardian"
+    GRANDPARENT = "grandparent"
+    AUNT_UNCLE = "aunt_uncle"
+    FAMILY_FRIEND = "family_friend"
+    NEIGHBOUR = "neighbour"
+    NANNY_BABYSITTER = "nanny_babysitter"
+    OTHER = "other"
+
+
+# How a family's emergency contact is related to them (not a pickup relation).
+class EmergencyRelation(StrEnum):
+    PARENT_GUARDIAN = "parent_guardian"
     GRANDPARENT = "grandparent"
     AUNT_UNCLE = "aunt_uncle"
     FAMILY_FRIEND = "family_friend"
@@ -90,3 +102,5 @@ class MedicalReviewStatus(StrEnum):
 class MedicalReviewDecision(StrEnum):
     APPROVED = "approved"
     DOCUMENTATION_REQUESTED = "documentation_requested"
+    # An approved child back to waiting on staff (pending); the family isn't told.
+    REOPEN = "reopen"

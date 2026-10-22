@@ -18,11 +18,14 @@ from app.main import app
 
 # Every customer gets their own phone (new_phone): a phone number belongs to
 # one family across the tenant, and their pickup row follows it.
+# Everything booking needs except the two phones (made per customer).
 COMPLETE_PROFILE = {
     "address_line_1": "1 Test Street",
     "suburb": "Brisbane",
     "state": "QLD",
     "postcode": "4000",
+    "emergency_contact_name": "Robin Contact",
+    "emergency_contact_relation": "grandparent",
 }
 
 PASSWORD = "Password123"
@@ -317,7 +320,12 @@ class Api:
 
         if complete_profile:
             phone = new_phone()
-            response = client.patch("/customer/v1/profile", json={**COMPLETE_PROFILE, "phone": phone})
+            # The emergency contact's phone must differ from the parent's.
+            emergency_phone = next(p for p in iter(new_phone, None) if p != phone)
+            response = client.patch(
+                "/customer/v1/profile",
+                json={**COMPLETE_PROFILE, "phone": phone, "emergency_contact_phone": emergency_phone},
+            )
             assert response.status_code == 200, response.text
 
         return Customer(client=client, email=email, password=PASSWORD, phone=phone)

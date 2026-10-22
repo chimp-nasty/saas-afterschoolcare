@@ -31,7 +31,7 @@
 			aria-expanded={isOpen}
 			aria-controls={contentId}
 			onclick={() => (isOpen = !isOpen)}
-			class="flex min-h-11 flex-1 items-center justify-between gap-2 text-left text-xs font-extrabold uppercase tracking-wide text-(--text-muted)"
+			class="flex min-h-11 flex-1 items-center justify-between gap-2 text-left label-text"
 		>
 			{title}
 

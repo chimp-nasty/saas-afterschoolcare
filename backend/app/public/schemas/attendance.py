@@ -16,6 +16,11 @@ class RollEntryResponse(BaseModel):
     family_first_name: str
     family_last_name: str
     family_phone: str | None
+    # The family's emergency contact, for when the parent can't be reached.
+    emergency_contact_name: str | None
+    emergency_contact_phone: str | None
+    emergency_contact_relation: str | None
+    emergency_contact_relation_other: str | None
 
     service_name: str
     start_time: time
@@ -111,6 +116,8 @@ class RunSheetEntryResponse(BaseModel):
     is_late: bool
     has_medical: bool
     medical_review_status: str | None
+    # Staff have written notes about the child (read at the kiosk).
+    has_notes: bool
 
 
 class RunSheetSessionResponse(BaseModel):

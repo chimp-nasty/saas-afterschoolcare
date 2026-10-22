@@ -58,7 +58,8 @@
 	dismissible={!isBusy}
 	onclose={() => confirmState.current && finish(false)}
 >
-	<p class="text-sm text-(--text-muted)">
+	<!-- What happens: body text, it's the point of the dialog. -->
+	<p class="text-base text-(--text)">
 		{request?.message}
 	</p>
 

@@ -10,6 +10,8 @@
 
 	import Button from '$lib/components/actions/Button.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 
 	import type { StaffKioskMemberResponse } from '$lib/api/schema';
 	import { formatTimestamp } from '$lib/utils/helpers';
@@ -52,7 +54,7 @@
 	<Card border>
 		<div class="flex flex-col items-center gap-4 py-4 text-center">
 			<p class="text-5xl font-extrabold text-(--text)">{formatClock(now)}</p>
-			<p class="text-base text-(--text-muted)">{formatTimestamp(now)}</p>
+			<p class="text-lg text-(--text-muted)">{formatTimestamp(now)}</p>
 
 			<div class="w-full max-w-xs">
 				<Button fullWidth onclick={onclock}>Clock in / out</Button>
@@ -61,7 +63,7 @@
 	</Card>
 
 	<section class="flex flex-col gap-3">
-		<h2 class="text-lg font-extrabold text-(--text)">On shift ({onShift.length})</h2>
+		<SectionHeading size="kiosk" title={`On shift (${onShift.length})`} />
 
 		<Card border padded={false}>
 			<ul class="flex flex-col">
@@ -78,14 +80,14 @@
 						{/if}
 					</li>
 				{:else}
-					<li class="px-5 py-3 text-base text-(--text-muted)">Nobody is clocked in.</li>
+					<li class="px-5"><EmptyState size="kiosk" message="Nobody is clocked in." /></li>
 				{/each}
 			</ul>
 		</Card>
 	</section>
 
 	<section class="flex flex-col gap-3">
-		<h2 class="text-lg font-extrabold text-(--text)">Clocked out today ({clockedOut.length})</h2>
+		<SectionHeading size="kiosk" title={`Clocked out today (${clockedOut.length})`} />
 
 		<Card border padded={false}>
 			<ul class="flex flex-col">
@@ -100,7 +102,7 @@
 						</span>
 					</li>
 				{:else}
-					<li class="px-5 py-3 text-base text-(--text-muted)">Nobody has clocked out yet.</li>
+					<li class="px-5"><EmptyState size="kiosk" message="Nobody has clocked out yet." /></li>
 				{/each}
 			</ul>
 		</Card>
@@ -108,7 +110,7 @@
 
 	{#if unclosed.length}
 		<section class="flex flex-col gap-3">
-			<h2 class="text-lg font-extrabold text-(--text)">Didn't clock out</h2>
+			<SectionHeading size="kiosk" title="Didn't clock out" />
 
 			<Card border padded={false}>
 				<ul class="flex flex-col">

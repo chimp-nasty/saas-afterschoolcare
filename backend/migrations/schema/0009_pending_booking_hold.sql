@@ -75,7 +75,11 @@ $$;
 
 -- Same rules as 0008, plus expiring the day's lapsed holds before
 -- counting ("LAPSED HOLDS"), and checking the child is still active and
--- within the service's age range on the day ("CHILD").
+-- within the service's age range on the day ("CHILD"). They also run when
+-- a booking cancelled without a refund is reinstated
+-- (trg_bookings_reinstate_rules): then the day may be today, since its own
+-- window (booking_is_reinstatable, schema/0004) runs until the session
+-- starts.
 CREATE OR REPLACE FUNCTION public.enforce_booking_rules()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -112,7 +116,7 @@ BEGIN
 
     -- An unknown day is left to fk_bookings_location_service_day.
     IF FOUND THEN
-        IF v_service_date <= (now() AT TIME ZONE v_timezone)::date THEN
+        IF TG_OP = 'INSERT' AND v_service_date <= (now() AT TIME ZONE v_timezone)::date THEN
             RAISE EXCEPTION 'Service day % is not in the future', v_service_date
                 USING ERRCODE = 'check_violation',
                       CONSTRAINT = 'ck_bookings_service_day_in_future',
@@ -208,3 +212,10 @@ BEGIN
     RETURN NEW;
 END;
 $$;
+
+-- A reinstated booking takes a place again, so it must fit like a new one.
+CREATE TRIGGER trg_bookings_reinstate_rules
+    BEFORE UPDATE OF booking_status ON public.bookings
+    FOR EACH ROW
+    WHEN (OLD.booking_status = 'CANCELLED' AND NEW.booking_status = 'CONFIRMED')
+    EXECUTE FUNCTION public.enforce_booking_rules();

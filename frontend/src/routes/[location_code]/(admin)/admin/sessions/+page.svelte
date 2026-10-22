@@ -9,10 +9,13 @@
     import { toast } from "svelte-sonner";
 
     import Button from "$lib/components/actions/Button.svelte";
+    import GridTable from "$lib/components/layout/GridTable.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import Modal from "$lib/components/overlays/Modal.svelte";
     import { confirmAction } from "$lib/components/overlays/confirm.svelte";
+    import EmptyState from "$lib/components/text/EmptyState.svelte";
+    import Pill from "$lib/components/text/Pill.svelte";
     import AddServiceDaysForm from "$lib/features/services/components/AddServiceDaysForm.svelte";
     import EditServiceDayForm from "$lib/features/services/components/EditServiceDayForm.svelte";
     import ServiceDayCapacityForm from "$lib/features/services/components/ServiceDayCapacityForm.svelte";
@@ -120,7 +123,7 @@
         });
     }
 
-    const columns = "grid grid-cols-[minmax(9rem,1.4fr)_minmax(9rem,1.4fr)_5rem_5rem_7rem_6rem_6rem] items-center gap-x-4";
+    const columns = "minmax(9rem,1.4fr) minmax(9rem,1.4fr) 5rem 5rem 7rem 6rem 6rem";
 </script>
 
 <Page width="wide">
@@ -132,7 +135,7 @@
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div class="flex flex-wrap items-end gap-3">
             <label class="flex flex-col gap-1">
-                <span class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Service</span>
+                <span class="label-text">Service</span>
                 <select value={data.serviceId} onchange={(event) => show({ service: event.currentTarget.value })}>
                     {#each data.services as option (option.id)}
                         <option value={option.id}>{option.service_name}</option>
@@ -155,48 +158,40 @@
     </div>
 
     {#if !service}
-        <p class="text-base text-(--text-muted)">No services are offered yet.</p>
+        <EmptyState message="No services are offered yet." />
     {:else}
-        <div class="overflow-x-auto rounded-2xl border border-(--border) bg-(--surface)">
-            <div class="min-w-[52rem]" role="table" aria-label={`${service.service_name} days`}>
-                <div class={[columns, "border-b border-(--border) bg-(--surface-muted) px-5 py-2"]} role="row">
-                    {#each ["Date", "Status", "Places", "Booked", "Awaiting pay", "Left", ""] as header, index (index)}
-                        <span class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)" role="columnheader">{header}</span>
-                    {/each}
-                </div>
-
-                {#each data.days as day (day.id)}
-                    <div
-                        class={[columns, "min-h-12 border-b border-(--border) px-5 py-2 last:border-b-0", day.is_past && "opacity-60"]}
-                        role="row"
-                    >
-                        <span class="text-base font-semibold text-(--text)" role="cell">{formatDate(day.service_date)}</span>
-                        <span class="truncate text-base text-(--text)" role="cell">
-                            {#if day.is_open}
-                                Open
-                            {:else}
-                                <span class="font-semibold text-(--warning-text)">Closed</span>{#if day.closed_reason}<span class="text-(--text-muted)"> · {day.closed_reason}</span>{/if}
-                            {/if}
-                        </span>
-                        <span class="text-base text-(--text)" role="cell">{day.capacity}</span>
-                        <span class="text-base text-(--text)" role="cell">{day.booked}</span>
-                        <span class="text-base text-(--text-muted)" role="cell">{day.awaiting_payment}</span>
-                        <span class={["text-base", day.places_left === 0 && day.is_open ? "font-extrabold text-(--danger-text)" : "text-(--text)"]} role="cell">
-                            {day.is_open ? (day.places_left === 0 ? "Full" : day.places_left) : "—"}
-                        </span>
-                        <span role="cell">
-                            {#if canChange && !day.is_past}
-                                <Button variant="ghost" fullWidth onclick={() => open("edit", day)}>Edit</Button>
-                            {/if}
-                        </span>
-                    </div>
-                {:else}
-                    <p class="px-5 py-3 text-base text-(--text-muted)">
-                        No {service.service_name.toLowerCase()} days in {monthLabel}.{#if canChange} Use Add days to set them up.{/if}
-                    </p>
-                {/each}
-            </div>
-        </div>
+        <GridTable
+            items={data.days}
+            key={(day) => day.id}
+            {columns}
+            headers={["Date", "Status", "Places", "Booked", "Awaiting pay", "Left", ""]}
+            label={`${service.service_name} days`}
+            minWidth="52rem"
+            rowClass={(day) => day.is_past && "opacity-60"}
+            empty={`No ${service.service_name.toLowerCase()} days in ${monthLabel}.${canChange ? " Use Add days to set them up." : ""}`}
+        >
+            {#snippet row(day)}
+                <span class="text-base font-semibold text-(--text)" role="cell">{formatDate(day.service_date)}</span>
+                <span class="text-base text-(--text)" role="cell">
+                    {#if day.is_open}
+                        Open
+                    {:else}
+                        <Pill tone="warning">Closed</Pill>{#if day.closed_reason}<span class="text-(--text-muted)"> · {day.closed_reason}</span>{/if}
+                    {/if}
+                </span>
+                <span class="text-base text-(--text)" role="cell">{day.capacity}</span>
+                <span class="text-base text-(--text)" role="cell">{day.booked}</span>
+                <span class="text-base text-(--text-muted)" role="cell">{day.awaiting_payment}</span>
+                <span class={["text-base", day.places_left === 0 && day.is_open ? "font-extrabold text-(--danger-text)" : "text-(--text)"]} role="cell">
+                    {day.is_open ? (day.places_left === 0 ? "Full" : day.places_left) : "—"}
+                </span>
+                <span role="cell">
+                    {#if canChange && !day.is_past}
+                        <Button variant="ghost" fullWidth onclick={() => open("edit", day)}>Edit</Button>
+                    {/if}
+                </span>
+            {/snippet}
+        </GridTable>
     {/if}
 </Page>
 

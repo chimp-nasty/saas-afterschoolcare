@@ -26,7 +26,7 @@
 			<p class="text-2xl font-extrabold text-(--primary)">{centreName}</p>
 
 			{#if label}
-				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">{label}</p>
+				<p class="label-text">{label}</p>
 			{/if}
 		</div>
 

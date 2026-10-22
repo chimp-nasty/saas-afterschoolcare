@@ -90,7 +90,9 @@ CREATE TYPE public.email_type_enum AS ENUM (
     'refund_confirmation',
     'documents_requested',
     'child_approved',
-    'kiosk_pin'
+    'kiosk_pin',
+    'staff_invite',
+    'new_message'
 );
 
 -- queued: logged, not yet handed to the provider. sent: accepted by the
@@ -128,6 +130,19 @@ CREATE TYPE public.refund_status_enum AS ENUM (
 
 CREATE TYPE public.pickup_relation_enum AS ENUM (
     'account_holder',
+    'parent_guardian',
+    'grandparent',
+    'aunt_uncle',
+    'family_friend',
+    'neighbour',
+    'nanny_babysitter',
+    'other'
+);
+
+-- How a family's emergency contact is related to them (customer_profile).
+-- Separate from pickup relations: an emergency contact isn't a pickup person.
+CREATE TYPE public.emergency_relation_enum AS ENUM (
+    'parent_guardian',
     'grandparent',
     'aunt_uncle',
     'family_friend',

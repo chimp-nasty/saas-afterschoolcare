@@ -19,6 +19,10 @@
 	import Field from '$lib/components/forms/Field.svelte';
 	import Modal from '$lib/components/overlays/Modal.svelte';
 	import { confirmAction } from '$lib/components/overlays/confirm.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
+	import Notice from '$lib/components/text/Notice.svelte';
+	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 	import KioskScreen from './KioskScreen.svelte';
 	import PinEntry from './PinEntry.svelte';
 	import StaffActionPlans from './StaffActionPlans.svelte';
@@ -27,6 +31,7 @@
 	import StaffChildPanel from './StaffChildPanel.svelte';
 	import StaffIdentify from './StaffIdentify.svelte';
 	import StaffMedicalPanel from './StaffMedicalPanel.svelte';
+	import StaffNotesPanel from './StaffNotesPanel.svelte';
 	import StaffRoll from './StaffRoll.svelte';
 	import StaffShifts from './StaffShifts.svelte';
 
@@ -35,6 +40,7 @@
 	import type {
 		ActionPlanResponse,
 		ChildMedicalResponse,
+		ChildNoteResponse,
 		ChildSearchResultResponse,
 		FamilyBookingResponse,
 		RollPickupPersonResponse,
@@ -136,6 +142,9 @@
 	let childTab = $state<string>(kioskChildTabs.ATTENDANCE);
 	let medical = $state<ChildMedicalResponse | null>(null);
 	let medicalError = $state<string | null>(null);
+	// The child's Notes tab (staff's notes), loaded the same way.
+	let notes = $state<ChildNoteResponse[] | null>(null);
+	let notesError = $state<string | null>(null);
 	let plans = $state<ActionPlanResponse[] | null>(null);
 	// A family's bookings: the child's Bookings tab, or an admin's refund.
 	let familyBookings = $state<FamilyBookingResponse[] | null>(null);
@@ -167,6 +176,7 @@
 			: []
 	);
 	const hasMedical = $derived(board.find((b) => b.booking_id === bookingId)?.has_medical ?? false);
+	const hasNotes = $derived(board.find((b) => b.booking_id === bookingId)?.has_notes ?? false);
 
 	// Before school children (here) can be sent to school from their panel.
 	const canSendToSchool = $derived(
@@ -270,6 +280,8 @@
 		release = null;
 		medical = null;
 		medicalError = null;
+		notes = null;
+		notesError = null;
 		familyBookings = null;
 		familyBookingsError = null;
 		searchText = '';
@@ -298,6 +310,7 @@
 		roll = null;
 		release = null;
 		medical = null;
+		notes = null;
 		plans = null;
 		familyBookings = null;
 		searchResults = null;
@@ -500,6 +513,26 @@
 			void loadMedical(entry.child_id);
 		}
 	});
+
+	$effect(() => {
+		if (step === 'child' && childTab === kioskChildTabs.NOTES && entry && !notes && !notesError) {
+			void loadNotes(entry.child_id);
+		}
+	});
+
+	async function loadNotes(childId: string) {
+		if (!staff) return;
+
+		const response = await api.notes(staff, childId);
+
+		if (response.status === 401 || response.status === 403) {
+			endTask({ text: messageOf(response), tone: 'danger' });
+			return;
+		}
+
+		if (response.ok && response.data) notes = response.data;
+		else notesError = messageOf(response);
+	}
 
 	async function loadMedical(childId: string) {
 		if (!staff) return;
@@ -745,15 +778,7 @@
 <KioskScreen {centreName} label="Staff kiosk">
 	<div class="flex flex-col gap-6">
 		{#if notice}
-			<p
-				class={[
-					'rounded-lg px-4 py-3 text-lg font-semibold',
-					notice.tone === 'success' ? 'bg-(--success-soft) text-(--success-text)' : 'bg-(--danger-soft) text-(--danger-text)'
-				]}
-				role="status"
-			>
-				{notice.text}
-			</p>
+			<Notice tone={notice.tone} size="kiosk">{notice.text}</Notice>
 		{/if}
 
 		<TabbedPanels {tabs} bind:activeTab>
@@ -762,7 +787,7 @@
 					<div class="flex flex-col gap-6">
 						<div class="flex flex-wrap items-end justify-between gap-4">
 							<label class="flex flex-col gap-1">
-								<span class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Day</span>
+								<span class="label-text">Day</span>
 								<input type="date" max={today || undefined} bind:value={date} onchange={() => void loadBoard()} />
 							</label>
 
@@ -773,9 +798,7 @@
 							</div>
 						</div>
 
-						{#if boardError}
-							<p class="text-lg font-semibold text-(--danger-text)" role="alert">{boardError}</p>
-						{/if}
+						<ErrorText size="kiosk" message={boardError} />
 
 						<!-- A new day picks its default session tab again. -->
 						{#key date}
@@ -805,15 +828,15 @@
 					/>
 				{:else if id === kioskTabs.ADMIN}
 					<section class="flex flex-col gap-3">
-						<div class="flex flex-wrap items-end justify-between gap-4">
-							<div class="flex flex-col gap-1">
-								<h2 class="text-lg font-extrabold text-(--text)">Refunds</h2>
-								<p class="text-base text-(--text-muted)">
-									Admins only. One booking (one child, one day) at a time, in full, up to and including its day.
-								</p>
-							</div>
-							<Button onclick={() => startTask({ kind: 'refund' })}>Start a refund</Button>
-						</div>
+						<SectionHeading
+							size="kiosk"
+							title="Refunds"
+							description="Admins only. One booking (one child, one day) at a time, in full, up to and including its day."
+						>
+							{#snippet actions()}
+								<Button onclick={() => startTask({ kind: 'refund' })}>Start a refund</Button>
+							{/snippet}
+						</SectionHeading>
 					</section>
 				{/if}
 			{/snippet}
@@ -859,16 +882,28 @@
 		{:else if step === 'child' && entry}
 			<div class="flex flex-col gap-4">
 				{#if hasMedical && childTab === kioskChildTabs.ATTENDANCE}
-					<div class="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg bg-(--danger-soft) px-4 py-2">
-						<p class="text-base font-semibold text-(--danger-text)">⚠ {entry.child_first_name} has medical details</p>
-						<Button variant="ghost" onclick={() => (childTab = kioskChildTabs.MEDICAL)}>See medical</Button>
-					</div>
+					<Notice tone="danger" size="kiosk">
+						⚠ {entry.child_first_name} has medical details
+						{#snippet actions()}
+							<Button variant="ghost" onclick={() => (childTab = kioskChildTabs.MEDICAL)}>See medical</Button>
+						{/snippet}
+					</Notice>
+				{/if}
+
+				{#if hasNotes && childTab === kioskChildTabs.ATTENDANCE}
+					<Notice tone="neutral" size="kiosk">
+						Staff have notes about {entry.child_first_name}
+						{#snippet actions()}
+							<Button variant="ghost" onclick={() => (childTab = kioskChildTabs.NOTES)}>See notes</Button>
+						{/snippet}
+					</Notice>
 				{/if}
 
 				<TabbedPanels
 					tabs={[
 						{ id: kioskChildTabs.ATTENDANCE, label: 'Attendance' },
 						{ id: kioskChildTabs.MEDICAL, label: 'Medical' },
+						{ id: kioskChildTabs.NOTES, label: 'Notes' },
 						{ id: kioskChildTabs.BOOKINGS, label: 'Bookings' }
 					]}
 					bind:activeTab={childTab}
@@ -876,6 +911,8 @@
 					{#snippet panel(tabId)}
 						{#if tabId === kioskChildTabs.MEDICAL}
 							<StaffMedicalPanel {medical} error={medicalError} onview={viewDocument} />
+						{:else if tabId === kioskChildTabs.NOTES}
+							<StaffNotesPanel {notes} error={notesError} />
 						{:else if tabId === kioskChildTabs.BOOKINGS}
 							<StaffFamilyBookings bookings={familyBookings} error={familyBookingsError} />
 						{:else}
@@ -942,16 +979,14 @@
 								</button>
 							</li>
 						{:else}
-							<li class="px-4 py-3 text-base text-(--text-muted)">No children found.</li>
+							<li class="px-4"><EmptyState size="kiosk" message="No children found." /></li>
 						{/each}
 					</ul>
 				{/if}
 			</form>
 		{:else if step === 'refund-bookings'}
 			<div class="flex flex-col gap-4">
-				{#if taskError}
-					<p class="text-lg font-semibold text-(--danger-text)" role="alert">{taskError}</p>
-				{/if}
+				<ErrorText size="kiosk" message={taskError} />
 
 				<StaffFamilyBookings bookings={familyBookings} error={familyBookingsError} {busy} onrefund={startRefund} />
 
@@ -1008,9 +1043,7 @@
 					{/snippet}
 				</Field>
 
-				{#if taskError}
-					<p class="text-lg font-semibold text-(--danger-text)" role="alert">{taskError}</p>
-				{/if}
+				<ErrorText size="kiosk" message={taskError} />
 
 				<div class="grid grid-cols-2 gap-3">
 					<Button variant="ghost" fullWidth onclick={() => (step = 'shift-choose')}>Back</Button>

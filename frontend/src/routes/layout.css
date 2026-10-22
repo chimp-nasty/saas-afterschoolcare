@@ -110,11 +110,20 @@ body {
 		color: var(--text-muted);
 	}
 
-	label {
-		@apply mb-1 block text-sm font-extrabold uppercase tracking-wide;
-
-		color: var(--text-muted);
+	/* A form field's label (Field): the label role. Only this class, so a
+	   <label> wrapping a checkbox or a filter doesn't restyle the text
+	   inside it. */
+	.field-label {
+		@apply label-text mb-1 block;
 	}
+}
+
+/* The label role (frontend/CLAUDE.md, "Text"): field labels, data row
+   labels, compact card titles, eyebrows, filter labels, table headers. */
+@utility label-text {
+	@apply text-xs font-extrabold uppercase tracking-wide;
+
+	color: var(--text-muted);
 }
 
 @keyframes bell-ring {

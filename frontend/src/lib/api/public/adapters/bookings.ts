@@ -86,6 +86,17 @@ export function createBookingApi(
 			);
 		},
 
+		// One paid booking, without a refund: after the refund cutoff,
+		// until its session starts. It stays paid, so it can be put back.
+		cancel(bookingId: string) {
+			return apiWrapper<null>(`${baseUrl}/${bookingId}/cancel`, { method: 'POST', fetcher });
+		},
+
+		// A booking cancelled without a refund, back again if there's a place.
+		reinstate(bookingId: string) {
+			return apiWrapper<null>(`${baseUrl}/${bookingId}/reinstate`, { method: 'POST', fetcher });
+		},
+
 		cancelGroup(bookingGroupId: string) {
 			return apiWrapper<null>(
 				`${baseUrl}/groups/${bookingGroupId}/cancel`,

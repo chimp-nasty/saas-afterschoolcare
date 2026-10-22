@@ -1,4 +1,9 @@
+<!--
+    A field's error, under the field (Field uses it): the shared ErrorText.
+-->
 <script lang="ts">
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
+
 	let {
 		message
 	}: {
@@ -7,7 +12,7 @@
 </script>
 
 {#if message}
-	<p class="mt-1 text-sm text-(--danger-text)">
-		{message}
-	</p>
+	<div class="mt-1">
+		<ErrorText {message} />
+	</div>
 {/if}

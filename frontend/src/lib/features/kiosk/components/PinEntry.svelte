@@ -5,6 +5,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 	import NumberPad from './NumberPad.svelte';
 
 	let {
@@ -52,7 +53,9 @@
 	</div>
 
 	{#if error}
-		<p class="max-w-md text-center text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
+		<div class="max-w-md text-center">
+			<ErrorText size="kiosk" message={error} />
+		</div>
 	{/if}
 
 	<NumberPad disabled={busy} ondigit={digit} onbackspace={() => (pin = pin.slice(0, -1))} />

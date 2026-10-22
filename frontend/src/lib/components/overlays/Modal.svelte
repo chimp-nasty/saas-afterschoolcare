@@ -18,12 +18,15 @@
 
 	let {
 		title,
+		description,
 		children,
 		actions,
 		dismissible = true,
 		onclose
 	}: {
 		title: string;
+		// One line under the title saying what this is for (secondary text).
+		description?: string;
 		children?: Snippet;
 		actions?: Snippet;
 		// False while something is running: Escape and the backdrop do nothing.
@@ -72,9 +75,15 @@
 	"
 >
 	<div class="flex flex-col gap-4">
-		<h2 class="text-lg font-extrabold text-(--text)">
-			{title}
-		</h2>
+		<div class="flex flex-col gap-1">
+			<h2 class="text-lg font-extrabold text-(--text)">
+				{title}
+			</h2>
+
+			{#if description}
+				<p class="text-sm text-(--text-muted)">{description}</p>
+			{/if}
+		</div>
 
 		{@render children?.()}
 

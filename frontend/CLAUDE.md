@@ -71,17 +71,43 @@ These keep features looking like one app. They're written for the customer-facin
 - Radius: `rounded-2xl` surfaces, `rounded-lg` buttons and tiles, `rounded-full` dots and pills. Nothing else.
 - Spacing: `gap-6` between page sections, `gap-4` inside a card.
 
+### Tables
+
+- Every table uses a shared component, never hand-built rows: `GridTable` (`components/layout/`) for lists read across (run sheets, staff, service days), `DataTable` for lists whose rows open a detail page (cards on a phone).
+- Rows are a fixed height (`ROW_HEIGHT_REM`, room for a 48px button): each cell is one line, vertically centred, cut off with "…". A tick, dash, pill or button never changes a row's height, and columns always line up.
+- Long lists get `maxRows` (a fixed height that scrolls, headers pinned); on a phone the table scrolls sideways inside itself, never the page.
+
 ### Text
 
 | Role | Classes |
 |---|---|
 | Page title | `text-2xl font-extrabold text-(--text)` (via `PageHeader`) |
 | Section title | `text-lg font-extrabold text-(--text)` |
-| Label (fields, data rows, card titles, eyebrows) | `text-xs font-extrabold uppercase tracking-wide text-(--text-muted)` |
+| Label (fields, data rows, card titles, eyebrows, filters, table headers) | `label-text` (`text-xs font-extrabold uppercase tracking-wide text-(--text-muted)`, defined once in `layout.css`) |
 | Body | `text-base text-(--text)`; values `font-semibold` |
 | Secondary | `text-sm text-(--text-muted)` |
 
 Only `font-semibold` and `font-extrabold`; no `font-medium` or `font-bold`.
+
+### Shared text components
+
+Each text role has one look, set by a component, never by hand-written classes (`components/text/`, `components/forms/`):
+
+| Role | Use |
+|---|---|
+| Section title (+ one-line description, actions beside it) | `SectionHeading` (`details` snippet when the description needs markup) |
+| A label on its own (a filter, a list's heading, an eyebrow) | the `label-text` class |
+| Label and value pairs (value semibold, "—" when empty) | `LabelValueList` |
+| Nothing to show ("No bookings yet.") | `EmptyState`: secondary text, left-aligned |
+| An error (a field's or an action's) | `ErrorText` (`Field` uses it via `InlineError`) |
+| How things stand, in a coloured box | `Notice` with a `tone` |
+| A status badge | `Pill` with a `tone` |
+| A checkbox with a title and help line | `CheckboxRow` |
+| A modal's intro line | `Modal`'s `description` |
+| A compact data card's title | `TitleCard` (the label role); cards a page is built from use `SectionHeading` |
+
+- Form labels are `Field`'s (`.field-label`, the label role). A plain `<label>` wrapping a checkbox or filter has no styling of its own, so the text inside it keeps its role.
+- The kiosk tablet is read at arm's length: these components take `size="kiosk"` (one size up; empty states centred) instead of kiosk copies. Kiosk screen titles are `text-3xl`, section titles `text-xl`, subtitles `text-lg` muted, body `text-lg`. A kiosk component also shown on the website (e.g. `StaffRoll` on the admin run sheet) takes a `size` prop and passes it down.
 
 ### Actions
 

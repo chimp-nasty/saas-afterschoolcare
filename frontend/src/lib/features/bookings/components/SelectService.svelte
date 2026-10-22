@@ -2,6 +2,7 @@
     import type { LocationServiceSelectionResponse } from "$lib/api/schema";
     import { ChevronRight } from "lucide-svelte";
 
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import { formatMoney, formatTimeRange } from "$lib/utils/helpers";
     import { agesLabel } from "$lib/features/services/policies";
 
@@ -32,16 +33,10 @@
             "
         >
             <div class="flex flex-col gap-2">
-                <div>
-                    <h2 class="text-lg font-extrabold text-(--text)">
-                        {locationService.service_name}
-                    </h2>
-
-                    <p class="text-sm text-(--text-muted)">
-                        {formatTimeRange(locationService.start_time, locationService.end_time)}
-                        · {agesLabel(locationService)}
-                    </p>
-                </div>
+                <SectionHeading
+                    title={locationService.service_name}
+                    description={`${formatTimeRange(locationService.start_time, locationService.end_time)} · ${agesLabel(locationService)}`}
+                />
 
                 <p>
                     <span class="text-base font-semibold text-(--text)">

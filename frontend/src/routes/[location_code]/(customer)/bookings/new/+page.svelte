@@ -1,8 +1,12 @@
 <script lang="ts">
     import { invalidate } from "$app/navigation";
 
+    import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
     import Page from "$lib/components/layout/Page.svelte";
+    import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import Notice from "$lib/components/text/Notice.svelte";
     import CreateBookingFlow from "$lib/features/bookings/components/CreateBookingFlow.svelte";
+    import { missingForBooking } from "$lib/features/customer/emergency";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
     import type { CreateBookingRequest } from "$lib/api/schema";
@@ -10,6 +14,14 @@
     let { data } = $props();
 
     const bookingApi = createBookingApi();
+
+    // Booking needs the parent's contact details and an emergency contact.
+    const missing = $derived(data.profile ? missingForBooking(data.profile) : []);
+
+    // "your phone number, your address and an emergency contact"
+    function listed(items: string[]): string {
+        return items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items[0];
+    }
 
     async function handleConfirm(body: CreateBookingRequest) {
         const response = await bookingApi.create(body);
@@ -31,10 +43,18 @@
 </script>
 
 <Page>
-    <CreateBookingFlow
-        locationServices={data.locationServices}
-        children={data.children}
-        serviceDays={data.serviceDays}
-        onConfirm={handleConfirm}
-    />
+    {#if !missing.length}
+        <CreateBookingFlow
+            locationServices={data.locationServices}
+            children={data.children}
+            serviceDays={data.serviceDays}
+            onConfirm={handleConfirm}
+        />
+    {:else}
+        <PageHeader title="Book sessions" />
+
+        <Notice tone="warning">Add {listed(missing)} before booking.</Notice>
+
+        <HyperTextLink href={`/${data.locationCode}/account?state=profile`}>Go to your profile</HyperTextLink>
+    {/if}
 </Page>

@@ -7,6 +7,8 @@
 -->
 <script lang="ts">
 	import Button from '$lib/components/actions/Button.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 
 	import type { FamilyBookingResponse } from '$lib/api/schema';
 	import { BOOKING_STATUS_LABELS } from '$lib/features/bookings/status';
@@ -32,9 +34,9 @@
 </script>
 
 {#if error}
-	<p class="text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
+	<ErrorText size="kiosk" message={error} />
 {:else if !bookings}
-	<p class="text-base text-(--text-muted)">Loading bookings…</p>
+	<p class="text-lg text-(--text-muted)">Loading bookings…</p>
 {:else}
 	<div class="flex flex-col gap-2">
 		<p class="text-sm text-(--text-muted)">Today to 2 weeks ahead, and anything awaiting payment.</p>
@@ -60,7 +62,7 @@
 					{/if}
 				</li>
 			{:else}
-				<li class="px-4 py-3 text-base text-(--text-muted)">No bookings in that time.</li>
+				<li class="px-4"><EmptyState size="kiosk" message="No bookings in that time." /></li>
 			{/each}
 		</ul>
 	</div>

@@ -272,5 +272,5 @@ def test_cannot_book_without_ever_having_a_profile(api: Api):
     assert response.status_code == 400
     assert response.json()["msg"] == (
         "Customer profile is incomplete. "
-        "Missing: phone, address_line_1, suburb, state, postcode"
+        "Missing: phone, address_line_1, suburb, state, postcode, emergency_contact"
     )

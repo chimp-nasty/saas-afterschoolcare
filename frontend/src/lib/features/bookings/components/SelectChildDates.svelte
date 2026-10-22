@@ -3,6 +3,7 @@
 
     import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Button from "$lib/components/actions/Button.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
 
     import ServiceDayCalendar from "./ServiceDayCalendar.svelte";
 
@@ -56,15 +57,10 @@
 </script>
 
 <section class="flex flex-col gap-4">
-    <div>
-        <h2 class="text-lg font-extrabold text-(--text)">
-            Who are you booking for?
-        </h2>
-
-        <p class="text-sm text-(--text-muted)">
-            Select one or more children.
-        </p>
-    </div>
+    <SectionHeading
+        title="Who are you booking for?"
+        description="Select one or more children."
+    />
 
     <div class="flex flex-wrap gap-3">
         {#each children as child (child.id)}
@@ -89,17 +85,12 @@
 </section>
 
 <section class="flex flex-col gap-4">
-    <div>
-        <h2 class="text-lg font-extrabold text-(--text)">
-            Choose dates
-        </h2>
-
-        <p class="text-sm text-(--text-muted)">
-            {selectedChildIds.length === 0
-                ? "Select a child before choosing dates."
-                : "Dates apply to every selected child."}
-        </p>
-    </div>
+    <SectionHeading
+        title="Choose dates"
+        description={selectedChildIds.length === 0
+            ? "Select a child before choosing dates."
+            : "Dates apply to every selected child."}
+    />
 
     {#if selectedChildIds.length > 0}
         <ServiceDayCalendar

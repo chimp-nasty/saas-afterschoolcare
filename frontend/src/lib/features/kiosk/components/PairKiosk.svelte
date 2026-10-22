@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
 	import Button from '$lib/components/actions/Button.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 
 	let {
 		onpair
@@ -31,7 +32,7 @@
 <form class="mx-auto flex w-full max-w-md flex-col items-center gap-6 pt-12" onsubmit={submit}>
 	<h1 class="text-center text-3xl font-extrabold text-(--text)">Set up this kiosk</h1>
 
-	<p class="text-center text-base text-(--text-muted)">
+	<p class="text-center text-lg text-(--text-muted)">
 		An admin adds the kiosk in Admin › Kiosks, which shows a setup code. Type it here.
 	</p>
 
@@ -49,7 +50,9 @@
 	</label>
 
 	{#if error}
-		<p class="text-center text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
+		<div class="w-full text-center">
+			<ErrorText size="kiosk" message={error} />
+		</div>
 	{/if}
 
 	<div class="w-full">

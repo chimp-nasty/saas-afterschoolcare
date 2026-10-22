@@ -6,6 +6,7 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 
 	import type { CreateServiceDaysRequest } from '$lib/api/schema';
 	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
@@ -77,7 +78,7 @@
 		</div>
 
 		<fieldset class="flex flex-col gap-2">
-			<legend class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Weekdays</legend>
+			<legend class="label-text">Weekdays</legend>
 			<div class="flex flex-wrap gap-3">
 				{#each WEEKDAYS as label, day (label)}
 					<label class="flex min-h-12 items-center gap-2">
@@ -86,7 +87,7 @@
 					</label>
 				{/each}
 			</div>
-			{#if errors.weekdays}<p class="text-sm text-(--danger-text)">{errors.weekdays}</p>{/if}
+			<ErrorText message={errors.weekdays} />
 		</fieldset>
 	{/if}
 

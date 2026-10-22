@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.errors.children import ChildProfileNotFoundError
 from app.public.repositories.child_medical_state import ChildMedicalStateRepository
+from app.public.schemas.enums import MedicalReviewStatus
 from app.public.schemas.medical_reviews import (
     ListMedicalReviewsFilterRequest,
     MedicalReviewResponse,
@@ -32,8 +33,11 @@ class ReadMedicalReviewService:
         *,
         filters: ListMedicalReviewsFilterRequest,
     ) -> list[MedicalReviewSummaryResponse]:
+        # The approved list grows: newest decision first, to find recent ones.
         rows = self.medical_state_repository.list_reviews(
             review_status=filters.review_status,
+            text_query=filters.q.strip() if filters.q else None,
+            newest_first=set(filters.review_status) == {MedicalReviewStatus.APPROVED},
         )
 
         return [

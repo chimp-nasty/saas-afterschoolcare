@@ -68,6 +68,11 @@
 			isActive: isActive('/admin/run-sheet')
 		},
 		{
+			label: 'Families',
+			onclick: () => navigate('/admin/families'),
+			isActive: isActive('/admin/families')
+		},
+		{
 			label: 'Service days',
 			onclick: () => navigate('/admin/sessions'),
 			isActive: isActive('/admin/sessions')
@@ -91,6 +96,11 @@
 			label: 'Kiosks',
 			onclick: () => navigate('/admin/kiosks'),
 			isActive: isActive('/admin/kiosks')
+		},
+		{
+			label: 'Staff',
+			onclick: () => navigate('/admin/users'),
+			isActive: isActive('/admin/users')
 		}
 	]);
 

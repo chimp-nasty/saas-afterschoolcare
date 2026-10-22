@@ -52,6 +52,19 @@ class PasswordResetEmail(EmailMessage):
 
 
 @dataclass(frozen=True, kw_only=True)
+class StaffInviteEmail(EmailMessage):
+    """Someone added to a centre's staff: a link to set their password."""
+
+    email_type = EmailType.STAFF_INVITE
+
+    user_id: UUID
+    token: str
+
+    def block(self, links):
+        return {"invite_url": links.url("reset-password", token=self.token, invite="1")}
+
+
+@dataclass(frozen=True, kw_only=True)
 class PasswordChangedEmail(EmailMessage):
     email_type = EmailType.PASSWORD_CHANGED
 
@@ -123,6 +136,22 @@ class DocumentsRequestedEmail(EmailMessage):
 
 
 @dataclass(frozen=True, kw_only=True)
+class NewMessageEmail(EmailMessage):
+    """A message from the centre (slice 4-5): only that there is one. Its
+    title and text stay in the app, as does which child it's about."""
+
+    email_type = EmailType.NEW_MESSAGE
+
+    user_id: UUID
+
+    def values(self):
+        return {"first_name": self.first_name}
+
+    def block(self, links):
+        return {"messages_url": links.url("actions")}
+
+
+@dataclass(frozen=True, kw_only=True)
 class ChildApprovedEmail(EmailMessage):
     email_type = EmailType.CHILD_APPROVED
 
@@ -174,7 +203,9 @@ MESSAGE_TYPES: tuple[type[EmailMessage], ...] = (
     RefundConfirmationEmail,
     DocumentsRequestedEmail,
     ChildApprovedEmail,
+    NewMessageEmail,
     KioskPinEmail,
+    StaffInviteEmail,
 )
 
 assert {m.email_type for m in MESSAGE_TYPES} == set(EmailType), "every email type needs a message"

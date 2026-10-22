@@ -6,6 +6,7 @@
 <script lang="ts">
 	import Card from '$lib/components/layout/Card.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
+	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 
 	let {
 		locationCode,
@@ -25,14 +26,12 @@
 <PageHeader title="Home" />
 
 <section class="flex flex-col gap-4">
-	<h2 class="text-lg font-extrabold text-(--text)">
-		Needs attention
-	</h2>
+	<SectionHeading title="Needs attention" />
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
 		<Card border href={`/${locationCode}/admin/run-sheet`}>
 			<div class="flex flex-col gap-1">
-				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+				<p class="label-text">
 					Late pickups
 				</p>
 
@@ -48,7 +47,7 @@
 
 		<Card border href={`/${locationCode}/admin/reviews`}>
 			<div class="flex flex-col gap-1">
-				<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+				<p class="label-text">
 					Medical reviews
 				</p>
 

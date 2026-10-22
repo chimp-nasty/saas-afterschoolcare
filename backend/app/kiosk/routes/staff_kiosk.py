@@ -35,12 +35,14 @@ from app.public.schemas.child_documents import ChildDocumentDownloadResponse
 from app.public.schemas.children import ChildSearchResultResponse
 from app.public.schemas.refunds import CreateRefundRequest, RefundResponse
 from app.public.schemas.child_medical import ActionPlanResponse, ChildMedicalResponse, SetPrintedRequest
+from app.public.schemas.family_notes import ChildNoteResponse
 from app.public.services.attendance import ReadAttendanceService, UpdateAttendanceService
 from app.public.services.bookings_read import ReadFamilyBookingsService
 from app.public.services.children_read import ReadChildService
 from app.public.services.refunds_create import CreateRefundService
 from app.public.services.child_documents_read import ReadChildDocumentService
 from app.public.services.child_medical_read import ActionPlanPrintService, ReadChildMedicalService
+from app.public.services.family_notes import ChildNoteService
 from app.public.services.pickup_identity import PickupIdentityService
 from app.public.services.staff_shifts import StaffShiftService
 
@@ -185,6 +187,17 @@ def get_child_medical(
     service: ReadChildMedicalService = Depends(_service(ReadChildMedicalService)),
 ) -> ApiResponse[ChildMedicalResponse]:
     return ApiResponse(ok=True, msg="Fetched Medical Details", data=service.get(child_id=child_id))
+
+
+# Staff's notes about a child, newest first (child_notes r); written by
+# admins on the website.
+@router.get("/children/{child_id}/notes")
+def list_child_notes(
+    child_id: UUID,
+    staff: KioskStaff = Depends(require_kiosk_staff(resource="child_notes", action="r")),
+    service: ChildNoteService = Depends(_service(ChildNoteService)),
+) -> ApiResponse[list[ChildNoteResponse]]:
+    return ApiResponse(ok=True, msg="Fetched notes", data=service.list_for_child(location_id=staff.device.location_id, child_id=child_id))
 
 
 # The location's action plans, for the physical folder (child_documents r).

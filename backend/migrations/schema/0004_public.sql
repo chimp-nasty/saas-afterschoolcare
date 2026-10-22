@@ -325,6 +325,15 @@ CREATE TRIGGER trg_location_service_days_rules
 -- CUSTOMER PROFILE
 -- =====================================================
 
+-- The parent's contact details and their emergency contact. All of them
+-- are needed before booking or adding a child (the services check the
+-- missing ones; CustomerProfileRepository.get_missing_profile_fields).
+--
+-- Emergency contact: exactly one per family, called when the parent can't
+-- be reached. Not a pickup person (no link to authorized_pickup_persons),
+-- and its phone needn't be unique, only a valid Australian number that
+-- isn't the parent's own. Families own it; staff read it (the admin family
+-- page, the staff kiosk), never change it.
 CREATE TABLE public.customer_profile (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -336,6 +345,13 @@ CREATE TABLE public.customer_profile (
     suburb VARCHAR(100),
     state VARCHAR(100),
     postcode VARCHAR(20),
+
+    emergency_contact_name VARCHAR(200),
+    -- 10 digits, normalised like every phone ("0400000000").
+    emergency_contact_phone VARCHAR(15),
+    emergency_contact_relation public.emergency_relation_enum,
+    -- Their own words, when the relation is "other".
+    emergency_contact_relation_other VARCHAR(100),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -351,12 +367,68 @@ CREATE TABLE public.customer_profile (
     CONSTRAINT ck_customer_profile_state
         CHECK (
             state IN ('NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT')
+        ),
+
+    CONSTRAINT ck_customer_profile_emergency_phone_format
+        CHECK (emergency_contact_phone ~ '^0[0-9]{9}$'),
+
+    -- Called when the parent can't be reached, so not the parent's number.
+    CONSTRAINT ck_customer_profile_emergency_phone_distinct
+        CHECK (emergency_contact_phone <> phone),
+
+    CONSTRAINT ck_customer_profile_emergency_relation_other
+        CHECK (
+            (emergency_contact_relation = 'other')
+                = (NULLIF(btrim(emergency_contact_relation_other), '') IS NOT NULL)
         )
 );
 
 CREATE TRIGGER trg_customer_profile_updated_at
     BEFORE UPDATE ON public.customer_profile
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- Families own their emergency contact: anyone else with a session (an
+-- admin correcting the family's phone or address) can't set or change it.
+-- Server code with no session is trusted.
+CREATE FUNCTION public.enforce_emergency_contact_owner()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_changed BOOLEAN;
+BEGIN
+    IF auth.current_user_id() IS NULL OR auth.current_user_id() = NEW.user_id THEN
+        RETURN NEW;
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        v_changed := NEW.emergency_contact_name IS NOT NULL
+            OR NEW.emergency_contact_phone IS NOT NULL
+            OR NEW.emergency_contact_relation IS NOT NULL
+            OR NEW.emergency_contact_relation_other IS NOT NULL;
+    ELSE
+        v_changed := (NEW.emergency_contact_name, NEW.emergency_contact_phone,
+                      NEW.emergency_contact_relation, NEW.emergency_contact_relation_other)
+            IS DISTINCT FROM
+                     (OLD.emergency_contact_name, OLD.emergency_contact_phone,
+                      OLD.emergency_contact_relation, OLD.emergency_contact_relation_other);
+    END IF;
+
+    IF v_changed THEN
+        RAISE EXCEPTION 'Only the family can change their emergency contact'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_customer_profile_emergency_family_only',
+                  TABLE = 'customer_profile',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_customer_profile_emergency_owner
+    BEFORE INSERT OR UPDATE ON public.customer_profile
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_emergency_contact_owner();
 
 
 -- =====================================================
@@ -471,7 +543,10 @@ CREATE TRIGGER trg_child_medical_state_updated_at
 --   * staff decide: approve, or request documentation (from pending,
 --     documentation_requested or approved, e.g. an action plan has
 --     expired). The decision is recorded against them, and approval
---     clears the request.
+--     clears the request. They can also reopen an approved child
+--     (approved -> pending; the service messages the family): it waits for review
+--     again, with no reviewer, like a family's change. Existing bookings
+--     stay; new ones wait for approval (the booking rules).
 --   * the child's details decide when a review is needed: only
 --     trg_child_profile_medical_review and trg_child_documents_medical_review
 --     send a child back to pending, from a family's session.
@@ -507,8 +582,16 @@ BEGIN
     WHERE cp.id = NEW.child_id;
 
     IF v_is_staff THEN
+        -- Reopening an approved child: back in the queue, nothing asked.
+        IF NEW.review_status = 'pending' AND OLD.review_status = 'approved' THEN
+            NEW.documentation_request := NULL;
+            NEW.updated_by_user_id := NULL;
+
+            RETURN NEW;
+        END IF;
+
         IF NEW.review_status NOT IN ('approved', 'documentation_requested') THEN
-            RAISE EXCEPTION 'Staff can only approve child % or request documentation', NEW.child_id
+            RAISE EXCEPTION 'Staff can only approve child %, request documentation, or reopen an approval', NEW.child_id
                 USING ERRCODE = 'check_violation',
                       CONSTRAINT = 'ck_child_medical_state_staff_decision',
                       TABLE = 'child_medical_state',
@@ -602,6 +685,12 @@ CREATE TRIGGER trg_child_profile_medical_review
 -- CHILD NOTES
 -- =====================================================
 
+-- Staff's internal notes about a child (slice 4-5): written and deleted by
+-- admins on the website (child_notes c/d), read there and by staff at the
+-- staff kiosk (child_notes r). Never shown to the family: RLS lets only
+-- location staff and above see them (schema/0005). A note can't be
+-- changed once saved (trg_child_notes_rules): a mistake is deleted and
+-- written again, so what staff read is what was written.
 CREATE TABLE public.child_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -609,6 +698,7 @@ CREATE TABLE public.child_notes (
 
     note TEXT NOT NULL,
 
+    -- The writer, from the session (trg_child_notes_rules).
     created_by_user_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -619,8 +709,39 @@ CREATE TABLE public.child_notes (
 
     CONSTRAINT fk_child_notes_created_by
         FOREIGN KEY (created_by_user_id)
-        REFERENCES auth.users (id)
+        REFERENCES auth.users (id),
+
+    CONSTRAINT ck_child_notes_note
+        CHECK (btrim(note) <> '')
 );
+
+CREATE INDEX ix_child_notes_child
+    ON public.child_notes (child_id, created_at DESC);
+
+-- The writer is whoever is logged in, and a saved note is fixed.
+CREATE FUNCTION public.enforce_child_note_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'A note can''t be changed once saved'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_child_notes_fixed',
+                  TABLE = 'child_notes',
+                  SCHEMA = 'public';
+    END IF;
+
+    NEW.created_by_user_id := COALESCE(auth.current_user_id(), NEW.created_by_user_id);
+    NEW.created_at := now();
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_child_notes_rules
+    BEFORE INSERT OR UPDATE ON public.child_notes
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_child_note_rules();
 
 
 -- =====================================================
@@ -1686,6 +1807,123 @@ BEGIN
 END;
 $$;
 
+-- Cancelling without a refund (the family, or an admin for them; the same
+-- rules for both): a confirmed, paid booking once the family's refund
+-- window has closed (refund_cutoff_days before the day), until its session
+-- starts (location time). Its place goes back; the money is kept, so it
+-- stays PAID: CANCELLED and PAID means cancelled without a refund.
+-- plpgsql so it can use effective_booking_status (schema/0009) at run time.
+CREATE FUNCTION public.booking_is_cancellable(p_booking_id UUID)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.bookings b
+        JOIN public.location_service_days d
+            ON d.id = b.location_service_day_id
+        JOIN public.location_service_config lsc
+            ON lsc.location_service_id = d.location_service_id
+        JOIN tenancy.locations l
+            ON l.id = b.location_id
+        WHERE b.id = p_booking_id
+          AND public.effective_booking_status(b.booking_status, b.created_at) = 'CONFIRMED'
+          AND b.payment_status = 'PAID'
+          AND (now() AT TIME ZONE l.timezone)::date > d.service_date - lsc.refund_cutoff_days
+          AND now() < (d.service_date + lsc.start_time) AT TIME ZONE l.timezone
+          AND NOT EXISTS (
+              SELECT 1
+              FROM public.refunds r
+              WHERE r.booking_id = b.id
+                AND r.status IN ('PENDING', 'SUCCEEDED')
+          )
+    );
+END;
+$$;
+
+-- Reinstating a booking cancelled without a refund: still CANCELLED and
+-- PAID, until its session starts. The place must still be free, and the
+-- usual booking rules apply again (trg_bookings_reinstate_rules).
+CREATE FUNCTION public.booking_is_reinstatable(p_booking_id UUID)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.bookings b
+        JOIN public.location_service_days d
+            ON d.id = b.location_service_day_id
+        JOIN public.location_service_config lsc
+            ON lsc.location_service_id = d.location_service_id
+        JOIN tenancy.locations l
+            ON l.id = b.location_id
+        WHERE b.id = p_booking_id
+          AND b.booking_status = 'CANCELLED'
+          AND b.payment_status = 'PAID'
+          AND now() < (d.service_date + lsc.start_time) AT TIME ZONE l.timezone
+          AND NOT EXISTS (
+              SELECT 1
+              FROM public.refunds r
+              WHERE r.booking_id = b.id
+                AND r.status IN ('PENDING', 'SUCCEEDED')
+          )
+    );
+END;
+$$;
+
+-- Cancelling (CONFIRMED -> CANCELLED, still PAID) and reinstating
+-- (CANCELLED -> CONFIRMED) by a user must fit the windows above; stamped
+-- with the database's clock. Server code with no session (payment and
+-- refund webhooks) is trusted. A refund's cancel sets REFUNDED, so isn't
+-- one of these.
+CREATE FUNCTION public.enforce_booking_cancel_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF auth.current_user_id() IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    IF OLD.booking_status = 'CONFIRMED'
+       AND NEW.booking_status = 'CANCELLED'
+       AND NEW.payment_status = 'PAID' THEN
+        IF NOT public.booking_is_cancellable(OLD.id) THEN
+            RAISE EXCEPTION 'Booking % can''t be cancelled now', OLD.id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_bookings_cancel_window',
+                      TABLE = 'bookings',
+                      SCHEMA = 'public';
+        END IF;
+
+        NEW.cancelled_at := now();
+    ELSIF OLD.booking_status = 'CANCELLED' AND NEW.booking_status = 'CONFIRMED' THEN
+        IF NOT public.booking_is_reinstatable(OLD.id) THEN
+            RAISE EXCEPTION 'Booking % can''t be reinstated', OLD.id
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_bookings_reinstate_window',
+                      TABLE = 'bookings',
+                      SCHEMA = 'public';
+        END IF;
+
+        NEW.cancelled_at := NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_bookings_cancel_rules
+    BEFORE UPDATE OF booking_status ON public.bookings
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_booking_cancel_rules();
+
 -- A new refund must be for a refundable booking (by the requester's role),
 -- and takes its amount, currency and payment from the booking.
 CREATE FUNCTION public.enforce_refund_rules()
@@ -2505,6 +2743,12 @@ $$;
 -- ACTIONS
 -- =====================================================
 
+-- Messages from the centre to a family, shown in their account (/actions)
+-- and marked read there (cited_at). Written by the system (e.g. a medical
+-- review's "documents needed") or by admins on the website (slice 4-5,
+-- actions c), who can withdraw one until it's read (actions d,
+-- trg_actions_rules). Their email only says there's a message: the text
+-- stays in the app (docs/email-policy.md).
 CREATE TABLE public.actions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -2512,10 +2756,13 @@ CREATE TABLE public.actions (
     location_id UUID NOT NULL,
     child_id UUID,
 
-    target TEXT NOT NULL,
+    -- The account page the message is about (an account or child tab, e.g.
+    -- "manage-documents"); NULL for a plain message.
+    target TEXT,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
 
+    -- The writer, from the session when there is one (trg_actions_rules).
     created_by_user_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     cited_at TIMESTAMPTZ,
@@ -2539,8 +2786,48 @@ CREATE TABLE public.actions (
 
     CONSTRAINT fk_actions_created_by
         FOREIGN KEY (created_by_user_id)
-        REFERENCES auth.users (id)
+        REFERENCES auth.users (id),
+
+    CONSTRAINT ck_actions_text
+        CHECK (btrim(title) <> '' AND btrim(message) <> '')
 );
+
+CREATE INDEX ix_actions_family
+    ON public.actions (user_id, location_id, created_at DESC);
+
+-- The writer is whoever is logged in, and a message can be withdrawn
+-- (deleted) only while the family hasn't read it. Deletes cascading from
+-- a removed account or child aren't withdrawals (pg_trigger_depth() > 1),
+-- and server code with no session is trusted.
+CREATE FUNCTION public.enforce_action_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        NEW.created_by_user_id := COALESCE(auth.current_user_id(), NEW.created_by_user_id);
+        NEW.created_at := now();
+
+        RETURN NEW;
+    END IF;
+
+    IF auth.current_user_id() IS NOT NULL
+       AND pg_trigger_depth() = 1
+       AND OLD.cited_at IS NOT NULL THEN
+        RAISE EXCEPTION 'The family has already read this message'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_actions_withdraw_unread',
+                  TABLE = 'actions',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN OLD;
+END;
+$$;
+
+CREATE TRIGGER trg_actions_rules
+    BEFORE INSERT OR DELETE ON public.actions
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_action_rules();
 
 
 -- =====================================================
@@ -2911,7 +3198,12 @@ RETURNS TABLE (
     released_to_name TEXT,
     release_note TEXT,
     sent_to_school BOOLEAN,
-    is_late BOOLEAN
+    is_late BOOLEAN,
+    -- The family's emergency contact (for staff with a PIN).
+    emergency_contact_name TEXT,
+    emergency_contact_phone TEXT,
+    emergency_contact_relation TEXT,
+    emergency_contact_relation_other TEXT
 )
 LANGUAGE sql
 STABLE
@@ -2950,7 +3242,11 @@ AS $$
         COALESCE(ar.sent_to_school, FALSE),
         ar.signed_in_at IS NOT NULL
             AND ar.signed_out_at IS NULL
-            AND now() > ((d.service_date + lsc.end_time) AT TIME ZONE l.timezone)
+            AND now() > ((d.service_date + lsc.end_time) AT TIME ZONE l.timezone),
+        cpr.emergency_contact_name::text,
+        cpr.emergency_contact_phone::text,
+        cpr.emergency_contact_relation::text,
+        cpr.emergency_contact_relation_other::text
     FROM public.bookings b
     JOIN public.location_service_days d
         ON d.id = b.location_service_day_id
@@ -3033,7 +3329,9 @@ RETURNS TABLE (
     sent_to_school BOOLEAN,
     is_late BOOLEAN,
     has_medical BOOLEAN,
-    medical_review_status TEXT
+    medical_review_status TEXT,
+    -- Staff have written notes about the child (read at the kiosk).
+    has_notes BOOLEAN
 )
 LANGUAGE plpgsql
 STABLE
@@ -3075,7 +3373,8 @@ BEGIN
                       AND doc.is_active
                       AND doc.upload_status = 'uploaded'
                 ),
-            ms.review_status::text
+            ms.review_status::text,
+            EXISTS (SELECT 1 FROM public.child_notes n WHERE n.child_id = cp.id)
         FROM public.attendance_roll(p_location_id, p_date) r
         JOIN public.child_profile cp
             ON cp.id = r.child_id
@@ -3114,7 +3413,9 @@ RETURNS TABLE (
     sent_to_school BOOLEAN,
     is_late BOOLEAN,
     has_medical BOOLEAN,
-    medical_review_status TEXT
+    medical_review_status TEXT,
+    -- Staff have written notes about the child (read at the kiosk).
+    has_notes BOOLEAN
 )
 LANGUAGE plpgsql
 STABLE
@@ -3231,6 +3532,245 @@ BEGIN
     RETURN QUERY SELECT * FROM public.run_sheet_sessions(p_location_id, p_date);
 END;
 $$;
+
+-- =====================================================
+-- STAFF ACCOUNTS
+-- =====================================================
+-- Admin › Staff (slice 4-3). Who may do what is the permissions'
+-- (staff_accounts, staff_admin_roles); these keep a location safe whoever
+-- does it. Superadmins are set up with the tenant (slice 5), not here.
+
+-- Staff roles at a location, from a user session:
+--   * a superadmin role is never added, changed or removed here
+--   * nobody removes or changes their own staff role (no locking yourself out)
+--   * a location always keeps at least one admin or superadmin
+-- Customer roles (families joining a centre) aren't affected. Writes with
+-- no user session are trusted server code (seeds, tests).
+CREATE FUNCTION auth.enforce_staff_role_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_old_role TEXT;
+    v_new_role TEXT;
+    v_location_id UUID := CASE WHEN TG_OP = 'INSERT' THEN NEW.location_id ELSE OLD.location_id END;
+BEGIN
+    IF auth.current_user_id() IS NULL THEN
+        RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+    END IF;
+
+    IF TG_OP <> 'INSERT' THEN
+        SELECT code INTO v_old_role FROM auth.roles WHERE id = OLD.role_id;
+    END IF;
+
+    IF TG_OP <> 'DELETE' THEN
+        SELECT code INTO v_new_role FROM auth.roles WHERE id = NEW.role_id;
+    END IF;
+
+    IF 'superadmin' IN (COALESCE(v_old_role, ''), COALESCE(v_new_role, '')) THEN
+        RAISE EXCEPTION 'Superadmins are set up with the tenant'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_user_roles_superadmin',
+                  TABLE = 'location_user_roles',
+                  SCHEMA = 'auth';
+    END IF;
+
+    IF TG_OP <> 'INSERT'
+       AND v_old_role IN ('staff', 'admin')
+       AND OLD.user_id = auth.current_user_id() THEN
+        RAISE EXCEPTION 'You can''t change your own role'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_user_roles_self',
+                  TABLE = 'location_user_roles',
+                  SCHEMA = 'auth';
+    END IF;
+
+    IF TG_OP <> 'INSERT'
+       AND v_old_role = 'admin'
+       AND COALESCE(v_new_role, '') <> 'admin'
+       AND NOT EXISTS (
+           SELECT 1
+           FROM auth.location_user_roles lur
+           JOIN auth.roles r
+               ON r.id = lur.role_id
+           WHERE lur.location_id = v_location_id
+             AND lur.id <> OLD.id
+             AND r.code IN ('admin', 'superadmin')
+       ) THEN
+        RAISE EXCEPTION 'Location % would have no admin', v_location_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_user_roles_last_admin',
+                  TABLE = 'location_user_roles',
+                  SCHEMA = 'auth';
+    END IF;
+
+    RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+END;
+$$;
+
+CREATE TRIGGER trg_location_user_roles_staff_rules
+    BEFORE INSERT OR UPDATE OR DELETE ON auth.location_user_roles
+    FOR EACH ROW EXECUTE FUNCTION auth.enforce_staff_role_rules();
+
+-- Whether the session user can manage this location's staff accounts, and
+-- the target is a staff member or admin there (never a superadmin). The
+-- functions below act past RLS (admins can't read each other's accounts or
+-- PINs), so they check this first. plpgsql: auth.is_location_admin is in
+-- schema/0005.
+CREATE FUNCTION public.can_manage_location_staff(p_location_id UUID, p_user_id UUID)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN auth.is_location_admin(p_location_id)
+       AND EXISTS (
+           SELECT 1
+           FROM auth.location_user_roles lur
+           JOIN auth.roles r
+               ON r.id = lur.role_id
+           WHERE lur.location_id = p_location_id
+             AND lur.user_id = p_user_id
+             AND r.code IN ('staff', 'admin')
+       )
+       AND NOT EXISTS (
+           SELECT 1
+           FROM auth.location_user_roles lur
+           JOIN auth.roles r
+               ON r.id = lur.role_id
+           WHERE lur.location_id = p_location_id
+             AND lur.user_id = p_user_id
+             AND r.code = 'superadmin'
+       );
+END;
+$$;
+
+-- Everyone who works at the location, for its admins: their role, whether
+-- they've set a staff PIN, and when they last logged in (NULL: invited,
+-- not yet logged in). plpgsql: auth.is_location_admin is in schema/0005.
+CREATE FUNCTION public.location_staff(p_location_id UUID)
+RETURNS TABLE (
+    user_id UUID,
+    first_name TEXT,
+    last_name TEXT,
+    email TEXT,
+    role_code TEXT,
+    has_pin BOOLEAN,
+    last_login TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        u.id,
+        u.first_name::text,
+        u.last_name::text,
+        u.email::text,
+        -- One staff role each; the highest if there were ever two.
+        (array_agg(r.code ORDER BY CASE r.code WHEN 'superadmin' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END))[1]::text,
+        bool_or(sp.user_id IS NOT NULL),
+        u.last_login
+    FROM auth.location_user_roles lur
+    JOIN auth.roles r
+        ON r.id = lur.role_id
+    JOIN auth.users u
+        ON u.id = lur.user_id
+    LEFT JOIN auth.staff_pins sp
+        ON sp.user_id = u.id
+    WHERE lur.location_id = p_location_id
+      AND r.code IN ('staff', 'admin', 'superadmin')
+      AND auth.is_location_admin(p_location_id)
+    GROUP BY u.id, u.first_name, u.last_name, u.email, u.last_login
+    ORDER BY u.first_name, u.last_name;
+END;
+$$;
+
+-- Correct a staff member's or admin's name (staff can't change their own).
+CREATE FUNCTION public.set_staff_name(p_location_id UUID, p_user_id UUID, p_first_name TEXT, p_last_name TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT public.can_manage_location_staff(p_location_id, p_user_id) THEN
+        RAISE EXCEPTION 'Not a staff member here'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_staff_managed',
+                  TABLE = 'users',
+                  SCHEMA = 'auth';
+    END IF;
+
+    UPDATE auth.users
+    SET first_name = COALESCE(NULLIF(btrim(p_first_name), ''), first_name),
+        last_name = COALESCE(NULLIF(btrim(p_last_name), ''), last_name)
+    WHERE id = p_user_id;
+END;
+$$;
+
+-- Clear a staff member's kiosk PIN (e.g. it's been shared): they set a new
+-- one on their account page.
+CREATE FUNCTION public.reset_staff_pin(p_location_id UUID, p_user_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT public.can_manage_location_staff(p_location_id, p_user_id) THEN
+        RAISE EXCEPTION 'Not a staff member here'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_staff_managed',
+                  TABLE = 'staff_pins',
+                  SCHEMA = 'auth';
+    END IF;
+
+    DELETE FROM auth.staff_pins WHERE user_id = p_user_id;
+END;
+$$;
+
+-- Remove someone from the location's staff: their staff role goes (the
+-- role rules above still apply), and an open shift is closed now, recorded
+-- against the kiosk it started on. Their account and records stay.
+CREATE FUNCTION public.remove_location_staff(p_location_id UUID, p_user_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT public.can_manage_location_staff(p_location_id, p_user_id) THEN
+        RAISE EXCEPTION 'Not a staff member here'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_location_staff_managed',
+                  TABLE = 'location_user_roles',
+                  SCHEMA = 'auth';
+    END IF;
+
+    DELETE FROM auth.location_user_roles lur
+    USING auth.roles r
+    WHERE r.id = lur.role_id
+      AND lur.location_id = p_location_id
+      AND lur.user_id = p_user_id
+      AND r.code IN ('staff', 'admin');
+
+    UPDATE public.staff_shifts
+    SET ended_at = now(),
+        ended_kiosk_device_id = started_kiosk_device_id
+    WHERE location_id = p_location_id
+      AND user_id = p_user_id
+      AND ended_at IS NULL;
+END;
+$$;
+
 
 -- =====================================================
 -- EMAIL MESSAGES

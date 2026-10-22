@@ -8,7 +8,9 @@
 	import { untrack } from 'svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
+	import CheckboxRow from '$lib/components/forms/CheckboxRow.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 
 	import type { RunSheetEntryResponse } from '$lib/api/schema';
 
@@ -54,22 +56,18 @@
 	</Field>
 
 	<div class="flex flex-col gap-2">
-		<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+		<p class="label-text">
 			{action === 'sign_in' ? 'Arrived' : 'Going to school'} ({ticked.length} of {candidates.length})
 		</p>
 
 		<ul class="flex max-h-[45vh] flex-col overflow-y-auto rounded-lg border border-(--border)">
 			{#each candidates as entry (entry.booking_id)}
-				<li class="border-b border-(--border) last:border-b-0">
-					<label class="flex min-h-12 items-center gap-3 px-4 py-2">
-						<input
-							type="checkbox"
-							class="size-5"
-							checked={ticked.includes(entry.booking_id)}
-							onchange={() => toggle(entry.booking_id)}
-						/>
-						<span class="text-base font-semibold text-(--text)">{entry.child_first_name} {entry.child_last_name}</span>
-					</label>
+				<li class="border-b border-(--border) px-4 py-1 last:border-b-0">
+					<CheckboxRow
+						checked={ticked.includes(entry.booking_id)}
+						title={`${entry.child_first_name} ${entry.child_last_name}`}
+						onchange={() => toggle(entry.booking_id)}
+					/>
 				</li>
 			{/each}
 		</ul>
@@ -82,9 +80,7 @@
 		</div>
 	</div>
 
-	{#if error}
-		<p class="text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
-	{/if}
+	<ErrorText size="kiosk" message={error} />
 
 	<div class="grid grid-cols-2 gap-3">
 		<Button variant="ghost" fullWidth isDisabled={busy} onclick={oncancel}>Cancel</Button>

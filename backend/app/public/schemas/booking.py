@@ -114,6 +114,10 @@ class BookingGroupLineResponse(BookingTableResponse):
     # The last day (location time) the family can refund it, inclusive.
     refundable_until: date
     is_refundable: bool
+    # Once the refund window has closed, until the session starts: cancel
+    # without a refund (it stays paid), and put back if there's a place.
+    is_cancellable: bool
+    is_reinstatable: bool
 
     # Its latest refund, if any: PENDING while Stripe processes it.
     refund_status: RefundStatus | None
@@ -182,3 +186,7 @@ class FamilyBookingResponse(BookingTableResponse):
 
     refund_status: RefundStatus | None
     is_refundable_by_admin: bool
+    # Cancel without a refund, or reinstate: the family's rules, which
+    # admins follow too.
+    is_cancellable: bool
+    is_reinstatable: bool

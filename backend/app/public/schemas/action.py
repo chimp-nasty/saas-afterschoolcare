@@ -12,7 +12,8 @@ class ActionResponse(BaseModel):
     user_id: UUID
     child_id: UUID | None
 
-    target: str
+    # The page it links to; NULL for a plain message.
+    target: str | None
 
     title: str
     message: str

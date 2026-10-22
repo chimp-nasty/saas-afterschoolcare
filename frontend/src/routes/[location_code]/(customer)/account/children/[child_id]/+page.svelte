@@ -8,6 +8,9 @@
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import { confirmAction } from "$lib/components/overlays/confirm.svelte";
+    import LabelValueList from "$lib/components/text/LabelValueList.svelte";
+    import Notice from "$lib/components/text/Notice.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import ChildDocumentList from "$lib/features/children/components/ChildDocumentList.svelte";
     import ChildDocumentUploadForm from "$lib/features/children/components/ChildDocumentUploadForm.svelte";
     import EditChildProfileForm from "$lib/features/children/components/EditChildProfileForm.svelte";
@@ -163,26 +166,24 @@
     }
 </script>
 
+{#snippet documentationRequest()}
+    <span class="whitespace-pre-line">{child.documentation_request}</span>
+{/snippet}
+
 <Page>
     <PageHeader title={`${child.first_name} ${child.last_name}`} />
 
     {#if notice}
         <Card border>
             <div class="flex flex-col gap-4">
-                <p class="text-sm text-(--text-muted)">
+                <Notice tone="warning">
                     {notice}
-                </p>
+                </Notice>
 
                 {#if child.review_status === "documentation_requested" && child.documentation_request}
-                    <div class="flex flex-col gap-1">
-                        <p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
-                            What the centre needs
-                        </p>
-
-                        <p class="text-base text-(--text) whitespace-pre-line">
-                            {child.documentation_request}
-                        </p>
-                    </div>
+                    <LabelValueList
+                        items={[{ label: "What the centre needs", content: documentationRequest }]}
+                    />
 
                     {#if activeTab !== childTabs.MANAGE_DOCUMENTS}
                         <Button
@@ -227,9 +228,7 @@
                     />
 
                     <div class="flex flex-col gap-4">
-                        <h2 class="text-lg font-extrabold text-(--text)">
-                            Add a document
-                        </h2>
+                        <SectionHeading title="Add a document" />
 
                         <ChildDocumentUploadForm
                             progress={uploadProgress}

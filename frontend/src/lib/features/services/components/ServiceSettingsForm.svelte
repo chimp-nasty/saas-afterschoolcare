@@ -6,6 +6,7 @@
     price they were paid at), new times apply to every booking.
 -->
 <script lang="ts">
+	import CheckboxRow from '$lib/components/forms/CheckboxRow.svelte';
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
 	import { confirmAction } from '$lib/components/overlays/confirm.svelte';
@@ -103,13 +104,11 @@
 </script>
 
 <Form {isLoading} handleSubmit={submit} submitLabel="Save">
-	<label class="flex min-h-12 items-center gap-3">
-		<input type="checkbox" class="size-5" bind:checked={body.is_active} />
-		<span class="flex flex-col">
-			<span class="text-base font-semibold text-(--text)">Offered to families</span>
-			<span class="text-sm text-(--text-muted)">Untick to stop new bookings. Existing bookings aren't changed.</span>
-		</span>
-	</label>
+	<CheckboxRow
+		bind:checked={body.is_active}
+		title="Offered to families"
+		help="Untick to stop new bookings. Existing bookings aren't changed."
+	/>
 
 	<Field label="Price per session ($)" error={errors.price}>
 		{#snippet children(id)}

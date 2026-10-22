@@ -58,6 +58,18 @@ class EmailTypeEnum(str, enum.Enum):
     DOCUMENTS_REQUESTED = 'documents_requested'
     CHILD_APPROVED = 'child_approved'
     KIOSK_PIN = 'kiosk_pin'
+    STAFF_INVITE = 'staff_invite'
+    NEW_MESSAGE = 'new_message'
+
+
+class EmergencyRelationEnum(str, enum.Enum):
+    PARENT_GUARDIAN = 'parent_guardian'
+    GRANDPARENT = 'grandparent'
+    AUNT_UNCLE = 'aunt_uncle'
+    FAMILY_FRIEND = 'family_friend'
+    NEIGHBOUR = 'neighbour'
+    NANNY_BABYSITTER = 'nanny_babysitter'
+    OTHER = 'other'
 
 
 class KioskKindEnum(str, enum.Enum):
@@ -86,6 +98,7 @@ class PermissionChannelEnum(str, enum.Enum):
 
 class PickupRelationEnum(str, enum.Enum):
     ACCOUNT_HOLDER = 'account_holder'
+    PARENT_GUARDIAN = 'parent_guardian'
     GRANDPARENT = 'grandparent'
     AUNT_UNCLE = 'aunt_uncle'
     FAMILY_FRIEND = 'family_friend'
@@ -244,6 +257,9 @@ class StaffPin(Base):
 class CustomerProfile(Base):
     __tablename__ = 'customer_profile'
     __table_args__ = (
+        CheckConstraint('emergency_contact_phone::text <> phone::text', name='ck_customer_profile_emergency_phone_distinct'),
+        CheckConstraint("emergency_contact_phone::text ~ '^0[0-9]{9}$'::text", name='ck_customer_profile_emergency_phone_format'),
+        CheckConstraint("emergency_contact_relation = 'other'::emergency_relation_enum) = (NULLIF(btrim(emergency_contact_relation_other::text), ''::text) IS NOT NULL", name='ck_customer_profile_emergency_relation_other'),
         CheckConstraint("state::text = ANY (ARRAY['NSW'::character varying, 'VIC'::character varying, 'QLD'::character varying, 'WA'::character varying, 'SA'::character varying, 'TAS'::character varying, 'ACT'::character varying, 'NT'::character varying]::text[])", name='ck_customer_profile_state'),
         ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_customer_profile_user'),
         PrimaryKeyConstraint('id', name='customer_profile_pkey'),
@@ -261,6 +277,10 @@ class CustomerProfile(Base):
     suburb: Mapped[Optional[str]] = mapped_column(String(100))
     state: Mapped[Optional[str]] = mapped_column(String(100))
     postcode: Mapped[Optional[str]] = mapped_column(String(20))
+    emergency_contact_name: Mapped[Optional[str]] = mapped_column(String(200))
+    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(15))
+    emergency_contact_relation: Mapped[Optional[EmergencyRelationEnum]] = mapped_column(Enum(EmergencyRelationEnum, values_callable=lambda cls: [member.value for member in cls], name='emergency_relation_enum'))
+    emergency_contact_relation_other: Mapped[Optional[str]] = mapped_column(String(100))
 
 
 
@@ -522,23 +542,25 @@ class LocationBranding(Base):
 class Action(Base):
     __tablename__ = 'actions'
     __table_args__ = (
+        CheckConstraint("btrim(title) <> ''::text AND btrim(message) <> ''::text", name='ck_actions_text'),
         ForeignKeyConstraint(['child_id', 'user_id', 'location_id'], ['public.child_profile.id', 'public.child_profile.user_id', 'public.child_profile.location_id'], ondelete='CASCADE', name='fk_actions_child'),
         ForeignKeyConstraint(['created_by_user_id'], ['auth.users.id'], name='fk_actions_created_by'),
         ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_actions_location'),
         ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_actions_user'),
         PrimaryKeyConstraint('id', name='actions_pkey'),
+        Index('ix_actions_family', 'user_id', 'location_id', 'created_at'),
         {'schema': 'public'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    target: Mapped[str] = mapped_column(Text, nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     created_by_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     child_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+    target: Mapped[Optional[str]] = mapped_column(Text)
     cited_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
@@ -600,9 +622,11 @@ class ChildMedicalState(Base):
 class ChildNote(Base):
     __tablename__ = 'child_notes'
     __table_args__ = (
+        CheckConstraint("btrim(note) <> ''::text", name='ck_child_notes_note'),
         ForeignKeyConstraint(['child_id'], ['public.child_profile.id'], ondelete='CASCADE', name='fk_child_notes_child'),
         ForeignKeyConstraint(['created_by_user_id'], ['auth.users.id'], name='fk_child_notes_created_by'),
         PrimaryKeyConstraint('id', name='child_notes_pkey'),
+        Index('ix_child_notes_child', 'child_id', 'created_at'),
         {'schema': 'public'}
     )
 

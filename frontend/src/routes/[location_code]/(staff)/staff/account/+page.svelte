@@ -9,6 +9,9 @@
     import Card from "$lib/components/layout/Card.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import ErrorText from "$lib/components/text/ErrorText.svelte";
+    import LabelValueList from "$lib/components/text/LabelValueList.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import ChangePasswordForm from "$lib/features/account/components/ChangePasswordForm.svelte";
     import StaffPinForm from "$lib/features/staff/components/StaffPinForm.svelte";
 
@@ -42,33 +45,16 @@
 
     {#if data.account}
         <section class="flex flex-col gap-3">
-            <h2 class="text-lg font-extrabold text-(--text)">Your details</h2>
+            <SectionHeading title="Your details" />
 
             <Card border>
-                <dl class="flex flex-col gap-3">
-                    <div>
-                        <dt class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Name</dt>
-                        <dd class="text-base text-(--text)">{data.account.first_name} {data.account.last_name}</dd>
-                    </div>
-
-                    <div>
-                        <dt class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Email</dt>
-                        <dd class="text-base text-(--text) break-all">{data.account.email}</dd>
-                    </div>
-
-                    <div>
-                        <dt class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">Where you work</dt>
-                        <dd>
-                            <ul class="flex flex-col gap-1">
-                                {#each data.account.roles as role (`${role.location_code}:${role.role_code}`)}
-                                    <li class="text-base text-(--text)">
-                                        {role.location_name ?? role.location_code}: {role.role_name}
-                                    </li>
-                                {/each}
-                            </ul>
-                        </dd>
-                    </div>
-                </dl>
+                <LabelValueList
+                    items={[
+                        { label: "Name", value: `${data.account.first_name} ${data.account.last_name}` },
+                        { label: "Email", value: data.account.email },
+                        { label: "Where you work", content: whereYouWork },
+                    ]}
+                />
 
                 <p class="mt-3 text-sm text-(--text-muted)">If something here is wrong, ask an admin to correct it.</p>
             </Card>
@@ -76,13 +62,11 @@
     {/if}
 
     <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-extrabold text-(--text)">Staff PIN</h2>
+        <SectionHeading title="Staff PIN" />
 
         <Card border>
             {#if data.status?.is_locked}
-                <p class="text-base font-semibold text-(--danger-text)">
-                    Your PIN is locked after too many wrong tries at the kiosk. Set a new one below to unlock it.
-                </p>
+                <ErrorText message="Your PIN is locked after too many wrong tries at the kiosk. Set a new one below to unlock it." />
             {:else if data.status?.is_set && data.status.set_at}
                 <p class="text-base text-(--text)">You set your PIN on {formatTimestamp(data.status.set_at)}.</p>
             {:else}
@@ -98,8 +82,18 @@
     </section>
 
     <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-extrabold text-(--text)">Change password</h2>
+        <SectionHeading title="Change password" />
 
         <ChangePasswordForm onsubmit={changePassword} />
     </section>
 </Page>
+
+{#snippet whereYouWork()}
+    {#if data.account}
+        <ul class="flex flex-col gap-1">
+            {#each data.account.roles as role (`${role.location_code}:${role.role_code}`)}
+                <li>{role.location_name ?? role.location_code}: {role.role_name}</li>
+            {/each}
+        </ul>
+    {/if}
+{/snippet}

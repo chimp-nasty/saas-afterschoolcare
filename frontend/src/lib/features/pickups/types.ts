@@ -6,6 +6,7 @@ export const PICKUP_LIMIT = 3;
 
 export const PICKUP_RELATION_LABELS: Record<PickupRelation, string> = {
     account_holder: 'Account holder',
+    parent_guardian: 'Other parent or guardian',
     grandparent: 'Grandparent',
     aunt_uncle: 'Aunt or uncle',
     family_friend: 'Family friend',

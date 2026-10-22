@@ -15,6 +15,7 @@ from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.public.repositories.customer_profile import CustomerProfileRepository
+from app.public.schemas.enums import EmergencyRelation
 
 from app.auth.schemas.auth import RegistrationRequest
 from app.public.schemas.customer import (
@@ -122,9 +123,15 @@ class CustomerService:
         if not profile:
             raise CustomerProfileNotFoundError()
 
+        fields = body.model_dump(exclude_unset=True)
+
+        # The "other" wording only goes with the "other" relation.
+        if fields.get("emergency_contact_relation") not in (None, EmergencyRelation.OTHER):
+            fields["emergency_contact_relation_other"] = None
+
         self.customer_profiles.update(
             profile=profile,
-            fields=body.model_dump(exclude_unset=True)
+            fields=fields
         )
 
         self.db.flush()

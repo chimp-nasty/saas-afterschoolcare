@@ -20,7 +20,7 @@
 
 <header class="flex flex-col gap-1">
     {#if eyebrow}
-        <p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+        <p class="label-text">
             {eyebrow}
         </p>
     {/if}

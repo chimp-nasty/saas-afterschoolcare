@@ -145,6 +145,34 @@ def cancel_booking_group(
     )
 
 
+# Cancel one paid booking without a refund, once the refund window has
+# closed, until its session starts; it stays paid. bookings u: the family
+# for their own, admins and superadmins for the location's families (RLS),
+# with the same rules (public.booking_is_cancellable). No email.
+@router.post("/{booking_id}/cancel")
+def cancel_booking(
+    booking_id: UUID,
+    ctx: TokenContext = Depends(require_permission(resource="bookings", action="u")),
+    service: UpdateBookingService = Depends(get_service(UpdateBookingService, db_dependency=get_rls_db)),
+) -> ApiResponse[None]:
+    service.cancel_booking(booking_id=booking_id)
+
+    return ApiResponse(ok=True, msg="Booking cancelled", data=None)
+
+
+# Put back a booking cancelled without a refund, until its session starts,
+# if there's still a place (bookings u, as above). No email.
+@router.post("/{booking_id}/reinstate")
+def reinstate_booking(
+    booking_id: UUID,
+    ctx: TokenContext = Depends(require_permission(resource="bookings", action="u")),
+    service: UpdateBookingService = Depends(get_service(UpdateBookingService, db_dependency=get_rls_db)),
+) -> ApiResponse[None]:
+    service.reinstate_booking(booking_id=booking_id)
+
+    return ApiResponse(ok=True, msg="Booking reinstated", data=None)
+
+
 @router.post("/", status_code=201)
 def create_booking(
     body: CreateBookingRequest,

@@ -25,6 +25,7 @@
     import type { Snippet } from "svelte";
 
     import Card from "$lib/components/layout/Card.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
 
     import { formatDate, formatMoney } from "$lib/utils/helpers";
 
@@ -64,21 +65,19 @@
 
 <div class="flex flex-col gap-4">
     <Card border>
-        <h2 class="text-lg font-extrabold text-(--text)">
-            {serviceName}
-        </h2>
-
-        {#if pricePerSession !== undefined}
-            <p class="text-sm text-(--text-muted)">
-                {formatPrice(pricePerSession)} / session
-            </p>
-        {/if}
+        <SectionHeading
+            title={serviceName}
+            description={pricePerSession !== undefined
+                ? `${formatPrice(pricePerSession)} / session`
+                : null}
+        />
     </Card>
 
     <!-- Unpadded: the rows and subtotal run edge to edge. -->
     {#each children as child (child.childId)}
         <Card border padded={false}>
-            <h3 class="border-b border-(--border) px-5 py-4 text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+            <!-- A compact data card's title: the label role, as TitleCard. -->
+            <h3 class="border-b border-(--border) px-5 py-4 label-text">
                 {child.childName}
             </h3>
 
@@ -86,7 +85,7 @@
                 {#each child.lines as line (line.bookingId ?? line.date)}
                     <div class="flex items-start justify-between gap-4 px-5 py-4">
                         <div>
-                            <p class="font-semibold text-(--text)">
+                            <p class="text-base font-semibold text-(--text)">
                                 {formatDate(line.date)}
                             </p>
 
@@ -96,7 +95,7 @@
                         </div>
 
                         <div class="flex flex-col items-end gap-2">
-                            <p class="font-semibold text-(--text)">
+                            <p class="text-base font-semibold text-(--text)">
                                 {formatPrice(line.priceCents)}
                             </p>
 
@@ -107,11 +106,11 @@
             </div>
 
             <div class="flex items-center justify-between rounded-b-2xl border-t border-(--border) bg-(--surface-muted) px-5 py-4">
-                <span class="text-sm text-(--text-muted)">
+                <span class="label-text">
                     Subtotal
                 </span>
 
-                <span class="font-semibold text-(--text)">
+                <span class="text-base font-semibold text-(--text)">
                     {formatPrice(subtotal(child))}
                 </span>
             </div>
@@ -121,12 +120,12 @@
     <Card border>
         <div class="flex items-center justify-between gap-4">
             <div>
-                <p class="text-sm text-(--text-muted)">
-                    {bookingCount} {bookingCount === 1 ? "session" : "sessions"}
+                <p class="label-text">
+                    {refundedCents > 0 ? "Total paid" : "Total"}
                 </p>
 
-                <p class="text-lg font-extrabold text-(--text)">
-                    {refundedCents > 0 ? "Total paid" : "Total"}
+                <p class="text-sm text-(--text-muted)">
+                    {bookingCount} {bookingCount === 1 ? "session" : "sessions"}
                 </p>
             </div>
 
@@ -137,11 +136,11 @@
 
         {#if refundedCents > 0}
             <div class="mt-4 flex items-center justify-between gap-4 border-t border-(--border) pt-4">
-                <span class="text-sm text-(--text-muted)">
+                <span class="label-text">
                     Refunded
                 </span>
 
-                <span class="font-semibold text-(--text)">
+                <span class="text-base font-semibold text-(--text)">
                     −{formatPrice(refundedCents)}
                 </span>
             </div>

@@ -109,7 +109,12 @@ def up(conn: Connection) -> None:
                 address_line_1 = COALESCE(address_line_1, '1 Test Street'),
                 suburb = COALESCE(suburb, 'Brisbane City'),
                 state = COALESCE(state, 'QLD'),
-                postcode = COALESCE(postcode, '4000')
+                postcode = COALESCE(postcode, '4000'),
+                -- Booking needs an emergency contact (not a pickup person,
+                -- and not the parent's own number).
+                emergency_contact_name = 'Robin Neighbour',
+                emergency_contact_phone = '0400999888',
+                emergency_contact_relation = 'neighbour'
             WHERE user_id = :user_id;
         """),
         {"phone": CUSTOMER_PHONE, "user_id": customer_id},

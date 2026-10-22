@@ -1,8 +1,8 @@
 <!--
     The staff kiosk's run sheet before anyone enters a PIN: a tab per service
     running that day (before school, after school, vacation care), each a
-    table with columns always aligned: place number, child (with a marker
-    for medical details, no details), when they were signed in and by whom,
+    table with columns always aligned: place number, child (with markers
+    for medical details and staff notes, no details), when they were signed in and by whom,
     when they left and who took them (names shortened, "Sam L."), and where
     they're up to. Booked children come first, alphabetically, then empty
     rows up to the session's capacity (each service has its own). Tapping a
@@ -13,8 +13,13 @@
 <script lang="ts">
 	import Button from '$lib/components/actions/Button.svelte';
 	import TabbedPanels from '$lib/components/controls/TabbedPanels.svelte';
+	import GridTable from '$lib/components/layout/GridTable.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import Pill from '$lib/components/text/Pill.svelte';
+	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 
 	import type { RunSheetEntryResponse, RunSheetSessionResponse } from '$lib/api/schema';
+	import type { TextSize, Tone } from '$lib/components/text/textSize';
 	import { formatTimeRange } from '$lib/utils/helpers';
 	import { formatClock } from '../kiosk';
 	import { rollStatus, ROLL_STATUS_LABELS, type RollStatus } from '../roll';
@@ -26,7 +31,8 @@
 		isPast,
 		onselect,
 		onbulk,
-		onprint
+		onprint,
+		size = 'kiosk'
 	}: {
 		sessions: RunSheetSessionResponse[];
 		entries: RunSheetEntryResponse[];
@@ -40,6 +46,8 @@
 		onbulk?: (action: BulkAction, session: RunSheetSessionResponse, candidates: RunSheetEntryResponse[]) => void;
 		// The printable run sheet for this session (asks for a PIN).
 		onprint: (session: RunSheetSessionResponse) => void;
+		// The kiosk tablet's text, or the website's (the admin run sheet).
+		size?: TextSize;
 	} = $props();
 
 	type BulkAction = 'sign_in' | 'to_school';
@@ -77,9 +85,8 @@
 		return null;
 	}
 
-	// One template for the header and every row, so columns line up.
-	const columns =
-		'grid grid-cols-[2.5rem_minmax(11rem,2fr)_5.5rem_minmax(7rem,1fr)_5.5rem_minmax(8rem,1.3fr)_6.5rem] items-center gap-x-4';
+	// The run sheet's columns (GridTable keeps every row aligned and the same height).
+	const columns = '2.5rem minmax(11rem,2fr) 5.5rem minmax(7rem,1fr) 5.5rem minmax(8rem,1.3fr) 6.5rem';
 
 	const headers = ['#', 'Child', 'In', 'Signed in by', 'Out', 'Collected by', 'Status'];
 
@@ -140,11 +147,6 @@
 
 	let activeTab = $state<string | undefined>(undefined);
 
-	// The free places' numbers, after the booked children, up to capacity.
-	function emptyPlaces(session: RunSheetSessionResponse, group: RunSheetEntryResponse[]): number[] {
-		return Array.from({ length: Math.max(session.capacity - group.length, 0) }, (_, index) => group.length + index + 1);
-	}
-
 	function places(session: RunSheetSessionResponse): string {
 		if (isPast) return `${session.capacity} places`;
 
@@ -161,12 +163,19 @@
 		return '—';
 	}
 
-	const pill: Record<RollStatus, string> = {
-		late: 'bg-(--danger-soft) text-(--danger-text)',
-		here: 'bg-(--success-soft) text-(--success-text)',
-		gone: 'bg-(--surface-muted) text-(--text-muted)',
-		expected: 'bg-(--warning-soft) text-(--warning-text)'
+	const tone: Record<RollStatus, Tone> = {
+		late: 'danger',
+		here: 'success',
+		gone: 'neutral',
+		expected: 'warning'
 	};
+
+	// The counts under a session's title (late children follow, in red).
+	function counts(group: RunSheetEntryResponse[]): string {
+		const late = count(group, 'late');
+
+		return `${group.length} booked · Not here ${count(group, 'expected')} · Here ${count(group, 'here') + late} · Gone ${count(group, 'gone')}`;
+	}
 </script>
 
 {#snippet cells(entry: RunSheetEntryResponse, index: number)}
@@ -179,9 +188,11 @@
 		</span>
 
 		{#if entry.has_medical}
-			<span class="shrink-0 rounded-full bg-(--danger-soft) px-2 py-0.5 text-xs font-extrabold uppercase tracking-wide text-(--danger-text)">
-				Medical
-			</span>
+			<Pill tone="danger" {size}>Medical</Pill>
+		{/if}
+
+		{#if entry.has_notes}
+			<Pill tone="neutral" {size}>Notes</Pill>
 		{/if}
 	</span>
 
@@ -204,14 +215,12 @@
 	</span>
 
 	<span role="cell">
-		<span class={['inline-block rounded-full px-3 py-1 text-sm font-extrabold', pill[status]]}>
-			{ROLL_STATUS_LABELS[status]}
-		</span>
+		<Pill tone={tone[status]} {size}>{ROLL_STATUS_LABELS[status]}</Pill>
 	</span>
 {/snippet}
 
 {#if !sessions.length}
-	<p class="text-center text-xl text-(--text-muted)">No sessions on this day.</p>
+	<EmptyState {size} message="No sessions on this day." />
 {:else}
 	<TabbedPanels {tabs} {initialTab} bind:activeTab>
 		{#snippet panel(id)}
@@ -222,73 +231,55 @@
 
 			{#if session}
 				<section class="flex flex-col gap-3">
-					<div class="flex flex-wrap items-baseline justify-between gap-2">
-						<div class="flex flex-col gap-1">
-							<h2 class="text-xl font-extrabold text-(--text)">
-								{session.service_name} · {formatTimeRange(session.start_time, session.end_time)}
-								{#if !session.is_open}
-									<span class="ml-2 rounded-full bg-(--surface-muted) px-3 py-1 text-sm font-extrabold uppercase text-(--text-muted)">Closed</span>
-								{/if}
-							</h2>
-							<p class="text-base text-(--text-muted)">
-								{group.length} booked · Not here {count(group, 'expected')} · Here {count(group, 'here') + count(group, 'late')} · Gone {count(group, 'gone')}
-								{#if count(group, 'late')}
-									· <span class="font-extrabold text-(--danger-text)">Late {count(group, 'late')}</span>
-								{/if}
-							</p>
-						</div>
+					<SectionHeading
+						title={`${session.service_name} · ${formatTimeRange(session.start_time, session.end_time)}`}
+						{size}
+					>
+						{#snippet details()}
+							{@const late = count(group, 'late')}
+							{counts(group)}{#if late}
+								· <span class="font-extrabold text-(--danger-text)">Late {late}</span>{/if}
+						{/snippet}
 
-						<div class="flex flex-wrap items-center gap-3">
-							<p class="text-base text-(--text-muted)">{places(session)}</p>
+						{#snippet actions()}
+							{#if !session.is_open}
+								<Pill tone="neutral" {size}>Closed</Pill>
+							{/if}
+
+							<p class={['text-(--text-muted)', size === 'kiosk' ? 'text-lg' : 'text-sm']}>{places(session)}</p>
 
 							<Button variant="ghost" onclick={() => onprint(session)}>Print run sheet</Button>
 
 							{#if onbulk && bulk && bulk.candidates.length}
 								{#if note}
-									<p class="text-base text-(--text-muted)">{note}</p>
+									<p class={['text-(--text-muted)', size === 'kiosk' ? 'text-lg' : 'text-sm']}>{note}</p>
 								{:else}
 									<Button onclick={() => onbulk(bulk.action, session, bulk.candidates)}>{bulk.label}</Button>
 								{/if}
 							{/if}
-						</div>
-					</div>
+						{/snippet}
+					</SectionHeading>
 
-					<!-- A fixed height of 9 rows that scrolls (one screen), with the headers
-					     pinned; sideways too on a phone. -->
-					<div class="max-h-[29.5rem] overflow-auto rounded-2xl border border-(--border) bg-(--surface)">
-						<div class="min-w-[49rem]" role="table" aria-label={`${session.service_name} run sheet`}>
-							<div class={[columns, 'sticky top-0 z-10 border-b border-(--border) bg-(--surface-muted) px-5 py-2']} role="row">
-								{#each headers as header (header)}
-									<span class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)" role="columnheader">{header}</span>
-								{/each}
-							</div>
-
-							{#each group as entry, index (entry.booking_id)}
-								{#if onselect}
-									<button
-										type="button"
-										class={[columns, 'min-h-12 w-full border-b border-(--border) px-5 py-2 text-left last:border-b-0 active:bg-(--primary-soft)']}
-										role="row"
-										onclick={() => onselect(entry)}
-									>
-										{@render cells(entry, index)}
-									</button>
-								{:else}
-									<div class={[columns, 'min-h-12 border-b border-(--border) px-5 py-2 last:border-b-0']} role="row">
-										{@render cells(entry, index)}
-									</div>
-								{/if}
-							{/each}
-
-							<!-- The places still free, up to this session's capacity. -->
-							{#each emptyPlaces(session, group) as place (place)}
-								<div class={[columns, 'min-h-12 border-b border-(--border) px-5 py-2 last:border-b-0']} role="row">
-									<span class="text-sm text-(--text-muted)" role="cell">{place}</span>
-									<span class="text-base tracking-[0.5em] text-(--border)" role="cell">········</span>
-								</div>
-							{/each}
-						</div>
-					</div>
+					<!-- 9 rows tall (one screen), then it scrolls; free places as blank rows. -->
+					<GridTable
+						items={group}
+						key={(entry) => entry.booking_id}
+						{columns}
+						{headers}
+						label={`${session.service_name} run sheet`}
+						maxRows={9}
+						minWidth="49rem"
+						fillers={Math.max(session.capacity - group.length, 0)}
+						onrowclick={onselect}
+					>
+						{#snippet row(entry, index)}
+							{@render cells(entry, index)}
+						{/snippet}
+						{#snippet filler(place)}
+							<span class="text-sm text-(--text-muted)" role="cell">{place}</span>
+							<span class="text-base tracking-[0.5em] text-(--border)" role="cell">········</span>
+						{/snippet}
+					</GridTable>
 				</section>
 			{/if}
 		{/snippet}

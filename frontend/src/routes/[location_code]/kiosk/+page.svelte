@@ -13,6 +13,7 @@
 	import StaffKiosk from '$lib/features/kiosk/components/StaffKiosk.svelte';
 	import Button from '$lib/components/actions/Button.svelte';
 	import Spinner from '$lib/components/feedback/Spinner.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
 
 	import { createFamilyKioskApi } from '$lib/api/kiosk/adapters/familyKiosk';
 	import { createStaffKioskApi } from '$lib/api/kiosk/adapters/staffKiosk';
@@ -81,7 +82,9 @@
 			<FamilyKiosk locationCode={data.locationCode} />
 		{:else}
 			<div class="flex flex-1 flex-col items-center justify-center gap-4">
-				<p class="text-center text-xl font-semibold text-(--danger-text)">{problem}</p>
+				<div class="text-center">
+					<ErrorText size="kiosk" message={problem} />
+				</div>
 				<Button variant="ghost" textSize="lg" onclick={() => { kind = 'loading'; void detect(); }}>
 					Try again
 				</Button>

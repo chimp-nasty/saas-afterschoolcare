@@ -17,7 +17,13 @@ from app.errors.attendance import (
     StaffKioskAccessError,
     StaffPinStaffOnlyError,
 )
-from app.errors.auth import UserCollisionError
+from app.errors.auth import (
+    StaffLastAdminError,
+    StaffNotFoundError,
+    StaffSelfChangeError,
+    StaffSuperadminError,
+    UserCollisionError,
+)
 from app.errors.kiosk import KioskKindTakenError, StaffKioskNotOnShiftError
 from app.errors.base import ApplicationError
 from app.errors.bookings import (
@@ -32,6 +38,8 @@ from app.errors.bookings import (
     ServiceDayClosedError,
     ServiceNotOfferedError,
     ServiceDayNotInFutureError,
+    BookingNotCancellableError,
+    BookingNotReinstatableError,
 )
 from app.errors.child_documents import (
     ChildDocumentChangeNotAllowedError,
@@ -41,7 +49,14 @@ from app.errors.child_documents import (
     ChildDocumentTooLargeError,
     ChildDocumentTypeNotAllowedError,
 )
+from app.errors.action import MessageAlreadyReadError
+from app.errors.customer import (
+    EmergencyContactFamilyOnlyError,
+    EmergencyContactPhoneError,
+    EmergencyContactRelationError,
+)
 from app.errors.children import (
+    ChildNoteFixedError,
     ChildProfileCollisionError,
     ChildProfileInactiveError,
 )
@@ -87,7 +102,18 @@ class InvalidValueError(ApplicationError):
 # than a 500.
 CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "uq_users_email": UserCollisionError,
+    "ck_location_user_roles_superadmin": StaffSuperadminError,
+    "ck_location_user_roles_self": StaffSelfChangeError,
+    "ck_location_user_roles_last_admin": StaffLastAdminError,
+    "ck_location_staff_managed": StaffNotFoundError,
     "uq_child_profile_active_identity": ChildProfileCollisionError,
+    # Raised by trg_child_notes_rules and trg_actions_rules (schema/0004).
+    "ck_child_notes_fixed": ChildNoteFixedError,
+    # The emergency contact on customer_profile (schema/0004).
+    "ck_customer_profile_emergency_phone_distinct": EmergencyContactPhoneError,
+    "ck_customer_profile_emergency_relation_other": EmergencyContactRelationError,
+    "ck_customer_profile_emergency_family_only": EmergencyContactFamilyOnlyError,
+    "ck_actions_withdraw_unread": MessageAlreadyReadError,
     "uq_bookings_active_child_service_day": BookingCollisionError,
     # Reusing the idempotency key of a group that's already paid/expired.
     "uq_booking_groups_user_idempotency": BookingAttemptFinishedError,
@@ -98,6 +124,9 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_bookings_service_day_open": ServiceDayClosedError,
     "ck_bookings_service_offered": ServiceNotOfferedError,
     "ck_bookings_service_day_full": BookingCapacityCollisionError,
+    # Cancelling without a refund, and reinstating (trg_bookings_cancel_rules, schema/0004).
+    "ck_bookings_cancel_window": BookingNotCancellableError,
+    "ck_bookings_reinstate_window": BookingNotReinstatableError,
     "ck_bookings_child_medically_cleared": ChildNotMedicallyClearedError,
     "ck_bookings_child_active": ChildInactiveError,
     "ck_bookings_child_age": ChildAgeNotEligibleError,

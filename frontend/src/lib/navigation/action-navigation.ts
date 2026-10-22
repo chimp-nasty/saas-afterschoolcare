@@ -22,9 +22,14 @@ export function buildActionHref(
 	locationCode: string,
 	action: {
 		childId: string | null;
-		target: string;
+		// NULL for a plain message, which links nowhere.
+		target: string | null;
 	}
 ): string | null {
+	if (!action.target) {
+		return null;
+	}
+
 	if (action.childId) {
 		if (!isChildTab(action.target)) {
 			return null;

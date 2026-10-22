@@ -68,6 +68,19 @@ CATALOGUE: dict[EmailType, EmailDefinition] = {
             requires_tls=True,
         ),
         EmailDefinition(
+            type=EmailType.STAFF_INVITE,
+            placeholders=frozenset(),
+            subject="You've been added to {centre_name}",
+            heading="Welcome to the team",
+            body=(
+                "Hi {first_name},\n\n"
+                "You've been added to the staff at {centre_name}. Set your password to log in."
+            ),
+            sign_off=_SIGN_OFF,
+            footer_reason="You're receiving this because {centre_name} added you to their staff.",
+            requires_tls=True,
+        ),
+        EmailDefinition(
             type=EmailType.PASSWORD_CHANGED,
             placeholders=frozenset(),
             subject="Your password was changed",
@@ -141,6 +154,18 @@ CATALOGUE: dict[EmailType, EmailDefinition] = {
                 "Hi {first_name},\n\n"
                 "{centre_name} has approved {child_first_name}'s profile. You can now book "
                 "sessions for {child_first_name}."
+            ),
+            sign_off=_SIGN_OFF,
+            footer_reason=_ACCOUNT_HOLDER,
+        ),
+        EmailDefinition(
+            type=EmailType.NEW_MESSAGE,
+            placeholders=frozenset(),
+            subject="You have a new message",
+            heading="You have a new message",
+            body=(
+                "Hi {first_name},\n\n"
+                "{centre_name} has sent you a message. Log in to read it."
             ),
             sign_off=_SIGN_OFF,
             footer_reason=_ACCOUNT_HOLDER,

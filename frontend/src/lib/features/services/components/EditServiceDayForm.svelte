@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import Button from '$lib/components/actions/Button.svelte';
+	import CheckboxRow from '$lib/components/forms/CheckboxRow.svelte';
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
 
@@ -69,15 +70,11 @@
 			{/snippet}
 		</Field>
 
-		<label class="flex min-h-12 items-center gap-3">
-			<input type="checkbox" class="size-5" bind:checked={body.is_open} />
-			<span class="flex flex-col">
-				<span class="text-base font-semibold text-(--text)">Open for bookings</span>
-				{#if day.is_open && held > 0}
-					<span class="text-sm text-(--text-muted)">Children are booked: refund them before closing this day.</span>
-				{/if}
-			</span>
-		</label>
+		<CheckboxRow
+			bind:checked={body.is_open}
+			title="Open for bookings"
+			help={day.is_open && held > 0 ? 'Children are booked: refund them before closing this day.' : null}
+		/>
 
 		{#if !body.is_open}
 			<Field label="Why it's closed (optional)" error={errors.closed_reason}>

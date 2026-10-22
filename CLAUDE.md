@@ -60,6 +60,6 @@ Mind the file order: a SQL-language function body is checked when it's created, 
 
 ## Not built yet (MVP order)
 
-Rest of the admin portal (service days and capacity, service settings, staff accounts, family bookings and web refunds, attendance history, notes and actions to families) → tenant configuration and Stripe Connect. The portal split (staff portal, admin portal, staff kiosk) and its rules are in `docs/portals.md`, kiosk procedures in `docs/kiosk-procedures.md`; email deployment steps (webhook subscription, SES tenants) are in `infra/email/ses/README.md`.
+Tenant configuration and Stripe Connect. Later: a review of customer-facing wording (explanations, guides, rule descriptions; text only), and the audit trail after the MVP. The portal split (staff portal, admin portal, staff kiosk) and its rules are in `docs/portals.md`, kiosk procedures in `docs/kiosk-procedures.md`; email deployment steps (webhook subscription, SES tenants) are in `infra/email/ses/README.md`.
 
 Timestamps that are compared with each other (attendance, ID checks, shifts) are stamped by the database's clock (`now()`), never the app server's.

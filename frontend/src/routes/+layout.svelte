@@ -12,7 +12,7 @@
 	duration={3000}
 	toastOptions={{
 		classes: {
-			toast: 'rounded-2xl! border! border-(--border)! text-sm! font-bold!',
+			toast: 'rounded-2xl! border! border-(--border)! text-sm! font-extrabold!',
 			success: 'bg-(--success-soft)! text-(--success-text)!',
 			error: 'bg-(--danger-soft)! text-(--danger-text)!'
 		}

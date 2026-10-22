@@ -1,14 +1,17 @@
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import Date, cast, func, or_, select
 from sqlalchemy.engine import Row
 
 from app.db.repository import Repository
 from app.db.models import (
+    Booking,
     ChildDocument,
     ChildMedicalState,
     ChildProfile,
     CustomerProfile,
+    Location,
+    LocationServiceDay,
     User,
 )
 from app.public.schemas.enums import ChildDocumentUploadStatus, MedicalReviewStatus
@@ -64,6 +67,31 @@ class ChildMedicalStateRepository(Repository):
 
         return state
 
+    def reopen(
+        self,
+        *,
+        child_id: UUID,
+    ) -> int:
+        """
+        An approved child back to pending (0 rows if they aren't approved:
+        a no-op change would slip past trg_child_medical_state_rules,
+        which checks changes). The trigger clears the reviewer.
+        """
+        return (
+            self.db.query(ChildMedicalState)
+            .filter(
+                ChildMedicalState.child_id == child_id,
+                ChildMedicalState.review_status == MedicalReviewStatus.APPROVED,
+            )
+            .update(
+                {
+                    ChildMedicalState.review_status: MedicalReviewStatus.PENDING,
+                    ChildMedicalState.documentation_request: None,
+                },
+                synchronize_session=False,
+            )
+        )
+
     def get_review(
         self,
         *,
@@ -78,6 +106,7 @@ class ChildMedicalStateRepository(Repository):
                 ChildMedicalState.updated_by_user_id.label("reviewed_by_user_id"),
                 User.id.label("family_user_id"),
                 User.email.label("family_email"),
+                self._upcoming_bookings().label("upcoming_bookings"),
             )
             .filter(ChildProfile.id == child_id)
             .first()
@@ -87,8 +116,15 @@ class ChildMedicalStateRepository(Repository):
         self,
         *,
         review_status: list[str],
+        text_query: str | None = None,
+        newest_first: bool = False,
     ) -> list[Row]:
-        """Current children in the given statuses, longest waiting first."""
+        """
+        Current children in the given statuses, longest waiting first (or
+        newest decision first, for the approved list). text_query matches
+        the start of the child's or the parent's first or last name, or
+        their full name.
+        """
         document_count = (
             self.db.query(func.count(ChildDocument.id))
             .filter(
@@ -107,13 +143,47 @@ class ChildMedicalStateRepository(Repository):
             .filter(
                 ChildProfile.is_active.is_(True),
                 ChildMedicalState.review_status.in_(review_status),
+                *([self._name_matches(text_query)] if text_query else []),
             )
             .order_by(
-                "status_since",
+                func.coalesce(ChildMedicalState.updated_at, ChildProfile.created_at).desc()
+                if newest_first
+                else "status_since",
                 ChildProfile.first_name,
                 ChildProfile.last_name,
             )
             .all()
+        )
+
+    @staticmethod
+    def _name_matches(text_query: str):
+        """The child's or the parent's name starts with the text (any word, or the full name)."""
+        pattern = f"{text_query.lower()}%"
+        names = (
+            ChildProfile.first_name,
+            ChildProfile.last_name,
+            ChildProfile.first_name + " " + ChildProfile.last_name,
+            User.first_name,
+            User.last_name,
+            User.first_name + " " + User.last_name,
+        )
+
+        return or_(*(func.lower(name).like(pattern) for name in names))
+
+    @staticmethod
+    def _upcoming_bookings():
+        """The child's confirmed bookings from today on (location time)."""
+        return (
+            select(func.count(Booking.id))
+            .join(LocationServiceDay, LocationServiceDay.id == Booking.location_service_day_id)
+            .join(Location, Location.id == Booking.location_id)
+            .where(
+                Booking.child_id == ChildProfile.id,
+                Booking.booking_status == "CONFIRMED",
+                LocationServiceDay.service_date >= cast(func.timezone(Location.timezone, func.now()), Date),
+            )
+            .correlate(ChildProfile)
+            .scalar_subquery()
         )
 
     def _review_query(self, *columns):
@@ -132,6 +202,8 @@ class ChildMedicalStateRepository(Repository):
                 ChildMedicalState.review_status,
                 ChildMedicalState.documentation_request,
                 status_since.label("status_since"),
+                # Who made the latest decision, as "Sam L."; None while waiting.
+                func.public.staff_short_name(ChildMedicalState.updated_by_user_id).label("reviewed_by"),
                 User.first_name.label("family_first_name"),
                 User.last_name.label("family_last_name"),
                 CustomerProfile.phone.label("family_phone"),

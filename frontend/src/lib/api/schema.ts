@@ -141,6 +141,249 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff-accounts/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Staff */
+        get: operations["list_staff_staff_accounts_v1__get"];
+        put?: never;
+        /** Add Staff */
+        post: operations["add_staff_staff_accounts_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-accounts/v1/{user_id}/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend Invite */
+        post: operations["resend_invite_staff_accounts_v1__user_id__invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-accounts/v1/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Staff */
+        delete: operations["remove_staff_staff_accounts_v1__user_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename Staff */
+        patch: operations["rename_staff_staff_accounts_v1__user_id__patch"];
+        trace?: never;
+    };
+    "/staff-accounts/v1/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change Staff Role */
+        put: operations["change_staff_role_staff_accounts_v1__user_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-accounts/v1/{user_id}/reset-pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Staff Pin */
+        post: operations["reset_staff_pin_staff_accounts_v1__user_id__reset_pin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Families */
+        get: operations["search_families_families_v1__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Family */
+        get: operations["get_family_families_v1__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Family */
+        patch: operations["update_family_families_v1__user_id__patch"];
+        trace?: never;
+    };
+    "/families/v1/{user_id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Family Bookings */
+        get: operations["list_family_bookings_families_v1__user_id__bookings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Family Attendance */
+        get: operations["list_family_attendance_families_v1__user_id__attendance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Family Payments */
+        get: operations["list_family_payments_families_v1__user_id__payments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Family Notes */
+        get: operations["list_family_notes_families_v1__user_id__notes_get"];
+        put?: never;
+        /** Add Family Note */
+        post: operations["add_family_note_families_v1__user_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Family Note */
+        delete: operations["delete_family_note_families_v1__user_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Family Messages */
+        get: operations["list_family_messages_families_v1__user_id__messages_get"];
+        put?: never;
+        /** Send Family Message */
+        post: operations["send_family_message_families_v1__user_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/v1/{user_id}/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw Family Message */
+        delete: operations["withdraw_family_message_families_v1__user_id__messages__message_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/location-branding/v1/public": {
         parameters: {
             query?: never;
@@ -272,6 +515,40 @@ export interface paths {
         put?: never;
         /** Cancel Booking Group */
         post: operations["cancel_booking_group_booking_v1_groups__booking_group_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/booking/v1/{booking_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Booking */
+        post: operations["cancel_booking_booking_v1__booking_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/booking/v1/{booking_id}/reinstate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reinstate Booking */
+        post: operations["reinstate_booking_booking_v1__booking_id__reinstate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1156,6 +1433,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff-kiosk/v1/{location_code}/children/{child_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Child Notes */
+        get: operations["list_child_notes_staff_kiosk_v1__location_code__children__child_id__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/staff-kiosk/v1/{location_code}/action-plans": {
         parameters: {
             query?: never;
@@ -1409,7 +1703,7 @@ export interface components {
             /** Child Id */
             child_id: string | null;
             /** Target */
-            target: string;
+            target: string | null;
             /** Title */
             title: string;
             /** Message */
@@ -1427,6 +1721,33 @@ export interface components {
             /** Cited At */
             cited_at: string | null;
         };
+        /**
+         * AddStaffRequest
+         * @description Add someone to the location's staff; new accounts are emailed an invite.
+         */
+        AddStaffRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Role
+             * @default staff
+             * @enum {string}
+             */
+            role: "staff" | "admin";
+        };
+        /** AddStaffResponse */
+        AddStaffResponse: {
+            staff: components["schemas"]["StaffAccountResponse"];
+            /** Invited */
+            invited: boolean;
+        };
         /** ApiResponse[AccountResponse] */
         ApiResponse_AccountResponse_: {
             /** Ok */
@@ -1442,6 +1763,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["ActionResponse"] | null;
+        };
+        /** ApiResponse[AddStaffResponse] */
+        ApiResponse_AddStaffResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["AddStaffResponse"] | null;
         };
         /** ApiResponse[AttendanceTimesResponse] */
         ApiResponse_AttendanceTimesResponse_: {
@@ -1515,6 +1844,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["ChildMedicalResponse"] | null;
         };
+        /** ApiResponse[ChildNoteResponse] */
+        ApiResponse_ChildNoteResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["ChildNoteResponse"] | null;
+        };
         /** ApiResponse[ChildResponse] */
         ApiResponse_ChildResponse_: {
             /** Ok */
@@ -1546,6 +1883,22 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["CustomerProfileResponse"] | null;
+        };
+        /** ApiResponse[FamilyMessageResponse] */
+        ApiResponse_FamilyMessageResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["FamilyMessageResponse"] | null;
+        };
+        /** ApiResponse[FamilyResponse] */
+        ApiResponse_FamilyResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["FamilyResponse"] | null;
         };
         /** ApiResponse[KioskDeviceResponse] */
         ApiResponse_KioskDeviceResponse_: {
@@ -1708,6 +2061,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["SetServiceDayCapacityResponse"] | null;
         };
+        /** ApiResponse[StaffAccountResponse] */
+        ApiResponse_StaffAccountResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["StaffAccountResponse"] | null;
+        };
         /** ApiResponse[StaffKioskVerifyResponse] */
         ApiResponse_StaffKioskVerifyResponse_: {
             /** Ok */
@@ -1804,6 +2165,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["ChildDocumentResponse"][] | null;
         };
+        /** ApiResponse[list[ChildNoteResponse]] */
+        ApiResponse_list_ChildNoteResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["ChildNoteResponse"][] | null;
+        };
         /** ApiResponse[list[ChildSearchResultResponse]] */
         ApiResponse_list_ChildSearchResultResponse__: {
             /** Ok */
@@ -1822,6 +2192,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["ChildTableResponse"][] | null;
         };
+        /** ApiResponse[list[FamilyAttendanceResponse]] */
+        ApiResponse_list_FamilyAttendanceResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["FamilyAttendanceResponse"][] | null;
+        };
         /** ApiResponse[list[FamilyBookingResponse]] */
         ApiResponse_list_FamilyBookingResponse__: {
             /** Ok */
@@ -1830,6 +2209,33 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["FamilyBookingResponse"][] | null;
+        };
+        /** ApiResponse[list[FamilyMessageResponse]] */
+        ApiResponse_list_FamilyMessageResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["FamilyMessageResponse"][] | null;
+        };
+        /** ApiResponse[list[FamilyPaymentResponse]] */
+        ApiResponse_list_FamilyPaymentResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["FamilyPaymentResponse"][] | null;
+        };
+        /** ApiResponse[list[FamilySearchResultResponse]] */
+        ApiResponse_list_FamilySearchResultResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["FamilySearchResultResponse"][] | null;
         };
         /** ApiResponse[list[KioskDeviceResponse]] */
         ApiResponse_list_KioskDeviceResponse__: {
@@ -1911,6 +2317,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["ServiceDayOverviewResponse"][] | null;
+        };
+        /** ApiResponse[list[StaffAccountResponse]] */
+        ApiResponse_list_StaffAccountResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["StaffAccountResponse"][] | null;
         };
         /** ApiResponse[list[StaffKioskMemberResponse]] */
         ApiResponse_list_StaffKioskMemberResponse__: {
@@ -2027,6 +2442,10 @@ export interface components {
             refundable_until: string;
             /** Is Refundable */
             is_refundable: boolean;
+            /** Is Cancellable */
+            is_cancellable: boolean;
+            /** Is Reinstatable */
+            is_reinstatable: boolean;
             refund_status: components["schemas"]["RefundStatus"] | null;
         };
         /**
@@ -2231,6 +2650,14 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** ChangeStaffRoleRequest */
+        ChangeStaffRoleRequest: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "staff" | "admin";
+        };
         /** CheckoutStatusResponse */
         CheckoutStatusResponse: {
             /**
@@ -2339,6 +2766,33 @@ export interface components {
             status_since: string;
             /** Documents */
             documents: components["schemas"]["ChildDocumentResponse"][];
+        };
+        /**
+         * ChildNoteResponse
+         * @description A staff note about a child; never shown to the family.
+         */
+        ChildNoteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Child First Name */
+            child_first_name: string;
+            /** Note */
+            note: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ChildResponse */
         ChildResponse: {
@@ -2483,6 +2937,16 @@ export interface components {
             /** Size Bytes */
             size_bytes: number;
         };
+        /** CreateChildNoteRequest */
+        CreateChildNoteRequest: {
+            /**
+             * Child Id
+             * Format: uuid
+             */
+            child_id: string;
+            /** Note */
+            note: string;
+        };
         /** CreateChildRequest */
         CreateChildRequest: {
             /** First Name */
@@ -2612,11 +3076,65 @@ export interface components {
             state: components["schemas"]["AustralianState"] | null;
             /** Postcode */
             postcode: string | null;
+            /** Emergency Contact Name */
+            emergency_contact_name: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone: string | null;
+            emergency_contact_relation: components["schemas"]["EmergencyRelation"] | null;
+            /** Emergency Contact Relation Other */
+            emergency_contact_relation_other: string | null;
             /**
              * Updated At
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * EmergencyRelation
+         * @enum {string}
+         */
+        EmergencyRelation: "parent_guardian" | "grandparent" | "aunt_uncle" | "family_friend" | "neighbour" | "nanny_babysitter" | "other";
+        /**
+         * FamilyAttendanceResponse
+         * @description One child's session in the attendance history.
+         */
+        FamilyAttendanceResponse: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Service Date
+             * Format: date
+             */
+            service_date: string;
+            /** Service Name */
+            service_name: string;
+            /** Child First Name */
+            child_first_name: string;
+            /** Child Last Name */
+            child_last_name: string;
+            /** Signed In At */
+            signed_in_at: string | null;
+            /** Signed In By */
+            signed_in_by: string | null;
+            /** Signed Out At */
+            signed_out_at: string | null;
+            /** Signed Out By */
+            signed_out_by: string | null;
+            /** Collected By */
+            collected_by: string | null;
+            /** Collector Id Sighted */
+            collector_id_sighted: boolean | null;
+            /** Released To Name */
+            released_to_name: string | null;
+            /** Release Note */
+            release_note: string | null;
+            /** Sent To School */
+            sent_to_school: boolean;
+            /** Left Late */
+            left_late: boolean;
         };
         /**
          * FamilyBookingResponse
@@ -2682,6 +3200,153 @@ export interface components {
             refund_status: components["schemas"]["RefundStatus"] | null;
             /** Is Refundable By Admin */
             is_refundable_by_admin: boolean;
+            /** Is Cancellable */
+            is_cancellable: boolean;
+            /** Is Reinstatable */
+            is_reinstatable: boolean;
+        };
+        /** FamilyChildResponse */
+        FamilyChildResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Dob
+             * Format: date
+             */
+            dob: string;
+            /** Is Active */
+            is_active: boolean;
+            review_status: components["schemas"]["MedicalReviewStatus"];
+        };
+        /**
+         * FamilyMessageResponse
+         * @description A message to the family, as the admin portal lists it.
+         */
+        FamilyMessageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Child Id */
+            child_id: string | null;
+            /** Child First Name */
+            child_first_name: string | null;
+            /** Target */
+            target: string | null;
+            /** Title */
+            title: string;
+            /** Message */
+            message: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Cited At */
+            cited_at: string | null;
+        };
+        /**
+         * FamilyPaymentResponse
+         * @description One payment (a checkout) and what's been refunded from it.
+         */
+        FamilyPaymentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Paid At */
+            paid_at: string | null;
+            /** Total Cents */
+            total_cents: number;
+            currency: components["schemas"]["CurrencyCode"];
+            /** Stripe Status */
+            stripe_status: string;
+            /** Receipt Url */
+            receipt_url: string | null;
+            /** Bookings */
+            bookings: number;
+            /** Refunded Cents */
+            refunded_cents: number;
+        };
+        /**
+         * FamilyResponse
+         * @description A family's page: the parent's details, children and pickup people.
+         */
+        FamilyResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Email */
+            email: string;
+            /** Phone */
+            phone: string | null;
+            /** Address Line 1 */
+            address_line_1: string | null;
+            /** Address Line 2 */
+            address_line_2: string | null;
+            /** Suburb */
+            suburb: string | null;
+            state: components["schemas"]["AustralianState"] | null;
+            /** Postcode */
+            postcode: string | null;
+            /** Emergency Contact Name */
+            emergency_contact_name: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone: string | null;
+            emergency_contact_relation: components["schemas"]["EmergencyRelation"] | null;
+            /** Emergency Contact Relation Other */
+            emergency_contact_relation_other: string | null;
+            /** Children */
+            children: components["schemas"]["FamilyChildResponse"][];
+            /** Pickups */
+            pickups: components["schemas"]["RollPickupPersonResponse"][];
+        };
+        /**
+         * FamilySearchResultResponse
+         * @description A family at this centre, as the search lists it.
+         */
+        FamilySearchResultResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Email */
+            email: string;
+            /** Phone */
+            phone: string | null;
+            /** Children */
+            children: string | null;
+            /** Upcoming */
+            upcoming: number;
+            /** Unpaid */
+            unpaid: number;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
@@ -3004,11 +3669,14 @@ export interface components {
          * MedicalReviewDecision
          * @enum {string}
          */
-        MedicalReviewDecision: "approved" | "documentation_requested";
+        MedicalReviewDecision: "approved" | "documentation_requested" | "reopen";
         /**
          * MedicalReviewDecisionRequest
-         * @description Approve the child, or ask the family for documentation. A request needs
-         *     a message saying what's needed; it's shown to the family.
+         * @description Approve the child, ask the family for documentation, or reopen an
+         *     approved child for review. A request needs a message saying what's
+         *     needed; it's shown to the family. A reopen always sends the family a
+         *     message in their account; this one, or a default saying staff are
+         *     reviewing.
          */
         MedicalReviewDecisionRequest: {
             decision: components["schemas"]["MedicalReviewDecision"];
@@ -3052,6 +3720,10 @@ export interface components {
             status_since: string;
             /** Reviewed By User Id */
             reviewed_by_user_id: string | null;
+            /** Reviewed By */
+            reviewed_by: string | null;
+            /** Upcoming Bookings */
+            upcoming_bookings: number;
             /**
              * Family User Id
              * Format: uuid
@@ -3098,6 +3770,8 @@ export interface components {
              * Format: date-time
              */
             status_since: string;
+            /** Reviewed By */
+            reviewed_by: string | null;
             /** Family First Name */
             family_first_name: string;
             /** Family Last Name */
@@ -3116,7 +3790,7 @@ export interface components {
          * PickupRelation
          * @enum {string}
          */
-        PickupRelation: "account_holder" | "grandparent" | "aunt_uncle" | "family_friend" | "neighbour" | "nanny_babysitter" | "other";
+        PickupRelation: "account_holder" | "parent_guardian" | "grandparent" | "aunt_uncle" | "family_friend" | "neighbour" | "nanny_babysitter" | "other";
         /**
          * PickupResponse
          * @description A person on the family's pickup list. The ID check and kiosk state are
@@ -3251,6 +3925,13 @@ export interface components {
              */
             terms_accepted: true;
         };
+        /** RenameStaffRequest */
+        RenameStaffRequest: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+        };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
             /** Token */
@@ -3288,6 +3969,14 @@ export interface components {
             family_last_name: string;
             /** Family Phone */
             family_phone: string | null;
+            /** Emergency Contact Name */
+            emergency_contact_name: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone: string | null;
+            /** Emergency Contact Relation */
+            emergency_contact_relation: string | null;
+            /** Emergency Contact Relation Other */
+            emergency_contact_relation_other: string | null;
             /** Service Name */
             service_name: string;
             /**
@@ -3430,6 +4119,8 @@ export interface components {
             has_medical: boolean;
             /** Medical Review Status */
             medical_review_status: string | null;
+            /** Has Notes */
+            has_notes: boolean;
         };
         /**
          * RunSheetResponse
@@ -3485,6 +4176,17 @@ export interface components {
             signing_opens_at: string | null;
             /** Signing Closes At */
             signing_closes_at: string | null;
+        };
+        /** SendFamilyMessageRequest */
+        SendFamilyMessageRequest: {
+            /** Title */
+            title: string;
+            /** Message */
+            message: string;
+            /** Child Id */
+            child_id?: string | null;
+            /** Target */
+            target?: ("profile" | "children" | "pickups" | "manage-documents") | null;
         };
         /**
          * ServiceDayOverviewResponse
@@ -3605,6 +4307,29 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /**
+         * StaffAccountResponse
+         * @description Someone who works at the location, as its admins see them.
+         */
+        StaffAccountResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Email */
+            email: string;
+            /** Role Code */
+            role_code: string;
+            /** Has Pin */
+            has_pin: boolean;
+            /** Last Login */
+            last_login: string | null;
         };
         /**
          * StaffKioskBulkRequest
@@ -3779,7 +4504,30 @@ export interface components {
             /** Medication Info */
             medication_info?: string | null;
         };
-        /** UpdateCustomerProfileRequest */
+        /**
+         * UpdateContactDetailsRequest
+         * @description The parent's phone and address: what an admin may correct (Admin › Families).
+         */
+        UpdateContactDetailsRequest: {
+            /** Phone */
+            phone?: string | null;
+            /** Address Line 1 */
+            address_line_1?: string | null;
+            /** Address Line 2 */
+            address_line_2?: string | null;
+            /** Suburb */
+            suburb?: string | null;
+            state?: components["schemas"]["AustralianState"] | null;
+            /** Postcode */
+            postcode?: string | null;
+        };
+        /**
+         * UpdateCustomerProfileRequest
+         * @description The family's own profile: their contact details and their emergency
+         *     contact (only the family sets it; trg_customer_profile_emergency_owner).
+         *     Its phone must be a valid Australian number and not the parent's own
+         *     (ck_customer_profile_emergency_phone_distinct).
+         */
         UpdateCustomerProfileRequest: {
             /** Phone */
             phone?: string | null;
@@ -3792,6 +4540,13 @@ export interface components {
             state?: components["schemas"]["AustralianState"] | null;
             /** Postcode */
             postcode?: string | null;
+            /** Emergency Contact Name */
+            emergency_contact_name?: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone?: string | null;
+            emergency_contact_relation?: components["schemas"]["EmergencyRelation"] | null;
+            /** Emergency Contact Relation Other */
+            emergency_contact_relation_other?: string | null;
         };
         /** UpdateKioskSettingsRequest */
         UpdateKioskSettingsRequest: {
@@ -3879,8 +4634,11 @@ export type AccountResponse = components['schemas']['AccountResponse'];
 export type AccountRoleResponse = components['schemas']['AccountRoleResponse'];
 export type ActionPlanResponse = components['schemas']['ActionPlanResponse'];
 export type ActionResponse = components['schemas']['ActionResponse'];
+export type AddStaffRequest = components['schemas']['AddStaffRequest'];
+export type AddStaffResponse = components['schemas']['AddStaffResponse'];
 export type ApiResponseAccountResponse = components['schemas']['ApiResponse_AccountResponse_'];
 export type ApiResponseActionResponse = components['schemas']['ApiResponse_ActionResponse_'];
+export type ApiResponseAddStaffResponse = components['schemas']['ApiResponse_AddStaffResponse_'];
 export type ApiResponseAttendanceTimesResponse = components['schemas']['ApiResponse_AttendanceTimesResponse_'];
 export type ApiResponseBookingGroupResponse = components['schemas']['ApiResponse_BookingGroupResponse_'];
 export type ApiResponseBookingResponse = components['schemas']['ApiResponse_BookingResponse_'];
@@ -3890,10 +4648,13 @@ export type ApiResponseChildDocumentDownloadResponse = components['schemas']['Ap
 export type ApiResponseChildDocumentResponse = components['schemas']['ApiResponse_ChildDocumentResponse_'];
 export type ApiResponseChildDocumentUploadResponse = components['schemas']['ApiResponse_ChildDocumentUploadResponse_'];
 export type ApiResponseChildMedicalResponse = components['schemas']['ApiResponse_ChildMedicalResponse_'];
+export type ApiResponseChildNoteResponse = components['schemas']['ApiResponse_ChildNoteResponse_'];
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCreateServiceDaysResponse = components['schemas']['ApiResponse_CreateServiceDaysResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
+export type ApiResponseFamilyMessageResponse = components['schemas']['ApiResponse_FamilyMessageResponse_'];
+export type ApiResponseFamilyResponse = components['schemas']['ApiResponse_FamilyResponse_'];
 export type ApiResponseKioskDeviceResponse = components['schemas']['ApiResponse_KioskDeviceResponse_'];
 export type ApiResponseKioskInfoResponse = components['schemas']['ApiResponse_KioskInfoResponse_'];
 export type ApiResponseKioskLoginResponse = components['schemas']['ApiResponse_KioskLoginResponse_'];
@@ -3914,6 +4675,7 @@ export type ApiResponseRunSheetResponse = components['schemas']['ApiResponse_Run
 export type ApiResponseServiceDayOverviewResponse = components['schemas']['ApiResponse_ServiceDayOverviewResponse_'];
 export type ApiResponseSessionResponse = components['schemas']['ApiResponse_SessionResponse_'];
 export type ApiResponseSetServiceDayCapacityResponse = components['schemas']['ApiResponse_SetServiceDayCapacityResponse_'];
+export type ApiResponseStaffAccountResponse = components['schemas']['ApiResponse_StaffAccountResponse_'];
 export type ApiResponseStaffKioskVerifyResponse = components['schemas']['ApiResponse_StaffKioskVerifyResponse_'];
 export type ApiResponseStaffPinStatusResponse = components['schemas']['ApiResponse_StaffPinStatusResponse_'];
 export type ApiResponseStaffShiftResponse = components['schemas']['ApiResponse_StaffShiftResponse_'];
@@ -3925,9 +4687,14 @@ export type ApiResponseListBookingConflictRow = components['schemas']['ApiRespon
 export type ApiResponseListBookingGroupSummaryResponse = components['schemas']['ApiResponse_list_BookingGroupSummaryResponse__'];
 export type ApiResponseListBookingTableResponse = components['schemas']['ApiResponse_list_BookingTableResponse__'];
 export type ApiResponseListChildDocumentResponse = components['schemas']['ApiResponse_list_ChildDocumentResponse__'];
+export type ApiResponseListChildNoteResponse = components['schemas']['ApiResponse_list_ChildNoteResponse__'];
 export type ApiResponseListChildSearchResultResponse = components['schemas']['ApiResponse_list_ChildSearchResultResponse__'];
 export type ApiResponseListChildTableResponse = components['schemas']['ApiResponse_list_ChildTableResponse__'];
+export type ApiResponseListFamilyAttendanceResponse = components['schemas']['ApiResponse_list_FamilyAttendanceResponse__'];
 export type ApiResponseListFamilyBookingResponse = components['schemas']['ApiResponse_list_FamilyBookingResponse__'];
+export type ApiResponseListFamilyMessageResponse = components['schemas']['ApiResponse_list_FamilyMessageResponse__'];
+export type ApiResponseListFamilyPaymentResponse = components['schemas']['ApiResponse_list_FamilyPaymentResponse__'];
+export type ApiResponseListFamilySearchResultResponse = components['schemas']['ApiResponse_list_FamilySearchResultResponse__'];
 export type ApiResponseListKioskDeviceResponse = components['schemas']['ApiResponse_list_KioskDeviceResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
@@ -3937,6 +4704,7 @@ export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_l
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
 export type ApiResponseListRollPickupPersonResponse = components['schemas']['ApiResponse_list_RollPickupPersonResponse__'];
 export type ApiResponseListServiceDayOverviewResponse = components['schemas']['ApiResponse_list_ServiceDayOverviewResponse__'];
+export type ApiResponseListStaffAccountResponse = components['schemas']['ApiResponse_list_StaffAccountResponse__'];
 export type ApiResponseListStaffKioskMemberResponse = components['schemas']['ApiResponse_list_StaffKioskMemberResponse__'];
 export type AttendanceTimesResponse = components['schemas']['AttendanceTimesResponse'];
 export type AustralianState = components['schemas']['AustralianState'];
@@ -3950,6 +4718,7 @@ export type BookingSelection = components['schemas']['BookingSelection'];
 export type BookingStatus = components['schemas']['BookingStatus'];
 export type BookingTableResponse = components['schemas']['BookingTableResponse'];
 export type ChangePasswordRequest = components['schemas']['ChangePasswordRequest'];
+export type ChangeStaffRoleRequest = components['schemas']['ChangeStaffRoleRequest'];
 export type CheckoutStatusResponse = components['schemas']['CheckoutStatusResponse'];
 export type CheckoutUrlResponse = components['schemas']['CheckoutUrlResponse'];
 export type ChildDocumentDownloadResponse = components['schemas']['ChildDocumentDownloadResponse'];
@@ -3958,12 +4727,14 @@ export type ChildDocumentType = components['schemas']['ChildDocumentType'];
 export type ChildDocumentUploadResponse = components['schemas']['ChildDocumentUploadResponse'];
 export type ChildDocumentUploadStatus = components['schemas']['ChildDocumentUploadStatus'];
 export type ChildMedicalResponse = components['schemas']['ChildMedicalResponse'];
+export type ChildNoteResponse = components['schemas']['ChildNoteResponse'];
 export type ChildResponse = components['schemas']['ChildResponse'];
 export type ChildSearchResultResponse = components['schemas']['ChildSearchResultResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
 export type CreateChildDocumentRequest = components['schemas']['CreateChildDocumentRequest'];
+export type CreateChildNoteRequest = components['schemas']['CreateChildNoteRequest'];
 export type CreateChildRequest = components['schemas']['CreateChildRequest'];
 export type CreateKioskDeviceRequest = components['schemas']['CreateKioskDeviceRequest'];
 export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
@@ -3972,7 +4743,14 @@ export type CreateServiceDaysRequest = components['schemas']['CreateServiceDaysR
 export type CreateServiceDaysResponse = components['schemas']['CreateServiceDaysResponse'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
+export type EmergencyRelation = components['schemas']['EmergencyRelation'];
+export type FamilyAttendanceResponse = components['schemas']['FamilyAttendanceResponse'];
 export type FamilyBookingResponse = components['schemas']['FamilyBookingResponse'];
+export type FamilyChildResponse = components['schemas']['FamilyChildResponse'];
+export type FamilyMessageResponse = components['schemas']['FamilyMessageResponse'];
+export type FamilyPaymentResponse = components['schemas']['FamilyPaymentResponse'];
+export type FamilyResponse = components['schemas']['FamilyResponse'];
+export type FamilySearchResultResponse = components['schemas']['FamilySearchResultResponse'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
 export type HttpValidationError = components['schemas']['HTTPValidationError'];
 export type KioskBookingResponse = components['schemas']['KioskBookingResponse'];
@@ -4005,6 +4783,7 @@ export type PublicLocationResponse = components['schemas']['PublicLocationRespon
 export type RefundResponse = components['schemas']['RefundResponse'];
 export type RefundStatus = components['schemas']['RefundStatus'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
+export type RenameStaffRequest = components['schemas']['RenameStaffRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type RollEntryResponse = components['schemas']['RollEntryResponse'];
 export type RollFamilyResponse = components['schemas']['RollFamilyResponse'];
@@ -4013,6 +4792,7 @@ export type RollResponse = components['schemas']['RollResponse'];
 export type RunSheetEntryResponse = components['schemas']['RunSheetEntryResponse'];
 export type RunSheetResponse = components['schemas']['RunSheetResponse'];
 export type RunSheetSessionResponse = components['schemas']['RunSheetSessionResponse'];
+export type SendFamilyMessageRequest = components['schemas']['SendFamilyMessageRequest'];
 export type ServiceDayOverviewResponse = components['schemas']['ServiceDayOverviewResponse'];
 export type SessionResponse = components['schemas']['SessionResponse'];
 export type SetPrintedRequest = components['schemas']['SetPrintedRequest'];
@@ -4020,6 +4800,7 @@ export type SetServiceDayCapacityRequest = components['schemas']['SetServiceDayC
 export type SetServiceDayCapacityResponse = components['schemas']['SetServiceDayCapacityResponse'];
 export type SetStaffPinRequest = components['schemas']['SetStaffPinRequest'];
 export type SignedUploadResponse = components['schemas']['SignedUploadResponse'];
+export type StaffAccountResponse = components['schemas']['StaffAccountResponse'];
 export type StaffKioskBulkRequest = components['schemas']['StaffKioskBulkRequest'];
 export type StaffKioskCheckIdRequest = components['schemas']['StaffKioskCheckIdRequest'];
 export type StaffKioskMemberResponse = components['schemas']['StaffKioskMemberResponse'];
@@ -4031,6 +4812,7 @@ export type StaffPinStatusResponse = components['schemas']['StaffPinStatusRespon
 export type StaffShiftResponse = components['schemas']['StaffShiftResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
+export type UpdateContactDetailsRequest = components['schemas']['UpdateContactDetailsRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
 export type UpdateKioskSettingsRequest = components['schemas']['UpdateKioskSettingsRequest'];
 export type UpdateLocationServiceConfigRequest = components['schemas']['UpdateLocationServiceConfigRequest'];
@@ -4329,6 +5111,661 @@ export interface operations {
             };
         };
     };
+    list_staff_staff_accounts_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_StaffAccountResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_staff_staff_accounts_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_AddStaffResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_invite_staff_accounts_v1__user_id__invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffAccountResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_staff_staff_accounts_v1__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_staff_staff_accounts_v1__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffAccountResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_staff_role_staff_accounts_v1__user_id__role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeStaffRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffAccountResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_staff_pin_staff_accounts_v1__user_id__reset_pin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StaffAccountResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_families_families_v1__get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_FamilySearchResultResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_family_families_v1__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_FamilyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_family_families_v1__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContactDetailsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_FamilyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_family_bookings_families_v1__user_id__bookings_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_FamilyBookingResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_family_attendance_families_v1__user_id__attendance_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_FamilyAttendanceResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_family_payments_families_v1__user_id__payments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_FamilyPaymentResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_family_notes_families_v1__user_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ChildNoteResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_family_note_families_v1__user_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChildNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ChildNoteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_family_note_families_v1__user_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                note_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_family_messages_families_v1__user_id__messages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_FamilyMessageResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_family_message_families_v1__user_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendFamilyMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_FamilyMessageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    withdraw_family_message_families_v1__user_id__messages__message_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                message_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_public_locations_location_branding_v1_public_get: {
         parameters: {
             query?: never;
@@ -4605,6 +6042,72 @@ export interface operations {
             header?: never;
             path: {
                 booking_group_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_booking_booking_v1__booking_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reinstate_booking_booking_v1__booking_id__reinstate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
             };
             cookie?: {
                 access_token?: string | null;
@@ -5798,6 +7301,7 @@ export interface operations {
         parameters: {
             query?: {
                 review_status?: components["schemas"]["MedicalReviewStatus"][];
+                q?: string | null;
             };
             header?: never;
             path?: never;
@@ -6804,6 +8308,44 @@ export interface operations {
             };
         };
     };
+    list_child_notes_staff_kiosk_v1__location_code__children__child_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Kiosk-Staff"?: string | null;
+                "X-Kiosk-Pin"?: string | null;
+                origin?: string | null;
+            };
+            path: {
+                child_id: string;
+                location_code: string;
+            };
+            cookie?: {
+                kiosk_device?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ChildNoteResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_action_plans_staff_kiosk_v1__location_code__action_plans_get: {
         parameters: {
             query?: never;
@@ -7186,21 +8728,25 @@ type ReadonlyArray<T> = [
 ] extends [
     unknown[]
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const addStaffRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AddStaffRequest"]["role"]> = ["staff", "admin"];
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingGroupScope"]> = ["upcoming", "history"];
 export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingStatus"]> = ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"];
+export const changeStaffRoleRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChangeStaffRoleRequest"]["role"]> = ["staff", "admin"];
 export const childDocumentTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentType"]> = ["medical_action_plan", "asthma_action_plan", "allergy_anaphylaxis_plan", "other"];
 export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentUploadStatus"]> = ["pending", "uploaded", "failed"];
 export const createKioskDeviceRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreateKioskDeviceRequest"]["kind"]> = ["family", "staff"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
+export const emergencyRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EmergencyRelation"]> = ["parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
 export const kioskDeviceResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskDeviceResponse"]["kind"]> = ["family", "staff"];
 export const kioskInfoResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskInfoResponse"]["kind"]> = ["family", "staff"];
 export const kioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskSignRequest"]["action"]> = ["in", "out"];
-export const medicalReviewDecisionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewDecision"]> = ["approved", "documentation_requested"];
+export const medicalReviewDecisionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewDecision"]> = ["approved", "documentation_requested", "reopen"];
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
 export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
-export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
+export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
 export const refundStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RefundStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
+export const sendFamilyMessageRequestTargetAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SendFamilyMessageRequest"]["target"]> = ["profile", "children", "pickups", "manage-documents"];
 export const staffKioskBulkRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskBulkRequest"]["action"]> = ["sign_in", "to_school", "sign_out"];
 export const staffKioskShiftRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskShiftRequest"]["action"]> = ["start", "end"];
 export const staffKioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskSignRequest"]["action"]> = ["in", "out"];

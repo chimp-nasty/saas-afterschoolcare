@@ -82,9 +82,7 @@
 						pt-3
 						md:border-r md:border-(--border)
 						md:py-3 md:pr-4
-						text-xs font-extrabold
-						uppercase tracking-wide
-						text-(--text-muted)
+						label-text
 					"
 				>
 					{item.label}

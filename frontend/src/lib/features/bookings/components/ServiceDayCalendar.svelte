@@ -180,7 +180,7 @@
                 </Calendar.PrevButton>
 
                 <Calendar.Heading
-                    class="text-base font-extrabold text-(--text)"
+                    class="text-lg font-extrabold text-(--text)"
                 />
 
                 <Calendar.NextButton
@@ -201,7 +201,7 @@
                         >
                             {#each weekdays as day}
                                 <Calendar.HeadCell
-                                    class="pb-2 text-center text-xs font-semibold text-(--text-muted)"
+                                    class="pb-2 text-center label-text"
                                 >
                                     {day}
                                 </Calendar.HeadCell>

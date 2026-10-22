@@ -32,7 +32,7 @@
 <Card border>
     <div class="flex flex-col gap-4">
         <div>
-            <p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+            <p class="label-text">
                 Centre
             </p>
 

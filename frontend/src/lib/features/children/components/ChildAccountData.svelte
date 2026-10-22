@@ -2,6 +2,7 @@
 	import type { ChildTableResponse } from "$lib/api/schema";
     import DataCard from "$lib/components/layout/DataCard.svelte";
     import Button from "$lib/components/actions/Button.svelte";
+    import EmptyState from "$lib/components/text/EmptyState.svelte";
 	import { goto } from "$app/navigation";
 
     import { REVIEW_STATUS_LABELS } from "$lib/features/children/review";
@@ -33,9 +34,7 @@
             ]}
         />
     {:else}
-        <p class="text-sm text-(--text-muted)">
-            You haven't added any children yet.
-        </p>
+        <EmptyState message="You haven't added any children yet." />
     {/each}
 
     <Button

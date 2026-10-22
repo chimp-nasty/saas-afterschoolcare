@@ -33,7 +33,6 @@ VALUES
     ('child_medical_state', 'd', 'Delete child medical state'),
     ('child_notes', 'c', 'Create child notes'),
     ('child_notes', 'r', 'Read child notes'),
-    ('child_notes', 'u', 'Update child notes'),
     ('child_notes', 'd', 'Delete child notes'),
     ('child_profile', 'c', 'Create child profile'),
     ('child_profile', 'r', 'Read child profile'),
@@ -43,6 +42,8 @@ VALUES
     ('customer_profile', 'r', 'Read customer profile'),
     ('customer_profile', 'u', 'Update customer profile'),
     ('customer_profile', 'd', 'Delete customer profile'),
+    ('families', 'r', 'Find families and see their details, bookings, attendance and payments'),
+    ('families', 'u', 'Correct a family''s phone and address'),
     ('location_kiosk_devices', 'c', 'Create location kiosk devices'),
     ('location_kiosk_devices', 'r', 'Read location kiosk devices'),
     ('location_kiosk_devices', 'u', 'Update location kiosk devices'),
@@ -71,6 +72,11 @@ VALUES
     ('service_types', 'u', 'Update service types'),
     ('service_types', 'd', 'Delete service types'),
     -- A staff member setting their own staff kiosk PIN.
+    ('staff_accounts', 'c', 'Add staff to the location (invite)'),
+    ('staff_accounts', 'r', 'See the location''s staff'),
+    ('staff_accounts', 'u', 'Resend invites, correct names, reset staff PINs'),
+    ('staff_accounts', 'd', 'Remove staff from the location'),
+    ('staff_admin_roles', 'u', 'Make or unmake admins'),
     ('staff_pins', 'u', 'Set own staff PIN'),
     -- At the staff kiosk: checking a pickup person's ID or approving them.
     ('pickup_identity', 'u', 'Check ID and approve pickup people'),

@@ -4,7 +4,9 @@
     a phone each row becomes a card with label | value lines. Staff lists
     use it so they work on a tablet or phone as well as a desktop.
 
-    Values arrive formatted; the first column is the row's title.
+    Values arrive formatted; the first column is the row's title. As in
+    GridTable, every table row is the same fixed height: one line per cell,
+    cut off with "…" if it's too long.
 -->
 <script lang="ts" module>
 	export type DataTableColumn<T> = {
@@ -17,6 +19,7 @@
 	import { goto } from '$app/navigation';
 
 	import Card from './Card.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
 
 	let {
 		rows,
@@ -41,9 +44,7 @@
 </script>
 
 {#if rows.length === 0}
-	<p class="text-sm text-(--text-muted)">
-		{empty}
-	</p>
+	<EmptyState message={empty} />
 {:else}
 	<!-- Phone: one card per row. -->
 	<div class="flex flex-col gap-4 md:hidden">
@@ -54,9 +55,9 @@
 						{display(titleColumn.value(row))}
 					</p>
 
-					{#each detailColumns as column}
+					{#each detailColumns as column (column.label)}
 						<div class="flex flex-col gap-1">
-							<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+							<p class="label-text">
 								{column.label}
 							</p>
 
@@ -73,13 +74,13 @@
 	<!-- Tablet and desktop: a table; tapping anywhere on a row opens it. -->
 	<div class="hidden md:block">
 		<Card border padded={false}>
-			<table class="w-full border-collapse text-left">
+			<table class="w-full table-fixed border-collapse text-left">
 				<thead>
 					<tr class="border-b border-(--border)">
-						{#each columns as column}
+						{#each columns as column (column.label)}
 							<th
 								scope="col"
-								class="px-5 py-3 text-xs font-extrabold uppercase tracking-wide text-(--text-muted)"
+								class="h-10 truncate px-5 label-text"
 							>
 								{column.label}
 							</th>
@@ -91,7 +92,7 @@
 					{#each rows as row, index (rowKey(row))}
 						<tr
 							class={[
-								'cursor-pointer transition hover:bg-(--primary-soft)',
+								'h-14 cursor-pointer transition hover:bg-(--primary-soft)',
 								index < rows.length - 1 && 'border-b border-(--border)'
 							]}
 							onclick={(event) => {
@@ -101,17 +102,17 @@
 								}
 							}}
 						>
-							<td class="px-5 py-3">
+							<td class="truncate px-5">
 								<a
 									href={rowHref(row)}
-									class="flex min-h-11 items-center text-base font-semibold text-(--text)"
+									class="block truncate leading-[3.5rem] text-base font-semibold text-(--text)"
 								>
 									{display(titleColumn.value(row))}
 								</a>
 							</td>
 
-							{#each detailColumns as column}
-								<td class="px-5 py-3 text-base text-(--text)">
+							{#each detailColumns as column (column.label)}
+								<td class="truncate px-5 text-base text-(--text)">
 									{display(column.value(row))}
 								</td>
 							{/each}

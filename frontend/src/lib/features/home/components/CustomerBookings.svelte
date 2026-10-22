@@ -2,6 +2,8 @@
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import Pill from '$lib/components/text/Pill.svelte';
 
 	import type { BookingTableResponse } from '$lib/api/schema';
 	import { BOOKING_STATUS_LABELS } from '$lib/features/bookings/status';
@@ -173,7 +175,7 @@
 			<ChevronLeft size={20} />
 		</Button>
 
-		<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+		<p class="label-text">
 			{weekLabel}
 		</p>
 
@@ -200,7 +202,7 @@
 				onclick={() => selectDay(index)}
 			>
 				<span
-					class="text-xs font-semibold text-(--text-muted)"
+					class="label-text"
 				>
 					{day.dayLabel}
 				</span>
@@ -229,7 +231,7 @@
 
 	<!-- Selected day -->
 	<div>
-		<p class="text-center font-extrabold">
+		<p class="text-center text-lg font-extrabold text-(--text)">
 			{formatDate(selectedDay.dateKey)}
 		</p>
 
@@ -245,14 +247,14 @@
 					></span>
 
 					<div class="min-w-0 flex-1">
-						<p class="font-semibold">
+						<p class="text-base font-semibold text-(--text)">
 							{booking.child_name}
 						</p>
 
 						<p class="text-sm text-(--text-muted)">
 							{booking.service_name} · {formatTimeRange(booking.start_time, booking.end_time)}
 							{#if booking.booking_status === 'PENDING'}
-								· <span class="font-semibold text-(--primary)">{BOOKING_STATUS_LABELS.PENDING}</span>
+								· <Pill tone="warning">{BOOKING_STATUS_LABELS.PENDING}</Pill>
 							{/if}
 						</p>
 					</div>
@@ -260,9 +262,7 @@
 					<ChevronRight size={18} class="shrink-0 text-(--text-muted)" />
 				</a>
 			{:else}
-				<p class="text-sm text-(--text-muted)">
-					No bookings on this day.
-				</p>
+				<EmptyState message="No bookings on this day." />
 			{/each}
 		</div>
 	</div>

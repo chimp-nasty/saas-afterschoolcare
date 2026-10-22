@@ -415,20 +415,22 @@ CREATE POLICY child_medical_state_admin_write_policy
         )
     );
 
+-- Staff's internal notes: location staff and above only, never the
+-- family (permissions decide who writes: admins, on the website).
 CREATE POLICY child_notes_scope_policy
     ON public.child_notes FOR ALL
     USING (
         EXISTS (
             SELECT 1 FROM public.child_profile cp
             WHERE cp.id = child_notes.child_id
-              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+              AND auth.is_location_staff(cp.location_id)
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM public.child_profile cp
             WHERE cp.id = child_notes.child_id
-              AND auth.can_access_location_row(cp.location_id, cp.user_id)
+              AND auth.is_location_staff(cp.location_id)
         )
     );
 

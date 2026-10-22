@@ -49,7 +49,7 @@
 	<!-- Fills the card, which the page's grid stretches to the taller one. -->
 	<div class="flex h-full flex-col gap-4">
 		<div class="flex flex-col gap-1">
-			<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">{info.label}</p>
+			<p class="label-text">{info.label}</p>
 			<p class="text-lg font-extrabold text-(--text)">{device?.name ?? '—'}</p>
 			<p class="text-sm text-(--text-muted)">{status}</p>
 			<p class="text-sm text-(--text-muted)">{info.description}</p>

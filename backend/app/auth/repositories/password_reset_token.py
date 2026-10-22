@@ -54,6 +54,23 @@ class PasswordResetTokenRepository(Repository):
             .first()
         )
 
+    def revoke_unused(
+        self,
+        *,
+        user_id: UUID,
+        location_id: UUID,
+    ) -> None:
+        """Earlier links for this user at this location stop working (a new invite)."""
+        (
+            self.db.query(PasswordResetToken)
+            .filter(
+                PasswordResetToken.user_id == user_id,
+                PasswordResetToken.location_id == location_id,
+                PasswordResetToken.used_at.is_(None),
+            )
+            .update({PasswordResetToken.used_at: func.now()}, synchronize_session=False)
+        )
+
     def mark_used(
         self,
         *,

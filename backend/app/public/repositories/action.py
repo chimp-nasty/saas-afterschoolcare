@@ -1,7 +1,8 @@
 from uuid import UUID
 from datetime import datetime, timezone
 
-from sqlalchemy import update
+from sqlalchemy import text, update
+from sqlalchemy.engine import Row
 
 from app.db.repository import Pagination, Repository
 from app.db.models import Action
@@ -14,7 +15,7 @@ class ActionRepository(Repository):
         user_id: UUID,
         location_id: UUID,
         created_by_user_id: UUID,
-        target: str,
+        target: str | None,
         title: str,
         message: str,
         child_id: UUID | None = None,
@@ -103,3 +104,38 @@ class ActionRepository(Repository):
         )
 
         return self._all(query, pagination)
+
+    def list_for_family(
+        self,
+        *,
+        location_id: UUID,
+        user_id: UUID,
+    ) -> list[Row]:
+        """A family's messages at a location, newest first, with the child's name and the writer as "Sam L."."""
+        return self.db.execute(
+            text("""
+                SELECT a.id, a.child_id, c.first_name AS child_first_name, a.target,
+                       a.title, a.message,
+                       public.staff_short_name(a.created_by_user_id) AS created_by,
+                       a.created_at, a.cited_at
+                FROM public.actions a
+                LEFT JOIN public.child_profile c ON c.id = a.child_id
+                WHERE a.location_id = :location_id AND a.user_id = :user_id
+                ORDER BY a.created_at DESC, a.id
+            """),
+            {"location_id": location_id, "user_id": user_id},
+        ).all()
+
+    def delete(
+        self,
+        *,
+        id: UUID,
+        user_id: UUID,
+    ) -> bool:
+        """Withdraw one of a family's messages; False when there's no such message."""
+        deleted = self.db.execute(
+            text("DELETE FROM public.actions WHERE id = :id AND user_id = :user_id"),
+            {"id": id, "user_id": user_id},
+        )
+
+        return deleted.rowcount > 0

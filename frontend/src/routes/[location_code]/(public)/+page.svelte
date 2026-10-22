@@ -7,9 +7,11 @@
 
 	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import Button from '$lib/components/actions/Button.svelte';
-	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import Notice from '$lib/components/text/Notice.svelte';
+	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
 	import ServiceCard from '$lib/features/services/components/ServiceCard.svelte';
 
@@ -30,12 +32,10 @@
 	{#if data.signedInElsewhere}
 		<!-- Logged in at another of the tenant's centres; that session
 		     doesn't count here (routes/[location_code]/+layout.ts). -->
-		<Card border>
-			<p class="text-sm text-(--text-muted)">
-				You're logged in at {data.signedInElsewhere.locationName}. Log out to
-				use this centre instead.
-			</p>
-		</Card>
+		<Notice>
+			You're logged in at {data.signedInElsewhere.locationName}. Log out to
+			use this centre instead.
+		</Notice>
 
 		<ActionBar>
 			<Button variant="ghost" onclick={() => logout(data.locationCode)}>
@@ -63,18 +63,12 @@
 	{/if}
 
 	<section class="flex flex-col gap-4">
-		<h2 class="text-lg font-extrabold text-(--text)">
-			Our services
-		</h2>
+		<SectionHeading title="Our services" />
 
 		{#each data.services as service (service.id)}
 			<ServiceCard {service} />
 		{:else}
-			<Card border>
-				<p class="text-sm text-(--text-muted)">
-					Services will be listed here soon.
-				</p>
-			</Card>
+			<EmptyState message="Services will be listed here soon." />
 		{/each}
 	</section>
 

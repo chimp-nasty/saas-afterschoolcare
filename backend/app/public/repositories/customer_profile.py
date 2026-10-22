@@ -99,4 +99,12 @@ class CustomerProfileRepository(Repository):
         if not profile.postcode:
             missing_fields.append("postcode")
 
+        # Exactly one emergency contact, and it's required.
+        if not (
+            profile.emergency_contact_name
+            and profile.emergency_contact_phone
+            and profile.emergency_contact_relation
+        ):
+            missing_fields.append("emergency_contact")
+
         return missing_fields

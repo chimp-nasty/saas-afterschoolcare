@@ -9,7 +9,8 @@
 	import { onDestroy, onMount } from 'svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
-	import Card from '$lib/components/layout/Card.svelte';
+	import ErrorText from '$lib/components/text/ErrorText.svelte';
+	import Notice from '$lib/components/text/Notice.svelte';
 	import FamilyToday from './FamilyToday.svelte';
 	import PhoneEntry from './PhoneEntry.svelte';
 	import PinEntry from './PinEntry.svelte';
@@ -243,7 +244,7 @@
 
 {#if step === 'start'}
 	<div class="flex flex-1 flex-col items-center justify-center gap-8 py-12">
-		<h1 class="text-center text-4xl font-extrabold text-(--text)">Welcome</h1>
+		<h1 class="text-center text-3xl font-extrabold text-(--text)">Welcome</h1>
 
 		{#if notice}
 			<p class="text-center text-lg text-(--text-muted)">{notice}</p>
@@ -295,16 +296,13 @@
 		</div>
 
 		{#if done}
-			<Card border>
-				<div class="flex flex-col items-center gap-3 text-center">
-					<p class="text-2xl font-extrabold text-(--success-text)">✓ {done}</p>
-					<p class="text-lg text-(--text-muted)">Logging out in {secondsLeft}…</p>
-				</div>
-			</Card>
+			<Notice tone="success" size="kiosk">✓ {done}. Logging out in {secondsLeft}…</Notice>
 		{/if}
 
 		{#if error}
-			<p class="text-center text-lg font-semibold text-(--danger-text)" role="alert">{error}</p>
+			<div class="text-center">
+				<ErrorText size="kiosk" message={error} />
+			</div>
 		{/if}
 
 		<FamilyToday {bookings} {busyBookingId} onsign={sign} />
@@ -313,7 +311,7 @@
 {:else if step === 'forgot'}
 	<PhoneEntry title="Forgot your PIN?" bind:phone submitLabel="Email me a new PIN" {error} {busy} onsubmit={forgotPin}>
 		{#snippet footer()}
-			<p class="max-w-sm text-center text-base text-(--text-muted)">
+			<p class="max-w-sm text-center text-lg text-(--text-muted)">
 				We'll email a new PIN to the email address on your family's pickup list.
 			</p>
 			<Button variant="ghost" onclick={() => reset()}>Cancel</Button>
@@ -322,7 +320,9 @@
 
 {:else if step === 'forgot-sent'}
 	<div class="flex flex-1 flex-col items-center justify-center gap-6 py-12">
-		<p class="max-w-md text-center text-2xl font-semibold text-(--text)">{notice}</p>
+		<div class="w-full max-w-md">
+			<Notice tone="success" size="kiosk">{notice}</Notice>
+		</div>
 		<Button variant="ghost" textSize="lg" onclick={() => reset()}>Back to start</Button>
 	</div>
 {/if}

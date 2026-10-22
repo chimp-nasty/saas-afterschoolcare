@@ -6,6 +6,7 @@
 	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import Button from '$lib/components/actions/Button.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
+	import EmptyState from '$lib/components/text/EmptyState.svelte';
 
 	import type { ChildDocumentResponse } from '$lib/api/schema';
 	import { DOCUMENT_TYPE_LABELS, formatFileSize } from '$lib/features/children/documents';
@@ -45,7 +46,7 @@
 		<Card border>
 			<div class="flex flex-col gap-4">
 				<div class="flex min-w-0 flex-col gap-1">
-					<p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
+					<p class="label-text">
 						{DOCUMENT_TYPE_LABELS[document.document_type]}
 					</p>
 
@@ -79,9 +80,9 @@
 			</div>
 		</Card>
 	{:else}
-		<p class="text-sm text-(--text-muted)">
-			{empty ??
+		<EmptyState
+			message={empty ??
 				`No documents yet. Upload ${firstName}'s action plans and any other medical documents the centre needs here.`}
-		</p>
+		/>
 	{/each}
 </div>

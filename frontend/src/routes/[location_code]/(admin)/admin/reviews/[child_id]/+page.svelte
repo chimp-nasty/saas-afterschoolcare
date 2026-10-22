@@ -10,8 +10,12 @@
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import { confirmAction } from "$lib/components/overlays/confirm.svelte";
+    import LabelValueList from "$lib/components/text/LabelValueList.svelte";
+    import Notice from "$lib/components/text/Notice.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import ChildDocumentList from "$lib/features/children/components/ChildDocumentList.svelte";
     import DocumentationRequestForm from "$lib/features/medical-reviews/components/DocumentationRequestForm.svelte";
+    import ReopenReviewForm from "$lib/features/medical-reviews/components/ReopenReviewForm.svelte";
     import { STAFF_REVIEW_STATUS_LABELS } from "$lib/features/medical-reviews/status";
 
     import { createChildDocumentsApi } from "$lib/api/public/adapters/childDocuments";
@@ -58,6 +62,20 @@
         return response;
     }
 
+    // Back to Waiting; the family gets this message, or the default one.
+    async function reopen({ message }: { message: string }) {
+        const response = await reviewsApi.decide(review.child_id, {
+            decision: "reopen",
+            message: message.trim() || null,
+        });
+
+        if (response.ok) {
+            await goto(`${listHref}?state=pending`, { invalidateAll: true });
+        }
+
+        return response;
+    }
+
     // The tab is opened before asking for the link, while the tap still
     // counts: tablets block tabs opened after waiting on a request.
     async function viewDocument(document: ChildDocumentResponse) {
@@ -90,26 +108,21 @@
     />
 
     {#if !review.is_active}
-        <Card border>
-            <p class="text-sm text-(--text-muted)">
-                This child has been removed by their family, so there's nothing to review.
-            </p>
-        </Card>
+        <Notice>This child has been removed by their family, so there's nothing to review.</Notice>
     {/if}
 
     {#if review.documentation_request}
         <Card border>
-            <div class="flex flex-col gap-1">
-                <p class="text-xs font-extrabold uppercase tracking-wide text-(--text-muted)">
-                    {review.review_status === "documentation_requested"
-                        ? "Requested from the family"
-                        : "Last requested from the family"}
-                </p>
-
-                <p class="text-base text-(--text) whitespace-pre-line">
-                    {review.documentation_request}
-                </p>
-            </div>
+            <LabelValueList
+                items={[
+                    {
+                        label: review.review_status === "documentation_requested"
+                            ? "Requested from the family"
+                            : "Last requested from the family",
+                        content: documentationRequest,
+                    },
+                ]}
+            />
         </Card>
     {/if}
 
@@ -136,9 +149,7 @@
         </div>
 
         <section class="flex flex-col gap-4">
-            <h2 class="text-lg font-extrabold text-(--text)">
-                Documents
-            </h2>
+            <SectionHeading title="Documents" />
 
             <ChildDocumentList
                 documents={data.documents}
@@ -151,11 +162,21 @@
 
     {#if canDecide}
         <section class="flex flex-col gap-4">
-            <h2 class="text-lg font-extrabold text-(--text)">
-                Decision
-            </h2>
+            <SectionHeading title="Decision" />
 
-            {#if review.review_status !== "approved"}
+            {#if review.upcoming_bookings > 0}
+                <Notice tone="neutral">
+                    {review.first_name} has {review.upcoming_bookings} upcoming
+                    {review.upcoming_bookings === 1 ? "booking" : "bookings"}. They stay booked whatever you decide;
+                    only new bookings wait for approval. Cancel or refund them on the family's page if needed.
+                </Notice>
+            {/if}
+
+            {#if review.review_status === "approved"}
+                <Card border>
+                    <ReopenReviewForm firstName={review.first_name} onsubmit={reopen} />
+                </Card>
+            {:else}
                 <Card border>
                     <div class="flex flex-col gap-4">
                         <p class="text-sm text-(--text-muted)">
@@ -178,3 +199,7 @@
         </section>
     {/if}
 </Page>
+
+{#snippet documentationRequest()}
+    <span class="whitespace-pre-line">{review.documentation_request}</span>
+{/snippet}

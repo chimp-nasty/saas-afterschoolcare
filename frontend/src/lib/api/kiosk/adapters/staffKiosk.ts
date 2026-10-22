@@ -8,6 +8,7 @@ import type {
 	AttendanceTimesResponse,
 	ChildDocumentDownloadResponse,
 	ChildMedicalResponse,
+	ChildNoteResponse,
 	ChildSearchResultResponse,
 	FamilyBookingResponse,
 	RefundResponse,
@@ -125,6 +126,14 @@ export function createStaffKioskApi(locationCode: string) {
 
 		medical(staff: StaffCredentials, childId: string) {
 			return apiWrapper<ChildMedicalResponse>(`${baseUrl}/children/${childId}/medical`, {
+				headers: as(staff),
+				silent: true
+			});
+		},
+
+		// Staff's notes about the child (written by admins on the website).
+		notes(staff: StaffCredentials, childId: string) {
+			return apiWrapper<ChildNoteResponse[]>(`${baseUrl}/children/${childId}/notes`, {
 				headers: as(staff),
 				silent: true
 			});
