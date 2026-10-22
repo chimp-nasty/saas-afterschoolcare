@@ -1,15 +1,12 @@
 from uuid import UUID
 from dataclasses import dataclass
-from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.db.transaction import transactional
 from app.errors.bookings import (
     BookingAttemptFinishedError,
     BookingGroupNotFoundError,
-    CheckoutOriginError,
     MultipleBookingServicesError,
     BookingGroupAlreadyPaidError,
     InvalidBookingServiceDaysError,
@@ -21,6 +18,7 @@ from app.integrations.payments.stripe.client import (
 )
 from app.tenancy.repositories.location import LocationRepository
 from app.tenancy.repositories.tenant import TenantRepository
+from app.tenancy.site_url import location_site_url
 from app.public.repositories.customer_profile import CustomerProfileRepository
 from app.errors.customer import CustomerProfileIncompleteError
 from app.public.schemas.booking import (
@@ -73,7 +71,6 @@ class CreateBookingService:
         self.location_repository = location_repository
         self.tenant_repository = tenant_repository
         self.customer_profile_repository = customer_profile_repository
-        self.stripe = StripeClient()
 
     @transactional
     def create(
@@ -260,27 +257,11 @@ class CreateBookingService:
         location_id: UUID,
         origin: str | None,
     ) -> str:
-        """
-        The location's frontend URL, for Stripe's return links. Built from
-        the request's Origin (so dev ports work) but only once it's checked
-        to be this tenant's site, so it can't be used as an open redirect.
-        """
+        """The location's site, checked against the request's Origin."""
         location = self.location_repository.get_by_id(id=location_id)
         tenant = self.tenant_repository.get_by_id(id=location.tenant_id)
 
-        hostname = (urlparse(origin).hostname or "").lower() if origin else ""
-
-        allowed_hostnames = {
-            f"{tenant.code}.{settings.BASE_DOMAIN}".lower(),
-        }
-
-        if tenant.custom_domain:
-            allowed_hostnames.add(tenant.custom_domain.lower())
-
-        if hostname not in allowed_hostnames:
-            raise CheckoutOriginError()
-
-        return f"{origin.rstrip('/')}/{location.code}"
+        return location_site_url(location=location, tenant=tenant, origin=origin)
 
     def _start_checkout(
         self,
@@ -324,9 +305,10 @@ class CreateBookingService:
                 )
             )
 
+        # In the tenant's Stripe account (the attempt's, set by the database).
         # The webhook acts as this user at this location (for RLS) and finds
         # the attempt from this metadata.
-        checkout = self.stripe.create_checkout_session(
+        checkout = StripeClient(account_id=attempt.stripe_account_id).create_checkout_session(
             line_items=line_items,
             currency=currency,
             metadata={
@@ -362,7 +344,7 @@ class CreateBookingService:
         )
 
         if latest and latest.stripe_checkout_session_id:
-            checkout = self.stripe.get_checkout_session(
+            checkout = StripeClient(account_id=latest.stripe_account_id).get_checkout_session(
                 checkout_session_id=latest.stripe_checkout_session_id,
             )
 

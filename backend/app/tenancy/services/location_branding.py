@@ -1,4 +1,5 @@
 from uuid import UUID
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.errors.tenancy import LocationNotFoundError
@@ -75,3 +76,17 @@ class LocationBrandingService:
                 tenant_id=tenant_id,
             )
         ]
+
+
+    def bookings_open(
+        self,
+        *,
+        location_id: UUID,
+    ) -> bool:
+        """
+        Whether families can book and pay here now: the business's Stripe
+        account can take payments (tenancy.payments_account, schema/0002).
+        """
+        return self.db.execute(
+            select(func.tenancy.payments_account(location_id))
+        ).scalar() is not None

@@ -344,6 +344,27 @@ class Location(Base):
 
 
 
+class TenantStripeAccount(Base):
+    __tablename__ = 'tenant_stripe_accounts'
+    __table_args__ = (
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_stripe_accounts_tenant'),
+        PrimaryKeyConstraint('tenant_id', name='tenant_stripe_accounts_pkey'),
+        UniqueConstraint('stripe_account_id', name='uq_tenant_stripe_accounts_account'),
+        {'schema': 'tenancy'}
+    )
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    stripe_account_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    charges_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    payouts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    details_submitted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    connected_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    disconnected_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    revoked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+
 class LocationUserRole(Base):
     __tablename__ = 'location_user_roles'
     __table_args__ = (
@@ -748,6 +769,7 @@ class PaymentAttempt(Base):
     stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String(255))
     stripe_checkout_session_id: Mapped[Optional[str]] = mapped_column(String(255))
     stripe_receipt_url: Mapped[Optional[str]] = mapped_column(Text)
+    stripe_account_id: Mapped[Optional[str]] = mapped_column(String(255))
     paid_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 

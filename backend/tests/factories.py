@@ -11,7 +11,8 @@ from sqlalchemy import create_engine, text
 
 from app.core.config import settings
 from app.core.security import hash_password, hash_token
-from app.integrations.payments.stripe.client import StripeCheckout, StripeRefund
+from app.errors.payments import PaymentProviderError
+from app.integrations.payments.stripe.client import StripeAccount, StripeCheckout, StripeRefund
 from app.integrations.storage.base import SignedUpload, StoredObject
 from app.main import app
 
@@ -165,18 +166,36 @@ class FakeStripeState:
     metadata: dict[str, dict] = field(default_factory=dict)
     created: list[dict] = field(default_factory=list)
 
-    # Refunds by Stripe refund id: what was asked for, with its metadata.
+    # Refunds by Stripe refund id: what was asked for, with its metadata
+    # and the connected account it was made in.
     refunds: dict[str, dict] = field(default_factory=dict)
+
+    # The connected account each checkout session was made in (None: the
+    # platform's), so webhooks come from the right account.
+    session_accounts: dict[str, str | None] = field(default_factory=dict)
+
+    # Connected accounts the fake has created, by id, and onboarding links.
+    accounts: dict[str, StripeAccount] = field(default_factory=dict)
+    onboarding_links: list[dict] = field(default_factory=list)
+
+    # "Connect with Stripe": the links handed out, and the account each
+    # OAuth code links (tests set these).
+    oauth_links: list[dict] = field(default_factory=list)
+    oauth_codes: dict[str, str] = field(default_factory=dict)
 
 
 class FakeStripe:
     """
     Stands in for StripeClient in every service (patched in conftest), so
     no test talks to Stripe. Webhook payloads are plain JSON and the
-    signature "invalid" is rejected, mimicking a forged request.
+    signature "invalid" is rejected, mimicking a forged request. Like the
+    real client, it's made for one connected account (or the platform).
     """
 
     state = FakeStripeState()
+
+    def __init__(self, *, account_id: str | None = None):
+        self.account_id = account_id
 
     def create_checkout_session(self, *, line_items, currency, metadata, success_url, cancel_url, idempotency_key):
         session_id = f"cs_test_{uuid.uuid4().hex}"
@@ -190,9 +209,11 @@ class FakeStripe:
 
         self.state.sessions[session_id] = checkout
         self.state.metadata[session_id] = metadata
+        self.state.session_accounts[session_id] = self.account_id
         self.state.created.append(
             {
                 "session_id": session_id,
+                "account_id": self.account_id,
                 "line_items": line_items,
                 "currency": currency,
                 "success_url": success_url,
@@ -224,6 +245,7 @@ class FakeStripe:
         refund_id = f"re_test_{uuid.uuid4().hex}"
 
         self.state.refunds[refund_id] = {
+            "account_id": self.account_id,
             "payment_intent_id": payment_intent_id,
             "amount_cents": amount_cents,
             "metadata": metadata,
@@ -232,7 +254,39 @@ class FakeStripe:
 
         return StripeRefund(refund_id=refund_id, status="pending")
 
-    def construct_webhook_event(self, *, payload, signature):
+    def create_account(self, *, email, business_name):
+        account = StripeAccount(
+            account_id=f"acct_test_{uuid.uuid4().hex[:16]}",
+            charges_enabled=False,
+            payouts_enabled=False,
+            details_submitted=False,
+        )
+        self.state.accounts[account.account_id] = account
+
+        return account
+
+    def get_account(self, *, account_id):
+        return self.state.accounts[account_id]
+
+    def create_onboarding_link(self, *, account_id, refresh_url, return_url):
+        self.state.onboarding_links.append(
+            {"account_id": account_id, "refresh_url": refresh_url, "return_url": return_url}
+        )
+
+        return f"https://connect.stripe.test/setup/{account_id}"
+
+    def oauth_authorize_url(self, *, state, redirect_uri):
+        self.state.oauth_links.append({"state": state, "redirect_uri": redirect_uri})
+
+        return f"https://connect.stripe.test/oauth/authorize?state={state}"
+
+    def complete_oauth(self, *, code):
+        if code not in self.state.oauth_codes:
+            raise PaymentProviderError(log_reason=f"Unknown OAuth code {code}")
+
+        return self.state.oauth_codes[code]
+
+    def construct_webhook_event(self, *, payload, signature, connect=False):
         if signature == "invalid":
             raise stripe.SignatureVerificationError("Invalid signature", signature)
 
@@ -599,7 +653,10 @@ class Api:
         payment_status: str = "paid",
         signature: str = "test",
     ):
-        """Deliver a Stripe webhook for a session the fake created."""
+        """
+        Deliver a Stripe webhook for a session the fake created, from the
+        account it was made in (the Connect endpoint for a tenant's account).
+        """
         event = {
             "type": event_type,
             "data": {
@@ -612,8 +669,15 @@ class Api:
             },
         }
 
+        return self._deliver(event, FakeStripe.state.session_accounts.get(checkout_session_id), signature)
+
+    def _deliver(self, event: dict, account_id: str | None, signature: str = "test"):
+        """Post an event to the endpoint Stripe would use for its account."""
+        if account_id:
+            event = {**event, "account": account_id}
+
         return self.client().post(
-            "/api/v1/webhooks/stripe",
+            "/api/v1/webhooks/stripe/connect" if account_id else "/api/v1/webhooks/stripe",
             content=json.dumps(event),
             headers={"Stripe-Signature": signature},
         )
@@ -640,11 +704,7 @@ class Api:
             },
         }
 
-        return self.client().post(
-            "/api/v1/webhooks/stripe",
-            content=json.dumps(event),
-            headers={"Stripe-Signature": "test"},
-        )
+        return self._deliver(event, refund.get("account_id"))
 
     @staticmethod
     def session_id(checkout_url: str) -> str:

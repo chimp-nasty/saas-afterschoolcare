@@ -1682,6 +1682,12 @@ CREATE TABLE public.payment_attempts (
     stripe_checkout_session_id VARCHAR(255),
     stripe_receipt_url TEXT,
 
+    -- The tenant's Stripe account the payment was taken in (direct
+    -- charges), set by trg_payment_attempts_account; its refunds go
+    -- through the same account. NULL only for rows written by server code
+    -- (seeds), which use the platform account.
+    stripe_account_id VARCHAR(255),
+
     total_cents INTEGER NOT NULL,
     currency public.currency_code_enum NOT NULL,
 
@@ -1704,6 +1710,37 @@ CREATE TABLE public.payment_attempts (
     CONSTRAINT ck_payment_attempts_total_non_negative
         CHECK (total_cents >= 0)
 );
+
+-- A checkout goes to the tenant's Stripe account, and only while it can
+-- take payments (tenancy.payments_account). Server code with no session
+-- (seeds) is trusted and keeps what it gives.
+CREATE FUNCTION public.set_payment_attempt_account()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF auth.current_user_id() IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    NEW.stripe_account_id := tenancy.payments_account(NEW.location_id);
+
+    IF NEW.stripe_account_id IS NULL THEN
+        RAISE EXCEPTION 'Location % isn''t taking payments', NEW.location_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_payment_attempts_payments_enabled',
+                  TABLE = 'payment_attempts',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_payment_attempts_account
+    BEFORE INSERT ON public.payment_attempts
+    FOR EACH ROW EXECUTE FUNCTION public.set_payment_attempt_account();
 
 
 -- =====================================================

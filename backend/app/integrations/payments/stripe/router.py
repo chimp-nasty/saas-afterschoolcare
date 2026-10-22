@@ -41,3 +41,32 @@ async def stripe_webhook(
         msg="Webhook received",
         data=None,
     )
+
+
+# Stripe Connect: events on tenants' connected accounts (their checkouts
+# and refunds, account updates), signed with the Connect endpoint's secret.
+@router.post("/stripe/connect")
+async def stripe_connect_webhook(
+    request: Request,
+    stripe_signature: str | None = Header(default=None),
+    service: StripeWebhookService = Depends(
+        get_service(
+            StripeWebhookService,
+            db_dependency=get_db,
+        )
+    ),
+) -> ApiResponse[None]:
+    payload = await request.body()
+
+    await run_in_threadpool(
+        service.handle,
+        payload=payload,
+        signature=stripe_signature,
+        connect=True,
+    )
+
+    return ApiResponse(
+        ok=True,
+        msg="Webhook received",
+        data=None,
+    )

@@ -141,6 +141,8 @@ ALTER TABLE tenancy.locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.locations FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.location_branding ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.location_branding FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_stripe_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_stripe_accounts FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY tenants_read_policy
     ON tenancy.tenants FOR SELECT
@@ -153,6 +155,51 @@ CREATE POLICY locations_read_policy
 CREATE POLICY location_branding_read_policy
     ON tenancy.location_branding FOR SELECT
     USING (true);
+
+-- A tenant's Stripe account: read by anyone with a role at one of its
+-- locations (a family's checkout needs it; admins see the status);
+-- connected and changed by its superadmins (permissions decide who uses
+-- the screen). Stripe's webhooks update it through
+-- tenancy.sync_stripe_account.
+CREATE POLICY tenant_stripe_accounts_read_policy
+    ON tenancy.tenant_stripe_accounts FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1
+            FROM tenancy.locations l
+            WHERE l.tenant_id = tenant_stripe_accounts.tenant_id
+              AND auth.has_location_role(l.id)
+        )
+    );
+
+CREATE POLICY tenant_stripe_accounts_write_policy
+    ON tenancy.tenant_stripe_accounts FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1
+            FROM auth.location_user_roles lur
+            JOIN auth.roles r
+                ON r.id = lur.role_id
+            JOIN tenancy.locations l
+                ON l.id = lur.location_id
+            WHERE lur.user_id = auth.current_user_id()
+              AND l.tenant_id = tenant_stripe_accounts.tenant_id
+              AND r.code = 'superadmin'
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1
+            FROM auth.location_user_roles lur
+            JOIN auth.roles r
+                ON r.id = lur.role_id
+            JOIN tenancy.locations l
+                ON l.id = lur.location_id
+            WHERE lur.user_id = auth.current_user_id()
+              AND l.tenant_id = tenant_stripe_accounts.tenant_id
+              AND r.code = 'superadmin'
+        )
+    );
 
 -- Superadmins of a tenant can manage it.
 CREATE POLICY tenants_write_policy

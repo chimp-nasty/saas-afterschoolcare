@@ -33,7 +33,6 @@ class UpdateBookingService:
         self.booking_group_repository = booking_group_repository
         self.booking_repository = booking_repository
         self.payment_attempt_repository = payment_attempt_repository
-        self.stripe = StripeClient()
 
     @transactional
     def cancel_group(
@@ -72,7 +71,8 @@ class UpdateBookingService:
         )
 
         if attempt and attempt.stripe_checkout_session_id:
-            checkout = self.stripe.get_checkout_session(
+            stripe = StripeClient(account_id=attempt.stripe_account_id)
+            checkout = stripe.get_checkout_session(
                 checkout_session_id=attempt.stripe_checkout_session_id,
             )
 
@@ -81,7 +81,7 @@ class UpdateBookingService:
                 raise BookingGroupAlreadyPaidError()
 
             if checkout.status == "open":
-                self.stripe.expire_checkout_session(
+                stripe.expire_checkout_session(
                     checkout_session_id=attempt.stripe_checkout_session_id,
                 )
 

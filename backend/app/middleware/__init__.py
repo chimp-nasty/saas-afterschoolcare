@@ -38,6 +38,8 @@ def configure_middleware(app: FastAPI) -> None:
         exempt_paths={
             "/api/v1/webhooks/stripe",
             "/api/v1/webhooks/stripe/",
+            "/api/v1/webhooks/stripe/connect",
+            "/api/v1/webhooks/stripe/connect/",
             "/api/v1/webhooks/ses",
             "/api/v1/webhooks/ses/",
         },

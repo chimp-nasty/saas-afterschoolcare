@@ -77,6 +77,8 @@ VALUES
     ('staff_accounts', 'u', 'Resend invites, correct names, reset staff PINs'),
     ('staff_accounts', 'd', 'Remove staff from the location'),
     ('staff_admin_roles', 'u', 'Make or unmake admins'),
+    ('stripe_account', 'r', 'See whether the business can take payments'),
+    ('stripe_account', 'u', 'Connect or disconnect the business''s Stripe account'),
     ('staff_pins', 'u', 'Set own staff PIN'),
     -- At the staff kiosk: checking a pickup person's ID or approving them.
     ('pickup_identity', 'u', 'Check ID and approve pickup people'),

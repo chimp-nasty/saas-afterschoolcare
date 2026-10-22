@@ -28,9 +28,26 @@ class Settings(BaseSettings):
     JWT_CLOCK_SKEW_SECONDS: int = 30
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 90
 
-    # Stripe
+    # Stripe. The platform's own keys; each tenant's payments go to its
+    # connected account (Stripe Connect, tenancy.tenant_stripe_accounts).
     STRIPE_SECRET_KEY: str
     STRIPE_WEBHOOK_SECRET: str
+    # The Connect webhook endpoint's signing secret: events on connected
+    # accounts (their checkouts and refunds, account updates). Empty
+    # rejects every Connect event.
+    STRIPE_CONNECT_WEBHOOK_SECRET: str = ""
+    # Dev only: a test-mode connected account the dev seed links to
+    # tenant1, so a rebuild doesn't need onboarding again.
+    STRIPE_DEV_ACCOUNT_ID: str | None = None
+    # "Connect with Stripe" (OAuth, linking a business's existing account):
+    # the platform's client id (ca_...) from Settings > Connect > Onboarding
+    # options > OAuth. Unset hides the option.
+    STRIPE_CONNECT_CLIENT_ID: str | None = None
+
+    # The API's public address. Stripe's OAuth returns to
+    # {API_BASE_URL}/stripe-account/v1/oauth/callback, which must be listed
+    # as a redirect URI in Stripe's OAuth settings.
+    API_BASE_URL: str = "http://localhost:8000"
 
     # Document storage (app/integrations/storage). Australian regions only:
     # docs/child-document-retention-policy.md. GCS credentials come from

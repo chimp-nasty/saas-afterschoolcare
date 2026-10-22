@@ -20,6 +20,7 @@ from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.repositories.refund import RefundRepository
 from app.public.schemas.enums import BookingStatus, PaymentStatus, RefundStatus, StripeStatus
+from app.tenancy.repositories.stripe_account import TenantStripeAccountRepository
 
 
 logger = logging.getLogger("app.payments")
@@ -30,6 +31,12 @@ class StripeWebhookService:
     The only place payment state changes. The success redirect just reads
     it (ReadBookingService.get_checkout_status), because a user can close
     the tab before it loads or open it without paying.
+
+    Two endpoints: the platform's, and Stripe Connect's (`connect`) for
+    events on tenants' connected accounts, where their checkouts and
+    refunds happen (direct charges), plus account.updated and
+    account.application.deauthorized. A payment or refund is only settled
+    by an event from the account it was made in.
     """
 
     def __init__(
@@ -41,6 +48,7 @@ class StripeWebhookService:
         booking_repository: BookingRepository,
         refund_repository: RefundRepository,
         user_repository: UserRepository,
+        stripe_account_repository: TenantStripeAccountRepository,
     ):
         self.db = db
         self.rls_context = rls_context
@@ -48,6 +56,7 @@ class StripeWebhookService:
         self.booking_repository = booking_repository
         self.refund_repository = refund_repository
         self.user_repository = user_repository
+        self.stripe_account_repository = stripe_account_repository
         self.stripe = StripeClient()
         self.emails = EmailOutbox(db)
 
@@ -56,32 +65,44 @@ class StripeWebhookService:
         *,
         payload: bytes,
         signature: str | None,
+        connect: bool = False,
     ) -> None:
         try:
             event = self.stripe.construct_webhook_event(
                 payload=payload,
                 signature=signature or "",
+                connect=connect,
             )
         except (ValueError, stripe.SignatureVerificationError) as exc:
             raise InvalidWebhookError(log_reason=str(exc)) from exc
 
         event_type = event["type"]
         session = event["data"]["object"]
+        # The connected account the event happened in (None: the platform's).
+        account_id = event.get("account") if connect else None
+
+        if event_type == "account.updated" and connect:
+            self._sync_account(stripe_account=session)
+            return
+
+        if event_type == "account.application.deauthorized" and connect:
+            self._revoke_account(account_id=account_id)
+            return
 
         if event_type == "checkout.session.completed":
             # Card payments are "paid" here; delayed methods (e.g. bank
             # debits) settle later via the async_payment_* events.
             if session["payment_status"] == "paid":
-                self._settle(session=session, succeeded=True)
+                self._settle(session=session, succeeded=True, account_id=account_id)
 
         elif event_type == "checkout.session.async_payment_succeeded":
-            self._settle(session=session, succeeded=True)
+            self._settle(session=session, succeeded=True, account_id=account_id)
 
         elif event_type in (
             "checkout.session.expired",
             "checkout.session.async_payment_failed",
         ):
-            self._settle(session=session, succeeded=False)
+            self._settle(session=session, succeeded=False, account_id=account_id)
 
         # A Refund object; its status says how far it's got.
         elif event_type in (
@@ -89,9 +110,62 @@ class StripeWebhookService:
             "refund.updated",
             "refund.failed",
         ):
-            self._settle_refund(stripe_refund=session)
+            self._settle_refund(stripe_refund=session, account_id=account_id)
 
         # Anything else is acknowledged and ignored.
+
+    @transactional
+    def _sync_account(self, *, stripe_account) -> None:
+        """Keep a tenant's account flags as Stripe reports them."""
+        known = self.stripe_account_repository.sync(
+            stripe_account_id=stripe_account["id"],
+            charges_enabled=bool(stripe_account.get("charges_enabled")),
+            payouts_enabled=bool(stripe_account.get("payouts_enabled")),
+            details_submitted=bool(stripe_account.get("details_submitted")),
+        )
+
+        logger.info(
+            "Connected account updated",
+            extra={
+                "event": "stripe_account_updated",
+                "result": "success" if known else "ignored",
+                "reason": f"account={stripe_account['id']}; charges_enabled={stripe_account.get('charges_enabled')}",
+            },
+        )
+
+    @transactional
+    def _revoke_account(self, *, account_id: str | None) -> None:
+        """The tenant removed our access in their Stripe dashboard."""
+        if not account_id:
+            return
+
+        known = self.stripe_account_repository.sync(stripe_account_id=account_id, revoked=True)
+
+        logger.warning(
+            "Connected account revoked our access",
+            extra={
+                "event": "stripe_account_revoked",
+                "result": "success" if known else "ignored",
+                "reason": f"account={account_id}",
+            },
+        )
+
+    @staticmethod
+    def _from_other_account(kind: str, expected: str | None, actual: str | None, reference) -> bool:
+        """An event must come from the account the payment was made in."""
+        if expected == actual:
+            return False
+
+        logger.warning(
+            "Stripe event from the wrong account",
+            extra={
+                "event": "stripe_webhook_wrong_account",
+                "result": "ignored",
+                "reason": f"{kind}={reference}; expected={expected}; actual={actual}",
+            },
+        )
+
+        return True
 
     @transactional
     def _settle(
@@ -99,6 +173,7 @@ class StripeWebhookService:
         *,
         session,
         succeeded: bool,
+        account_id: str | None,
     ) -> None:
         metadata = session.get("metadata") or {}
 
@@ -127,6 +202,9 @@ class StripeWebhookService:
         if not attempt or attempt.stripe_status != StripeStatus.PENDING:
             return
 
+        if self._from_other_account("payment_attempt", attempt.stripe_account_id, account_id, attempt.id):
+            return
+
         attempt.stripe_status = (
             StripeStatus.SUCCEEDED if succeeded else StripeStatus.FAILED
         )
@@ -140,6 +218,7 @@ class StripeWebhookService:
             if attempt.stripe_payment_intent_id:
                 attempt.stripe_receipt_url = self._receipt_url(
                     payment_intent_id=attempt.stripe_payment_intent_id,
+                    account_id=attempt.stripe_account_id,
                 )
 
             confirmed = self.booking_repository.settle_pending_for_group(
@@ -200,6 +279,7 @@ class StripeWebhookService:
         self,
         *,
         payment_intent_id: str,
+        account_id: str | None,
     ) -> str | None:
         """
         The payment's receipt link, if Stripe can give it now. A failed
@@ -207,7 +287,7 @@ class StripeWebhookService:
         goes without "View receipt".
         """
         try:
-            return self.stripe.get_receipt_url(payment_intent_id=payment_intent_id)
+            return StripeClient(account_id=account_id).get_receipt_url(payment_intent_id=payment_intent_id)
         except PaymentProviderError as exc:
             logger.warning(
                 "Couldn't fetch the Stripe receipt",
@@ -224,6 +304,7 @@ class StripeWebhookService:
         self,
         *,
         stripe_refund,
+        account_id: str | None,
     ) -> None:
         """
         Finish one of our refunds. Succeeded: cancel the booking (releasing
@@ -253,6 +334,11 @@ class StripeWebhookService:
         # Stripe retries and sends several events per refund; only a
         # pending refund moves.
         if not refund or refund.status != RefundStatus.PENDING:
+            return
+
+        payment = self.refund_repository.get_payment(refund=refund)
+
+        if self._from_other_account("refund", payment.stripe_account_id, account_id, refund.id):
             return
 
         # Saving Stripe's reply may have failed after the refund was made.

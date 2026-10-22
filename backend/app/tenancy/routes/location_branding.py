@@ -68,3 +68,26 @@ def get_public_branding(
         msg="Fetched public location data",
         data=result,
     )
+
+
+
+# Whether families can book and pay at this location now (its business's
+# Stripe account can take payments). Not cached: it changes when the
+# business connects Stripe or turns payments off.
+@router.get("/public/{location_code}/bookings-open")
+def get_bookings_open(
+    location_id: UUID = Depends(
+        resolve_location_id,
+    ),
+    service: LocationBrandingService = Depends(
+        get_service(
+            LocationBrandingService,
+            db_dependency=get_db,
+        )
+    ),
+) -> ApiResponse[bool]:
+    return ApiResponse(
+        ok=True,
+        msg="Fetched whether bookings are open",
+        data=service.bookings_open(location_id=location_id),
+    )

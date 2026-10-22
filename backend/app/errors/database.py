@@ -50,6 +50,7 @@ from app.errors.child_documents import (
     ChildDocumentTypeNotAllowedError,
 )
 from app.errors.action import MessageAlreadyReadError
+from app.errors.payments import PaymentsNotEnabledError, StripeAccountTakenError
 from app.errors.customer import (
     EmergencyContactFamilyOnlyError,
     EmergencyContactPhoneError,
@@ -125,6 +126,10 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_bookings_service_offered": ServiceNotOfferedError,
     "ck_bookings_service_day_full": BookingCapacityCollisionError,
     # Cancelling without a refund, and reinstating (trg_bookings_cancel_rules, schema/0004).
+    # The tenant's Stripe account can't take payments (schema/0004, 0009).
+    "ck_bookings_payments_enabled": PaymentsNotEnabledError,
+    "ck_payment_attempts_payments_enabled": PaymentsNotEnabledError,
+    "uq_tenant_stripe_accounts_account": StripeAccountTakenError,
     "ck_bookings_cancel_window": BookingNotCancellableError,
     "ck_bookings_reinstate_window": BookingNotReinstatableError,
     "ck_bookings_child_medically_cleared": ChildNotMedicallyClearedError,

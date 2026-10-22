@@ -114,6 +114,19 @@ BEGIN
     WHERE d.id = NEW.location_service_day_id
     FOR UPDATE OF d;
 
+    -- A new booking needs somewhere to pay: the tenant's Stripe account,
+    -- able to take payments (tenancy.payments_account, schema/0002).
+    -- Server code with no session (seeds) is trusted.
+    IF TG_OP = 'INSERT'
+       AND NULLIF(current_setting('app.user_id', true), '') IS NOT NULL
+       AND tenancy.payments_account(NEW.location_id) IS NULL THEN
+        RAISE EXCEPTION 'Location % isn''t taking bookings yet', NEW.location_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_bookings_payments_enabled',
+                  TABLE = 'bookings',
+                  SCHEMA = 'public';
+    END IF;
+
     -- An unknown day is left to fk_bookings_location_service_day.
     IF FOUND THEN
         IF TG_OP = 'INSERT' AND v_service_date <= (now() AT TIME ZONE v_timezone)::date THEN

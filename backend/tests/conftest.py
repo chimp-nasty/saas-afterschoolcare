@@ -50,6 +50,8 @@ os.environ.update(
 os.environ["APP_ENV"] = "test"
 
 
+from sqlalchemy import create_engine, text  # noqa: E402
+
 from tests.factories import (  # noqa: E402  (needs the env above)
     Api,
     FakeEmail,
@@ -67,6 +69,24 @@ def database():
 
     migrator.rebuild()
 
+    # Every tenant takes payments through its own connected account, as a
+    # live tenant does (tests of the other states change it and put it back).
+    with create_engine(os.environ["DATABASE_ADMIN_URL"]).begin() as conn:
+        conn.execute(text("""
+            INSERT INTO tenancy.tenant_stripe_accounts (
+                tenant_id, stripe_account_id, charges_enabled, payouts_enabled, details_submitted
+            )
+            SELECT t.id, 'acct_test_' || t.code, TRUE, TRUE, TRUE
+            FROM tenancy.tenants t
+            ON CONFLICT (tenant_id) DO UPDATE
+            SET stripe_account_id = EXCLUDED.stripe_account_id,
+                charges_enabled = TRUE,
+                payouts_enabled = TRUE,
+                details_submitted = TRUE,
+                disconnected_at = NULL,
+                revoked_at = NULL
+        """))
+
 
 @pytest.fixture(autouse=True)
 def fake_stripe(monkeypatch) -> type[FakeStripe]:
@@ -81,6 +101,7 @@ def fake_stripe(monkeypatch) -> type[FakeStripe]:
         "app.public.services.bookings_update",
         "app.public.services.refunds_create",
         "app.integrations.payments.stripe.webhook",
+        "app.tenancy.services.stripe_connect",
     ):
         monkeypatch.setattr(f"{module}.StripeClient", FakeStripe)
 

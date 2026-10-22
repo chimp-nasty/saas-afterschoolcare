@@ -32,6 +32,8 @@ class PaymentAttemptRepository(Repository):
 
         self.db.add(record)
         self.db.flush()
+        # The Stripe account is the database's (trg_payment_attempts_account).
+        self.db.refresh(record)
 
         return record
 

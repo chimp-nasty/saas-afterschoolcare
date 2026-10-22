@@ -65,6 +65,10 @@ GRANT INSERT, UPDATE ON auth.password_reset_tokens TO app_user;
 
 GRANT SELECT ON ALL TABLES IN SCHEMA tenancy TO app_user;
 
+-- Superadmins connect and disconnect the tenant's Stripe account (RLS
+-- limits it to their tenant).
+GRANT INSERT, UPDATE ON tenancy.tenant_stripe_accounts TO app_user;
+
 
 -- =====================================================
 -- SEQUENCES

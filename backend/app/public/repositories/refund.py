@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
+from sqlalchemy.engine import Row
+
 from app.db.repository import Repository
-from app.db.models import PaymentAttempt, Refund
+from app.db.models import PaymentAttempt, Refund, TenantStripeAccount
 from app.public.schemas.enums import RefundStatus
 
 
@@ -46,15 +48,28 @@ class RefundRepository(Repository):
             .first()
         )
 
-    def get_payment_intent_id(
+    def get_payment(
         self,
         *,
         refund: Refund,
-    ) -> str | None:
+    ) -> Row:
+        """
+        The payment being refunded: its payment intent, the Stripe account it
+        was taken in (refunds go through the same one), and whether that
+        account has since revoked our access.
+        """
         return (
-            self.db.query(PaymentAttempt.stripe_payment_intent_id)
+            self.db.query(
+                PaymentAttempt.stripe_payment_intent_id,
+                PaymentAttempt.stripe_account_id,
+                TenantStripeAccount.revoked_at.isnot(None).label("account_revoked"),
+            )
+            .outerjoin(
+                TenantStripeAccount,
+                TenantStripeAccount.stripe_account_id == PaymentAttempt.stripe_account_id,
+            )
             .filter(PaymentAttempt.id == refund.payment_attempt_id)
-            .scalar()
+            .one()
         )
 
     def mark_submitted(

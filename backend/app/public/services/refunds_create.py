@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.db.transaction import transactional
 from app.errors.bookings import BookingNotFoundError
-from app.errors.payments import PaymentProviderError
+from app.errors.payments import PaymentProviderError, StripeAccountRevokedError
 from app.integrations.payments.stripe.client import StripeClient
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.refund import RefundRepository
@@ -25,6 +25,8 @@ class _OpenedRefund:
     location_id: UUID
     amount_cents: int
     payment_intent_id: str
+    # The tenant's Stripe account the payment was taken in (None: the platform's).
+    stripe_account_id: str | None
 
 
 class CreateRefundService:
@@ -50,7 +52,6 @@ class CreateRefundService:
         self.rls_context = rls_context
         self.booking_repository = booking_repository
         self.refund_repository = refund_repository
-        self.stripe = StripeClient()
 
     def create(
         self,
@@ -72,7 +73,7 @@ class CreateRefundService:
         )
 
         try:
-            stripe_refund = self.stripe.create_refund(
+            stripe_refund = StripeClient(account_id=opened.stripe_account_id).create_refund(
                 payment_intent_id=opened.payment_intent_id,
                 amount_cents=opened.amount_cents,
                 # The webhook acts as the booking's family, at its location.
@@ -133,13 +134,21 @@ class CreateRefundService:
             },
         )
 
+        payment = self.refund_repository.get_payment(refund=refund)
+
+        # The centre removed our access in Stripe: only they can refund it
+        # now (in their dashboard). Raising undoes the refund row.
+        if payment.account_revoked:
+            raise StripeAccountRevokedError()
+
         return _OpenedRefund(
             refund_id=refund.id,
             booking_id=booking.id,
             family_user_id=booking.user_id,
             location_id=booking.location_id,
             amount_cents=refund.amount_cents,
-            payment_intent_id=self.refund_repository.get_payment_intent_id(refund=refund),
+            payment_intent_id=payment.stripe_payment_intent_id,
+            stripe_account_id=payment.stripe_account_id,
         )
 
     @transactional
