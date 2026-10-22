@@ -1,6 +1,7 @@
 import { createLocationServicesApi } from "$lib/api/public/adapters/location-services";
 import { createChildrenApi } from "$lib/api/public/adapters/children";
 import { createCustomerApi } from "$lib/api/public/adapters/customer";
+import { createLocationBrandingApi } from "$lib/api/tenancy/adapters/location-branding";
 import { createLocationServiceDaysApi } from "$lib/api/public/adapters/location-service-days";
 
 import type { PageLoad } from "../$types";
@@ -8,6 +9,7 @@ import type { PageLoad } from "../$types";
 export const load: PageLoad = async ({
     depends,
     fetch,
+    params,
 }) => {
     const locationServicesApi =
         createLocationServicesApi(fetch);
@@ -26,6 +28,7 @@ export const load: PageLoad = async ({
         childrenResponse,
         serviceDaysResponse,
         profileResponse,
+        bookingsOpenResponse,
     ] = await Promise.all([
         locationServicesApi.list(),
 
@@ -39,6 +42,9 @@ export const load: PageLoad = async ({
 
         // Booking needs a complete profile, emergency contact included.
         customerApi.getProfile(),
+
+        // And the centre taking payments (its Stripe account connected).
+        createLocationBrandingApi(fetch).bookingsOpen(params.location_code),
     ]);
 
     depends("app:new-booking");
@@ -55,5 +61,8 @@ export const load: PageLoad = async ({
 
         profile:
             profileResponse.data ?? null,
+
+        bookingsOpen:
+            bookingsOpenResponse.data ?? false,
     };
 };

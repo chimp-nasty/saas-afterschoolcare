@@ -418,6 +418,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/location-branding/v1/public/{location_code}/bookings-open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bookings Open */
+        get: operations["get_bookings_open_location_branding_v1_public__location_code__bookings_open_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Stripe Account */
+        get: operations["get_stripe_account_stripe_account_v1__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Stripe Onboarding */
+        post: operations["start_stripe_onboarding_stripe_account_v1_onboarding_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/oauth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Stripe Oauth */
+        post: operations["start_stripe_oauth_stripe_account_v1_oauth_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/oauth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Finish Stripe Oauth */
+        get: operations["finish_stripe_oauth_stripe_account_v1_oauth_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Stripe Account */
+        post: operations["refresh_stripe_account_stripe_account_v1_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disconnect Stripe Account */
+        post: operations["disconnect_stripe_account_stripe_account_v1_disconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stripe-account/v1/reconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconnect Stripe Account */
+        post: operations["reconnect_stripe_account_stripe_account_v1_reconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/customer/v1/onboard/{location_code}": {
         parameters: {
             query?: never;
@@ -1603,6 +1739,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/stripe/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stripe Connect Webhook */
+        post: operations["stripe_connect_webhook_api_v1_webhooks_stripe_connect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/ses": {
         parameters: {
             query?: never;
@@ -2092,6 +2245,31 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["StaffShiftResponse"] | null;
+        };
+        /** ApiResponse[StripeAccountStatusResponse] */
+        ApiResponse_StripeAccountStatusResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["StripeAccountStatusResponse"] | null;
+        };
+        /** ApiResponse[StripeOnboardingResponse] */
+        ApiResponse_StripeOnboardingResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["StripeOnboardingResponse"] | null;
+        };
+        /** ApiResponse[bool] */
+        ApiResponse_bool_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: boolean | null;
         };
         /** ApiResponse[int] */
         ApiResponse_int_: {
@@ -4482,6 +4660,40 @@ export interface components {
             ended_at: string | null;
         };
         /**
+         * StripeAccountStatusResponse
+         * @description The business's Stripe account, as Admin › Payments shows it.
+         */
+        StripeAccountStatusResponse: {
+            /** Connected */
+            connected: boolean;
+            /** Stripe Account Id */
+            stripe_account_id: string | null;
+            /** Details Submitted */
+            details_submitted: boolean;
+            /** Charges Enabled */
+            charges_enabled: boolean;
+            /** Payouts Enabled */
+            payouts_enabled: boolean;
+            /** Disconnected */
+            disconnected: boolean;
+            /** Revoked */
+            revoked: boolean;
+            /** Takes Payments */
+            takes_payments: boolean;
+            /** Connected At */
+            connected_at: string | null;
+            /** Can Link Existing */
+            can_link_existing: boolean;
+        };
+        /**
+         * StripeOnboardingResponse
+         * @description Stripe's hosted onboarding page, to send the superadmin to (one use).
+         */
+        StripeOnboardingResponse: {
+            /** Url */
+            url: string;
+        };
+        /**
          * StripeStatus
          * @enum {string}
          */
@@ -4679,6 +4891,9 @@ export type ApiResponseStaffAccountResponse = components['schemas']['ApiResponse
 export type ApiResponseStaffKioskVerifyResponse = components['schemas']['ApiResponse_StaffKioskVerifyResponse_'];
 export type ApiResponseStaffPinStatusResponse = components['schemas']['ApiResponse_StaffPinStatusResponse_'];
 export type ApiResponseStaffShiftResponse = components['schemas']['ApiResponse_StaffShiftResponse_'];
+export type ApiResponseStripeAccountStatusResponse = components['schemas']['ApiResponse_StripeAccountStatusResponse_'];
+export type ApiResponseStripeOnboardingResponse = components['schemas']['ApiResponse_StripeOnboardingResponse_'];
+export type ApiResponseBool = components['schemas']['ApiResponse_bool_'];
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
 export type ApiResponseListActionPlanResponse = components['schemas']['ApiResponse_list_ActionPlanResponse__'];
 export type ApiResponseListActionResponse = components['schemas']['ApiResponse_list_ActionResponse__'];
@@ -4810,6 +5025,8 @@ export type StaffKioskUndoRequest = components['schemas']['StaffKioskUndoRequest
 export type StaffKioskVerifyResponse = components['schemas']['StaffKioskVerifyResponse'];
 export type StaffPinStatusResponse = components['schemas']['StaffPinStatusResponse'];
 export type StaffShiftResponse = components['schemas']['StaffShiftResponse'];
+export type StripeAccountStatusResponse = components['schemas']['StripeAccountStatusResponse'];
+export type StripeOnboardingResponse = components['schemas']['StripeOnboardingResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateContactDetailsRequest = components['schemas']['UpdateContactDetailsRequest'];
@@ -5817,6 +6034,262 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_PublicLocationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bookings_open_location_branding_v1_public__location_code__bookings_open_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path: {
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_bool_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stripe_account_stripe_account_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeAccountStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_stripe_onboarding_stripe_account_v1_onboarding_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeOnboardingResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_stripe_oauth_stripe_account_v1_oauth_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                origin?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeOnboardingResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_stripe_oauth_stripe_account_v1_oauth_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_stripe_account_stripe_account_v1_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeAccountStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_stripe_account_stripe_account_v1_disconnect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeAccountStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconnect_stripe_account_stripe_account_v1_reconnect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeAccountStatusResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -8669,6 +9142,37 @@ export interface operations {
         };
     };
     stripe_webhook_api_v1_webhooks_stripe_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "stripe-signature"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stripe_connect_webhook_api_v1_webhooks_stripe_connect_post: {
         parameters: {
             query?: never;
             header?: {

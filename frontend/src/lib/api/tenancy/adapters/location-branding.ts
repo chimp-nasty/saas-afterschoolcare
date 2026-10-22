@@ -32,5 +32,11 @@ export function createLocationBrandingApi(
 				}
 			);
 		},
+
+		// Whether families can book and pay there now (the business's
+		// Stripe account takes payments). Not cached, unlike the above.
+		bookingsOpen(locationCode: string) {
+			return apiWrapper<boolean>(`${baseUrl}/public/${locationCode}/bookings-open`, { method: 'GET', fetcher });
+		},
 	};
 }

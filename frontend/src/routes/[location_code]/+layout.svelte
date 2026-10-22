@@ -92,6 +92,12 @@
 					}
 				]
 			: []),
+		// Admins see whether payments are on; superadmins manage it there.
+		{
+			label: 'Payments',
+			onclick: () => navigate('/admin/payments'),
+			isActive: isActive('/admin/payments')
+		},
 		{
 			label: 'Kiosks',
 			onclick: () => navigate('/admin/kiosks'),

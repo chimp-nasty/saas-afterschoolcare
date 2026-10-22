@@ -43,7 +43,13 @@
 </script>
 
 <Page>
-    {#if !missing.length}
+    {#if !data.bookingsOpen}
+        <PageHeader title="Book sessions" />
+
+        <Notice tone="warning">
+            {data.location.display_name ?? data.location.location_name} isn't taking bookings online yet. Please check back soon.
+        </Notice>
+    {:else if !missing.length}
         <CreateBookingFlow
             locationServices={data.locationServices}
             children={data.children}

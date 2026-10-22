@@ -30,7 +30,7 @@ Mind the file order: a SQL-language function body is checked when it's created, 
 - Routes call services, never repositories. One router per resource (`app/public/routes/*.py`), prefix `/<resource>/v1`, every handler returns `ApiResponse[...]`.
 - Services own transactions (`@transactional` from `app/db/transaction.py`) and business logging. Services are built by `get_service(...)`, which injects any `Repository` subclass named in `__init__` by type.
 - Repositories own queries and never commit. Models in `app/db/models.py` are generated from the database (don't edit); request/response models live in `schemas/`.
-- Stripe is only called through `StripeClient` (`app/integrations/payments/stripe/client.py`), so tenant Stripe accounts (Connect, later) are one change. Our database is the only source of prices: checkout and refunds send amounts directly; there's no Stripe catalogue.
+- Stripe is only called through `StripeClient` (`app/integrations/payments/stripe/client.py`). Each tenant is paid into its own connected account (Stripe Connect, Standard, direct charges): pass the payment's `stripe_account_id` (`StripeClient(account_id=...)`); the database picks it (`tenancy.payments_account`) and refuses bookings and checkouts while the tenant can't take payments. Events on connected accounts arrive on `/api/v1/webhooks/stripe/connect`. Setup: `infra/stripe/README.md`. Our database is the only source of prices: checkout and refunds send amounts directly; there's no Stripe catalogue.
 
 ### Rules live in the database
 
