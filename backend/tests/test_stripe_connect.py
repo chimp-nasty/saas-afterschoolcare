@@ -1,6 +1,6 @@
 """
-Stripe Connect (Admin › Payments, slice 5): each tenant is paid into its
-own Stripe account. Superadmins connect it through Stripe's onboarding and
+Stripe Connect (Business settings › Payments, slice 5): each tenant is paid into its
+own Stripe account. The owner connects it through Stripe's onboarding and
 can turn payments off and on; admins see whether it takes payments. A
 centre takes bookings only while its account can take payments. Payments
 and refunds happen in the tenant's account, and only events from that
@@ -74,10 +74,13 @@ def test_who_sees_the_status(api: Api, admin, superadmin, customer):
     assert customer.client.get(f"{BASE}/").status_code == 403
 
 
-# Only superadmins connect or turn payments off.
-def test_admins_cannot_change_it(admin):
-    assert admin.post(f"{BASE}/onboarding").status_code == 403
-    assert admin.post(f"{BASE}/disconnect").status_code == 403
+# Only the tenant's owner connects or turns payments off: admins and other
+# superadmins can't (a location permission never stands in for the tenant
+# one).
+def test_only_the_owner_can_change_it(admin, superadmin):
+    for client in (admin, superadmin):
+        assert client.post(f"{BASE}/onboarding").status_code == 403
+        assert client.post(f"{BASE}/disconnect").status_code == 403
 
 
 # A checkout is made in the tenant's own account, and only an event from
@@ -103,10 +106,10 @@ def test_payments_go_to_the_tenants_account(api: Api, customer, fake_stripe):
 
 
 # A new business connects: a Standard account is created and the
-# superadmin is sent to Stripe's onboarding, returning to Admin › Payments.
+# owner is sent to Stripe's onboarding, returning to Business settings › Payments.
 # Bookings open once Stripe says the account can take payments.
 def test_connecting_a_business(api: Api, fake_stripe):
-    superadmin = api.new_staff(role="superadmin", pin=None, tenant="tenant2", location="location2").client
+    owner = api.login("sa2user@test.com", "123", tenant="tenant2", location="location2")
     customer = api.new_customer(tenant="tenant2", location="location2")
     child = api.new_child(customer)
     day = api.service_day(tenant="tenant2", location="location2")
@@ -114,18 +117,18 @@ def test_connecting_a_business(api: Api, fake_stripe):
     with _account_changed(api, "tenant2"):
         api.sql("DELETE FROM tenancy.tenant_stripe_accounts WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')")
 
-        assert superadmin.get(f"{BASE}/").json()["data"]["connected"] is False
+        assert owner.get(f"{BASE}/").json()["data"]["connected"] is False
         refused = api.book(customer, {child["id"]: [day]})
         assert refused.status_code == 409
         assert refused.json()["msg"] == "This centre isn't taking bookings online yet"
 
-        response = superadmin.post(f"{BASE}/onboarding")
+        response = owner.post(f"{BASE}/onboarding")
         assert response.status_code == 200, response.text
         [account_id] = fake_stripe.state.accounts
         assert response.json()["data"]["url"].endswith(account_id)
-        assert fake_stripe.state.onboarding_links[-1]["return_url"].endswith("/location2/admin/payments?stripe=return")
+        assert fake_stripe.state.onboarding_links[-1]["return_url"].endswith("/business/payments?stripe=return")
 
-        status = superadmin.get(f"{BASE}/").json()["data"]
+        status = owner.get(f"{BASE}/").json()["data"]
         assert (status["connected"], status["takes_payments"]) == (True, False)
 
         # Onboarding finished: Stripe's account.updated turns payments on.
@@ -134,17 +137,17 @@ def test_connecting_a_business(api: Api, fake_stripe):
             "data": {"object": {"id": account_id, "charges_enabled": True, "payouts_enabled": True, "details_submitted": True}},
         }
         assert api._deliver(event, account_id).status_code == 200
-        assert superadmin.get(f"{BASE}/").json()["data"]["takes_payments"] is True
+        assert owner.get(f"{BASE}/").json()["data"]["takes_payments"] is True
         assert api.book(customer, {child["id"]: [day]}).status_code == 201
 
 
 # Turning payments off stops new bookings, but a past payment can still be
 # refunded through the account it was made in; turning them on reopens.
-def test_disconnect_keeps_refunds(api: Api, superadmin, customer, fake_stripe):
+def test_disconnect_keeps_refunds(api: Api, owner, customer, fake_stripe):
     booking_id = _paid_booking(api, customer)
 
     with _account_changed(api, "tenant1"):
-        data = superadmin.post(f"{BASE}/disconnect").json()["data"]
+        data = owner.post(f"{BASE}/disconnect").json()["data"]
         assert (data["disconnected"], data["takes_payments"]) == (True, False)
 
         child = api.new_child(customer)
@@ -155,7 +158,7 @@ def test_disconnect_keeps_refunds(api: Api, superadmin, customer, fake_stripe):
         [refund] = fake_stripe.state.refunds.values()
         assert refund["account_id"] == "acct_test_tenant1"
 
-        assert superadmin.post(f"{BASE}/reconnect").json()["data"]["takes_payments"] is True
+        assert owner.post(f"{BASE}/reconnect").json()["data"]["takes_payments"] is True
 
 
 # Once the business revokes our access in Stripe, bookings close and a
@@ -197,9 +200,9 @@ def oauth_enabled(monkeypatch):
     monkeypatch.setattr(settings, "STRIPE_CONNECT_CLIENT_ID", "ca_test")
 
 
-def _start_oauth(superadmin, fake_stripe) -> str:
+def _start_oauth(owner, fake_stripe) -> str:
     """Start "Connect with Stripe"; returns the state Stripe will hand back."""
-    response = superadmin.post(f"{BASE}/oauth")
+    response = owner.post(f"{BASE}/oauth")
     assert response.status_code == 200, response.text
     assert fake_stripe.state.oauth_links[-1]["redirect_uri"].endswith("/stripe-account/v1/oauth/callback")
 
@@ -210,50 +213,50 @@ def _finish_oauth(api: Api, **params):
     return api.client().get(f"{BASE}/oauth/callback", params=params, follow_redirects=False)
 
 
-# A superadmin links the business's existing Stripe account: Stripe returns
+# The owner links the business's existing Stripe account: Stripe returns
 # to the API's callback (no login needed; the signed state says who and
-# where), the account is linked, and they land back on Admin › Payments.
-def test_link_an_existing_account(api: Api, superadmin, fake_stripe, oauth_enabled):
+# where), the account is linked, and they land back on Business settings › Payments.
+def test_link_an_existing_account(api: Api, owner, fake_stripe, oauth_enabled):
     fake_stripe.state.accounts["acct_existing"] = StripeAccount(
         account_id="acct_existing", charges_enabled=True, payouts_enabled=True, details_submitted=True
     )
     fake_stripe.state.oauth_codes["ac_good"] = "acct_existing"
 
     with _account_changed(api, "tenant1"):
-        assert superadmin.get(f"{BASE}/").json()["data"]["can_link_existing"] is True
-        state = _start_oauth(superadmin, fake_stripe)
+        assert owner.get(f"{BASE}/").json()["data"]["can_link_existing"] is True
+        state = _start_oauth(owner, fake_stripe)
 
         response = _finish_oauth(api, code="ac_good", state=state, scope="read_write")
         assert response.status_code == 303
-        assert response.headers["location"].endswith("/location1/admin/payments?stripe=connected")
+        assert response.headers["location"].endswith("/business/payments?stripe=connected")
 
-        status = superadmin.get(f"{BASE}/").json()["data"]
+        status = owner.get(f"{BASE}/").json()["data"]
         assert (status["stripe_account_id"], status["is_linked"], status["takes_payments"]) == ("acct_existing", True, True)
 
 
 # A linked account that isn't ready yet is finished in the business's own
 # Stripe dashboard: our onboarding link isn't offered for it.
-def test_linked_account_finishes_setup_in_stripe(api: Api, superadmin, fake_stripe, oauth_enabled):
+def test_linked_account_finishes_setup_in_stripe(api: Api, owner, fake_stripe, oauth_enabled):
     fake_stripe.state.accounts["acct_unfinished"] = StripeAccount(
         account_id="acct_unfinished", charges_enabled=False, payouts_enabled=False, details_submitted=False
     )
     fake_stripe.state.oauth_codes["ac_unfinished"] = "acct_unfinished"
 
     with _account_changed(api, "tenant1"):
-        _finish_oauth(api, code="ac_unfinished", state=_start_oauth(superadmin, fake_stripe))
+        _finish_oauth(api, code="ac_unfinished", state=_start_oauth(owner, fake_stripe))
 
-        status = superadmin.get(f"{BASE}/").json()["data"]
+        status = owner.get(f"{BASE}/").json()["data"]
         assert (status["is_linked"], status["takes_payments"]) == (True, False)
 
-        response = superadmin.post(f"{BASE}/onboarding")
+        response = owner.post(f"{BASE}/onboarding")
         assert response.status_code == 409
         assert "Stripe dashboard" in response.json()["msg"]
 
 
 # Declining at Stripe, or a code that fails, sends them back saying so;
 # nothing is linked.
-def test_cancelled_or_failed_link(api: Api, superadmin, fake_stripe, oauth_enabled):
-    state = _start_oauth(superadmin, fake_stripe)
+def test_cancelled_or_failed_link(api: Api, owner, fake_stripe, oauth_enabled):
+    state = _start_oauth(owner, fake_stripe)
 
     cancelled = _finish_oauth(api, error="access_denied", state=state)
     assert cancelled.headers["location"].endswith("?stripe=cancelled")
@@ -261,18 +264,18 @@ def test_cancelled_or_failed_link(api: Api, superadmin, fake_stripe, oauth_enabl
     failed = _finish_oauth(api, code="ac_unknown", state=state)
     assert failed.headers["location"].endswith("?stripe=error")
 
-    assert superadmin.get(f"{BASE}/").json()["data"]["stripe_account_id"] == "acct_test_tenant1"
+    assert owner.get(f"{BASE}/").json()["data"]["stripe_account_id"] == "acct_test_tenant1"
 
 
 # One Stripe account can't be linked to two businesses.
-def test_account_already_linked_elsewhere(api: Api, superadmin, fake_stripe, oauth_enabled):
+def test_account_already_linked_elsewhere(api: Api, owner, fake_stripe, oauth_enabled):
     fake_stripe.state.accounts["acct_test_tenant2"] = StripeAccount(
         account_id="acct_test_tenant2", charges_enabled=True, payouts_enabled=True, details_submitted=True
     )
     fake_stripe.state.oauth_codes["ac_taken"] = "acct_test_tenant2"
 
     with _account_changed(api, "tenant1"):
-        response = _finish_oauth(api, code="ac_taken", state=_start_oauth(superadmin, fake_stripe))
+        response = _finish_oauth(api, code="ac_taken", state=_start_oauth(owner, fake_stripe))
 
         assert response.headers["location"].endswith("?stripe=taken")
 
@@ -286,8 +289,8 @@ def test_callback_needs_our_state(api: Api):
 
 
 # Without the platform's OAuth client id, linking isn't offered.
-def test_linking_needs_the_client_id(superadmin, monkeypatch):
+def test_linking_needs_the_client_id(owner, monkeypatch):
     monkeypatch.setattr(settings, "STRIPE_CONNECT_CLIENT_ID", None)
 
-    assert superadmin.get(f"{BASE}/").json()["data"]["can_link_existing"] is False
-    assert superadmin.post(f"{BASE}/oauth").status_code == 409
+    assert owner.get(f"{BASE}/").json()["data"]["can_link_existing"] is False
+    assert owner.post(f"{BASE}/oauth").status_code == 409

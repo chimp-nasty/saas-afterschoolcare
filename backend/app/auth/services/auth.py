@@ -26,6 +26,7 @@ from app.auth.schemas.auth import (
 )
 from app.errors.auth import (
     AuthenticationFailedError,
+    PermissionNotFoundError,
     InvalidPasswordResetError,
     JwtInvalidError,
 )
@@ -59,20 +60,30 @@ class AuthService:
         *,
         ctx: TokenContext,
     ) -> SessionResponse:
-        """Who's logged in, and at which location (from their token)."""
-        location = self.locations.get_by_id(id=ctx.location_id)
+        """
+        Who's logged in, at which location (none in Business settings), and
+        what they may do across the tenant (from their token).
+        """
+        location = None
 
-        if not location:
-            raise JwtInvalidError()
+        if ctx.location_id:
+            location = self.locations.get_by_id(id=ctx.location_id)
+
+            if not location:
+                raise JwtInvalidError()
 
         return SessionResponse(
             user_id=ctx.user_id,
             email=ctx.email,
             first_name=ctx.first_name,
             roles=ctx.roles,
-            location_id=location.id,
-            location_code=location.code,
-            location_name=location.name,
+            location_id=location.id if location else None,
+            location_code=location.code if location else None,
+            location_name=location.name if location else None,
+            tenant_permissions={
+                resource: sorted(actions)
+                for resource, actions in ctx.tenant_permissions.items()
+            },
         )
 
     @transactional
@@ -86,8 +97,101 @@ class AuthService:
         Authenticate a user for a location and issue an access token.
 
         The token contains the user's roles and effective permissions
-        for the requested location.
+        for the requested location, and their permissions across its
+        tenant (the owner's; empty for everyone else).
         """
+        user = self._authenticate(body=body)
+
+        if not self.location_user_roles.list_roles_by_user_and_location(
+            user_id=user.id,
+            location_id=location_id,
+        ):
+            raise AuthenticationFailedError()
+
+        self.users.update_last_login(
+            user=user,
+        )
+
+        location = self.locations.get_by_id(id=location_id)
+
+        return self._issue_token(
+            user_id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            tenant_id=location.tenant_id,
+            location_id=location_id,
+        )
+
+    @transactional
+    def business_login(
+        self,
+        *,
+        body: LoginRequest,
+        tenant_id: UUID,
+    ) -> str:
+        """
+        Log in to Business settings (/business): the tenant's owner only,
+        with no location (docs/tenant-administration.md). Anyone else is
+        refused as if the password were wrong, so the page doesn't say who
+        owns the business.
+        """
+        user = self._authenticate(body=body)
+
+        if not self.permissions.list_tenant_permissions(
+            user_id=user.id,
+            tenant_id=tenant_id,
+        ):
+            raise AuthenticationFailedError()
+
+        self.users.update_last_login(
+            user=user,
+        )
+
+        return self._issue_token(
+            user_id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            tenant_id=tenant_id,
+            location_id=None,
+        )
+
+    @transactional
+    def switch_location(
+        self,
+        *,
+        ctx: TokenContext,
+        location_id: UUID,
+    ) -> str:
+        """
+        A new token for another location of the same tenant (the site's,
+        resolve_location_id) where the user has a role, keeping their
+        tenant permissions: "Manage centre" from Business settings. Tenant
+        permissions never stand in for a role there.
+        """
+        self.rls_context.set_user_id(
+            user_id=ctx.user_id,
+        )
+
+        if not self.location_user_roles.list_roles_by_user_and_location(
+            user_id=ctx.user_id,
+            location_id=location_id,
+        ):
+            raise PermissionNotFoundError()
+
+        return self._issue_token(
+            user_id=ctx.user_id,
+            email=ctx.email,
+            first_name=ctx.first_name,
+            tenant_id=ctx.tenant_id,
+            location_id=location_id,
+        )
+
+    def _authenticate(
+        self,
+        *,
+        body: LoginRequest,
+    ):
+        """The user with this email and password (RLS set to them), or AuthenticationFailedError."""
         self.rls_context.set_login_email(
             email=body.email,
         )
@@ -109,47 +213,64 @@ class AuthService:
             user_id=user.id,
         )
 
-        location_roles = (
-            self.location_user_roles.list_roles_by_user_and_location(
-                user_id=user.id,
-                location_id=location_id,
+        return user
+
+    def _issue_token(
+        self,
+        *,
+        user_id: UUID,
+        email: str | None,
+        first_name: str | None,
+        tenant_id: UUID,
+        location_id: UUID | None,
+    ) -> str:
+        """
+        Every access token is made here (location login, business login,
+        switching location), so the claims can't drift: the roles and
+        permissions at the location (none without one) and the tenant
+        permissions, read now.
+        """
+        roles: list[str] = []
+        permission_map: PermissionMap = {}
+
+        if location_id:
+            role_ids = [
+                location_role.role_id
+                for location_role in self.location_user_roles.list_roles_by_user_and_location(
+                    user_id=user_id,
+                    location_id=location_id,
+                )
+            ]
+
+            roles = [
+                role.code
+                for role in self.roles.list_by_ids(
+                    role_ids=role_ids,
+                )
+            ]
+
+            permission_map = self._build_permission_map(
+                permissions=self.permissions.list_by_role_ids(
+                    role_ids=role_ids,
+                ),
             )
-        )
 
-        if not location_roles:
-            raise AuthenticationFailedError()
-
-        role_ids = [
-            location_role.role_id
-            for location_role in location_roles
-        ]
-
-        roles = [
-            role.code
-            for role in self.roles.list_by_ids(
-                role_ids=role_ids,
-            )
-        ]
-
-        permissions = self.permissions.list_by_role_ids(
-            role_ids=role_ids,
-        )
-
-        permission_map = self._build_permission_map(
-            permissions=permissions,
-        )
-
-        self.users.update_last_login(
-            user=user,
+        tenant_permission_map = self._build_permission_map(
+            permissions=self.permissions.list_tenant_permissions(
+                user_id=user_id,
+                tenant_id=tenant_id,
+            ),
         )
 
         return TokenService.create_access_token(
-            user_id=user.id,
+            user_id=user_id,
+            tenant_id=tenant_id,
             location_id=location_id,
             roles=roles,
             permissions=permission_map,
-            email=user.email,
-            first_name=user.first_name,
+            tenant_permissions=tenant_permission_map,
+            email=email,
+            first_name=first_name,
         )
 
     def _build_permission_map(

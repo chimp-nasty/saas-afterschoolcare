@@ -78,9 +78,22 @@ VALUES
     ('staff_accounts', 'd', 'Remove staff from the location'),
     ('staff_admin_roles', 'u', 'Make or unmake admins'),
     ('stripe_account', 'r', 'See whether the business can take payments'),
-    ('stripe_account', 'u', 'Connect or disconnect the business''s Stripe account'),
     ('staff_pins', 'u', 'Set own staff PIN'),
     -- At the staff kiosk: checking a pickup person's ID or approving them.
     ('pickup_identity', 'u', 'Check ID and approve pickup people'),
     ('staff_shifts', 'c', 'Start and end own shifts'),
     ('staff_shifts', 'r', 'Read shifts');
+
+-- The whole business (docs/tenant-administration.md): granted directly to
+-- the tenant's owner (auth.user_tenant_permissions), never to a role.
+INSERT INTO auth.permissions (resource, action, scope, description)
+VALUES
+    ('tenant_settings', 'r', 'tenant', 'See the business''s details'),
+    ('tenant_settings', 'u', 'tenant', 'Change the business''s details'),
+    ('tenant_locations', 'c', 'tenant', 'Add locations'),
+    ('tenant_locations', 'r', 'tenant', 'See all the business''s locations'),
+    ('tenant_locations', 'u', 'tenant', 'Change a location''s details'),
+    ('tenant_stripe_account', 'r', 'tenant', 'See the business''s Stripe account'),
+    ('tenant_stripe_account', 'u', 'tenant', 'Connect or disconnect the business''s Stripe account'),
+    ('tenant_domains', 'r', 'tenant', 'See the business''s web addresses'),
+    ('tenant_domains', 'u', 'tenant', 'Add or remove the business''s own domain');

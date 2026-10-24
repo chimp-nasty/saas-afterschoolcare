@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -10,7 +10,7 @@ export function createStaffPinApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/staff-pin/v1`;
+		`${API_BASE}/staff-pin/v1`;
 
 	return {
 		status() {

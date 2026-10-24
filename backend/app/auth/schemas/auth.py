@@ -34,7 +34,12 @@ class SessionResponse(BaseModel):
     roles: list[str]
 
     # The location this session is for (logins are per location). The
-    # frontend only treats it as logged in at this location.
-    location_id: UUID
-    location_code: str
+    # frontend only treats it as logged in at this location. None in
+    # Business settings (/business), which has no location.
+    location_id: UUID | None
+    location_code: str | None
     location_name: str | None
+
+    # What they may do across the whole tenant: {resource: [actions]}, the
+    # owner's; empty for everyone else. Shows "Business settings".
+    tenant_permissions: dict[str, list[str]]

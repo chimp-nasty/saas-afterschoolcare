@@ -15,9 +15,11 @@ class CustomerProfileRepository(Repository):
         suburb: str | None = None,
         state: AustralianState | None = None,
         postcode: str | None = None,
+        terms_document_id: UUID | None = None,
     ) -> CustomerProfile:
         record = CustomerProfile(
             user_id=user_id,
+            terms_document_id=terms_document_id,
             phone=phone,
             address_line_1=address_line_1,
             address_line_2=address_line_2,

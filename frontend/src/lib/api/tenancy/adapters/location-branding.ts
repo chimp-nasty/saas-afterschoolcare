@@ -1,15 +1,24 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import type { PublicLocationResponse } from '$lib/api/schema';
+import type { PublicBusinessResponse, PublicLocationResponse } from '$lib/api/schema';
+
+
+// The business's logo, site icon (its logo if none, else the platform's) and
+// current policy PDFs: links that redirect to the file (stage 5).
+export type SiteFileKind = 'logo' | 'icon' | 'privacy' | 'terms';
+
+export function siteFileUrl(kind: SiteFileKind): string {
+	return `${API_BASE}/location-branding/v1/site-files/${kind}`;
+}
 
 
 export function createLocationBrandingApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/location-branding/v1`;
+		`${API_BASE}/location-branding/v1`;
 
 	return {
 		// The tenant's centres (from the site's address), before login.
@@ -21,6 +30,12 @@ export function createLocationBrandingApi(
 					fetcher
 				}
 			);
+		},
+
+		// The business's landing page: its words, colours and FAQs, and which
+		// images and policies it has.
+		getPublicBusiness() {
+			return apiWrapper<PublicBusinessResponse>(`${baseUrl}/public/business`, { method: 'GET', fetcher });
 		},
 
 		getPublicLocation(locationCode: string) {

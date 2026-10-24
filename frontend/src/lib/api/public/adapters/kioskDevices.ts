@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -16,7 +16,7 @@ export function createKioskDevicesApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/kiosk-devices/v1`;
+		`${API_BASE}/kiosk-devices/v1`;
 
 	return {
 		list() {

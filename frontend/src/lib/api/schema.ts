@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/auth/v1/login/{location_code}": {
+    "/api/auth/v1/login/{location_code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -14,14 +14,48 @@ export interface paths {
         get?: never;
         put?: never;
         /** Login */
-        post: operations["login_auth_v1_login__location_code__post"];
+        post: operations["login_api_auth_v1_login__location_code__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/v1/logout": {
+    "/api/auth/v1/business/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Business Login */
+        post: operations["business_login_api_auth_v1_business_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/v1/switch-location/{location_code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Switch Location */
+        post: operations["switch_location_api_auth_v1_switch_location__location_code__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/v1/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -31,14 +65,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Logout */
-        post: operations["logout_auth_v1_logout_post"];
+        post: operations["logout_api_auth_v1_logout_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/v1/forgot-password/{location_code}": {
+    "/api/auth/v1/forgot-password/{location_code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -48,14 +82,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Forgot Password */
-        post: operations["forgot_password_auth_v1_forgot_password__location_code__post"];
+        post: operations["forgot_password_api_auth_v1_forgot_password__location_code__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/v1/reset-password": {
+    "/api/auth/v1/reset-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -65,14 +99,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reset Password */
-        post: operations["reset_password_auth_v1_reset_password_post"];
+        post: operations["reset_password_api_auth_v1_reset_password_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auth/v1/session": {
+    "/api/auth/v1/session": {
         parameters: {
             query?: never;
             header?: never;
@@ -80,7 +114,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Session */
-        get: operations["get_session_auth_v1_session_get"];
+        get: operations["get_session_api_auth_v1_session_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -89,7 +123,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-pin/v1/": {
+    "/api/staff-pin/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -97,9 +131,9 @@ export interface paths {
             cookie?: never;
         };
         /** Get Staff Pin Status */
-        get: operations["get_staff_pin_status_staff_pin_v1__get"];
+        get: operations["get_staff_pin_status_api_staff_pin_v1__get"];
         /** Set Staff Pin */
-        put: operations["set_staff_pin_staff_pin_v1__put"];
+        put: operations["set_staff_pin_api_staff_pin_v1__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -107,7 +141,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/v1/": {
+    "/api/account/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -115,7 +149,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Account */
-        get: operations["get_account_account_v1__get"];
+        get: operations["get_account_api_account_v1__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -124,7 +158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/v1/password": {
+    "/api/account/v1/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -134,14 +168,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Change Password */
-        post: operations["change_password_account_v1_password_post"];
+        post: operations["change_password_api_account_v1_password_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-accounts/v1/": {
+    "/api/staff-accounts/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -149,17 +183,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Staff */
-        get: operations["list_staff_staff_accounts_v1__get"];
+        get: operations["list_staff_api_staff_accounts_v1__get"];
         put?: never;
         /** Add Staff */
-        post: operations["add_staff_staff_accounts_v1__post"];
+        post: operations["add_staff_api_staff_accounts_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-accounts/v1/{user_id}/invite": {
+    "/api/staff-accounts/v1/{user_id}/invite": {
         parameters: {
             query?: never;
             header?: never;
@@ -169,14 +203,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Resend Invite */
-        post: operations["resend_invite_staff_accounts_v1__user_id__invite_post"];
+        post: operations["resend_invite_api_staff_accounts_v1__user_id__invite_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-accounts/v1/{user_id}": {
+    "/api/staff-accounts/v1/{user_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -187,14 +221,14 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove Staff */
-        delete: operations["remove_staff_staff_accounts_v1__user_id__delete"];
+        delete: operations["remove_staff_api_staff_accounts_v1__user_id__delete"];
         options?: never;
         head?: never;
         /** Rename Staff */
-        patch: operations["rename_staff_staff_accounts_v1__user_id__patch"];
+        patch: operations["rename_staff_api_staff_accounts_v1__user_id__patch"];
         trace?: never;
     };
-    "/staff-accounts/v1/{user_id}/role": {
+    "/api/staff-accounts/v1/{user_id}/role": {
         parameters: {
             query?: never;
             header?: never;
@@ -203,7 +237,7 @@ export interface paths {
         };
         get?: never;
         /** Change Staff Role */
-        put: operations["change_staff_role_staff_accounts_v1__user_id__role_put"];
+        put: operations["change_staff_role_api_staff_accounts_v1__user_id__role_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -211,7 +245,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-accounts/v1/{user_id}/reset-pin": {
+    "/api/staff-accounts/v1/{user_id}/reset-pin": {
         parameters: {
             query?: never;
             header?: never;
@@ -221,14 +255,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reset Staff Pin */
-        post: operations["reset_staff_pin_staff_accounts_v1__user_id__reset_pin_post"];
+        post: operations["reset_staff_pin_api_staff_accounts_v1__user_id__reset_pin_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/families/v1/": {
+    "/api/families/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -236,7 +270,7 @@ export interface paths {
             cookie?: never;
         };
         /** Search Families */
-        get: operations["search_families_families_v1__get"];
+        get: operations["search_families_api_families_v1__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -245,7 +279,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}": {
+    "/api/families/v1/{user_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -253,17 +287,17 @@ export interface paths {
             cookie?: never;
         };
         /** Get Family */
-        get: operations["get_family_families_v1__user_id__get"];
+        get: operations["get_family_api_families_v1__user_id__get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Family */
-        patch: operations["update_family_families_v1__user_id__patch"];
+        patch: operations["update_family_api_families_v1__user_id__patch"];
         trace?: never;
     };
-    "/families/v1/{user_id}/bookings": {
+    "/api/families/v1/{user_id}/bookings": {
         parameters: {
             query?: never;
             header?: never;
@@ -271,7 +305,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Family Bookings */
-        get: operations["list_family_bookings_families_v1__user_id__bookings_get"];
+        get: operations["list_family_bookings_api_families_v1__user_id__bookings_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -280,7 +314,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}/attendance": {
+    "/api/families/v1/{user_id}/attendance": {
         parameters: {
             query?: never;
             header?: never;
@@ -288,7 +322,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Family Attendance */
-        get: operations["list_family_attendance_families_v1__user_id__attendance_get"];
+        get: operations["list_family_attendance_api_families_v1__user_id__attendance_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -297,7 +331,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}/payments": {
+    "/api/families/v1/{user_id}/payments": {
         parameters: {
             query?: never;
             header?: never;
@@ -305,7 +339,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Family Payments */
-        get: operations["list_family_payments_families_v1__user_id__payments_get"];
+        get: operations["list_family_payments_api_families_v1__user_id__payments_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -314,7 +348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}/notes": {
+    "/api/families/v1/{user_id}/notes": {
         parameters: {
             query?: never;
             header?: never;
@@ -322,17 +356,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Family Notes */
-        get: operations["list_family_notes_families_v1__user_id__notes_get"];
+        get: operations["list_family_notes_api_families_v1__user_id__notes_get"];
         put?: never;
         /** Add Family Note */
-        post: operations["add_family_note_families_v1__user_id__notes_post"];
+        post: operations["add_family_note_api_families_v1__user_id__notes_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}/notes/{note_id}": {
+    "/api/families/v1/{user_id}/notes/{note_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -343,13 +377,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Family Note */
-        delete: operations["delete_family_note_families_v1__user_id__notes__note_id__delete"];
+        delete: operations["delete_family_note_api_families_v1__user_id__notes__note_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}/messages": {
+    "/api/families/v1/{user_id}/messages": {
         parameters: {
             query?: never;
             header?: never;
@@ -357,17 +391,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Family Messages */
-        get: operations["list_family_messages_families_v1__user_id__messages_get"];
+        get: operations["list_family_messages_api_families_v1__user_id__messages_get"];
         put?: never;
         /** Send Family Message */
-        post: operations["send_family_message_families_v1__user_id__messages_post"];
+        post: operations["send_family_message_api_families_v1__user_id__messages_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/families/v1/{user_id}/messages/{message_id}": {
+    "/api/families/v1/{user_id}/messages/{message_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -378,13 +412,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** Withdraw Family Message */
-        delete: operations["withdraw_family_message_families_v1__user_id__messages__message_id__delete"];
+        delete: operations["withdraw_family_message_api_families_v1__user_id__messages__message_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/location-branding/v1/public": {
+    "/api/location-branding/v1/public": {
         parameters: {
             query?: never;
             header?: never;
@@ -392,7 +426,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Public Locations */
-        get: operations["list_public_locations_location_branding_v1_public_get"];
+        get: operations["list_public_locations_api_location_branding_v1_public_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -401,7 +435,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/location-branding/v1/public/{location_code}": {
+    "/api/location-branding/v1/public/business": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Business */
+        get: operations["get_public_business_api_location_branding_v1_public_business_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-branding/v1/site-files/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public File */
+        get: operations["get_public_file_api_location_branding_v1_site_files__kind__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-branding/v1/public/{location_code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -409,7 +477,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Public Branding */
-        get: operations["get_public_branding_location_branding_v1_public__location_code__get"];
+        get: operations["get_public_branding_api_location_branding_v1_public__location_code__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -418,7 +486,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/location-branding/v1/public/{location_code}/bookings-open": {
+    "/api/location-branding/v1/public/{location_code}/bookings-open": {
         parameters: {
             query?: never;
             header?: never;
@@ -426,7 +494,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Bookings Open */
-        get: operations["get_bookings_open_location_branding_v1_public__location_code__bookings_open_get"];
+        get: operations["get_bookings_open_api_location_branding_v1_public__location_code__bookings_open_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -435,7 +503,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/": {
+    "/api/stripe-account/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -443,7 +511,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Stripe Account */
-        get: operations["get_stripe_account_stripe_account_v1__get"];
+        get: operations["get_stripe_account_api_stripe_account_v1__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -452,7 +520,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/onboarding": {
+    "/api/stripe-account/v1/tenant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tenant Stripe Account */
+        get: operations["get_tenant_stripe_account_api_stripe_account_v1_tenant_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stripe-account/v1/onboarding": {
         parameters: {
             query?: never;
             header?: never;
@@ -462,14 +547,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Start Stripe Onboarding */
-        post: operations["start_stripe_onboarding_stripe_account_v1_onboarding_post"];
+        post: operations["start_stripe_onboarding_api_stripe_account_v1_onboarding_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/oauth": {
+    "/api/stripe-account/v1/oauth": {
         parameters: {
             query?: never;
             header?: never;
@@ -479,14 +564,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Start Stripe Oauth */
-        post: operations["start_stripe_oauth_stripe_account_v1_oauth_post"];
+        post: operations["start_stripe_oauth_api_stripe_account_v1_oauth_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/oauth/callback": {
+    "/api/stripe-account/v1/oauth/callback": {
         parameters: {
             query?: never;
             header?: never;
@@ -494,7 +579,7 @@ export interface paths {
             cookie?: never;
         };
         /** Finish Stripe Oauth */
-        get: operations["finish_stripe_oauth_stripe_account_v1_oauth_callback_get"];
+        get: operations["finish_stripe_oauth_api_stripe_account_v1_oauth_callback_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -503,7 +588,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/refresh": {
+    "/api/stripe-account/v1/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -513,14 +598,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Refresh Stripe Account */
-        post: operations["refresh_stripe_account_stripe_account_v1_refresh_post"];
+        post: operations["refresh_stripe_account_api_stripe_account_v1_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/disconnect": {
+    "/api/stripe-account/v1/disconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -530,14 +615,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Disconnect Stripe Account */
-        post: operations["disconnect_stripe_account_stripe_account_v1_disconnect_post"];
+        post: operations["disconnect_stripe_account_api_stripe_account_v1_disconnect_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/stripe-account/v1/reconnect": {
+    "/api/stripe-account/v1/reconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -547,14 +632,324 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reconnect Stripe Account */
-        post: operations["reconnect_stripe_account_stripe_account_v1_reconnect_post"];
+        post: operations["reconnect_stripe_account_api_stripe_account_v1_reconnect_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/customer/v1/onboard/{location_code}": {
+    "/api/business/v1/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Overview */
+        get: operations["get_overview_api_business_v1_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settings */
+        get: operations["get_settings_api_business_v1_settings_get"];
+        /** Update Settings */
+        put: operations["update_settings_api_business_v1_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Locations */
+        get: operations["list_locations_api_business_v1_locations_get"];
+        put?: never;
+        /** Create Location */
+        post: operations["create_location_api_business_v1_locations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/locations/{location_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Location */
+        put: operations["update_location_api_business_v1_locations__location_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/site": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Site */
+        get: operations["get_site_api_business_v1_site_get"];
+        /** Update Site */
+        put: operations["update_site_api_business_v1_site_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/site/faqs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Faqs */
+        put: operations["replace_faqs_api_business_v1_site_faqs_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/site/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Site Upload */
+        post: operations["start_site_upload_api_business_v1_site_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/site/uploads/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Site Upload */
+        post: operations["confirm_site_upload_api_business_v1_site_uploads_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/site/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Site Image */
+        delete: operations["remove_site_image_api_business_v1_site__kind__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_api_platform_v1_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_platform_v1_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Session */
+        get: operations["get_session_api_platform_v1_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/tenants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tenants */
+        get: operations["list_tenants_api_platform_v1_tenants_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/tenants/{tenant_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Tenant Active */
+        put: operations["set_tenant_active_api_platform_v1_tenants__tenant_id__active_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Invites */
+        get: operations["list_invites_api_platform_v1_invites_get"];
+        put?: never;
+        /** Create Invite */
+        post: operations["create_invite_api_platform_v1_invites_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/invites/{invite_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Invite */
+        delete: operations["revoke_invite_api_platform_v1_invites__invite_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/registration/v1/invites/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Invite */
+        get: operations["get_invite_api_registration_v1_invites__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/registration/v1/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register */
+        post: operations["register_api_registration_v1_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customer/v1/onboard/{location_code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -564,14 +959,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Onboard */
-        post: operations["onboard_customer_v1_onboard__location_code__post"];
+        post: operations["onboard_api_customer_v1_onboard__location_code__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/customer/v1/profile": {
+    "/api/customer/v1/profile": {
         parameters: {
             query?: never;
             header?: never;
@@ -579,17 +974,17 @@ export interface paths {
             cookie?: never;
         };
         /** Get Profile */
-        get: operations["get_profile_customer_v1_profile_get"];
+        get: operations["get_profile_api_customer_v1_profile_get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Profile */
-        patch: operations["update_profile_customer_v1_profile_patch"];
+        patch: operations["update_profile_api_customer_v1_profile_patch"];
         trace?: never;
     };
-    "/booking/v1/groups": {
+    "/api/booking/v1/groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -597,7 +992,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Booking Groups */
-        get: operations["list_booking_groups_booking_v1_groups_get"];
+        get: operations["list_booking_groups_api_booking_v1_groups_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -606,7 +1001,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/groups/{booking_group_id}": {
+    "/api/booking/v1/groups/{booking_group_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -614,7 +1009,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Booking Group */
-        get: operations["get_booking_group_booking_v1_groups__booking_group_id__get"];
+        get: operations["get_booking_group_api_booking_v1_groups__booking_group_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -623,7 +1018,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/groups/{booking_group_id}/checkout": {
+    "/api/booking/v1/groups/{booking_group_id}/checkout": {
         parameters: {
             query?: never;
             header?: never;
@@ -633,14 +1028,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Booking Group Checkout */
-        post: operations["create_booking_group_checkout_booking_v1_groups__booking_group_id__checkout_post"];
+        post: operations["create_booking_group_checkout_api_booking_v1_groups__booking_group_id__checkout_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/groups/{booking_group_id}/cancel": {
+    "/api/booking/v1/groups/{booking_group_id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -650,14 +1045,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Cancel Booking Group */
-        post: operations["cancel_booking_group_booking_v1_groups__booking_group_id__cancel_post"];
+        post: operations["cancel_booking_group_api_booking_v1_groups__booking_group_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/{booking_id}/cancel": {
+    "/api/booking/v1/{booking_id}/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -667,14 +1062,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Cancel Booking */
-        post: operations["cancel_booking_booking_v1__booking_id__cancel_post"];
+        post: operations["cancel_booking_api_booking_v1__booking_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/{booking_id}/reinstate": {
+    "/api/booking/v1/{booking_id}/reinstate": {
         parameters: {
             query?: never;
             header?: never;
@@ -684,14 +1079,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reinstate Booking */
-        post: operations["reinstate_booking_booking_v1__booking_id__reinstate_post"];
+        post: operations["reinstate_booking_api_booking_v1__booking_id__reinstate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/": {
+    "/api/booking/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -699,17 +1094,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Bookings */
-        get: operations["list_bookings_booking_v1__get"];
+        get: operations["list_bookings_api_booking_v1__get"];
         put?: never;
         /** Create Booking */
-        post: operations["create_booking_booking_v1__post"];
+        post: operations["create_booking_api_booking_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/checkout/{checkout_session_id}": {
+    "/api/booking/v1/checkout/{checkout_session_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -717,7 +1112,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Checkout Status */
-        get: operations["get_checkout_status_booking_v1_checkout__checkout_session_id__get"];
+        get: operations["get_checkout_status_api_booking_v1_checkout__checkout_session_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -726,7 +1121,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/conflicts": {
+    "/api/booking/v1/conflicts": {
         parameters: {
             query?: never;
             header?: never;
@@ -736,14 +1131,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Find Conflicts */
-        post: operations["find_conflicts_booking_v1_conflicts_post"];
+        post: operations["find_conflicts_api_booking_v1_conflicts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/booking/v1/{booking_id}": {
+    "/api/booking/v1/{booking_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -751,7 +1146,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Booking */
-        get: operations["get_booking_booking_v1__booking_id__get"];
+        get: operations["get_booking_api_booking_v1__booking_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -760,7 +1155,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/children/v1/{child_id}": {
+    "/api/children/v1/{child_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -768,17 +1163,17 @@ export interface paths {
             cookie?: never;
         };
         /** Get Child */
-        get: operations["get_child_children_v1__child_id__get"];
+        get: operations["get_child_api_children_v1__child_id__get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Child Profile */
-        patch: operations["update_child_profile_children_v1__child_id__patch"];
+        patch: operations["update_child_profile_api_children_v1__child_id__patch"];
         trace?: never;
     };
-    "/children/v1/": {
+    "/api/children/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -786,17 +1181,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Children */
-        get: operations["list_children_children_v1__get"];
+        get: operations["list_children_api_children_v1__get"];
         put?: never;
         /** Create Child Profile */
-        post: operations["create_child_profile_children_v1__post"];
+        post: operations["create_child_profile_api_children_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/children/v1/{child_id}/deactivate": {
+    "/api/children/v1/{child_id}/deactivate": {
         parameters: {
             query?: never;
             header?: never;
@@ -806,14 +1201,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Deactivate Child Profile */
-        post: operations["deactivate_child_profile_children_v1__child_id__deactivate_post"];
+        post: operations["deactivate_child_profile_api_children_v1__child_id__deactivate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/location-service-days/v1/": {
+    "/api/location-service-days/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -821,17 +1216,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Location Service Days */
-        get: operations["list_location_service_days_location_service_days_v1__get"];
+        get: operations["list_location_service_days_api_location_service_days_v1__get"];
         put?: never;
         /** Create Service Days */
-        post: operations["create_service_days_location_service_days_v1__post"];
+        post: operations["create_service_days_api_location_service_days_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/location-service-days/v1/overview": {
+    "/api/location-service-days/v1/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -839,7 +1234,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Service Day Overview */
-        get: operations["get_service_day_overview_location_service_days_v1_overview_get"];
+        get: operations["get_service_day_overview_api_location_service_days_v1_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -848,7 +1243,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/location-service-days/v1/capacity": {
+    "/api/location-service-days/v1/capacity": {
         parameters: {
             query?: never;
             header?: never;
@@ -862,10 +1257,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Set Service Day Capacity */
-        patch: operations["set_service_day_capacity_location_service_days_v1_capacity_patch"];
+        patch: operations["set_service_day_capacity_api_location_service_days_v1_capacity_patch"];
         trace?: never;
     };
-    "/location-service-days/v1/{day_id}": {
+    "/api/location-service-days/v1/{day_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -876,14 +1271,14 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Service Day */
-        delete: operations["delete_service_day_location_service_days_v1__day_id__delete"];
+        delete: operations["delete_service_day_api_location_service_days_v1__day_id__delete"];
         options?: never;
         head?: never;
         /** Update Service Day */
-        patch: operations["update_service_day_location_service_days_v1__day_id__patch"];
+        patch: operations["update_service_day_api_location_service_days_v1__day_id__patch"];
         trace?: never;
     };
-    "/location-services/v1/public/{location_code}": {
+    "/api/location-services/v1/public/{location_code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -891,7 +1286,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Public Location Services */
-        get: operations["list_public_location_services_location_services_v1_public__location_code__get"];
+        get: operations["list_public_location_services_api_location_services_v1_public__location_code__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -900,7 +1295,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/location-services/v1/settings": {
+    "/api/location-services/v1/settings": {
         parameters: {
             query?: never;
             header?: never;
@@ -908,7 +1303,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Location Service Settings */
-        get: operations["list_location_service_settings_location_services_v1_settings_get"];
+        get: operations["list_location_service_settings_api_location_services_v1_settings_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -917,7 +1312,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/location-services/v1/{location_service_id}/config": {
+    "/api/location-services/v1/{location_service_id}/config": {
         parameters: {
             query?: never;
             header?: never;
@@ -931,10 +1326,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Update Location Service Config */
-        patch: operations["update_location_service_config_location_services_v1__location_service_id__config_patch"];
+        patch: operations["update_location_service_config_api_location_services_v1__location_service_id__config_patch"];
         trace?: never;
     };
-    "/location-services/v1/": {
+    "/api/location-services/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -942,7 +1337,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Location Services */
-        get: operations["list_location_services_location_services_v1__get"];
+        get: operations["list_location_services_api_location_services_v1__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -951,7 +1346,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/action/v1/": {
+    "/api/action/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -959,7 +1354,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Actions */
-        get: operations["list_actions_action_v1__get"];
+        get: operations["list_actions_api_action_v1__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -968,7 +1363,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/action/v1/count/uncited": {
+    "/api/action/v1/count/uncited": {
         parameters: {
             query?: never;
             header?: never;
@@ -976,7 +1371,7 @@ export interface paths {
             cookie?: never;
         };
         /** Count Uncited */
-        get: operations["count_uncited_action_v1_count_uncited_get"];
+        get: operations["count_uncited_api_action_v1_count_uncited_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -985,7 +1380,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/action/v1/{action_id}": {
+    "/api/action/v1/{action_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -999,10 +1394,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Update Cited At */
-        patch: operations["update_cited_at_action_v1__action_id__patch"];
+        patch: operations["update_cited_at_api_action_v1__action_id__patch"];
         trace?: never;
     };
-    "/pickups/v1/": {
+    "/api/pickups/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1010,17 +1405,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Pickups */
-        get: operations["list_pickups_pickups_v1__get"];
+        get: operations["list_pickups_api_pickups_v1__get"];
         put?: never;
         /** Create Pickup */
-        post: operations["create_pickup_pickups_v1__post"];
+        post: operations["create_pickup_api_pickups_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/pickups/v1/{pickup_id}": {
+    "/api/pickups/v1/{pickup_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1028,17 +1423,17 @@ export interface paths {
             cookie?: never;
         };
         /** Get Pickup */
-        get: operations["get_pickup_pickups_v1__pickup_id__get"];
+        get: operations["get_pickup_api_pickups_v1__pickup_id__get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update Pickup */
-        patch: operations["update_pickup_pickups_v1__pickup_id__patch"];
+        patch: operations["update_pickup_api_pickups_v1__pickup_id__patch"];
         trace?: never;
     };
-    "/pickups/v1/{pickup_id}/deactivate": {
+    "/api/pickups/v1/{pickup_id}/deactivate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1048,14 +1443,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Deactivate Pickup */
-        post: operations["deactivate_pickup_pickups_v1__pickup_id__deactivate_post"];
+        post: operations["deactivate_pickup_api_pickups_v1__pickup_id__deactivate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/refunds/v1/": {
+    "/api/refunds/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1065,14 +1460,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Refund */
-        post: operations["create_refund_refunds_v1__post"];
+        post: operations["create_refund_api_refunds_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/child-documents/v1/": {
+    "/api/child-documents/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1080,17 +1475,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Child Documents */
-        get: operations["list_child_documents_child_documents_v1__get"];
+        get: operations["list_child_documents_api_child_documents_v1__get"];
         put?: never;
         /** Start Child Document Upload */
-        post: operations["start_child_document_upload_child_documents_v1__post"];
+        post: operations["start_child_document_upload_api_child_documents_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/child-documents/v1/{document_id}/complete": {
+    "/api/child-documents/v1/{document_id}/complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1100,14 +1495,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Complete Child Document Upload */
-        post: operations["complete_child_document_upload_child_documents_v1__document_id__complete_post"];
+        post: operations["complete_child_document_upload_api_child_documents_v1__document_id__complete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/child-documents/v1/{document_id}/download": {
+    "/api/child-documents/v1/{document_id}/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1115,7 +1510,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Child Document Download */
-        get: operations["get_child_document_download_child_documents_v1__document_id__download_get"];
+        get: operations["get_child_document_download_api_child_documents_v1__document_id__download_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1124,7 +1519,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/child-documents/v1/{document_id}/remove": {
+    "/api/child-documents/v1/{document_id}/remove": {
         parameters: {
             query?: never;
             header?: never;
@@ -1134,14 +1529,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Remove Child Document */
-        post: operations["remove_child_document_child_documents_v1__document_id__remove_post"];
+        post: operations["remove_child_document_api_child_documents_v1__document_id__remove_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/medical-reviews/v1/": {
+    "/api/medical-reviews/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1149,7 +1544,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Medical Reviews */
-        get: operations["list_medical_reviews_medical_reviews_v1__get"];
+        get: operations["list_medical_reviews_api_medical_reviews_v1__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1158,7 +1553,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/medical-reviews/v1/{child_id}": {
+    "/api/medical-reviews/v1/{child_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1166,17 +1561,17 @@ export interface paths {
             cookie?: never;
         };
         /** Get Medical Review */
-        get: operations["get_medical_review_medical_reviews_v1__child_id__get"];
+        get: operations["get_medical_review_api_medical_reviews_v1__child_id__get"];
         put?: never;
         /** Decide Medical Review */
-        post: operations["decide_medical_review_medical_reviews_v1__child_id__post"];
+        post: operations["decide_medical_review_api_medical_reviews_v1__child_id__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk-devices/v1/": {
+    "/api/kiosk-devices/v1/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1184,17 +1579,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Kiosk Devices */
-        get: operations["list_kiosk_devices_kiosk_devices_v1__get"];
+        get: operations["list_kiosk_devices_api_kiosk_devices_v1__get"];
         put?: never;
         /** Create Kiosk Device */
-        post: operations["create_kiosk_device_kiosk_devices_v1__post"];
+        post: operations["create_kiosk_device_api_kiosk_devices_v1__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk-devices/v1/settings": {
+    "/api/kiosk-devices/v1/settings": {
         parameters: {
             query?: never;
             header?: never;
@@ -1202,9 +1597,9 @@ export interface paths {
             cookie?: never;
         };
         /** Get Kiosk Settings */
-        get: operations["get_kiosk_settings_kiosk_devices_v1_settings_get"];
+        get: operations["get_kiosk_settings_api_kiosk_devices_v1_settings_get"];
         /** Update Kiosk Settings */
-        put: operations["update_kiosk_settings_kiosk_devices_v1_settings_put"];
+        put: operations["update_kiosk_settings_api_kiosk_devices_v1_settings_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1212,7 +1607,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/kiosk-devices/v1/{device_id}/setup-code": {
+    "/api/kiosk-devices/v1/{device_id}/setup-code": {
         parameters: {
             query?: never;
             header?: never;
@@ -1222,14 +1617,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** New Kiosk Setup Code */
-        post: operations["new_kiosk_setup_code_kiosk_devices_v1__device_id__setup_code_post"];
+        post: operations["new_kiosk_setup_code_api_kiosk_devices_v1__device_id__setup_code_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk-devices/v1/{device_id}/revoke": {
+    "/api/kiosk-devices/v1/{device_id}/revoke": {
         parameters: {
             query?: never;
             header?: never;
@@ -1239,14 +1634,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Revoke Kiosk Device */
-        post: operations["revoke_kiosk_device_kiosk_devices_v1__device_id__revoke_post"];
+        post: operations["revoke_kiosk_device_api_kiosk_devices_v1__device_id__revoke_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attendance/v1/roll": {
+    "/api/attendance/v1/roll": {
         parameters: {
             query?: never;
             header?: never;
@@ -1254,7 +1649,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Roll */
-        get: operations["get_roll_attendance_v1_roll_get"];
+        get: operations["get_roll_api_attendance_v1_roll_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1263,7 +1658,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attendance/v1/board": {
+    "/api/attendance/v1/board": {
         parameters: {
             query?: never;
             header?: never;
@@ -1271,7 +1666,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Run Sheet */
-        get: operations["get_run_sheet_attendance_v1_board_get"];
+        get: operations["get_run_sheet_api_attendance_v1_board_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1280,7 +1675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/pair": {
+    "/api/kiosk/v1/{location_code}/pair": {
         parameters: {
             query?: never;
             header?: never;
@@ -1290,14 +1685,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Pair Kiosk */
-        post: operations["pair_kiosk_kiosk_v1__location_code__pair_post"];
+        post: operations["pair_kiosk_api_kiosk_v1__location_code__pair_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/device": {
+    "/api/kiosk/v1/{location_code}/device": {
         parameters: {
             query?: never;
             header?: never;
@@ -1305,7 +1700,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Kiosk Device */
-        get: operations["get_kiosk_device_kiosk_v1__location_code__device_get"];
+        get: operations["get_kiosk_device_api_kiosk_v1__location_code__device_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1314,7 +1709,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/login": {
+    "/api/kiosk/v1/{location_code}/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -1324,14 +1719,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Kiosk Login */
-        post: operations["kiosk_login_kiosk_v1__location_code__login_post"];
+        post: operations["kiosk_login_api_kiosk_v1__location_code__login_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/pin": {
+    "/api/kiosk/v1/{location_code}/pin": {
         parameters: {
             query?: never;
             header?: never;
@@ -1341,14 +1736,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Kiosk Change Pin */
-        post: operations["kiosk_change_pin_kiosk_v1__location_code__pin_post"];
+        post: operations["kiosk_change_pin_api_kiosk_v1__location_code__pin_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/forgot-pin": {
+    "/api/kiosk/v1/{location_code}/forgot-pin": {
         parameters: {
             query?: never;
             header?: never;
@@ -1358,14 +1753,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Kiosk Forgot Pin */
-        post: operations["kiosk_forgot_pin_kiosk_v1__location_code__forgot_pin_post"];
+        post: operations["kiosk_forgot_pin_api_kiosk_v1__location_code__forgot_pin_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/today": {
+    "/api/kiosk/v1/{location_code}/today": {
         parameters: {
             query?: never;
             header?: never;
@@ -1373,7 +1768,7 @@ export interface paths {
             cookie?: never;
         };
         /** Kiosk Today */
-        get: operations["kiosk_today_kiosk_v1__location_code__today_get"];
+        get: operations["kiosk_today_api_kiosk_v1__location_code__today_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1382,7 +1777,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/kiosk/v1/{location_code}/sign": {
+    "/api/kiosk/v1/{location_code}/sign": {
         parameters: {
             query?: never;
             header?: never;
@@ -1392,14 +1787,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Kiosk Sign */
-        post: operations["kiosk_sign_kiosk_v1__location_code__sign_post"];
+        post: operations["kiosk_sign_api_kiosk_v1__location_code__sign_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/device": {
+    "/api/staff-kiosk/v1/{location_code}/device": {
         parameters: {
             query?: never;
             header?: never;
@@ -1407,7 +1802,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Staff Kiosk Device */
-        get: operations["get_staff_kiosk_device_staff_kiosk_v1__location_code__device_get"];
+        get: operations["get_staff_kiosk_device_api_staff_kiosk_v1__location_code__device_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1416,7 +1811,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/staff": {
+    "/api/staff-kiosk/v1/{location_code}/staff": {
         parameters: {
             query?: never;
             header?: never;
@@ -1424,7 +1819,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Kiosk Staff */
-        get: operations["list_kiosk_staff_staff_kiosk_v1__location_code__staff_get"];
+        get: operations["list_kiosk_staff_api_staff_kiosk_v1__location_code__staff_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1433,7 +1828,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/board": {
+    "/api/staff-kiosk/v1/{location_code}/board": {
         parameters: {
             query?: never;
             header?: never;
@@ -1441,7 +1836,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Staff Kiosk Board */
-        get: operations["get_staff_kiosk_board_staff_kiosk_v1__location_code__board_get"];
+        get: operations["get_staff_kiosk_board_api_staff_kiosk_v1__location_code__board_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1450,7 +1845,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/verify": {
+    "/api/staff-kiosk/v1/{location_code}/verify": {
         parameters: {
             query?: never;
             header?: never;
@@ -1460,14 +1855,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Verify Staff Pin */
-        post: operations["verify_staff_pin_staff_kiosk_v1__location_code__verify_post"];
+        post: operations["verify_staff_pin_api_staff_kiosk_v1__location_code__verify_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/roll": {
+    "/api/staff-kiosk/v1/{location_code}/roll": {
         parameters: {
             query?: never;
             header?: never;
@@ -1475,7 +1870,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Staff Kiosk Roll */
-        get: operations["get_staff_kiosk_roll_staff_kiosk_v1__location_code__roll_get"];
+        get: operations["get_staff_kiosk_roll_api_staff_kiosk_v1__location_code__roll_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1484,7 +1879,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/families/{family_user_id}/pickups": {
+    "/api/staff-kiosk/v1/{location_code}/families/{family_user_id}/pickups": {
         parameters: {
             query?: never;
             header?: never;
@@ -1492,7 +1887,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Family Pickups */
-        get: operations["get_family_pickups_staff_kiosk_v1__location_code__families__family_user_id__pickups_get"];
+        get: operations["get_family_pickups_api_staff_kiosk_v1__location_code__families__family_user_id__pickups_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1501,7 +1896,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/children/search": {
+    "/api/staff-kiosk/v1/{location_code}/children/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1509,7 +1904,7 @@ export interface paths {
             cookie?: never;
         };
         /** Search Children */
-        get: operations["search_children_staff_kiosk_v1__location_code__children_search_get"];
+        get: operations["search_children_api_staff_kiosk_v1__location_code__children_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1518,7 +1913,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/families/{family_user_id}/bookings": {
+    "/api/staff-kiosk/v1/{location_code}/families/{family_user_id}/bookings": {
         parameters: {
             query?: never;
             header?: never;
@@ -1526,7 +1921,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Family Bookings */
-        get: operations["list_family_bookings_staff_kiosk_v1__location_code__families__family_user_id__bookings_get"];
+        get: operations["list_family_bookings_api_staff_kiosk_v1__location_code__families__family_user_id__bookings_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1535,7 +1930,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/refunds": {
+    "/api/staff-kiosk/v1/{location_code}/refunds": {
         parameters: {
             query?: never;
             header?: never;
@@ -1545,14 +1940,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Kiosk Refund */
-        post: operations["create_kiosk_refund_staff_kiosk_v1__location_code__refunds_post"];
+        post: operations["create_kiosk_refund_api_staff_kiosk_v1__location_code__refunds_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/children/{child_id}/medical": {
+    "/api/staff-kiosk/v1/{location_code}/children/{child_id}/medical": {
         parameters: {
             query?: never;
             header?: never;
@@ -1560,7 +1955,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Child Medical */
-        get: operations["get_child_medical_staff_kiosk_v1__location_code__children__child_id__medical_get"];
+        get: operations["get_child_medical_api_staff_kiosk_v1__location_code__children__child_id__medical_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1569,7 +1964,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/children/{child_id}/notes": {
+    "/api/staff-kiosk/v1/{location_code}/children/{child_id}/notes": {
         parameters: {
             query?: never;
             header?: never;
@@ -1577,7 +1972,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Child Notes */
-        get: operations["list_child_notes_staff_kiosk_v1__location_code__children__child_id__notes_get"];
+        get: operations["list_child_notes_api_staff_kiosk_v1__location_code__children__child_id__notes_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1586,7 +1981,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/action-plans": {
+    "/api/staff-kiosk/v1/{location_code}/action-plans": {
         parameters: {
             query?: never;
             header?: never;
@@ -1594,7 +1989,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Action Plans */
-        get: operations["list_action_plans_staff_kiosk_v1__location_code__action_plans_get"];
+        get: operations["list_action_plans_api_staff_kiosk_v1__location_code__action_plans_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1603,7 +1998,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/documents/{document_id}/download": {
+    "/api/staff-kiosk/v1/{location_code}/documents/{document_id}/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1611,7 +2006,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Document Download */
-        get: operations["get_document_download_staff_kiosk_v1__location_code__documents__document_id__download_get"];
+        get: operations["get_document_download_api_staff_kiosk_v1__location_code__documents__document_id__download_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1620,7 +2015,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/documents/{document_id}/printed": {
+    "/api/staff-kiosk/v1/{location_code}/documents/{document_id}/printed": {
         parameters: {
             query?: never;
             header?: never;
@@ -1629,7 +2024,7 @@ export interface paths {
         };
         get?: never;
         /** Set Document Printed */
-        put: operations["set_document_printed_staff_kiosk_v1__location_code__documents__document_id__printed_put"];
+        put: operations["set_document_printed_api_staff_kiosk_v1__location_code__documents__document_id__printed_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1637,7 +2032,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/sign": {
+    "/api/staff-kiosk/v1/{location_code}/sign": {
         parameters: {
             query?: never;
             header?: never;
@@ -1647,14 +2042,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Staff Kiosk Sign */
-        post: operations["staff_kiosk_sign_staff_kiosk_v1__location_code__sign_post"];
+        post: operations["staff_kiosk_sign_api_staff_kiosk_v1__location_code__sign_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/bulk": {
+    "/api/staff-kiosk/v1/{location_code}/bulk": {
         parameters: {
             query?: never;
             header?: never;
@@ -1664,14 +2059,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Staff Kiosk Bulk */
-        post: operations["staff_kiosk_bulk_staff_kiosk_v1__location_code__bulk_post"];
+        post: operations["staff_kiosk_bulk_api_staff_kiosk_v1__location_code__bulk_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/undo": {
+    "/api/staff-kiosk/v1/{location_code}/undo": {
         parameters: {
             query?: never;
             header?: never;
@@ -1681,14 +2076,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Staff Kiosk Undo */
-        post: operations["staff_kiosk_undo_staff_kiosk_v1__location_code__undo_post"];
+        post: operations["staff_kiosk_undo_api_staff_kiosk_v1__location_code__undo_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/check-id": {
+    "/api/staff-kiosk/v1/{location_code}/check-id": {
         parameters: {
             query?: never;
             header?: never;
@@ -1698,14 +2093,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Staff Kiosk Check Id */
-        post: operations["staff_kiosk_check_id_staff_kiosk_v1__location_code__check_id_post"];
+        post: operations["staff_kiosk_check_id_api_staff_kiosk_v1__location_code__check_id_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/staff-kiosk/v1/{location_code}/shift": {
+    "/api/staff-kiosk/v1/{location_code}/shift": {
         parameters: {
             query?: never;
             header?: never;
@@ -1715,7 +2110,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Staff Kiosk Shift */
-        post: operations["staff_kiosk_shift_staff_kiosk_v1__location_code__shift_post"];
+        post: operations["staff_kiosk_shift_api_staff_kiosk_v1__location_code__shift_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1802,7 +2197,7 @@ export interface components {
             /** Location Code */
             location_code: string;
             /** Location Name */
-            location_name: string | null;
+            location_name: string;
             /** Role Code */
             role_code: string;
             /** Role Name */
@@ -1949,6 +2344,30 @@ export interface components {
             msg: string;
             data?: components["schemas"]["BookingResponse"] | null;
         };
+        /** ApiResponse[BusinessLocationResponse] */
+        ApiResponse_BusinessLocationResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["BusinessLocationResponse"] | null;
+        };
+        /** ApiResponse[BusinessOverviewResponse] */
+        ApiResponse_BusinessOverviewResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["BusinessOverviewResponse"] | null;
+        };
+        /** ApiResponse[BusinessSettingsResponse] */
+        ApiResponse_BusinessSettingsResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["BusinessSettingsResponse"] | null;
+        };
         /** ApiResponse[CheckoutStatusResponse] */
         ApiResponse_CheckoutStatusResponse_: {
             /** Ok */
@@ -2029,6 +2448,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["CreateServiceDaysResponse"] | null;
         };
+        /** ApiResponse[CreatedInviteResponse] */
+        ApiResponse_CreatedInviteResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["CreatedInviteResponse"] | null;
+        };
         /** ApiResponse[CustomerProfileResponse] */
         ApiResponse_CustomerProfileResponse_: {
             /** Ok */
@@ -2052,6 +2479,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["FamilyResponse"] | null;
+        };
+        /** ApiResponse[InviteDetailsResponse] */
+        ApiResponse_InviteDetailsResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["InviteDetailsResponse"] | null;
         };
         /** ApiResponse[KioskDeviceResponse] */
         ApiResponse_KioskDeviceResponse_: {
@@ -2150,6 +2585,22 @@ export interface components {
             msg: string;
             data?: components["schemas"]["PickupResponse"] | null;
         };
+        /** ApiResponse[PlatformSessionResponse] */
+        ApiResponse_PlatformSessionResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PlatformSessionResponse"] | null;
+        };
+        /** ApiResponse[PublicBusinessResponse] */
+        ApiResponse_PublicBusinessResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PublicBusinessResponse"] | null;
+        };
         /** ApiResponse[PublicLocationResponse] */
         ApiResponse_PublicLocationResponse_: {
             /** Ok */
@@ -2165,6 +2616,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["RefundResponse"] | null;
+        };
+        /** ApiResponse[RegisteredTenantResponse] */
+        ApiResponse_RegisteredTenantResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["RegisteredTenantResponse"] | null;
         };
         /** ApiResponse[RollPickupPersonResponse] */
         ApiResponse_RollPickupPersonResponse_: {
@@ -2213,6 +2672,22 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["SetServiceDayCapacityResponse"] | null;
+        };
+        /** ApiResponse[SiteResponse] */
+        ApiResponse_SiteResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["SiteResponse"] | null;
+        };
+        /** ApiResponse[SiteUploadResponse] */
+        ApiResponse_SiteUploadResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["SiteUploadResponse"] | null;
         };
         /** ApiResponse[StaffAccountResponse] */
         ApiResponse_StaffAccountResponse_: {
@@ -2334,6 +2809,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["BookingTableResponse"][] | null;
         };
+        /** ApiResponse[list[BusinessLocationResponse]] */
+        ApiResponse_list_BusinessLocationResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["BusinessLocationResponse"][] | null;
+        };
         /** ApiResponse[list[ChildDocumentResponse]] */
         ApiResponse_list_ChildDocumentResponse__: {
             /** Ok */
@@ -2415,6 +2899,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["FamilySearchResultResponse"][] | null;
         };
+        /** ApiResponse[list[InviteResponse]] */
+        ApiResponse_list_InviteResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["InviteResponse"][] | null;
+        };
         /** ApiResponse[list[KioskDeviceResponse]] */
         ApiResponse_list_KioskDeviceResponse__: {
             /** Ok */
@@ -2468,6 +2961,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["PickupResponse"][] | null;
+        };
+        /** ApiResponse[list[PlatformTenantResponse]] */
+        ApiResponse_list_PlatformTenantResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["PlatformTenantResponse"][] | null;
         };
         /** ApiResponse[list[PublicLocationResponse]] */
         ApiResponse_list_PublicLocationResponse__: {
@@ -2821,6 +3323,119 @@ export interface components {
             price_snapshot_cents: number;
             currency: components["schemas"]["CurrencyCode"];
         };
+        /**
+         * BusinessLocationRequest
+         * @description A location's details, all at once (adding one, or the edit form).
+         *     Changing its code changes its address: old links then lead to the
+         *     landing page, where families choose it again.
+         */
+        BusinessLocationRequest: {
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+            /** Address Line 1 */
+            address_line_1: string;
+            /** Address Line 2 */
+            address_line_2?: string | null;
+            /** Suburb */
+            suburb: string;
+            state: components["schemas"]["AustralianState"];
+            /** Postcode */
+            postcode: string;
+            /** Phone */
+            phone?: string | null;
+            /** Email */
+            email?: string | null;
+            /**
+             * Timezone
+             * @default Australia/Brisbane
+             * @enum {string}
+             */
+            timezone: "Australia/Brisbane" | "Australia/Sydney" | "Australia/Melbourne" | "Australia/Hobart" | "Australia/Adelaide" | "Australia/Darwin" | "Australia/Perth" | "Australia/Broken_Hill" | "Australia/Lord_Howe" | "Australia/Eucla";
+        };
+        /** BusinessLocationResponse */
+        BusinessLocationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Address Line 1 */
+            address_line_1: string;
+            /** Address Line 2 */
+            address_line_2: string | null;
+            /** Suburb */
+            suburb: string;
+            /** State */
+            state: string;
+            /** Postcode */
+            postcode: string;
+            /** Phone */
+            phone: string | null;
+            /** Email */
+            email: string | null;
+            /** Timezone */
+            timezone: string;
+            /** Services Offered */
+            services_offered: number;
+        };
+        /**
+         * BusinessOverviewResponse
+         * @description The setup checklist on Business settings' first page.
+         */
+        BusinessOverviewResponse: {
+            /** Name */
+            name: string;
+            /** Details Complete */
+            details_complete: boolean;
+            /** Locations */
+            locations: components["schemas"]["BusinessLocationResponse"][];
+            /** Payments Connected */
+            payments_connected: boolean;
+            /** Takes Payments */
+            takes_payments: boolean;
+        };
+        /**
+         * BusinessSettingsRequest
+         * @description The business's details, all at once (the settings form sends every
+         *     field). The ABN's check digits are the database's (ck_tenants_abn).
+         */
+        BusinessSettingsRequest: {
+            /** Name */
+            name: string;
+            /** Legal Name */
+            legal_name?: string | null;
+            /** Abn */
+            abn?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** About */
+            about?: string | null;
+        };
+        /** BusinessSettingsResponse */
+        BusinessSettingsResponse: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Legal Name */
+            legal_name: string | null;
+            /** Abn */
+            abn: string | null;
+            /** Email */
+            email: string | null;
+            /** Phone */
+            phone: string | null;
+            /** About */
+            about: string | null;
+        };
         /** ChangePasswordRequest */
         ChangePasswordRequest: {
             /** Current Password */
@@ -3074,6 +3689,16 @@ export interface components {
             is_active: boolean;
             review_status: components["schemas"]["MedicalReviewStatus"];
         };
+        /** ConfirmSiteUploadRequest */
+        ConfirmSiteUploadRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "logo" | "icon" | "privacy" | "terms";
+            /** Key */
+            key: string;
+        };
         /** CreateBookingRequest */
         CreateBookingRequest: {
             /** Idempotency Key */
@@ -3147,6 +3772,14 @@ export interface components {
              * @default false
              */
             pickup_consent: boolean;
+        };
+        /** CreateInviteRequest */
+        CreateInviteRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
         };
         /** CreateKioskDeviceRequest */
         CreateKioskDeviceRequest: {
@@ -3225,6 +3858,28 @@ export interface components {
             created: string[];
             /** Skipped */
             skipped: string[];
+        };
+        /** CreatedInviteResponse */
+        CreatedInviteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Url */
+            url: string;
         };
         /**
          * CurrencyCode
@@ -3526,6 +4181,21 @@ export interface components {
             /** Unpaid */
             unpaid: number;
         };
+        /** FaqItem */
+        FaqItem: {
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
+        };
+        /**
+         * FaqsRequest
+         * @description The whole list, in order (at most 20: ck_tenant_faqs_limit).
+         */
+        FaqsRequest: {
+            /** Faqs */
+            faqs: components["schemas"]["FaqItem"][];
+        };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /** Email */
@@ -3535,6 +4205,34 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * InviteDetailsResponse
+         * @description What the registration page shows about its invite.
+         */
+        InviteDetailsResponse: {
+            /** Email */
+            email: string;
+        };
+        /** InviteResponse */
+        InviteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
         };
         /**
          * KioskBookingResponse
@@ -4007,6 +4705,81 @@ export interface components {
              */
             created_at: string;
         };
+        /** PlatformSessionResponse */
+        PlatformSessionResponse: {
+            /**
+             * Platform Admin Id
+             * Format: uuid
+             */
+            platform_admin_id: string;
+            /** Email */
+            email: string;
+        };
+        /**
+         * PlatformTenantResponse
+         * @description One business, as the platform sees it: no families, bookings or staff.
+         */
+        PlatformTenantResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Invited Email */
+            invited_email: string | null;
+            /** Location Count */
+            location_count: number;
+            /** Payments Connected */
+            payments_connected: boolean;
+            /** Takes Payments */
+            takes_payments: boolean;
+        };
+        /**
+         * PublicBusinessResponse
+         * @description The business's landing page: what anyone may see.
+         */
+        PublicBusinessResponse: {
+            /** Name */
+            name: string;
+            /** Tagline */
+            tagline: string | null;
+            /** About */
+            about: string | null;
+            /** Email */
+            email: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Primary Color */
+            primary_color: string | null;
+            /** Secondary Color */
+            secondary_color: string | null;
+            /** Has Logo */
+            has_logo: boolean;
+            /** Has Privacy */
+            has_privacy: boolean;
+            /** Has Terms */
+            has_terms: boolean;
+            /** Faqs */
+            faqs: components["schemas"]["PublicFaqResponse"][];
+        };
+        /** PublicFaqResponse */
+        PublicFaqResponse: {
+            /** Question */
+            question: string;
+            /** Answer */
+            answer: string;
+        };
         /** PublicLocationResponse */
         PublicLocationResponse: {
             /** Tenant Name */
@@ -4042,16 +4815,12 @@ export interface components {
             phone: string | null;
             /** Email */
             email: string | null;
-            /** Display Name */
-            display_name: string | null;
-            /** Logo Key */
-            logo_key: string | null;
+            /** Has Logo */
+            has_logo: boolean;
             /** Primary Color */
             primary_color: string | null;
             /** Secondary Color */
             secondary_color: string | null;
-            /** Font Family */
-            font_family: string | null;
         };
         /**
          * RefundResponse
@@ -4084,6 +4853,36 @@ export interface components {
          * @enum {string}
          */
         RefundStatus: "PENDING" | "SUCCEEDED" | "FAILED";
+        /**
+         * RegisterTenantRequest
+         * @description A business registering with its invite: its name and web address, and
+         *     its owner (the invite's email). Everything else comes after, in
+         *     Business settings.
+         */
+        RegisterTenantRequest: {
+            /** Invite */
+            invite: string;
+            /** Business Name */
+            business_name: string;
+            /** Code */
+            code: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Password */
+            password: string;
+            /**
+             * Terms Accepted
+             * @constant
+             */
+            terms_accepted: true;
+        };
+        /** RegisteredTenantResponse */
+        RegisteredTenantResponse: {
+            /** Business Login Url */
+            business_login_url: string;
+        };
         /** RegistrationRequest */
         RegistrationRequest: {
             /**
@@ -4414,15 +5213,16 @@ export interface components {
             first_name: string;
             /** Roles */
             roles: string[];
-            /**
-             * Location Id
-             * Format: uuid
-             */
-            location_id: string;
+            /** Location Id */
+            location_id: string | null;
             /** Location Code */
-            location_code: string;
+            location_code: string | null;
             /** Location Name */
             location_name: string | null;
+            /** Tenant Permissions */
+            tenant_permissions: {
+                [key: string]: string[];
+            };
         };
         /** SetPrintedRequest */
         SetPrintedRequest: {
@@ -4467,6 +5267,11 @@ export interface components {
             /** Pin */
             pin: string;
         };
+        /** SetTenantActiveRequest */
+        SetTenantActiveRequest: {
+            /** Is Active */
+            is_active: boolean;
+        };
         /**
          * SignedUploadResponse
          * @description Post `fields` and then the file (as the last form field, named "file")
@@ -4485,6 +5290,59 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /** SiteDocumentResponse */
+        SiteDocumentResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "privacy" | "terms";
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+        };
+        /**
+         * SiteRequest
+         * @description The landing page's headline and the business's colours (empty: the app's defaults).
+         */
+        SiteRequest: {
+            /** Tagline */
+            tagline?: string | null;
+            /** Primary Color */
+            primary_color?: string | null;
+            /** Secondary Color */
+            secondary_color?: string | null;
+        };
+        /** SiteResponse */
+        SiteResponse: {
+            /** Tagline */
+            tagline: string | null;
+            /** Primary Color */
+            primary_color: string | null;
+            /** Secondary Color */
+            secondary_color: string | null;
+            /** Has Logo */
+            has_logo: boolean;
+            /** Has Icon */
+            has_icon: boolean;
+            /** Documents */
+            documents: components["schemas"]["SiteDocumentResponse"][];
+            /** Faqs */
+            faqs: components["schemas"]["FaqItem"][];
+        };
+        /** SiteUploadResponse */
+        SiteUploadResponse: {
+            /** Key */
+            key: string;
+            /** Url */
+            url: string;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
         };
         /**
          * StaffAccountResponse
@@ -4658,6 +5516,19 @@ export interface components {
             started_at: string | null;
             /** Ended At */
             ended_at: string | null;
+        };
+        /** StartSiteUploadRequest */
+        StartSiteUploadRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "logo" | "icon" | "privacy" | "terms";
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "image/png" | "image/jpeg" | "image/webp" | "application/pdf";
         };
         /**
          * StripeAccountStatusResponse
@@ -4856,6 +5727,9 @@ export type ApiResponseAddStaffResponse = components['schemas']['ApiResponse_Add
 export type ApiResponseAttendanceTimesResponse = components['schemas']['ApiResponse_AttendanceTimesResponse_'];
 export type ApiResponseBookingGroupResponse = components['schemas']['ApiResponse_BookingGroupResponse_'];
 export type ApiResponseBookingResponse = components['schemas']['ApiResponse_BookingResponse_'];
+export type ApiResponseBusinessLocationResponse = components['schemas']['ApiResponse_BusinessLocationResponse_'];
+export type ApiResponseBusinessOverviewResponse = components['schemas']['ApiResponse_BusinessOverviewResponse_'];
+export type ApiResponseBusinessSettingsResponse = components['schemas']['ApiResponse_BusinessSettingsResponse_'];
 export type ApiResponseCheckoutStatusResponse = components['schemas']['ApiResponse_CheckoutStatusResponse_'];
 export type ApiResponseCheckoutUrlResponse = components['schemas']['ApiResponse_CheckoutUrlResponse_'];
 export type ApiResponseChildDocumentDownloadResponse = components['schemas']['ApiResponse_ChildDocumentDownloadResponse_'];
@@ -4866,9 +5740,11 @@ export type ApiResponseChildNoteResponse = components['schemas']['ApiResponse_Ch
 export type ApiResponseChildResponse = components['schemas']['ApiResponse_ChildResponse_'];
 export type ApiResponseCreateBookingResponse = components['schemas']['ApiResponse_CreateBookingResponse_'];
 export type ApiResponseCreateServiceDaysResponse = components['schemas']['ApiResponse_CreateServiceDaysResponse_'];
+export type ApiResponseCreatedInviteResponse = components['schemas']['ApiResponse_CreatedInviteResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
 export type ApiResponseFamilyMessageResponse = components['schemas']['ApiResponse_FamilyMessageResponse_'];
 export type ApiResponseFamilyResponse = components['schemas']['ApiResponse_FamilyResponse_'];
+export type ApiResponseInviteDetailsResponse = components['schemas']['ApiResponse_InviteDetailsResponse_'];
 export type ApiResponseKioskDeviceResponse = components['schemas']['ApiResponse_KioskDeviceResponse_'];
 export type ApiResponseKioskInfoResponse = components['schemas']['ApiResponse_KioskInfoResponse_'];
 export type ApiResponseKioskLoginResponse = components['schemas']['ApiResponse_KioskLoginResponse_'];
@@ -4881,14 +5757,19 @@ export type ApiResponseLocationServiceSettingsResponse = components['schemas']['
 export type ApiResponseMedicalReviewResponse = components['schemas']['ApiResponse_MedicalReviewResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
+export type ApiResponsePlatformSessionResponse = components['schemas']['ApiResponse_PlatformSessionResponse_'];
+export type ApiResponsePublicBusinessResponse = components['schemas']['ApiResponse_PublicBusinessResponse_'];
 export type ApiResponsePublicLocationResponse = components['schemas']['ApiResponse_PublicLocationResponse_'];
 export type ApiResponseRefundResponse = components['schemas']['ApiResponse_RefundResponse_'];
+export type ApiResponseRegisteredTenantResponse = components['schemas']['ApiResponse_RegisteredTenantResponse_'];
 export type ApiResponseRollPickupPersonResponse = components['schemas']['ApiResponse_RollPickupPersonResponse_'];
 export type ApiResponseRollResponse = components['schemas']['ApiResponse_RollResponse_'];
 export type ApiResponseRunSheetResponse = components['schemas']['ApiResponse_RunSheetResponse_'];
 export type ApiResponseServiceDayOverviewResponse = components['schemas']['ApiResponse_ServiceDayOverviewResponse_'];
 export type ApiResponseSessionResponse = components['schemas']['ApiResponse_SessionResponse_'];
 export type ApiResponseSetServiceDayCapacityResponse = components['schemas']['ApiResponse_SetServiceDayCapacityResponse_'];
+export type ApiResponseSiteResponse = components['schemas']['ApiResponse_SiteResponse_'];
+export type ApiResponseSiteUploadResponse = components['schemas']['ApiResponse_SiteUploadResponse_'];
 export type ApiResponseStaffAccountResponse = components['schemas']['ApiResponse_StaffAccountResponse_'];
 export type ApiResponseStaffKioskVerifyResponse = components['schemas']['ApiResponse_StaffKioskVerifyResponse_'];
 export type ApiResponseStaffPinStatusResponse = components['schemas']['ApiResponse_StaffPinStatusResponse_'];
@@ -4903,6 +5784,7 @@ export type ApiResponseListAttendanceTimesResponse = components['schemas']['ApiR
 export type ApiResponseListBookingConflictRow = components['schemas']['ApiResponse_list_BookingConflictRow__'];
 export type ApiResponseListBookingGroupSummaryResponse = components['schemas']['ApiResponse_list_BookingGroupSummaryResponse__'];
 export type ApiResponseListBookingTableResponse = components['schemas']['ApiResponse_list_BookingTableResponse__'];
+export type ApiResponseListBusinessLocationResponse = components['schemas']['ApiResponse_list_BusinessLocationResponse__'];
 export type ApiResponseListChildDocumentResponse = components['schemas']['ApiResponse_list_ChildDocumentResponse__'];
 export type ApiResponseListChildNoteResponse = components['schemas']['ApiResponse_list_ChildNoteResponse__'];
 export type ApiResponseListChildSearchResultResponse = components['schemas']['ApiResponse_list_ChildSearchResultResponse__'];
@@ -4912,12 +5794,14 @@ export type ApiResponseListFamilyBookingResponse = components['schemas']['ApiRes
 export type ApiResponseListFamilyMessageResponse = components['schemas']['ApiResponse_list_FamilyMessageResponse__'];
 export type ApiResponseListFamilyPaymentResponse = components['schemas']['ApiResponse_list_FamilyPaymentResponse__'];
 export type ApiResponseListFamilySearchResultResponse = components['schemas']['ApiResponse_list_FamilySearchResultResponse__'];
+export type ApiResponseListInviteResponse = components['schemas']['ApiResponse_list_InviteResponse__'];
 export type ApiResponseListKioskDeviceResponse = components['schemas']['ApiResponse_list_KioskDeviceResponse__'];
 export type ApiResponseListLocationServiceDayTableResponse = components['schemas']['ApiResponse_list_LocationServiceDayTableResponse__'];
 export type ApiResponseListLocationServiceSelectionResponse = components['schemas']['ApiResponse_list_LocationServiceSelectionResponse__'];
 export type ApiResponseListLocationServiceSettingsResponse = components['schemas']['ApiResponse_list_LocationServiceSettingsResponse__'];
 export type ApiResponseListMedicalReviewSummaryResponse = components['schemas']['ApiResponse_list_MedicalReviewSummaryResponse__'];
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
+export type ApiResponseListPlatformTenantResponse = components['schemas']['ApiResponse_list_PlatformTenantResponse__'];
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
 export type ApiResponseListRollPickupPersonResponse = components['schemas']['ApiResponse_list_RollPickupPersonResponse__'];
 export type ApiResponseListServiceDayOverviewResponse = components['schemas']['ApiResponse_list_ServiceDayOverviewResponse__'];
@@ -4934,6 +5818,11 @@ export type BookingResponse = components['schemas']['BookingResponse'];
 export type BookingSelection = components['schemas']['BookingSelection'];
 export type BookingStatus = components['schemas']['BookingStatus'];
 export type BookingTableResponse = components['schemas']['BookingTableResponse'];
+export type BusinessLocationRequest = components['schemas']['BusinessLocationRequest'];
+export type BusinessLocationResponse = components['schemas']['BusinessLocationResponse'];
+export type BusinessOverviewResponse = components['schemas']['BusinessOverviewResponse'];
+export type BusinessSettingsRequest = components['schemas']['BusinessSettingsRequest'];
+export type BusinessSettingsResponse = components['schemas']['BusinessSettingsResponse'];
 export type ChangePasswordRequest = components['schemas']['ChangePasswordRequest'];
 export type ChangeStaffRoleRequest = components['schemas']['ChangeStaffRoleRequest'];
 export type CheckoutStatusResponse = components['schemas']['CheckoutStatusResponse'];
@@ -4948,16 +5837,19 @@ export type ChildNoteResponse = components['schemas']['ChildNoteResponse'];
 export type ChildResponse = components['schemas']['ChildResponse'];
 export type ChildSearchResultResponse = components['schemas']['ChildSearchResultResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
+export type ConfirmSiteUploadRequest = components['schemas']['ConfirmSiteUploadRequest'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
 export type CreateChildDocumentRequest = components['schemas']['CreateChildDocumentRequest'];
 export type CreateChildNoteRequest = components['schemas']['CreateChildNoteRequest'];
 export type CreateChildRequest = components['schemas']['CreateChildRequest'];
+export type CreateInviteRequest = components['schemas']['CreateInviteRequest'];
 export type CreateKioskDeviceRequest = components['schemas']['CreateKioskDeviceRequest'];
 export type CreatePickupRequest = components['schemas']['CreatePickupRequest'];
 export type CreateRefundRequest = components['schemas']['CreateRefundRequest'];
 export type CreateServiceDaysRequest = components['schemas']['CreateServiceDaysRequest'];
 export type CreateServiceDaysResponse = components['schemas']['CreateServiceDaysResponse'];
+export type CreatedInviteResponse = components['schemas']['CreatedInviteResponse'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
 export type EmergencyRelation = components['schemas']['EmergencyRelation'];
@@ -4968,8 +5860,12 @@ export type FamilyMessageResponse = components['schemas']['FamilyMessageResponse
 export type FamilyPaymentResponse = components['schemas']['FamilyPaymentResponse'];
 export type FamilyResponse = components['schemas']['FamilyResponse'];
 export type FamilySearchResultResponse = components['schemas']['FamilySearchResultResponse'];
+export type FaqItem = components['schemas']['FaqItem'];
+export type FaqsRequest = components['schemas']['FaqsRequest'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
 export type HttpValidationError = components['schemas']['HTTPValidationError'];
+export type InviteDetailsResponse = components['schemas']['InviteDetailsResponse'];
+export type InviteResponse = components['schemas']['InviteResponse'];
 export type KioskBookingResponse = components['schemas']['KioskBookingResponse'];
 export type KioskChangePinRequest = components['schemas']['KioskChangePinRequest'];
 export type KioskDeviceResponse = components['schemas']['KioskDeviceResponse'];
@@ -4996,9 +5892,15 @@ export type MedicalReviewSummaryResponse = components['schemas']['MedicalReviewS
 export type PaymentStatus = components['schemas']['PaymentStatus'];
 export type PickupRelation = components['schemas']['PickupRelation'];
 export type PickupResponse = components['schemas']['PickupResponse'];
+export type PlatformSessionResponse = components['schemas']['PlatformSessionResponse'];
+export type PlatformTenantResponse = components['schemas']['PlatformTenantResponse'];
+export type PublicBusinessResponse = components['schemas']['PublicBusinessResponse'];
+export type PublicFaqResponse = components['schemas']['PublicFaqResponse'];
 export type PublicLocationResponse = components['schemas']['PublicLocationResponse'];
 export type RefundResponse = components['schemas']['RefundResponse'];
 export type RefundStatus = components['schemas']['RefundStatus'];
+export type RegisterTenantRequest = components['schemas']['RegisterTenantRequest'];
+export type RegisteredTenantResponse = components['schemas']['RegisteredTenantResponse'];
 export type RegistrationRequest = components['schemas']['RegistrationRequest'];
 export type RenameStaffRequest = components['schemas']['RenameStaffRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
@@ -5016,7 +5918,12 @@ export type SetPrintedRequest = components['schemas']['SetPrintedRequest'];
 export type SetServiceDayCapacityRequest = components['schemas']['SetServiceDayCapacityRequest'];
 export type SetServiceDayCapacityResponse = components['schemas']['SetServiceDayCapacityResponse'];
 export type SetStaffPinRequest = components['schemas']['SetStaffPinRequest'];
+export type SetTenantActiveRequest = components['schemas']['SetTenantActiveRequest'];
 export type SignedUploadResponse = components['schemas']['SignedUploadResponse'];
+export type SiteDocumentResponse = components['schemas']['SiteDocumentResponse'];
+export type SiteRequest = components['schemas']['SiteRequest'];
+export type SiteResponse = components['schemas']['SiteResponse'];
+export type SiteUploadResponse = components['schemas']['SiteUploadResponse'];
 export type StaffAccountResponse = components['schemas']['StaffAccountResponse'];
 export type StaffKioskBulkRequest = components['schemas']['StaffKioskBulkRequest'];
 export type StaffKioskCheckIdRequest = components['schemas']['StaffKioskCheckIdRequest'];
@@ -5027,6 +5934,7 @@ export type StaffKioskUndoRequest = components['schemas']['StaffKioskUndoRequest
 export type StaffKioskVerifyResponse = components['schemas']['StaffKioskVerifyResponse'];
 export type StaffPinStatusResponse = components['schemas']['StaffPinStatusResponse'];
 export type StaffShiftResponse = components['schemas']['StaffShiftResponse'];
+export type StartSiteUploadRequest = components['schemas']['StartSiteUploadRequest'];
 export type StripeAccountStatusResponse = components['schemas']['StripeAccountStatusResponse'];
 export type StripeOnboardingResponse = components['schemas']['StripeOnboardingResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
@@ -5040,12 +5948,10 @@ export type UpdateServiceDayRequest = components['schemas']['UpdateServiceDayReq
 export type ValidationError = components['schemas']['ValidationError'];
 export type $defs = Record<string, never>;
 export interface operations {
-    login_auth_v1_login__location_code__post: {
+    login_api_auth_v1_login__location_code__post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -5077,7 +5983,73 @@ export interface operations {
             };
         };
     };
-    logout_auth_v1_logout_post: {
+    business_login_api_auth_v1_business_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    switch_location_api_auth_v1_switch_location__location_code__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_code: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_auth_v1_logout_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5097,12 +6069,10 @@ export interface operations {
             };
         };
     };
-    forgot_password_auth_v1_forgot_password__location_code__post: {
+    forgot_password_api_auth_v1_forgot_password__location_code__post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -5134,7 +6104,7 @@ export interface operations {
             };
         };
     };
-    reset_password_auth_v1_reset_password_post: {
+    reset_password_api_auth_v1_reset_password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5167,7 +6137,7 @@ export interface operations {
             };
         };
     };
-    get_session_auth_v1_session_get: {
+    get_session_api_auth_v1_session_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5198,7 +6168,7 @@ export interface operations {
             };
         };
     };
-    get_staff_pin_status_staff_pin_v1__get: {
+    get_staff_pin_status_api_staff_pin_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5229,7 +6199,7 @@ export interface operations {
             };
         };
     };
-    set_staff_pin_staff_pin_v1__put: {
+    set_staff_pin_api_staff_pin_v1__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -5264,7 +6234,7 @@ export interface operations {
             };
         };
     };
-    get_account_account_v1__get: {
+    get_account_api_account_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5295,7 +6265,7 @@ export interface operations {
             };
         };
     };
-    change_password_account_v1_password_post: {
+    change_password_api_account_v1_password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5330,7 +6300,7 @@ export interface operations {
             };
         };
     };
-    list_staff_staff_accounts_v1__get: {
+    list_staff_api_staff_accounts_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5361,7 +6331,7 @@ export interface operations {
             };
         };
     };
-    add_staff_staff_accounts_v1__post: {
+    add_staff_api_staff_accounts_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5396,7 +6366,7 @@ export interface operations {
             };
         };
     };
-    resend_invite_staff_accounts_v1__user_id__invite_post: {
+    resend_invite_api_staff_accounts_v1__user_id__invite_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5429,7 +6399,7 @@ export interface operations {
             };
         };
     };
-    remove_staff_staff_accounts_v1__user_id__delete: {
+    remove_staff_api_staff_accounts_v1__user_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -5462,7 +6432,7 @@ export interface operations {
             };
         };
     };
-    rename_staff_staff_accounts_v1__user_id__patch: {
+    rename_staff_api_staff_accounts_v1__user_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -5499,7 +6469,7 @@ export interface operations {
             };
         };
     };
-    change_staff_role_staff_accounts_v1__user_id__role_put: {
+    change_staff_role_api_staff_accounts_v1__user_id__role_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -5536,7 +6506,7 @@ export interface operations {
             };
         };
     };
-    reset_staff_pin_staff_accounts_v1__user_id__reset_pin_post: {
+    reset_staff_pin_api_staff_accounts_v1__user_id__reset_pin_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5569,7 +6539,7 @@ export interface operations {
             };
         };
     };
-    search_families_families_v1__get: {
+    search_families_api_families_v1__get: {
         parameters: {
             query: {
                 q: string;
@@ -5602,7 +6572,7 @@ export interface operations {
             };
         };
     };
-    get_family_families_v1__user_id__get: {
+    get_family_api_families_v1__user_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5635,7 +6605,7 @@ export interface operations {
             };
         };
     };
-    update_family_families_v1__user_id__patch: {
+    update_family_api_families_v1__user_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -5672,7 +6642,7 @@ export interface operations {
             };
         };
     };
-    list_family_bookings_families_v1__user_id__bookings_get: {
+    list_family_bookings_api_families_v1__user_id__bookings_get: {
         parameters: {
             query?: {
                 date_from?: string | null;
@@ -5708,7 +6678,7 @@ export interface operations {
             };
         };
     };
-    list_family_attendance_families_v1__user_id__attendance_get: {
+    list_family_attendance_api_families_v1__user_id__attendance_get: {
         parameters: {
             query?: {
                 date_from?: string | null;
@@ -5744,7 +6714,7 @@ export interface operations {
             };
         };
     };
-    list_family_payments_families_v1__user_id__payments_get: {
+    list_family_payments_api_families_v1__user_id__payments_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5777,7 +6747,7 @@ export interface operations {
             };
         };
     };
-    list_family_notes_families_v1__user_id__notes_get: {
+    list_family_notes_api_families_v1__user_id__notes_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5810,7 +6780,7 @@ export interface operations {
             };
         };
     };
-    add_family_note_families_v1__user_id__notes_post: {
+    add_family_note_api_families_v1__user_id__notes_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5847,7 +6817,7 @@ export interface operations {
             };
         };
     };
-    delete_family_note_families_v1__user_id__notes__note_id__delete: {
+    delete_family_note_api_families_v1__user_id__notes__note_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -5881,7 +6851,7 @@ export interface operations {
             };
         };
     };
-    list_family_messages_families_v1__user_id__messages_get: {
+    list_family_messages_api_families_v1__user_id__messages_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5914,7 +6884,7 @@ export interface operations {
             };
         };
     };
-    send_family_message_families_v1__user_id__messages_post: {
+    send_family_message_api_families_v1__user_id__messages_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5951,7 +6921,7 @@ export interface operations {
             };
         };
     };
-    withdraw_family_message_families_v1__user_id__messages__message_id__delete: {
+    withdraw_family_message_api_families_v1__user_id__messages__message_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -5985,12 +6955,10 @@ export interface operations {
             };
         };
     };
-    list_public_locations_location_branding_v1_public_get: {
+    list_public_locations_api_location_branding_v1_public_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -6005,6 +6973,48 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponse_list_PublicLocationResponse__"];
                 };
             };
+        };
+    };
+    get_public_business_api_location_branding_v1_public_business_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PublicBusinessResponse_"];
+                };
+            };
+        };
+    };
+    get_public_file_api_location_branding_v1_site_files__kind__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "logo" | "icon" | "privacy" | "terms";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -6016,12 +7026,10 @@ export interface operations {
             };
         };
     };
-    get_public_branding_location_branding_v1_public__location_code__get: {
+    get_public_branding_api_location_branding_v1_public__location_code__get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -6049,12 +7057,10 @@ export interface operations {
             };
         };
     };
-    get_bookings_open_location_branding_v1_public__location_code__bookings_open_get: {
+    get_bookings_open_api_location_branding_v1_public__location_code__bookings_open_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -6082,7 +7088,7 @@ export interface operations {
             };
         };
     };
-    get_stripe_account_stripe_account_v1__get: {
+    get_stripe_account_api_stripe_account_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6113,12 +7119,41 @@ export interface operations {
             };
         };
     };
-    start_stripe_onboarding_stripe_account_v1_onboarding_post: {
+    get_tenant_stripe_account_api_stripe_account_v1_tenant_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
             };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_StripeAccountStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_stripe_onboarding_api_stripe_account_v1_onboarding_post: {
+        parameters: {
+            query?: never;
+            header?: never;
             path?: never;
             cookie?: {
                 access_token?: string | null;
@@ -6146,12 +7181,10 @@ export interface operations {
             };
         };
     };
-    start_stripe_oauth_stripe_account_v1_oauth_post: {
+    start_stripe_oauth_api_stripe_account_v1_oauth_post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: {
                 access_token?: string | null;
@@ -6179,7 +7212,7 @@ export interface operations {
             };
         };
     };
-    finish_stripe_oauth_stripe_account_v1_oauth_callback_get: {
+    finish_stripe_oauth_api_stripe_account_v1_oauth_callback_get: {
         parameters: {
             query?: {
                 code?: string | null;
@@ -6212,7 +7245,7 @@ export interface operations {
             };
         };
     };
-    refresh_stripe_account_stripe_account_v1_refresh_post: {
+    refresh_stripe_account_api_stripe_account_v1_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6243,7 +7276,7 @@ export interface operations {
             };
         };
     };
-    disconnect_stripe_account_stripe_account_v1_disconnect_post: {
+    disconnect_stripe_account_api_stripe_account_v1_disconnect_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6274,7 +7307,7 @@ export interface operations {
             };
         };
     };
-    reconnect_stripe_account_stripe_account_v1_reconnect_post: {
+    reconnect_stripe_account_api_stripe_account_v1_reconnect_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6305,12 +7338,729 @@ export interface operations {
             };
         };
     };
-    onboard_customer_v1_onboard__location_code__post: {
+    get_overview_api_business_v1_overview_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
             };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BusinessOverviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_business_v1_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BusinessSettingsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_business_v1_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BusinessSettingsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_locations_api_business_v1_locations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_BusinessLocationResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_location_api_business_v1_locations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BusinessLocationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_location_api_business_v1_locations__location_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_BusinessLocationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_site_api_business_v1_site_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_site_api_business_v1_site_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_faqs_api_business_v1_site_faqs_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FaqsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_site_upload_api_business_v1_site_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartSiteUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteUploadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_site_upload_api_business_v1_site_uploads_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmSiteUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_site_image_api_business_v1_site__kind__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "logo" | "icon";
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_api_platform_v1_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_platform_v1_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+        };
+    };
+    get_session_api_platform_v1_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformSessionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tenants_api_platform_v1_tenants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_PlatformTenantResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_tenant_active_api_platform_v1_tenants__tenant_id__active_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTenantActiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_invites_api_platform_v1_invites_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_InviteResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_invite_api_platform_v1_invites_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInviteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CreatedInviteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_invite_api_platform_v1_invites__invite_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invite_id: string;
+            };
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_invite_api_registration_v1_invites__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_InviteDetailsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_api_registration_v1_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterTenantRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_RegisteredTenantResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    onboard_api_customer_v1_onboard__location_code__post: {
+        parameters: {
+            query?: never;
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -6342,7 +8092,7 @@ export interface operations {
             };
         };
     };
-    get_profile_customer_v1_profile_get: {
+    get_profile_api_customer_v1_profile_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6373,7 +8123,7 @@ export interface operations {
             };
         };
     };
-    update_profile_customer_v1_profile_patch: {
+    update_profile_api_customer_v1_profile_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -6408,7 +8158,7 @@ export interface operations {
             };
         };
     };
-    list_booking_groups_booking_v1_groups_get: {
+    list_booking_groups_api_booking_v1_groups_get: {
         parameters: {
             query?: {
                 page?: number;
@@ -6443,7 +8193,7 @@ export interface operations {
             };
         };
     };
-    get_booking_group_booking_v1_groups__booking_group_id__get: {
+    get_booking_group_api_booking_v1_groups__booking_group_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6476,12 +8226,10 @@ export interface operations {
             };
         };
     };
-    create_booking_group_checkout_booking_v1_groups__booking_group_id__checkout_post: {
+    create_booking_group_checkout_api_booking_v1_groups__booking_group_id__checkout_post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 booking_group_id: string;
             };
@@ -6511,7 +8259,7 @@ export interface operations {
             };
         };
     };
-    cancel_booking_group_booking_v1_groups__booking_group_id__cancel_post: {
+    cancel_booking_group_api_booking_v1_groups__booking_group_id__cancel_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6544,7 +8292,7 @@ export interface operations {
             };
         };
     };
-    cancel_booking_booking_v1__booking_id__cancel_post: {
+    cancel_booking_api_booking_v1__booking_id__cancel_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6577,7 +8325,7 @@ export interface operations {
             };
         };
     };
-    reinstate_booking_booking_v1__booking_id__reinstate_post: {
+    reinstate_booking_api_booking_v1__booking_id__reinstate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6610,7 +8358,7 @@ export interface operations {
             };
         };
     };
-    list_bookings_booking_v1__get: {
+    list_bookings_api_booking_v1__get: {
         parameters: {
             query?: {
                 page?: number;
@@ -6648,12 +8396,10 @@ export interface operations {
             };
         };
     };
-    create_booking_booking_v1__post: {
+    create_booking_api_booking_v1__post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: {
                 access_token?: string | null;
@@ -6685,7 +8431,7 @@ export interface operations {
             };
         };
     };
-    get_checkout_status_booking_v1_checkout__checkout_session_id__get: {
+    get_checkout_status_api_booking_v1_checkout__checkout_session_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6718,7 +8464,7 @@ export interface operations {
             };
         };
     };
-    find_conflicts_booking_v1_conflicts_post: {
+    find_conflicts_api_booking_v1_conflicts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6753,7 +8499,7 @@ export interface operations {
             };
         };
     };
-    get_booking_booking_v1__booking_id__get: {
+    get_booking_api_booking_v1__booking_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6786,7 +8532,7 @@ export interface operations {
             };
         };
     };
-    get_child_children_v1__child_id__get: {
+    get_child_api_children_v1__child_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6819,7 +8565,7 @@ export interface operations {
             };
         };
     };
-    update_child_profile_children_v1__child_id__patch: {
+    update_child_profile_api_children_v1__child_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -6856,7 +8602,7 @@ export interface operations {
             };
         };
     };
-    list_children_children_v1__get: {
+    list_children_api_children_v1__get: {
         parameters: {
             query?: {
                 is_active?: boolean | null;
@@ -6890,7 +8636,7 @@ export interface operations {
             };
         };
     };
-    create_child_profile_children_v1__post: {
+    create_child_profile_api_children_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6925,7 +8671,7 @@ export interface operations {
             };
         };
     };
-    deactivate_child_profile_children_v1__child_id__deactivate_post: {
+    deactivate_child_profile_api_children_v1__child_id__deactivate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6958,7 +8704,7 @@ export interface operations {
             };
         };
     };
-    list_location_service_days_location_service_days_v1__get: {
+    list_location_service_days_api_location_service_days_v1__get: {
         parameters: {
             query?: {
                 date_from?: string | null;
@@ -6993,7 +8739,7 @@ export interface operations {
             };
         };
     };
-    create_service_days_location_service_days_v1__post: {
+    create_service_days_api_location_service_days_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7028,7 +8774,7 @@ export interface operations {
             };
         };
     };
-    get_service_day_overview_location_service_days_v1_overview_get: {
+    get_service_day_overview_api_location_service_days_v1_overview_get: {
         parameters: {
             query: {
                 location_service_id: string;
@@ -7063,7 +8809,7 @@ export interface operations {
             };
         };
     };
-    set_service_day_capacity_location_service_days_v1_capacity_patch: {
+    set_service_day_capacity_api_location_service_days_v1_capacity_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -7098,7 +8844,7 @@ export interface operations {
             };
         };
     };
-    delete_service_day_location_service_days_v1__day_id__delete: {
+    delete_service_day_api_location_service_days_v1__day_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -7131,7 +8877,7 @@ export interface operations {
             };
         };
     };
-    update_service_day_location_service_days_v1__day_id__patch: {
+    update_service_day_api_location_service_days_v1__day_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -7168,12 +8914,10 @@ export interface operations {
             };
         };
     };
-    list_public_location_services_location_services_v1_public__location_code__get: {
+    list_public_location_services_api_location_services_v1_public__location_code__get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -7201,7 +8945,7 @@ export interface operations {
             };
         };
     };
-    list_location_service_settings_location_services_v1_settings_get: {
+    list_location_service_settings_api_location_services_v1_settings_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7232,7 +8976,7 @@ export interface operations {
             };
         };
     };
-    update_location_service_config_location_services_v1__location_service_id__config_patch: {
+    update_location_service_config_api_location_services_v1__location_service_id__config_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -7269,7 +9013,7 @@ export interface operations {
             };
         };
     };
-    list_location_services_location_services_v1__get: {
+    list_location_services_api_location_services_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7300,7 +9044,7 @@ export interface operations {
             };
         };
     };
-    list_actions_action_v1__get: {
+    list_actions_api_action_v1__get: {
         parameters: {
             query?: {
                 page?: number;
@@ -7337,7 +9081,7 @@ export interface operations {
             };
         };
     };
-    count_uncited_action_v1_count_uncited_get: {
+    count_uncited_api_action_v1_count_uncited_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7368,7 +9112,7 @@ export interface operations {
             };
         };
     };
-    update_cited_at_action_v1__action_id__patch: {
+    update_cited_at_api_action_v1__action_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -7401,7 +9145,7 @@ export interface operations {
             };
         };
     };
-    list_pickups_pickups_v1__get: {
+    list_pickups_api_pickups_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7432,7 +9176,7 @@ export interface operations {
             };
         };
     };
-    create_pickup_pickups_v1__post: {
+    create_pickup_api_pickups_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7467,7 +9211,7 @@ export interface operations {
             };
         };
     };
-    get_pickup_pickups_v1__pickup_id__get: {
+    get_pickup_api_pickups_v1__pickup_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7500,7 +9244,7 @@ export interface operations {
             };
         };
     };
-    update_pickup_pickups_v1__pickup_id__patch: {
+    update_pickup_api_pickups_v1__pickup_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -7537,7 +9281,7 @@ export interface operations {
             };
         };
     };
-    deactivate_pickup_pickups_v1__pickup_id__deactivate_post: {
+    deactivate_pickup_api_pickups_v1__pickup_id__deactivate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7570,7 +9314,7 @@ export interface operations {
             };
         };
     };
-    create_refund_refunds_v1__post: {
+    create_refund_api_refunds_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7605,7 +9349,7 @@ export interface operations {
             };
         };
     };
-    list_child_documents_child_documents_v1__get: {
+    list_child_documents_api_child_documents_v1__get: {
         parameters: {
             query: {
                 child_id: string;
@@ -7638,7 +9382,7 @@ export interface operations {
             };
         };
     };
-    start_child_document_upload_child_documents_v1__post: {
+    start_child_document_upload_api_child_documents_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7673,7 +9417,7 @@ export interface operations {
             };
         };
     };
-    complete_child_document_upload_child_documents_v1__document_id__complete_post: {
+    complete_child_document_upload_api_child_documents_v1__document_id__complete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7706,7 +9450,7 @@ export interface operations {
             };
         };
     };
-    get_child_document_download_child_documents_v1__document_id__download_get: {
+    get_child_document_download_api_child_documents_v1__document_id__download_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7739,7 +9483,7 @@ export interface operations {
             };
         };
     };
-    remove_child_document_child_documents_v1__document_id__remove_post: {
+    remove_child_document_api_child_documents_v1__document_id__remove_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7772,7 +9516,7 @@ export interface operations {
             };
         };
     };
-    list_medical_reviews_medical_reviews_v1__get: {
+    list_medical_reviews_api_medical_reviews_v1__get: {
         parameters: {
             query?: {
                 review_status?: components["schemas"]["MedicalReviewStatus"][];
@@ -7806,7 +9550,7 @@ export interface operations {
             };
         };
     };
-    get_medical_review_medical_reviews_v1__child_id__get: {
+    get_medical_review_api_medical_reviews_v1__child_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7839,7 +9583,7 @@ export interface operations {
             };
         };
     };
-    decide_medical_review_medical_reviews_v1__child_id__post: {
+    decide_medical_review_api_medical_reviews_v1__child_id__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7876,7 +9620,7 @@ export interface operations {
             };
         };
     };
-    list_kiosk_devices_kiosk_devices_v1__get: {
+    list_kiosk_devices_api_kiosk_devices_v1__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7907,7 +9651,7 @@ export interface operations {
             };
         };
     };
-    create_kiosk_device_kiosk_devices_v1__post: {
+    create_kiosk_device_api_kiosk_devices_v1__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -7942,7 +9686,7 @@ export interface operations {
             };
         };
     };
-    get_kiosk_settings_kiosk_devices_v1_settings_get: {
+    get_kiosk_settings_api_kiosk_devices_v1_settings_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7973,7 +9717,7 @@ export interface operations {
             };
         };
     };
-    update_kiosk_settings_kiosk_devices_v1_settings_put: {
+    update_kiosk_settings_api_kiosk_devices_v1_settings_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -8008,7 +9752,7 @@ export interface operations {
             };
         };
     };
-    new_kiosk_setup_code_kiosk_devices_v1__device_id__setup_code_post: {
+    new_kiosk_setup_code_api_kiosk_devices_v1__device_id__setup_code_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -8041,7 +9785,7 @@ export interface operations {
             };
         };
     };
-    revoke_kiosk_device_kiosk_devices_v1__device_id__revoke_post: {
+    revoke_kiosk_device_api_kiosk_devices_v1__device_id__revoke_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -8074,7 +9818,7 @@ export interface operations {
             };
         };
     };
-    get_roll_attendance_v1_roll_get: {
+    get_roll_api_attendance_v1_roll_get: {
         parameters: {
             query?: {
                 date?: string | null;
@@ -8107,7 +9851,7 @@ export interface operations {
             };
         };
     };
-    get_run_sheet_attendance_v1_board_get: {
+    get_run_sheet_api_attendance_v1_board_get: {
         parameters: {
             query?: {
                 date?: string | null;
@@ -8140,12 +9884,10 @@ export interface operations {
             };
         };
     };
-    pair_kiosk_kiosk_v1__location_code__pair_post: {
+    pair_kiosk_api_kiosk_v1__location_code__pair_post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8177,12 +9919,10 @@ export interface operations {
             };
         };
     };
-    get_kiosk_device_kiosk_v1__location_code__device_get: {
+    get_kiosk_device_api_kiosk_v1__location_code__device_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8212,12 +9952,10 @@ export interface operations {
             };
         };
     };
-    kiosk_login_kiosk_v1__location_code__login_post: {
+    kiosk_login_api_kiosk_v1__location_code__login_post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8251,12 +9989,11 @@ export interface operations {
             };
         };
     };
-    kiosk_change_pin_kiosk_v1__location_code__pin_post: {
+    kiosk_change_pin_api_kiosk_v1__location_code__pin_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Session"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8291,12 +10028,10 @@ export interface operations {
             };
         };
     };
-    kiosk_forgot_pin_kiosk_v1__location_code__forgot_pin_post: {
+    kiosk_forgot_pin_api_kiosk_v1__location_code__forgot_pin_post: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8330,12 +10065,11 @@ export interface operations {
             };
         };
     };
-    kiosk_today_kiosk_v1__location_code__today_get: {
+    kiosk_today_api_kiosk_v1__location_code__today_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Session"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8366,12 +10100,11 @@ export interface operations {
             };
         };
     };
-    kiosk_sign_kiosk_v1__location_code__sign_post: {
+    kiosk_sign_api_kiosk_v1__location_code__sign_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Session"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8406,12 +10139,10 @@ export interface operations {
             };
         };
     };
-    get_staff_kiosk_device_staff_kiosk_v1__location_code__device_get: {
+    get_staff_kiosk_device_api_staff_kiosk_v1__location_code__device_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8441,12 +10172,10 @@ export interface operations {
             };
         };
     };
-    list_kiosk_staff_staff_kiosk_v1__location_code__staff_get: {
+    list_kiosk_staff_api_staff_kiosk_v1__location_code__staff_get: {
         parameters: {
             query?: never;
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8476,14 +10205,12 @@ export interface operations {
             };
         };
     };
-    get_staff_kiosk_board_staff_kiosk_v1__location_code__board_get: {
+    get_staff_kiosk_board_api_staff_kiosk_v1__location_code__board_get: {
         parameters: {
             query?: {
                 date?: string | null;
             };
-            header?: {
-                origin?: string | null;
-            };
+            header?: never;
             path: {
                 location_code: string;
             };
@@ -8513,13 +10240,12 @@ export interface operations {
             };
         };
     };
-    verify_staff_pin_staff_kiosk_v1__location_code__verify_post: {
+    verify_staff_pin_api_staff_kiosk_v1__location_code__verify_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8550,7 +10276,7 @@ export interface operations {
             };
         };
     };
-    get_staff_kiosk_roll_staff_kiosk_v1__location_code__roll_get: {
+    get_staff_kiosk_roll_api_staff_kiosk_v1__location_code__roll_get: {
         parameters: {
             query?: {
                 date?: string | null;
@@ -8558,7 +10284,6 @@ export interface operations {
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8589,13 +10314,12 @@ export interface operations {
             };
         };
     };
-    get_family_pickups_staff_kiosk_v1__location_code__families__family_user_id__pickups_get: {
+    get_family_pickups_api_staff_kiosk_v1__location_code__families__family_user_id__pickups_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 family_user_id: string;
@@ -8627,7 +10351,7 @@ export interface operations {
             };
         };
     };
-    search_children_staff_kiosk_v1__location_code__children_search_get: {
+    search_children_api_staff_kiosk_v1__location_code__children_search_get: {
         parameters: {
             query: {
                 q: string;
@@ -8635,7 +10359,6 @@ export interface operations {
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8666,13 +10389,12 @@ export interface operations {
             };
         };
     };
-    list_family_bookings_staff_kiosk_v1__location_code__families__family_user_id__bookings_get: {
+    list_family_bookings_api_staff_kiosk_v1__location_code__families__family_user_id__bookings_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 family_user_id: string;
@@ -8704,13 +10426,12 @@ export interface operations {
             };
         };
     };
-    create_kiosk_refund_staff_kiosk_v1__location_code__refunds_post: {
+    create_kiosk_refund_api_staff_kiosk_v1__location_code__refunds_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8745,13 +10466,12 @@ export interface operations {
             };
         };
     };
-    get_child_medical_staff_kiosk_v1__location_code__children__child_id__medical_get: {
+    get_child_medical_api_staff_kiosk_v1__location_code__children__child_id__medical_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 child_id: string;
@@ -8783,13 +10503,12 @@ export interface operations {
             };
         };
     };
-    list_child_notes_staff_kiosk_v1__location_code__children__child_id__notes_get: {
+    list_child_notes_api_staff_kiosk_v1__location_code__children__child_id__notes_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 child_id: string;
@@ -8821,13 +10540,12 @@ export interface operations {
             };
         };
     };
-    list_action_plans_staff_kiosk_v1__location_code__action_plans_get: {
+    list_action_plans_api_staff_kiosk_v1__location_code__action_plans_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8858,13 +10576,12 @@ export interface operations {
             };
         };
     };
-    get_document_download_staff_kiosk_v1__location_code__documents__document_id__download_get: {
+    get_document_download_api_staff_kiosk_v1__location_code__documents__document_id__download_get: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 document_id: string;
@@ -8896,13 +10613,12 @@ export interface operations {
             };
         };
     };
-    set_document_printed_staff_kiosk_v1__location_code__documents__document_id__printed_put: {
+    set_document_printed_api_staff_kiosk_v1__location_code__documents__document_id__printed_put: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 document_id: string;
@@ -8938,13 +10654,12 @@ export interface operations {
             };
         };
     };
-    staff_kiosk_sign_staff_kiosk_v1__location_code__sign_post: {
+    staff_kiosk_sign_api_staff_kiosk_v1__location_code__sign_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -8979,13 +10694,12 @@ export interface operations {
             };
         };
     };
-    staff_kiosk_bulk_staff_kiosk_v1__location_code__bulk_post: {
+    staff_kiosk_bulk_api_staff_kiosk_v1__location_code__bulk_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -9020,13 +10734,12 @@ export interface operations {
             };
         };
     };
-    staff_kiosk_undo_staff_kiosk_v1__location_code__undo_post: {
+    staff_kiosk_undo_api_staff_kiosk_v1__location_code__undo_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -9061,13 +10774,12 @@ export interface operations {
             };
         };
     };
-    staff_kiosk_check_id_staff_kiosk_v1__location_code__check_id_post: {
+    staff_kiosk_check_id_api_staff_kiosk_v1__location_code__check_id_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -9102,13 +10814,12 @@ export interface operations {
             };
         };
     };
-    staff_kiosk_shift_staff_kiosk_v1__location_code__shift_post: {
+    staff_kiosk_shift_api_staff_kiosk_v1__location_code__shift_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Kiosk-Staff"?: string | null;
                 "X-Kiosk-Pin"?: string | null;
-                origin?: string | null;
             };
             path: {
                 location_code: string;
@@ -9234,13 +10945,17 @@ type ReadonlyArray<T> = [
 ] extends [
     unknown[]
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const pathsApiLocationBrandingV1SiteFilesKindGetParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/location-branding/v1/site-files/{kind}"]["get"]["parameters"]["path"]["kind"]> = ["logo", "icon", "privacy", "terms"];
+export const pathsApiBusinessV1SiteKindDeleteParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/business/v1/site/{kind}"]["delete"]["parameters"]["path"]["kind"]> = ["logo", "icon"];
 export const addStaffRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AddStaffRequest"]["role"]> = ["staff", "admin"];
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingGroupScope"]> = ["upcoming", "history"];
 export const bookingStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingStatus"]> = ["PENDING", "CONFIRMED", "CANCELLED", "EXPIRED"];
+export const businessLocationRequestTimezoneValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BusinessLocationRequest"]["timezone"]> = ["Australia/Brisbane", "Australia/Sydney", "Australia/Melbourne", "Australia/Hobart", "Australia/Adelaide", "Australia/Darwin", "Australia/Perth", "Australia/Broken_Hill", "Australia/Lord_Howe", "Australia/Eucla"];
 export const changeStaffRoleRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChangeStaffRoleRequest"]["role"]> = ["staff", "admin"];
 export const childDocumentTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentType"]> = ["medical_action_plan", "asthma_action_plan", "allergy_anaphylaxis_plan", "other"];
 export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentUploadStatus"]> = ["pending", "uploaded", "failed"];
+export const confirmSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConfirmSiteUploadRequest"]["kind"]> = ["logo", "icon", "privacy", "terms"];
 export const createKioskDeviceRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreateKioskDeviceRequest"]["kind"]> = ["family", "staff"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
 export const emergencyRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EmergencyRelation"]> = ["parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
@@ -9253,8 +10968,11 @@ export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components
 export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
 export const refundStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RefundStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
 export const sendFamilyMessageRequestTargetAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SendFamilyMessageRequest"]["target"]> = ["profile", "children", "pickups", "manage-documents"];
+export const siteDocumentResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SiteDocumentResponse"]["kind"]> = ["privacy", "terms"];
 export const staffKioskBulkRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskBulkRequest"]["action"]> = ["sign_in", "to_school", "sign_out"];
 export const staffKioskShiftRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskShiftRequest"]["action"]> = ["start", "end"];
 export const staffKioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskSignRequest"]["action"]> = ["in", "out"];
 export const staffKioskUndoRequestStepValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskUndoRequest"]["step"]> = ["sign_in", "sign_out"];
+export const startSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["kind"]> = ["logo", "icon", "privacy", "terms"];
+export const startSiteUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

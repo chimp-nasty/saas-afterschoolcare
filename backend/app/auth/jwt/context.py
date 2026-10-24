@@ -17,11 +17,15 @@ PermissionMap = dict[
 @dataclass(frozen=True)
 class TokenContext:
     user_id: UUID
-    location_id: UUID
+    tenant_id: UUID
+    # None in Business settings (/business): no location, so no location
+    # permissions either (require_permission refuses it).
+    location_id: UUID | None
     email: str | None
     first_name: str | None
     roles: tuple[str, ...]
     permissions: PermissionMap
+    tenant_permissions: PermissionMap
 
 
 def build_token_context(
@@ -32,9 +36,18 @@ def build_token_context(
         claim_name="user_id",
     )
 
-    location_id = _parse_uuid_claim(
+    tenant_id = _parse_uuid_claim(
         claims=claims,
-        claim_name="location_id",
+        claim_name="tenant_id",
+    )
+
+    location_id = (
+        _parse_uuid_claim(
+            claims=claims,
+            claim_name="location_id",
+        )
+        if claims.get("location_id") is not None
+        else None
     )
 
     roles = _parse_roles(
@@ -43,6 +56,10 @@ def build_token_context(
 
     permissions = _parse_permissions(
         claims.get("permissions", {}),
+    )
+
+    tenant_permissions = _parse_permissions(
+        claims.get("tenant_permissions", {}),
     )
 
     email = _parse_optional_string(
@@ -55,11 +72,13 @@ def build_token_context(
 
     return TokenContext(
         user_id=user_id,
+        tenant_id=tenant_id,
         location_id=location_id,
         email=email,
         first_name=first_name,
         roles=roles,
         permissions=permissions,
+        tenant_permissions=tenant_permissions,
     )
 
 

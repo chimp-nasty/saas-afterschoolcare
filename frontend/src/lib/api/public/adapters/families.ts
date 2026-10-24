@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -22,7 +22,7 @@ export function createFamiliesApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/families/v1`;
+		`${API_BASE}/families/v1`;
 
 	const dated = (path: string, dateFrom?: string | null, dateTo?: string | null) => {
 		const query = buildQueryParams({ date_from: dateFrom ?? undefined, date_to: dateTo ?? undefined });

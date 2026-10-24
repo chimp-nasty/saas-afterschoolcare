@@ -94,7 +94,7 @@ def sns(monkeypatch):
 
 
 def _post(api: Api, message: dict):
-    return api.client().post("/api/v1/webhooks/ses", content=json.dumps(message))
+    return api.client().post("/v1/webhooks/ses", content=json.dumps(message))
 
 
 class _Accepting:
@@ -222,7 +222,7 @@ def test_nothing_accepted_without_a_topic(api: Api, monkeypatch):
 
 # A body that isn't JSON is refused.
 def test_garbage_is_refused(api: Api):
-    assert api.client().post("/api/v1/webhooks/ses", content=b"not json").status_code == 400
+    assert api.client().post("/v1/webhooks/ses", content=b"not json").status_code == 400
 
 
 # ---------------------------------------------------------------------------

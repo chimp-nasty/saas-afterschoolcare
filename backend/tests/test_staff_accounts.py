@@ -181,7 +181,8 @@ def test_superadmins_are_not_managed_here(api: Api, superadmin):
 
 # The database keeps a location safe whoever writes: nobody changes their
 # own staff role, and a location always keeps an admin. (A new location of
-# its own, so exactly one admin there.)
+# its own, so exactly one admin there: the owner's superadmin role, added
+# with the location, is taken away first, as server code.)
 def test_database_rules_for_staff_roles(api: Api):
     code = f"loc-{uuid.uuid4().hex[:8]}"
     [(location_id,)] = api.sql(
@@ -190,6 +191,7 @@ def test_database_rules_for_staff_roles(api: Api):
         "FROM tenancy.tenants t WHERE t.code = 'tenant1' RETURNING id::text",
         code=code,
     )
+    api.sql("DELETE FROM auth.location_user_roles WHERE location_id = CAST(:l AS uuid)", l=location_id)
     only_admin = api.new_staff(role="admin", pin=None, location=code)
     staff = api.new_staff(pin=None, location=code)
 

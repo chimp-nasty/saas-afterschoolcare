@@ -96,6 +96,11 @@ class PermissionChannelEnum(str, enum.Enum):
     KIOSK = 'kiosk'
 
 
+class PermissionScopeEnum(str, enum.Enum):
+    LOCATION = 'location'
+    TENANT = 'tenant'
+
+
 class PickupRelationEnum(str, enum.Enum):
     ACCOUNT_HOLDER = 'account_holder'
     PARENT_GUARDIAN = 'parent_guardian'
@@ -130,6 +135,7 @@ class Permission(Base):
         CheckConstraint("action::text = ANY (ARRAY['c'::character varying, 'r'::character varying, 'u'::character varying, 'd'::character varying]::text[])", name='ck_permissions_action'),
         CheckConstraint("resource::text ~ '^[a-z][a-z0-9_]*$'::text", name='ck_permissions_resource_format'),
         PrimaryKeyConstraint('id', name='permissions_pkey'),
+        UniqueConstraint('id', 'scope', name='uq_permissions_id_scope'),
         UniqueConstraint('resource', 'action', name='uq_permissions_resource_action'),
         {'schema': 'auth'}
     )
@@ -137,7 +143,27 @@ class Permission(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     resource: Mapped[str] = mapped_column(String(100), nullable=False)
     action: Mapped[str] = mapped_column(String(1), nullable=False)
+    scope: Mapped[PermissionScopeEnum] = mapped_column(Enum(PermissionScopeEnum, values_callable=lambda cls: [member.value for member in cls], name='permission_scope_enum', schema='auth'), nullable=False, server_default=text("'location'::auth.permission_scope_enum"))
     description: Mapped[Optional[str]] = mapped_column(Text)
+
+
+
+class PlatformAdmin(Base):
+    __tablename__ = 'platform_admins'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='platform_admins_pkey'),
+        UniqueConstraint('email', name='uq_platform_admins_email'),
+        {'schema': 'auth'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    last_login: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 
@@ -200,6 +226,9 @@ class ServiceType(Base):
 class Tenant(Base):
     __tablename__ = 'tenants'
     __table_args__ = (
+        CheckConstraint('abn IS NULL OR tenancy.is_valid_abn(abn::text)', name='ck_tenants_abn'),
+        CheckConstraint("btrim(name::text) <> ''::text", name='ck_tenants_name_not_blank'),
+        CheckConstraint("code::text <> ALL (ARRAY['www'::character varying, 'api'::character varying, 'platform'::character varying, 'admin'::character varying, 'mail'::character varying, 'app'::character varying]::text[])", name='ck_tenants_code_reserved'),
         CheckConstraint("code::text ~ '^[a-z][a-z0-9-]*$'::text", name='ck_tenants_code_format'),
         PrimaryKeyConstraint('id', name='tenants_pkey'),
         UniqueConstraint('code', name='uq_tenants_code'),
@@ -216,13 +245,19 @@ class Tenant(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     custom_domain: Mapped[Optional[str]] = mapped_column(String(255))
     email: Mapped[Optional[str]] = mapped_column(String(255))
+    legal_name: Mapped[Optional[str]] = mapped_column(String(200))
+    abn: Mapped[Optional[str]] = mapped_column(CHAR(11))
+    phone: Mapped[Optional[str]] = mapped_column(String(50))
+    about: Mapped[Optional[str]] = mapped_column(String(1000))
+    tagline: Mapped[Optional[str]] = mapped_column(String(120))
 
 
 
 class RolePermission(Base):
     __tablename__ = 'role_permissions'
     __table_args__ = (
-        ForeignKeyConstraint(['permission_id'], ['auth.permissions.id'], ondelete='CASCADE', name='fk_role_permissions_permission'),
+        CheckConstraint("scope = 'location'::auth.permission_scope_enum", name='ck_role_permissions_scope'),
+        ForeignKeyConstraint(['permission_id', 'scope'], ['auth.permissions.id', 'auth.permissions.scope'], ondelete='CASCADE', name='fk_role_permissions_permission'),
         ForeignKeyConstraint(['role_id'], ['auth.roles.id'], ondelete='CASCADE', name='fk_role_permissions_role'),
         PrimaryKeyConstraint('id', name='role_permissions_pkey'),
         UniqueConstraint('role_id', 'permission_id', 'channel', name='uq_role_permissions_role_permission_channel'),
@@ -233,6 +268,7 @@ class RolePermission(Base):
     role_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     permission_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     channel: Mapped[PermissionChannelEnum] = mapped_column(Enum(PermissionChannelEnum, values_callable=lambda cls: [member.value for member in cls], name='permission_channel_enum', schema='auth'), nullable=False)
+    scope: Mapped[PermissionScopeEnum] = mapped_column(Enum(PermissionScopeEnum, values_callable=lambda cls: [member.value for member in cls], name='permission_scope_enum', schema='auth'), nullable=False, server_default=text("'location'::auth.permission_scope_enum"))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
 
 
@@ -254,33 +290,43 @@ class StaffPin(Base):
 
 
 
-class CustomerProfile(Base):
-    __tablename__ = 'customer_profile'
+class TenantInvite(Base):
+    __tablename__ = 'tenant_invites'
     __table_args__ = (
-        CheckConstraint('emergency_contact_phone::text <> phone::text', name='ck_customer_profile_emergency_phone_distinct'),
-        CheckConstraint("emergency_contact_phone::text ~ '^0[0-9]{9}$'::text", name='ck_customer_profile_emergency_phone_format'),
-        CheckConstraint("emergency_contact_relation = 'other'::emergency_relation_enum) = (NULLIF(btrim(emergency_contact_relation_other::text), ''::text) IS NOT NULL", name='ck_customer_profile_emergency_relation_other'),
-        CheckConstraint("state::text = ANY (ARRAY['NSW'::character varying, 'VIC'::character varying, 'QLD'::character varying, 'WA'::character varying, 'SA'::character varying, 'TAS'::character varying, 'ACT'::character varying, 'NT'::character varying]::text[])", name='ck_customer_profile_state'),
-        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_customer_profile_user'),
-        PrimaryKeyConstraint('id', name='customer_profile_pkey'),
-        UniqueConstraint('user_id', name='uq_customer_profile_user'),
-        {'schema': 'public'}
+        CheckConstraint('tenant_id IS NULL OR used_at IS NOT NULL', name='ck_tenant_invites_used'),
+        ForeignKeyConstraint(['created_by'], ['auth.platform_admins.id'], name='fk_tenant_invites_created_by'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='SET NULL', name='fk_tenant_invites_tenant'),
+        PrimaryKeyConstraint('id', name='tenant_invites_pkey'),
+        UniqueConstraint('token_hash', name='uq_tenant_invites_token_hash'),
+        {'schema': 'auth'}
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_by: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text("(now() + '7 days'::interval)"))
+    revoked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    used_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    tenant_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+
+
+class TenantOwner(Base):
+    __tablename__ = 'tenant_owners'
+    __table_args__ = (
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_owners_tenant'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_tenant_owners_user'),
+        PrimaryKeyConstraint('tenant_id', name='tenant_owners_pkey'),
+        UniqueConstraint('tenant_id', 'user_id', name='uq_tenant_owners_tenant_user'),
+        UniqueConstraint('user_id', name='uq_tenant_owners_user'),
+        {'schema': 'auth'}
+    )
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    phone: Mapped[Optional[str]] = mapped_column(String(30))
-    address_line_1: Mapped[Optional[str]] = mapped_column(String(255))
-    address_line_2: Mapped[Optional[str]] = mapped_column(String(255))
-    suburb: Mapped[Optional[str]] = mapped_column(String(100))
-    state: Mapped[Optional[str]] = mapped_column(String(100))
-    postcode: Mapped[Optional[str]] = mapped_column(String(20))
-    emergency_contact_name: Mapped[Optional[str]] = mapped_column(String(200))
-    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(15))
-    emergency_contact_relation: Mapped[Optional[EmergencyRelationEnum]] = mapped_column(Enum(EmergencyRelationEnum, values_callable=lambda cls: [member.value for member in cls], name='emergency_relation_enum'))
-    emergency_contact_relation_other: Mapped[Optional[str]] = mapped_column(String(100))
 
 
 
@@ -312,10 +358,13 @@ class Location(Base):
     __tablename__ = 'locations'
     __table_args__ = (
         CheckConstraint("btrim(address_line_1::text) <> ''::text AND btrim(suburb::text) <> ''::text", name='ck_locations_address_not_blank'),
+        CheckConstraint("btrim(name::text) <> ''::text", name='ck_locations_name_not_blank'),
+        CheckConstraint("code::text <> ALL (ARRAY['business'::character varying, 'api'::character varying, 'platform'::character varying, 'register'::character varying, 'kiosk'::character varying, 'staff'::character varying, 'login'::character varying, 'demo'::character varying]::text[])", name='ck_locations_code_reserved'),
         CheckConstraint("code::text ~ '^[a-z][a-z0-9-]*$'::text", name='ck_locations_code_format'),
         CheckConstraint('latitude IS NULL) = (longitude IS NULL', name='ck_locations_coordinates'),
         CheckConstraint("postcode ~ '^[0-9]{4}$'::text", name='ck_locations_postcode'),
         CheckConstraint("state::text = ANY (ARRAY['NSW'::character varying, 'VIC'::character varying, 'QLD'::character varying, 'WA'::character varying, 'SA'::character varying, 'TAS'::character varying, 'ACT'::character varying, 'NT'::character varying]::text[])", name='ck_locations_state'),
+        CheckConstraint("timezone = ANY (ARRAY['Australia/Brisbane'::text, 'Australia/Sydney'::text, 'Australia/Melbourne'::text, 'Australia/Hobart'::text, 'Australia/Adelaide'::text, 'Australia/Darwin'::text, 'Australia/Perth'::text, 'Australia/Broken_Hill'::text, 'Australia/Lord_Howe'::text, 'Australia/Eucla'::text])", name='ck_locations_timezone'),
         ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_locations_tenant'),
         PrimaryKeyConstraint('id', name='locations_pkey'),
         UniqueConstraint('id', 'tenant_id', name='uq_locations_id_tenant'),
@@ -325,6 +374,7 @@ class Location(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
     tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     address_line_1: Mapped[str] = mapped_column(String(255), nullable=False)
     suburb: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -334,13 +384,70 @@ class Location(Base):
     kiosk_enforce_service_times: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    name: Mapped[Optional[str]] = mapped_column(String(200))
     address_line_2: Mapped[Optional[str]] = mapped_column(String(255))
     latitude: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(9, 6))
     longitude: Mapped[Optional[decimal.Decimal]] = mapped_column(Numeric(9, 6))
     google_place_id: Mapped[Optional[str]] = mapped_column(Text)
     phone: Mapped[Optional[str]] = mapped_column(String(50))
     email: Mapped[Optional[str]] = mapped_column(String(255))
+
+
+
+class TenantBranding(Base):
+    __tablename__ = 'tenant_branding'
+    __table_args__ = (
+        CheckConstraint("primary_color IS NULL OR primary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text) AND (secondary_color IS NULL OR secondary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name='ck_tenant_branding_colors'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_branding_tenant'),
+        PrimaryKeyConstraint('tenant_id', name='tenant_branding_pkey'),
+        {'schema': 'tenancy'}
+    )
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    logo_key: Mapped[Optional[str]] = mapped_column(Text)
+    icon_key: Mapped[Optional[str]] = mapped_column(Text)
+    primary_color: Mapped[Optional[str]] = mapped_column(String(7))
+    secondary_color: Mapped[Optional[str]] = mapped_column(String(7))
+
+
+
+class TenantDocument(Base):
+    __tablename__ = 'tenant_documents'
+    __table_args__ = (
+        CheckConstraint("kind::text = ANY (ARRAY['privacy'::character varying, 'terms'::character varying]::text[])", name='ck_tenant_documents_kind'),
+        CheckConstraint('size_bytes >= 1 AND size_bytes <= 5242880', name='ck_tenant_documents_size'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_documents_tenant'),
+        ForeignKeyConstraint(['uploaded_by'], ['auth.users.id'], name='fk_tenant_documents_uploaded_by'),
+        PrimaryKeyConstraint('id', name='tenant_documents_pkey'),
+        Index('ix_tenant_documents_current', 'tenant_id', 'kind', 'uploaded_at'),
+        {'schema': 'tenancy'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    uploaded_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class TenantFaq(Base):
+    __tablename__ = 'tenant_faqs'
+    __table_args__ = (
+        CheckConstraint("btrim(question::text) <> ''::text AND btrim(answer::text) <> ''::text", name='ck_tenant_faqs_text'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_faqs_tenant'),
+        PrimaryKeyConstraint('id', name='tenant_faqs_pkey'),
+        UniqueConstraint('tenant_id', 'position', name='uq_tenant_faqs_position'),
+        {'schema': 'tenancy'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    question: Mapped[str] = mapped_column(String(200), nullable=False)
+    answer: Mapped[str] = mapped_column(String(2000), nullable=False)
 
 
 
@@ -402,6 +509,26 @@ class PasswordResetToken(Base):
     expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     used_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+
+class UserTenantPermission(Base):
+    __tablename__ = 'user_tenant_permissions'
+    __table_args__ = (
+        CheckConstraint("scope = 'tenant'::auth.permission_scope_enum", name='ck_user_tenant_permissions_scope'),
+        ForeignKeyConstraint(['permission_id', 'scope'], ['auth.permissions.id', 'auth.permissions.scope'], ondelete='CASCADE', name='fk_user_tenant_permissions_permission'),
+        ForeignKeyConstraint(['tenant_id', 'user_id'], ['auth.tenant_owners.tenant_id', 'auth.tenant_owners.user_id'], ondelete='CASCADE', name='fk_user_tenant_permissions_owner'),
+        PrimaryKeyConstraint('id', name='user_tenant_permissions_pkey'),
+        UniqueConstraint('user_id', 'tenant_id', 'permission_id', name='uq_user_tenant_permissions_user_tenant_permission'),
+        {'schema': 'auth'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    permission_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    scope: Mapped[PermissionScopeEnum] = mapped_column(Enum(PermissionScopeEnum, values_callable=lambda cls: [member.value for member in cls], name='permission_scope_enum', schema='auth'), nullable=False, server_default=text("'tenant'::auth.permission_scope_enum"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
 
 
 
@@ -499,6 +626,38 @@ class ChildProfile(Base):
 
 
 
+class CustomerProfile(Base):
+    __tablename__ = 'customer_profile'
+    __table_args__ = (
+        CheckConstraint('emergency_contact_phone::text <> phone::text', name='ck_customer_profile_emergency_phone_distinct'),
+        CheckConstraint("emergency_contact_phone::text ~ '^0[0-9]{9}$'::text", name='ck_customer_profile_emergency_phone_format'),
+        CheckConstraint("emergency_contact_relation = 'other'::emergency_relation_enum) = (NULLIF(btrim(emergency_contact_relation_other::text), ''::text) IS NOT NULL", name='ck_customer_profile_emergency_relation_other'),
+        CheckConstraint("state::text = ANY (ARRAY['NSW'::character varying, 'VIC'::character varying, 'QLD'::character varying, 'WA'::character varying, 'SA'::character varying, 'TAS'::character varying, 'ACT'::character varying, 'NT'::character varying]::text[])", name='ck_customer_profile_state'),
+        ForeignKeyConstraint(['terms_document_id'], ['tenancy.tenant_documents.id'], name='fk_customer_profile_terms_document'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_customer_profile_user'),
+        PrimaryKeyConstraint('id', name='customer_profile_pkey'),
+        UniqueConstraint('user_id', name='uq_customer_profile_user'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    phone: Mapped[Optional[str]] = mapped_column(String(30))
+    address_line_1: Mapped[Optional[str]] = mapped_column(String(255))
+    address_line_2: Mapped[Optional[str]] = mapped_column(String(255))
+    suburb: Mapped[Optional[str]] = mapped_column(String(100))
+    state: Mapped[Optional[str]] = mapped_column(String(100))
+    postcode: Mapped[Optional[str]] = mapped_column(String(20))
+    emergency_contact_name: Mapped[Optional[str]] = mapped_column(String(200))
+    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(15))
+    emergency_contact_relation: Mapped[Optional[EmergencyRelationEnum]] = mapped_column(Enum(EmergencyRelationEnum, values_callable=lambda cls: [member.value for member in cls], name='emergency_relation_enum'))
+    emergency_contact_relation_other: Mapped[Optional[str]] = mapped_column(String(100))
+    terms_document_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
+
+
+
 class LocationKioskDevice(Base):
     __tablename__ = 'location_kiosk_devices'
     __table_args__ = (
@@ -537,27 +696,6 @@ class LocationService(Base):
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     service_type_id: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-
-
-
-class LocationBranding(Base):
-    __tablename__ = 'location_branding'
-    __table_args__ = (
-        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_location_branding_location'),
-        PrimaryKeyConstraint('id', name='location_branding_pkey'),
-        UniqueConstraint('location_id', name='uq_location_branding_location'),
-        {'schema': 'tenancy'}
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
-    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
-    display_name: Mapped[Optional[str]] = mapped_column(String(200))
-    logo_key: Mapped[Optional[str]] = mapped_column(Text)
-    primary_color: Mapped[Optional[str]] = mapped_column(String(50))
-    secondary_color: Mapped[Optional[str]] = mapped_column(String(50))
-    font_family: Mapped[Optional[str]] = mapped_column(String(100))
 
 
 

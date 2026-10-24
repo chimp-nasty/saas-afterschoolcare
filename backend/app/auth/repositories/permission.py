@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.db.models import Permission, RolePermission
+from app.db.models import Permission, RolePermission, UserTenantPermission
 
 
 class PermissionRepository(Repository):
@@ -54,5 +54,28 @@ class PermissionRepository(Repository):
                 RolePermission.channel == channel,
             )
             .distinct()
+            .all()
+        )
+
+    def list_tenant_permissions(
+        self,
+        *,
+        user_id: UUID,
+        tenant_id: UUID,
+    ) -> list[Permission]:
+        """
+        The user's permissions across the tenant (docs/tenant-administration.md):
+        granted to its owner directly, empty for everyone else.
+        """
+        return (
+            self.db.query(Permission)
+            .join(
+                UserTenantPermission,
+                UserTenantPermission.permission_id == Permission.id,
+            )
+            .filter(
+                UserTenantPermission.user_id == user_id,
+                UserTenantPermission.tenant_id == tenant_id,
+            )
             .all()
         )

@@ -1,7 +1,10 @@
+from typing import Any
 from uuid import UUID
 
+from sqlalchemy import func
+
 from app.db.repository import Repository
-from app.db.models import Location
+from app.db.models import Location, LocationServiceConfig
 
 
 class LocationRepository(Repository):
@@ -18,6 +21,7 @@ class LocationRepository(Repository):
         postcode: str,
         phone: str | None = None,
         email: str | None = None,
+        timezone: str = "Australia/Brisbane",
         is_active: bool = True,
     ) -> Location:
         record = Location(
@@ -31,6 +35,7 @@ class LocationRepository(Repository):
             postcode=postcode,
             phone=phone,
             email=email,
+            timezone=timezone,
             is_active=is_active,
         )
 
@@ -64,3 +69,38 @@ class LocationRepository(Repository):
             )
             .first()
         )
+
+    def list_for_tenant_with_services_offered(
+        self,
+        *,
+        tenant_id: UUID,
+    ) -> list[tuple[Location, int]]:
+        """Every location of the tenant, by name, with how many services it offers."""
+        offered = func.count(LocationServiceConfig.location_service_id).filter(
+            LocationServiceConfig.is_active,
+        )
+
+        return (
+            self.db.query(Location, offered)
+            .outerjoin(
+                LocationServiceConfig,
+                LocationServiceConfig.location_id == Location.id,
+            )
+            .filter(Location.tenant_id == tenant_id)
+            .group_by(Location.id)
+            .order_by(Location.name)
+            .all()
+        )
+
+    def update(
+        self,
+        *,
+        location: Location,
+        values: dict[str, Any],
+    ) -> Location:
+        for field, value in values.items():
+            setattr(location, field, value)
+
+        self.db.flush()
+
+        return location

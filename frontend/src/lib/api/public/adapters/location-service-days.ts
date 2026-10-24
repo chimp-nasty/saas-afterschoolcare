@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -18,7 +18,7 @@ import type {
 
 
 export type ListLocationServiceDaysFilter = Omit<
-	NonNullable<operations['list_location_service_days_location_service_days_v1__get']['parameters']['query']>,
+	NonNullable<operations['list_location_service_days_api_location_service_days_v1__get']['parameters']['query']>,
 	keyof Pagination
 >;
 
@@ -27,7 +27,7 @@ export function createLocationServiceDaysApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/location-service-days/v1`;
+		`${API_BASE}/location-service-days/v1`;
 
 	return {
 		list(

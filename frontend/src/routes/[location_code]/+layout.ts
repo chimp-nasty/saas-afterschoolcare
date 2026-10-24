@@ -45,23 +45,25 @@ export const load: LayoutLoad = async ({
 					firstName: sessionResponse.data.first_name,
 					roles: sessionResponse.data.roles,
 					locationCode: sessionResponse.data.location_code,
-					locationName: sessionResponse.data.location_name
+					locationName: sessionResponse.data.location_name,
+					tenantPermissions: sessionResponse.data.tenant_permissions
 				}
 			: null;
 
 	// Logins are per location: a session only counts at its own location.
 	// Elsewhere the user is treated as logged out (no nav, protected pages
 	// go to the landing page), which shows where they're logged in instead.
+	// A Business settings login has no location, so it counts nowhere here.
 	const session =
 		loggedIn && loggedIn.locationCode === locationCode
 			? loggedIn
 			: null;
 
 	const signedInElsewhere =
-		loggedIn && !session
+		loggedIn && !session && loggedIn.locationCode
 			? {
 					locationCode: loggedIn.locationCode,
-					locationName: loggedIn.locationName ?? loggedIn.locationCode
+					locationName: loggedIn.locationName
 				}
 			: null;
 

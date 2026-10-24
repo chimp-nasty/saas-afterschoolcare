@@ -1,6 +1,6 @@
 # Stripe Connect setup
 
-How payments reach each business. Every tenant has its own **Standard** connected Stripe account, and families pay it directly (**direct charges**): the centre is the seller, and owns payouts, disputes and its Stripe dashboard. The platform keeps only its own keys and each tenant's account id (`tenancy.tenant_stripe_accounts`). The app side is `backend/app/integrations/payments/stripe/` and Admin › Payments (`backend/app/tenancy/services/stripe_connect.py`).
+How payments reach each business. Every tenant has its own **Standard** connected Stripe account, and families pay it directly (**direct charges**): the centre is the seller, and owns payouts, disputes and its Stripe dashboard. The platform keeps only its own keys and each tenant's account id (`tenancy.tenant_stripe_accounts`). The app side is `backend/app/integrations/payments/stripe/` and Business settings › Payments (`/business/payments`, `backend/app/tenancy/services/stripe_connect.py`); each centre's Admin › Payments shows the status read-only.
 
 Platform subscriptions (billing tenants for the software) are separate and done by hand for now.
 
@@ -17,10 +17,10 @@ In the Stripe dashboard of the platform's account:
 
 ## 1b. "Connect with Stripe" (linking a business's existing account)
 
-A business that already has a Stripe account links it through Stripe's OAuth instead of making a new one (Admin › Payments → **Connect your Stripe account**). Stripe returns everyone to one address on the API, which sends them back to their own site.
+A business that already has a Stripe account links it through Stripe's OAuth instead of making a new one (Business settings › Payments → **Connect your Stripe account**). Stripe returns everyone to one address on the API, which sends them back to their own site.
 
 1. **Settings → Connect → Onboarding options → OAuth:** turn on OAuth for Standard accounts.
-2. Add the redirect URI `{API_BASE_URL}/stripe-account/v1/oauth/callback`, e.g. `https://api.<domain>/stripe-account/v1/oauth/callback` (and `http://localhost:8000/stripe-account/v1/oauth/callback` in test mode).
+2. Add the redirect URI `{API_BASE_URL}/api/stripe-account/v1/oauth/callback`, e.g. `https://<platform domain>/api/stripe-account/v1/oauth/callback` (and `http://localhost:8000/api/stripe-account/v1/oauth/callback` in test mode). It's on the platform's own site, not a tenant's.
 3. Copy the **client id** (`ca_…`, separate for test and live) into `STRIPE_CONNECT_CLIENT_ID`. Without it, only "Create a new Stripe account" is offered.
 
 The business stays in control: it can remove the platform's access from its own Stripe dashboard at any time (bookings then close, see the table below).
@@ -31,28 +31,30 @@ Two endpoints on the API, both under **Developers → Webhooks**:
 
 | Endpoint | Listens to | Events | Secret setting |
 |---|---|---|---|
-| `https://api.<domain>/api/v1/webhooks/stripe` | **Your account** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `refund.created`, `refund.updated`, `refund.failed` | `STRIPE_WEBHOOK_SECRET` |
-| `https://api.<domain>/api/v1/webhooks/stripe/connect` | **Connected accounts** | the same, plus `account.updated` and `account.application.deauthorized` | `STRIPE_CONNECT_WEBHOOK_SECRET` |
+| `https://<platform domain>/api/v1/webhooks/stripe` | **Your account** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `refund.created`, `refund.updated`, `refund.failed` | `STRIPE_WEBHOOK_SECRET` |
+| `https://<platform domain>/api/v1/webhooks/stripe/connect` | **Connected accounts** | the same, plus `account.updated` and `account.application.deauthorized` | `STRIPE_CONNECT_WEBHOOK_SECRET` |
 
 With direct charges, a family's checkout and refunds happen in the centre's account, so they arrive on the **Connect** endpoint. The platform endpoint only settles payments made before an account was connected (seeded data). Each event is checked against the account the payment was made in.
 
 ## 3. Dev
 
-1. Rebuild, log in as the superadmin (`sa1user@test.com`, password `123`) and open **Admin › Payments → Connect Stripe**. In test mode, Stripe's onboarding accepts test data ("Use test data" / phone `000 000 0000`, code `000000`).
+1. Rebuild, log in to Business settings as tenant 1's owner (`http://tenant1.localhost:5173/business`, `sa1user@test.com`, password `123`) and open **Payments → Connect Stripe**. In test mode, Stripe's onboarding accepts test data ("Use test data" / phone `000 000 0000`, code `000000`).
 2. Forward both kinds of events to the local API with the Stripe CLI ([install](https://docs.stripe.com/stripe-cli); `stripe login` once, into the platform's account). One command, in its own terminal, while the API runs:
 
    ```powershell
-   stripe listen --forward-to localhost:8000/api/v1/webhooks/stripe --forward-connect-to localhost:8000/api/v1/webhooks/stripe/connect
+   stripe listen --events "checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,refund.created,refund.updated,refund.failed,account.updated,account.application.deauthorized" --forward-to localhost:8000/api/v1/webhooks/stripe --forward-connect-to localhost:8000/api/v1/webhooks/stripe/connect
    ```
+
+   Newer CLI versions refuse to start without `--events`. The list is every event the webhook handles (`backend/app/integrations/payments/stripe/`); add to it when the handler learns a new one.
 
    Your account's events go to the first endpoint and connected accounts' events (a family's checkout and refunds, `account.updated`) to the second. It prints one signing secret (`whsec_…`) for the session: put it in `backend/.env` as **both** `STRIPE_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET`, then restart the API. The secret stays the same on later runs from the same machine, so this is needed once (until the CLI login expires, about 90 days). Each forwarded event and the API's response code is printed in that terminal; a `400` usually means the secret in `.env` doesn't match.
 
-   Without the CLI, **Refresh status** on Admin › Payments reads the account's state from Stripe instead, but paid checkouts and refunds are only recorded through the webhook, so bookings stay pending.
+   Without the CLI, **Refresh status** on Business settings › Payments reads the account's state from Stripe instead, but paid checkouts and refunds are only recorded through the webhook, so bookings stay pending.
 3. Copy the connected account's id (`acct_…`, shown in your platform dashboard under **Connected accounts**) into `backend/.env` as `STRIPE_DEV_ACCOUNT_ID`. From then on, every rebuild links it to tenant1 again (`migrations/dev_seed/0005_dev_stripe_account.py`), so onboarding is only needed once.
 
 ## What each state means
 
-| State (Admin › Payments) | Bookings | Refunds of past payments |
+| State (Business settings › Payments) | Bookings | Refunds of past payments |
 |---|---|---|
 | Not connected, or onboarding unfinished | Closed | — |
 | Taking bookings | Open | Through the account |
@@ -67,5 +69,5 @@ With direct charges, a family's checkout and refunds happen in the centre's acco
 | `STRIPE_WEBHOOK_SECRET` | The `whsec_…` of the **Your account** endpoint |
 | `STRIPE_CONNECT_WEBHOOK_SECRET` | The `whsec_…` of the **Connected accounts** endpoint |
 | `STRIPE_CONNECT_CLIENT_ID` | The live OAuth client id (`ca_…`) |
-| `API_BASE_URL` | The API's public address, e.g. `https://api.<domain>` (no trailing slash) |
+| `API_BASE_URL` | The platform's own site, where the API answers under `/api`, e.g. `https://<platform domain>` (no trailing slash) |
 | `STRIPE_DEV_ACCOUNT_ID` | Not set (dev only) |

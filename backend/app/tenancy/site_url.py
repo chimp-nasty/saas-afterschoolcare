@@ -5,17 +5,16 @@ from app.db.models import Location, Tenant
 from app.errors.bookings import CheckoutOriginError
 
 
-def location_site_url(
+def tenant_site_url(
     *,
-    location: Location,
     tenant: Tenant,
     origin: str | None,
 ) -> str:
     """
-    The location's frontend URL, for Stripe's return links (checkout and
-    onboarding). Built from the request's Origin (so dev ports work) but
-    only once it's checked to be this tenant's site, so it can't be used as
-    an open redirect.
+    The tenant's site (scheme, host and port), for Stripe's return links
+    (checkout and onboarding). Built from the site the request came to
+    (site_origin, so dev ports work) but only once it's checked to be this
+    tenant's site, so it can't be used as an open redirect.
     """
     hostname = (urlparse(origin).hostname or "").lower() if origin else ""
 
@@ -29,4 +28,14 @@ def location_site_url(
     if hostname not in allowed_hostnames:
         raise CheckoutOriginError()
 
-    return f"{origin.rstrip('/')}/{location.code}"
+    return origin.rstrip("/")
+
+
+def location_site_url(
+    *,
+    location: Location,
+    tenant: Tenant,
+    origin: str | None,
+) -> str:
+    """The location's pages on the tenant's site (tenant_site_url)."""
+    return f"{tenant_site_url(tenant=tenant, origin=origin)}/{location.code}"

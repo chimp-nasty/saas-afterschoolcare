@@ -10,7 +10,7 @@
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Footer from '$lib/components/layout/tenant/Footer.svelte';
-	import Sidebar, { type SidebarItem } from '$lib/components/controls/Sidebar.svelte';
+	import Sidebar, { type SidebarItem, type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
 	import BottomNav, { type BottomNavItem } from '$lib/components/controls/BottomNav.svelte';
 	import Drawer from '$lib/components/overlays/Drawer.svelte';
 	import ConfirmDialog from '$lib/components/overlays/ConfirmDialog.svelte';
@@ -51,65 +51,6 @@
 		void goto(route(path));
 	}
 
-	// Only screens that are built (docs/portals.md). The staff portal is
-	// every employee's own account; the admin portal runs the business.
-	const staffItems = $derived.by((): SidebarItem[] => [
-		{
-			label: 'My account',
-			onclick: () => navigate('/staff/account'),
-			isActive: isActive('/staff/account')
-		}
-	]);
-
-	const adminItems = $derived.by((): SidebarItem[] => [
-		{
-			label: 'Run sheet',
-			onclick: () => navigate('/admin/run-sheet'),
-			isActive: isActive('/admin/run-sheet')
-		},
-		{
-			label: 'Families',
-			onclick: () => navigate('/admin/families'),
-			isActive: isActive('/admin/families')
-		},
-		{
-			label: 'Service days',
-			onclick: () => navigate('/admin/sessions'),
-			isActive: isActive('/admin/sessions')
-		},
-		{
-			label: 'Medical reviews',
-			onclick: () => navigate('/admin/reviews'),
-			isActive: isActive('/admin/reviews')
-		},
-		// Business settings: superadmins only (the API refuses admins too).
-		...(isSuperadmin
-			? [
-					{
-						label: 'Service settings',
-						onclick: () => navigate('/admin/settings'),
-						isActive: isActive('/admin/settings')
-					}
-				]
-			: []),
-		// Admins see whether payments are on; superadmins manage it there.
-		{
-			label: 'Payments',
-			onclick: () => navigate('/admin/payments'),
-			isActive: isActive('/admin/payments')
-		},
-		{
-			label: 'Kiosks',
-			onclick: () => navigate('/admin/kiosks'),
-			isActive: isActive('/admin/kiosks')
-		},
-		{
-			label: 'Staff',
-			onclick: () => navigate('/admin/users'),
-			isActive: isActive('/admin/users')
-		}
-	]);
-
 	const isStaff = $derived(
 		['staff', 'admin', 'superadmin'].some((role) => $auth.roles.includes(role))
 	);
@@ -120,50 +61,79 @@
 		['admin', 'superadmin'].some((role) => $auth.roles.includes(role))
 	);
 
-	const customerItems = $derived.by((): SidebarItem[] => [
-		{
-			label: 'Account',
-			onclick: () => navigate('/account'),
-			isActive: isActive('/account')
-		},
-		{
-			label: 'Bookings',
-			onclick: () => navigate('/bookings'),
-			isActive: isActive('/bookings')
-		}
-	]);
+	const isOwner = $derived(Object.keys($auth.tenantPermissions).length > 0);
 
-	const items = $derived.by(() => {
-		const result: SidebarItem[] = [];
+	function link(label: string, path: string): SidebarItem {
+		return { label, onclick: () => navigate(path), isActive: isActive(path) };
+	}
 
-		// A staff-role login's home is their account, so they get no Home.
-		if (isAdmin || !isStaff) {
-			result.push({
-				label: 'Home',
-				onclick: () => navigate('/home'),
-				isActive: isActive('/home')
-			});
-		}
+	// Only screens that are built (docs/portals.md). Staff and admins see
+	// their links grouped by what they're for, groups and links in
+	// alphabetical order; families get a plain list. Home is always first
+	// and Logout last.
+	const sections = $derived.by((): SidebarSection[] => {
+		const groups: SidebarSection[] = [];
 
 		if (isAdmin) {
-			result.push(...adminItems);
+			groups.push(
+				{
+					heading: 'Day to day',
+					items: [
+						link('Kiosks', '/admin/kiosks'),
+						link('Run sheet', '/admin/run-sheet'),
+						link('Service days', '/admin/sessions')
+					]
+				},
+				{
+					heading: 'Families',
+					items: [
+						link('Families', '/admin/families'),
+						link('Medical reviews', '/admin/reviews')
+					]
+				},
+				{
+					heading: 'Settings',
+					items: [
+						// The business's owner: its details, centres and payments.
+						...(isOwner
+							? [{ label: 'Business settings', onclick: () => { sidebarOpen = false; void goto('/business'); } }]
+							: []),
+						// Admins see whether payments are on; the owner manages
+						// them in Business settings.
+						link('Payments', '/admin/payments'),
+						// Superadmins only (the API refuses admins too).
+						...(isSuperadmin ? [link('Service settings', '/admin/settings')] : []),
+						link('Staff', '/admin/users')
+					]
+				}
+			);
 		}
 
 		// Everyone who works here, admins included, has their own account.
 		if (isStaff) {
-			result.push(...staffItems);
+			groups.push({ heading: 'Your account', items: [link('My account', '/staff/account')] });
 		}
 
 		if ($auth.roles.includes('customer')) {
-			result.push(...customerItems);
+			const familyItems = [link('Account', '/account'), link('Bookings', '/bookings')];
+
+			// Families only: no headings. Staff who are also a family here get
+			// their family's links as a group like the rest.
+			groups.push(isStaff ? { heading: 'Your family', items: familyItems } : { items: familyItems });
 		}
 
-		result.push({
-			label: 'Logout',
-			onclick: logout
-		});
+		groups.sort((a, b) => (a.heading ?? '').localeCompare(b.heading ?? ''));
 
-		return result;
+		for (const group of groups) {
+			group.items.sort((a, b) => a.label.localeCompare(b.label));
+		}
+
+		return [
+			// A staff-role login's home is their account, so they get no Home.
+			...(isAdmin || !isStaff ? [{ items: [link('Home', '/home')] }] : []),
+			...groups,
+			{ items: [{ label: 'Logout', onclick: logout }] }
+		];
 	});
 
 	// Kiosk tablets (/{location}/kiosk) are full screen: no header,
@@ -201,7 +171,7 @@
 <ConfirmDialog />
 
 {#snippet sidebar()}
-	<Sidebar {items} />
+	<Sidebar {sections} />
 {/snippet}
 
 {#snippet bottomNav()}
@@ -244,7 +214,7 @@
 		onclose={() => sidebarOpen = false}
 	>
 		<Sidebar
-			{items}
+			{sections}
 			drawer
 		/>
 	</Drawer>

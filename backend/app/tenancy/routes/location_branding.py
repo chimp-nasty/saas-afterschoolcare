@@ -1,6 +1,8 @@
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse
 
 from app.api.response import ApiResponse
 from app.dependencies.auth import resolve_location_id, resolve_tenant_id
@@ -9,8 +11,11 @@ from app.dependencies.service import get_service
 from app.core.cache.cache import cached
 from app.core.cache.stores import cache_stores
 
+from app.errors.tenancy import SiteFileNotFoundError
 from app.tenancy.services.location_branding import LocationBrandingService
+from app.tenancy.services.site import SiteService
 from app.tenancy.schemas.location_branding import PublicLocationResponse
+from app.tenancy.schemas.site import PublicBusinessResponse
 
 
 router = APIRouter(
@@ -41,6 +46,56 @@ def list_public_locations(
         msg="Fetched public locations",
         data=result,
     )
+
+
+# The business's landing page ("/", stage 5): its words, colours, FAQs and
+# which images and policies it has. Public.
+@router.get("/public/business")
+def get_public_business(
+    tenant_id: UUID = Depends(
+        resolve_tenant_id,
+    ),
+    service: SiteService = Depends(
+        get_service(
+            SiteService,
+            db_dependency=get_db,
+        )
+    ),
+) -> ApiResponse[PublicBusinessResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Fetched business",
+        data=service.public_business(tenant_id=tenant_id),
+    )
+
+
+# The business's logo, site icon (its logo if it has none) or current
+# policy PDF: a redirect to a short-lived link to the file. Public. With no
+# icon or logo at all, the platform's own icon.
+# Not under /public/ (a centre's code goes there).
+@router.get("/site-files/{kind}")
+def get_public_file(
+    kind: Literal["logo", "icon", "privacy", "terms"],
+    tenant_id: UUID = Depends(
+        resolve_tenant_id,
+    ),
+    service: SiteService = Depends(
+        get_service(
+            SiteService,
+            db_dependency=get_db,
+        )
+    ),
+) -> RedirectResponse:
+    url = service.public_file_url(tenant_id=tenant_id, kind=kind)
+
+    if url is None and kind == "icon":
+        url = "/favicon.svg"
+
+    if url is None:
+        raise SiteFileNotFoundError()
+
+    # Browsers may reuse the redirect for a while, well inside the link's life.
+    return RedirectResponse(url, status_code=302, headers={"Cache-Control": "private, max-age=600"})
 
 
 @router.get("/public/{location_code}")

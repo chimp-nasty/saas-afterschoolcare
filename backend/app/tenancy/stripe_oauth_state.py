@@ -1,7 +1,7 @@
 """
 The `state` carried through "Connect with Stripe" (Stripe's OAuth for
 linking an existing account). Stripe returns everyone to one registered
-address on the API, so the state says who started it, at which location,
+address on the API, so the state says who started it, for which tenant,
 and which site to send them back to. Signed like the app's tokens but with
 its own audience, so it can't be used as anything else, and it lasts only
 long enough to log in to Stripe and approve.
@@ -23,9 +23,9 @@ _LIFETIME = timedelta(minutes=30)
 @dataclass(frozen=True)
 class OAuthState:
     user_id: UUID
-    location_id: UUID
-    # The location's site, checked against the request's Origin when it
-    # was issued (app/tenancy/site_url.py).
+    tenant_id: UUID
+    # Business settings on the tenant's site, checked when it was issued
+    # (app/tenancy/site_url.py).
     site_url: str
 
 
@@ -35,7 +35,7 @@ def encode_state(state: OAuthState) -> str:
     return encode(
         {
             "sub": str(state.user_id),
-            "loc": str(state.location_id),
+            "tenant": str(state.tenant_id),
             "site": state.site_url,
             "iss": settings.JWT_ISSUER,
             "aud": _AUDIENCE,
@@ -61,7 +61,7 @@ def decode_state(token: str) -> OAuthState | None:
 
         return OAuthState(
             user_id=UUID(claims["sub"]),
-            location_id=UUID(claims["loc"]),
+            tenant_id=UUID(claims["tenant"]),
             site_url=claims["site"],
         )
     except (InvalidTokenError, KeyError, ValueError):

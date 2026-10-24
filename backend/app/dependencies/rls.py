@@ -35,7 +35,9 @@ def get_rls_db(
             )
         """),
         {
-            "location_id": str(ctx.location_id),
+            # Empty without a location (Business settings): RLS reads it
+            # as none.
+            "location_id": str(ctx.location_id) if ctx.location_id else "",
         },
     )
 

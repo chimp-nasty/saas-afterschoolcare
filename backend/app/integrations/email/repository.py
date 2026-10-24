@@ -10,8 +10,8 @@ from app.db.models import (
     EmailStatusEnum,
     EmailTemplateOverride,
     Location,
-    LocationBranding,
     Tenant,
+    TenantBranding,
 )
 
 
@@ -31,7 +31,7 @@ class EmailMessageRepository(Repository):
         *,
         location_id: UUID,
     ) -> Row | None:
-        """The location, its tenant and its brand colour."""
+        """The location, its tenant and the business's brand colour."""
         return (
             self.db.query(
                 Location.code.label("location_code"),
@@ -43,10 +43,10 @@ class EmailMessageRepository(Repository):
                 Tenant.name.label("tenant_name"),
                 Tenant.email.label("tenant_email"),
                 Tenant.custom_domain,
-                LocationBranding.primary_color,
+                TenantBranding.primary_color,
             )
             .join(Tenant, Tenant.id == Location.tenant_id)
-            .outerjoin(LocationBranding, LocationBranding.location_id == Location.id)
+            .outerjoin(TenantBranding, TenantBranding.tenant_id == Location.tenant_id)
             .filter(Location.id == location_id)
             .first()
         )

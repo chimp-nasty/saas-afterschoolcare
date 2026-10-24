@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from app.db.repository import Repository
@@ -62,3 +63,16 @@ class TenantRepository(Repository):
             .filter(Tenant.custom_domain == custom_domain)
             .first()
         )
+
+    def update(
+        self,
+        *,
+        tenant: Tenant,
+        values: dict[str, Any],
+    ) -> Tenant:
+        for field, value in values.items():
+            setattr(tenant, field, value)
+
+        self.db.flush()
+
+        return tenant

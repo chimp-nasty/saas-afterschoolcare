@@ -58,6 +58,11 @@ GRANT INSERT, UPDATE, DELETE ON auth.location_user_roles TO app_user;
 -- Forgot / reset password.
 GRANT INSERT, UPDATE ON auth.password_reset_tokens TO app_user;
 
+-- The platform's site: a platform admin's last login, and invites (RLS:
+-- platform admins only).
+GRANT UPDATE ON auth.platform_admins TO app_user;
+GRANT INSERT, UPDATE ON auth.tenant_invites TO app_user;
+
 
 -- =====================================================
 -- TENANCY
@@ -65,9 +70,18 @@ GRANT INSERT, UPDATE ON auth.password_reset_tokens TO app_user;
 
 GRANT SELECT ON ALL TABLES IN SCHEMA tenancy TO app_user;
 
--- Superadmins connect and disconnect the tenant's Stripe account (RLS
--- limits it to their tenant).
+-- The tenant's owner connects and disconnects its Stripe account, changes
+-- the business's details and adds and edits its locations (RLS limits each
+-- to their own tenant and their tenant permissions).
 GRANT INSERT, UPDATE ON tenancy.tenant_stripe_accounts TO app_user;
+GRANT UPDATE ON tenancy.tenants TO app_user;
+GRANT INSERT, UPDATE ON tenancy.locations TO app_user;
+
+-- Its site (stage 5): branding, FAQs (saved as a whole list) and policy
+-- documents (added, never changed).
+GRANT INSERT, UPDATE ON tenancy.tenant_branding TO app_user;
+GRANT INSERT, UPDATE, DELETE ON tenancy.tenant_faqs TO app_user;
+GRANT INSERT ON tenancy.tenant_documents TO app_user;
 
 
 -- =====================================================

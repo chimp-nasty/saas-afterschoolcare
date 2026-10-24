@@ -16,8 +16,13 @@ TENANT_1_USER_PASSWORD = DEV_PASSWORD
 TENANT_2_USER_EMAIL = "t2user@test.com"
 TENANT_2_USER_PASSWORD = DEV_PASSWORD
 
-# Tenant 1's superadmin (business settings such as services and prices).
+# Each tenant's owner: its superadmin (business settings such as services
+# and prices) and holder of its tenant permissions.
 TENANT_1_SUPERADMIN_EMAIL = "sa1user@test.com"
+TENANT_2_SUPERADMIN_EMAIL = "sa2user@test.com"
+
+# The platform's own admin (the platform's site: localhost:5173/platform).
+PLATFORM_ADMIN_EMAIL = "platform@test.com"
 
 
 def up(conn: Connection) -> None:
@@ -437,116 +442,94 @@ def up(conn: Connection) -> None:
     )
 
     # =========================
-    # TENANT 1 - LOCATION 1 BRANDING
+    # BRANDING (one per business)
     # =========================
 
-    conn.execute(
-        text("""
-            INSERT INTO tenancy.location_branding (
-                location_id,
-                display_name,
-                primary_color,
-                secondary_color
-            )
-            VALUES (
-                :location_id,
-                'Tenant 1 - Location 1',
-                '#5E2BFF',
-                '#E8FFC2'
-            )
-            ON CONFLICT (location_id)
-            DO UPDATE SET
-                display_name = EXCLUDED.display_name,
-                primary_color = EXCLUDED.primary_color,
-                secondary_color = EXCLUDED.secondary_color;
-        """),
-        {
-            "location_id": tenant_1_location_1_id,
-        },
-    )
+    for tenant_id, primary_color, secondary_color in (
+        (tenant_1_id, "#5E2BFF", "#E8FFC2"),
+        (tenant_2_id, "#0369A1", "#FDBA74"),
+    ):
+        conn.execute(
+            text("""
+                INSERT INTO tenancy.tenant_branding (tenant_id, primary_color, secondary_color)
+                VALUES (:tenant_id, :primary_color, :secondary_color)
+                ON CONFLICT (tenant_id)
+                DO UPDATE SET
+                    primary_color = EXCLUDED.primary_color,
+                    secondary_color = EXCLUDED.secondary_color;
+            """),
+            {
+                "tenant_id": tenant_id,
+                "primary_color": primary_color,
+                "secondary_color": secondary_color,
+            },
+        )
 
     # =========================
-    # TENANT 1 - LOCATION 2 BRANDING
+    # TENANT OWNERS
     # =========================
+    # Each tenant's owner: superadmin at all its locations (the
+    # tenant_owners trigger) and holder of every tenant permission.
 
-    conn.execute(
-        text("""
-            INSERT INTO tenancy.location_branding (
-                location_id,
-                display_name,
-                primary_color,
-                secondary_color
-            )
-            VALUES (
-                :location_id,
-                'Tenant 1 - Location 2',
-                '#7C3AED',
-                '#D9F99D'
-            )
-            ON CONFLICT (location_id)
-            DO UPDATE SET
-                display_name = EXCLUDED.display_name,
-                primary_color = EXCLUDED.primary_color,
-                secondary_color = EXCLUDED.secondary_color;
-        """),
-        {
-            "location_id": tenant_1_location_2_id,
-        },
-    )
-
-    # =========================
-    # TENANT 2 - LOCATION 2 BRANDING
-    # =========================
-
-    conn.execute(
-        text("""
-            INSERT INTO tenancy.location_branding (
-                location_id,
-                display_name,
-                primary_color,
-                secondary_color
-            )
-            VALUES (
-                :location_id,
-                'Tenant 2 - Location 2',
-                '#0369A1',
-                '#FDBA74'
-            )
-            ON CONFLICT (location_id)
-            DO UPDATE SET
-                display_name = EXCLUDED.display_name,
-                primary_color = EXCLUDED.primary_color,
-                secondary_color = EXCLUDED.secondary_color;
-        """),
-        {
-            "location_id": tenant_2_location_2_id,
-        },
-    )
-
-    # =========================
-    # TENANT 1 SUPERADMIN (location 1)
-    # =========================
-
-    conn.execute(
-        text("""
-            WITH superadmin AS (
+    for email, first_name, tenant_id in (
+        (TENANT_1_SUPERADMIN_EMAIL, "Super", tenant_1_id),
+        (TENANT_2_SUPERADMIN_EMAIL, "Super Two", tenant_2_id),
+    ):
+        owner_id = conn.execute(
+            text("""
                 INSERT INTO auth.users (
                     email, password_hash, first_name, last_name,
                     terms_accepted_at, terms_version, is_active
                 )
-                VALUES (:email, :password_hash, 'Super', 'Admin', now(), 'v1', TRUE)
+                VALUES (:email, :password_hash, :first_name, 'Admin', now(), 'v1', TRUE)
                 ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
-                RETURNING id
-            )
-            INSERT INTO auth.location_user_roles (user_id, location_id, role_id)
-            SELECT superadmin.id, :location_id, r.id
-            FROM superadmin, auth.roles r
-            WHERE r.code = 'superadmin'
-            ON CONFLICT (user_id, location_id, role_id) DO NOTHING;
+                RETURNING id;
+            """),
+            {
+                "email": email,
+                "password_hash": password_hash,
+                "first_name": first_name,
+            },
+        ).scalar_one()
+
+        conn.execute(
+            text("""
+                INSERT INTO auth.tenant_owners (tenant_id, user_id)
+                VALUES (:tenant_id, :user_id)
+                ON CONFLICT (tenant_id) DO NOTHING;
+            """),
+            {
+                "tenant_id": tenant_id,
+                "user_id": owner_id,
+            },
+        )
+
+        conn.execute(
+            text("""
+                INSERT INTO auth.user_tenant_permissions (user_id, tenant_id, permission_id)
+                SELECT :user_id, :tenant_id, p.id
+                FROM auth.permissions p
+                WHERE p.scope = 'tenant'
+                ON CONFLICT (user_id, tenant_id, permission_id) DO NOTHING;
+            """),
+            {
+                "tenant_id": tenant_id,
+                "user_id": owner_id,
+            },
+        )
+
+    # =========================
+    # PLATFORM ADMIN
+    # =========================
+
+    conn.execute(
+        text("""
+            INSERT INTO auth.platform_admins (email, password_hash, first_name, last_name)
+            VALUES (:email, :password_hash, 'Platform', 'Admin')
+            ON CONFLICT (email) DO NOTHING;
         """),
         {
-            "email": TENANT_1_SUPERADMIN_EMAIL,
+            "email": PLATFORM_ADMIN_EMAIL,
             "password_hash": password_hash,
-            "location_id": tenant_1_location_1_id,
         },
     )

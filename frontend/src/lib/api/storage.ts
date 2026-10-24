@@ -10,7 +10,7 @@ import type { SignedUploadResponse } from '$lib/api/schema';
  * Resolves true once storage has the file.
  */
 export function uploadToStorage(
-	upload: SignedUploadResponse,
+	upload: Pick<SignedUploadResponse, 'url' | 'fields'>,
 	file: File,
 	onProgress?: (percent: number) => void
 ): Promise<boolean> {

@@ -22,7 +22,8 @@ def create_app() -> FastAPI:
 
     configure_middleware(app)
 
-    app.include_router(api_router)
+    # Served under /api on each tenant's own site (docs/tenant-administration.md).
+    app.include_router(api_router, prefix="/api")
 
     ExceptionHandlerRegistry.register(app)
 

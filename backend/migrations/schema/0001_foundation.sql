@@ -18,6 +18,15 @@ CREATE TYPE auth.permission_channel_enum AS ENUM (
     'kiosk'
 );
 
+-- What a permission is for (docs/tenant-administration.md): 'location'
+-- permissions are granted to roles at a location; 'tenant' permissions
+-- (the whole business: its settings, locations, Stripe, domains) are
+-- granted directly to the tenant's owner.
+CREATE TYPE auth.permission_scope_enum AS ENUM (
+    'location',
+    'tenant'
+);
+
 
 -- =====================================================
 -- updated_at

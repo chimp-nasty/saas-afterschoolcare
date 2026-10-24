@@ -26,9 +26,7 @@ class PublicLocationResponse(BaseModel):
     phone: str | None
     email: str | None
 
-    display_name: str | None
-    logo_key: str | None
-
+    # The business's branding (one brand per business: tenant_branding).
+    has_logo: bool
     primary_color: str | None
     secondary_color: str | None
-    font_family: str | None

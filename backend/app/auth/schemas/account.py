@@ -5,7 +5,7 @@ class AccountRoleResponse(BaseModel):
     """One of your roles at one of your locations."""
 
     location_code: str
-    location_name: str | None
+    location_name: str
     role_code: str
     role_name: str
 

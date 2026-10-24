@@ -25,6 +25,20 @@ from app.errors.auth import (
     UserCollisionError,
 )
 from app.errors.kiosk import KioskKindTakenError, StaffKioskNotOnShiftError
+from app.errors.platform import (
+    InviteNotUsableError,
+    TenantActivePlatformOnlyError,
+    TenantCodeReservedError,
+    TenantCodeTakenError,
+)
+from app.errors.tenancy import (
+    AbnInvalidError,
+    FaqLimitError,
+    SiteColourError,
+    LocationCodeReservedError,
+    LocationCodeTakenError,
+    LocationTimezoneError,
+)
 from app.errors.base import ApplicationError
 from app.errors.bookings import (
     BookingAttemptFinishedError,
@@ -191,6 +205,19 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     # Staff PINs (schema/0004): set_staff_pin.
     "ck_staff_pins_staff_only": StaffPinStaffOnlyError,
     "ck_staff_pins_pin_format": PinFormatError,
+    # Business settings (schema/0002).
+    "ck_tenants_abn": AbnInvalidError,
+    "uq_locations_tenant_code": LocationCodeTakenError,
+    "ck_locations_code_reserved": LocationCodeReservedError,
+    "ck_locations_timezone": LocationTimezoneError,
+    # The platform and registration (schema/0002, 0003).
+    "ck_tenant_invites_usable": InviteNotUsableError,
+    "uq_tenants_code": TenantCodeTakenError,
+    "ck_tenants_code_reserved": TenantCodeReservedError,
+    "ck_tenants_active_platform_only": TenantActivePlatformOnlyError,
+    # The business's site (stage 5).
+    "ck_tenant_branding_colors": SiteColourError,
+    "ck_tenant_faqs_limit": FaqLimitError,
 }
 
 

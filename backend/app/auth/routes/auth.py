@@ -6,6 +6,7 @@ from app.api.response import ApiResponse
 from app.dependencies.db import get_db
 from app.dependencies.auth import (
     resolve_location_id,
+    resolve_tenant_id,
     get_current_token_context,
 )
 from app.dependencies.service import get_service
@@ -45,6 +46,80 @@ def login(
         location_id=location_id,
     )
 
+    _set_access_cookie(response, access_token)
+
+    return ApiResponse(
+        ok=True,
+        msg="Login successful",
+        data=None,
+    )
+
+
+# Business settings (/business): the tenant's owner, with no location. No
+# permission (it's a login); the tenant is the site's.
+@router.post("/business/login")
+def business_login(
+    body: LoginRequest,
+    response: Response,
+    tenant_id: UUID = Depends(
+        resolve_tenant_id,
+    ),
+    service: AuthService = Depends(
+        get_service(
+            AuthService,
+            db_dependency=get_db,
+        )
+    ),
+) -> ApiResponse[None]:
+    access_token = service.business_login(
+        body=body,
+        tenant_id=tenant_id,
+    )
+
+    _set_access_cookie(response, access_token)
+
+    return ApiResponse(
+        ok=True,
+        msg="Login successful",
+        data=None,
+    )
+
+
+# Another location of the same business, without logging in again ("Manage
+# centre" in Business settings). Any login may ask; it needs a role at that
+# location, which is the check that matters.
+@router.post("/switch-location/{location_code}")
+def switch_location(
+    response: Response,
+    location_id: UUID = Depends(
+        resolve_location_id,
+    ),
+    ctx: TokenContext = Depends(
+        get_current_token_context,
+    ),
+    service: AuthService = Depends(
+        get_service(
+            AuthService,
+            db_dependency=get_db,
+        )
+    ),
+) -> ApiResponse[None]:
+    access_token = service.switch_location(
+        ctx=ctx,
+        location_id=location_id,
+    )
+
+    _set_access_cookie(response, access_token)
+
+    return ApiResponse(
+        ok=True,
+        msg="Switched centre",
+        data=None,
+    )
+
+
+def _set_access_cookie(response: Response, access_token: str) -> None:
+    """The login cookie: no Domain, so it belongs to this tenant's site only."""
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -56,12 +131,6 @@ def login(
             settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
             * 60
         ),
-    )
-
-    return ApiResponse(
-        ok=True,
-        msg="Login successful",
-        data=None,
     )
 
 

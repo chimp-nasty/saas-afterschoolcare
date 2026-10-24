@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -15,7 +15,7 @@ import type {
 
 
 export type ListChildrenFilter = Omit<
-	NonNullable<operations['list_children_children_v1__get']['parameters']['query']>,
+	NonNullable<operations['list_children_api_children_v1__get']['parameters']['query']>,
 	keyof Pagination
 >;
 
@@ -24,7 +24,7 @@ export function createChildrenApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/children/v1`;
+		`${API_BASE}/children/v1`;
 
 	return {
 		getById(childId: string) {

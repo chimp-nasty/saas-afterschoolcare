@@ -150,6 +150,7 @@ def fake_storage(monkeypatch) -> type[FakeStorage]:
     for module in (
         "app.public.services.child_documents_create",
         "app.public.services.child_documents_read",
+        "app.tenancy.services.site",
     ):
         monkeypatch.setattr(f"{module}.StorageClient", FakeStorage)
 
@@ -173,6 +174,20 @@ def admin(api: Api):
 def superadmin(api: Api):
     """A superadmin at tenant1/location1 (business settings), logged in on the website."""
     return api.new_staff(role="superadmin", pin=None).client
+
+
+@pytest.fixture
+def owner(api: Api):
+    """
+    Tenant1's owner (seeded: one per tenant), logged in at location1: its
+    superadmin, holding every tenant permission.
+    """
+    return api.login("sa1user@test.com", "123", tenant="tenant1", location="location1")
+
+
+@pytest.fixture
+def tenant2_owner(api: Api):
+    return api.login("sa2user@test.com", "123", tenant="tenant2", location="location2")
 
 
 @pytest.fixture

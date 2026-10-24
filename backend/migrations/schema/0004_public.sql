@@ -353,8 +353,17 @@ CREATE TABLE public.customer_profile (
     -- Their own words, when the relation is "other".
     emergency_contact_relation_other VARCHAR(100),
 
+    -- The business's terms the family accepted when they signed up (its
+    -- current version then; tenancy.tenant_documents keeps every version).
+    -- None if it had none. Never changes (trg_customer_profile_terms_fixed).
+    terms_document_id UUID,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_customer_profile_terms_document
+        FOREIGN KEY (terms_document_id)
+        REFERENCES tenancy.tenant_documents (id),
 
     CONSTRAINT fk_customer_profile_user
         FOREIGN KEY (user_id)
@@ -386,6 +395,28 @@ CREATE TABLE public.customer_profile (
 CREATE TRIGGER trg_customer_profile_updated_at
     BEFORE UPDATE ON public.customer_profile
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- What a family accepted at sign-up stays on record.
+CREATE FUNCTION public.enforce_customer_profile_terms_fixed()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.terms_document_id IS DISTINCT FROM OLD.terms_document_id THEN
+        RAISE EXCEPTION 'The terms a family accepted can''t be changed'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_customer_profile_terms_fixed',
+                  TABLE = 'customer_profile',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_customer_profile_terms_fixed
+    BEFORE UPDATE ON public.customer_profile
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_customer_profile_terms_fixed();
 
 -- Families own their emergency contact: anyone else with a session (an
 -- admin correcting the family's phone or address) can't set or change it.
@@ -3578,7 +3609,9 @@ $$;
 -- does it. Superadmins are set up with the tenant (slice 5), not here.
 
 -- Staff roles at a location, from a user session:
---   * a superadmin role is never added, changed or removed here
+--   * a superadmin role is never added, changed or removed here, except the
+--     tenant owner's own, added for them at each location
+--     (auth.grant_owner_superadmin)
 --   * nobody removes or changes their own staff role (no locking yourself out)
 --   * a location always keeps at least one admin or superadmin
 -- Customer roles (families joining a centre) aren't affected. Writes with
@@ -3604,6 +3637,21 @@ BEGIN
 
     IF TG_OP <> 'DELETE' THEN
         SELECT code INTO v_new_role FROM auth.roles WHERE id = NEW.role_id;
+    END IF;
+
+    -- The one exception: the tenant's owner made superadmin at a location
+    -- (auth.grant_owner_superadmin, when they add one).
+    IF TG_OP = 'INSERT'
+       AND v_new_role = 'superadmin'
+       AND EXISTS (
+           SELECT 1
+           FROM auth.tenant_owners o
+           JOIN tenancy.locations l
+               ON l.tenant_id = o.tenant_id
+           WHERE o.user_id = NEW.user_id
+             AND l.id = NEW.location_id
+       ) THEN
+        RETURN NEW;
     END IF;
 
     IF 'superadmin' IN (COALESCE(v_old_role, ''), COALESCE(v_new_role, '')) THEN

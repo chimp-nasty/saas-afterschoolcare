@@ -59,7 +59,7 @@
     const frame = $derived(
         messageFrame(
             data.family.first_name,
-            data.location.display_name ?? data.location.location_name ?? data.location.tenant_name
+            data.location.location_name
         )
     );
 

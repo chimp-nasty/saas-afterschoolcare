@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -14,7 +14,7 @@ export function createAuthApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/auth/v1`;
+		`${API_BASE}/auth/v1`;
 
 	return {
 		login(locationCode: string, body: LoginRequest) {
@@ -24,6 +24,32 @@ export function createAuthApi(
 					method: 'POST',
 					body,
 					fetcher
+				}
+			);
+		},
+
+		// Business settings (/business): the owner, with no location.
+		businessLogin(body: LoginRequest) {
+			return apiWrapper<null>(
+				`${baseUrl}/business/login`,
+				{
+					method: 'POST',
+					body,
+					fetcher
+				}
+			);
+		},
+
+		// Another centre of the business, without logging in again (needs a
+		// role there): "Manage centre" in Business settings.
+		switchLocation(locationCode: string) {
+			return apiWrapper<null>(
+				`${baseUrl}/switch-location/${locationCode}`,
+				{
+					method: 'POST',
+					fetcher,
+					// The page moves on; errors still toast.
+					quiet: true
 				}
 			);
 		},

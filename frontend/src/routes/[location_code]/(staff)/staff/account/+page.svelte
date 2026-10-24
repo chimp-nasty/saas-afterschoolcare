@@ -92,7 +92,7 @@
     {#if data.account}
         <ul class="flex flex-col gap-1">
             {#each data.account.roles as role (`${role.location_code}:${role.role_code}`)}
-                <li>{role.location_name ?? role.location_code}: {role.role_name}</li>
+                <li>{role.location_name}: {role.role_name}</li>
             {/each}
         </ul>
     {/if}

@@ -15,6 +15,7 @@ from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.role import RoleRepository
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.public.repositories.customer_profile import CustomerProfileRepository
+from app.tenancy.repositories.tenant_site import TenantSiteRepository
 from app.public.schemas.enums import EmergencyRelation
 
 from app.auth.schemas.auth import RegistrationRequest
@@ -33,6 +34,7 @@ class CustomerService:
         location_user_roles: LocationUserRoleRepository,
         roles: RoleRepository,
         customer_profiles: CustomerProfileRepository,
+        site_repository: TenantSiteRepository,
         rls_context: RlsContextRepository,
     ):
         self.db = db
@@ -41,6 +43,7 @@ class CustomerService:
         self.location_user_roles = location_user_roles
         self.roles = roles
         self.customer_profiles = customer_profiles
+        self.site_repository = site_repository
         self.rls_context = rls_context
         self.emails = EmailOutbox(db)
 
@@ -84,8 +87,16 @@ class CustomerService:
             role_id=customer_role.id
         )
 
+        # The business's terms they've just accepted: its current version,
+        # kept on record (customer_profile.terms_document_id).
+        terms = self.site_repository.current_document_for_location(
+            location_id=location_id,
+            kind="terms",
+        )
+
         self.customer_profiles.create(
-            user_id=user.id
+            user_id=user.id,
+            terms_document_id=terms.id if terms else None,
         )
 
         self.emails.queue(WelcomeEmail(

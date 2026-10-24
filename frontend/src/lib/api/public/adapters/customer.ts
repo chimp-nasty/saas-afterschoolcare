@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -13,7 +13,7 @@ export function createCustomerApi(
 	fetcher?: typeof fetch
 ) {
     const baseUrl =
-		`${PUBLIC_API_URL}/customer/v1`;
+		`${API_BASE}/customer/v1`;
 
     return {
         onboard(locationCode: string, body: RegistrationRequest) {

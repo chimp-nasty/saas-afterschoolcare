@@ -39,7 +39,6 @@ VALUES
     ('superadmin', 'staff_accounts', 'd', 'web'),
     ('superadmin', 'staff_admin_roles', 'u', 'web'),
     ('superadmin', 'stripe_account', 'r', 'web'),
-    ('superadmin', 'stripe_account', 'u', 'web'),
     ('superadmin', 'families', 'r', 'web'),
     ('superadmin', 'families', 'u', 'web'),
     ('superadmin', 'booking_groups', 'r', 'web'),

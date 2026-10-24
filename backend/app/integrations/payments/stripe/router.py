@@ -10,7 +10,7 @@ from app.integrations.payments.stripe.webhook import StripeWebhookService
 # Exempt from rate limiting (app/middleware/__init__.py). Stripe signs every
 # request; StripeWebhookService rejects anything unsigned or forged.
 router = APIRouter(
-    prefix="/api/v1/webhooks",
+    prefix="/v1/webhooks",
     tags=["webhooks"],
 )
 

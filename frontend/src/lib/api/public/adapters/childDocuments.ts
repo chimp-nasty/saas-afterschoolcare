@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -14,7 +14,7 @@ export function createChildDocumentsApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/child-documents/v1`;
+		`${API_BASE}/child-documents/v1`;
 
 	return {
 		// The child's current documents, newest first.

@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import RedirectResponse
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
-from app.dependencies.auth import require_permission
+from app.dependencies.auth import require_permission, require_tenant_permission, site_origin
 from app.dependencies.db import get_db
 from app.dependencies.rls import get_rls_db
 from app.dependencies.service import get_service
@@ -12,12 +12,12 @@ from app.tenancy.schemas.stripe_account import StripeAccountStatusResponse, Stri
 from app.tenancy.services.stripe_connect import StripeConnectService
 
 
-# Admin › Payments (slice 5): the business's Stripe account (Stripe
-# Connect). stripe_account r: admins and superadmins see whether it can
-# take payments; stripe_account u: superadmins connect it (Stripe's hosted
-# onboarding, or "Connect with Stripe" to link an existing account),
-# refresh its status and turn payments off or on. A business setting, so
-# superadmins only, like service settings.
+# The business's Stripe account (Stripe Connect; slice 5). Managed in
+# Business settings › Payments (/business/payments) by the tenant's owner
+# (tenant_stripe_account r/u: connect it through Stripe's hosted onboarding
+# or "Connect with Stripe", refresh its status, turn payments off or on).
+# A centre's admins and superadmins only see whether it takes payments
+# (stripe_account r, Admin › Payments). docs/tenant-administration.md.
 router = APIRouter(
     prefix="/stripe-account/v1",
     tags=["stripe-account"],
@@ -26,26 +26,36 @@ router = APIRouter(
 _service = get_service(StripeConnectService, db_dependency=get_rls_db)
 
 
+# A centre's admin pages: read only.
 @router.get("/")
 def get_stripe_account(
     ctx: TokenContext = Depends(require_permission(resource="stripe_account", action="r")),
     service: StripeConnectService = Depends(_service),
 ) -> ApiResponse[StripeAccountStatusResponse]:
-    return ApiResponse(ok=True, msg="Fetched payments account", data=service.status(location_id=ctx.location_id))
+    return ApiResponse(ok=True, msg="Fetched payments account", data=service.status(tenant_id=ctx.tenant_id))
 
 
-# A one-time link to Stripe's onboarding, which returns to Admin › Payments
-# on this location's site (checked against the request's Origin).
+# Business settings: the same, for the owner (who may have no location).
+@router.get("/tenant")
+def get_tenant_stripe_account(
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_stripe_account", action="r")),
+    service: StripeConnectService = Depends(_service),
+) -> ApiResponse[StripeAccountStatusResponse]:
+    return ApiResponse(ok=True, msg="Fetched payments account", data=service.status(tenant_id=ctx.tenant_id))
+
+
+# A one-time link to Stripe's onboarding, which returns to Business
+# settings › Payments on this tenant's site.
 @router.post("/onboarding")
 def start_stripe_onboarding(
-    origin: str | None = Header(default=None),
-    ctx: TokenContext = Depends(require_permission(resource="stripe_account", action="u")),
+    origin: str = Depends(site_origin),
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_stripe_account", action="u")),
     service: StripeConnectService = Depends(_service),
 ) -> ApiResponse[StripeOnboardingResponse]:
     return ApiResponse(
         ok=True,
         msg="Continuing to Stripe",
-        data=service.onboarding_link(location_id=ctx.location_id, origin=origin),
+        data=service.onboarding_link(tenant_id=ctx.tenant_id, origin=origin),
     )
 
 
@@ -53,21 +63,21 @@ def start_stripe_onboarding(
 # existing account (OAuth). Stripe returns to the callback below.
 @router.post("/oauth")
 def start_stripe_oauth(
-    origin: str | None = Header(default=None),
-    ctx: TokenContext = Depends(require_permission(resource="stripe_account", action="u")),
+    origin: str = Depends(site_origin),
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_stripe_account", action="u")),
     service: StripeConnectService = Depends(_service),
 ) -> ApiResponse[StripeOnboardingResponse]:
     return ApiResponse(
         ok=True,
         msg="Continuing to Stripe",
-        data=service.oauth_link(location_id=ctx.location_id, user_id=ctx.user_id, origin=origin),
+        data=service.oauth_link(tenant_id=ctx.tenant_id, user_id=ctx.user_id, origin=origin),
     )
 
 
 # Stripe's OAuth returns the browser here (one registered address for every
 # tenant). No login is needed: the signed state says who started it, and
-# the account is saved as them (RLS: a superadmin of that business). Sends
-# them back to Admin › Payments on their own site.
+# the account is saved as them (RLS: the owner of that business). Sends
+# them back to Business settings › Payments on their own site.
 @router.get("/oauth/callback")
 def finish_stripe_oauth(
     code: str | None = Query(default=None),
@@ -85,31 +95,31 @@ def finish_stripe_oauth(
 
 @router.post("/refresh")
 def refresh_stripe_account(
-    ctx: TokenContext = Depends(require_permission(resource="stripe_account", action="u")),
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_stripe_account", action="u")),
     service: StripeConnectService = Depends(_service),
 ) -> ApiResponse[StripeAccountStatusResponse]:
-    return ApiResponse(ok=True, msg="Payments account refreshed", data=service.refresh(location_id=ctx.location_id))
+    return ApiResponse(ok=True, msg="Payments account refreshed", data=service.refresh(tenant_id=ctx.tenant_id))
 
 
 @router.post("/disconnect")
 def disconnect_stripe_account(
-    ctx: TokenContext = Depends(require_permission(resource="stripe_account", action="u")),
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_stripe_account", action="u")),
     service: StripeConnectService = Depends(_service),
 ) -> ApiResponse[StripeAccountStatusResponse]:
     return ApiResponse(
         ok=True,
         msg="Online payments turned off",
-        data=service.set_disconnected(location_id=ctx.location_id, disconnected=True),
+        data=service.set_disconnected(tenant_id=ctx.tenant_id, disconnected=True),
     )
 
 
 @router.post("/reconnect")
 def reconnect_stripe_account(
-    ctx: TokenContext = Depends(require_permission(resource="stripe_account", action="u")),
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_stripe_account", action="u")),
     service: StripeConnectService = Depends(_service),
 ) -> ApiResponse[StripeAccountStatusResponse]:
     return ApiResponse(
         ok=True,
         msg="Online payments turned on",
-        data=service.set_disconnected(location_id=ctx.location_id, disconnected=False),
+        data=service.set_disconnected(tenant_id=ctx.tenant_id, disconnected=False),
     )

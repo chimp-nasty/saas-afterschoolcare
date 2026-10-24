@@ -29,7 +29,7 @@
 	let kind = $state<Kind>('loading');
 	let problem = $state<string | null>(null);
 
-	const centreName = $derived(data.location.location_name || data.location.tenant_name);
+	const centreName = $derived(data.location.location_name);
 
 	async function detect() {
 		const family = await familyApi.device();

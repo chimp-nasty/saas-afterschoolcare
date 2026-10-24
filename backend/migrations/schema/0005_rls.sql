@@ -33,6 +33,48 @@ AS $$
     );
 $$;
 
+-- The request is a platform admin's (app.platform_admin_id, set for the
+-- platform's site only): an active one. SECURITY DEFINER: reads past the
+-- platform_admins policies.
+CREATE FUNCTION auth.is_platform_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.platform_admins a
+        WHERE a.id = NULLIF(current_setting('app.platform_admin_id', true), '')::uuid
+          AND a.is_active
+    );
+$$;
+
+-- The current user holds a tenant permission (docs/tenant-administration.md)
+-- for the tenant: read from the grants each time, so taking one away works
+-- at once, whatever the token still says.
+CREATE FUNCTION auth.has_tenant_permission(
+    p_tenant_id uuid,
+    p_resource text,
+    p_action text
+)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM auth.user_tenant_permissions utp
+        JOIN auth.permissions p
+            ON p.id = utp.permission_id
+        WHERE utp.user_id = auth.current_user_id()
+          AND utp.tenant_id = p_tenant_id
+          AND p.resource = p_resource
+          AND p.action = p_action
+    );
+$$;
+
 -- Staff and above at the row's location see every row there; customers
 -- at that location see only rows they own.
 CREATE FUNCTION auth.can_access_location_row(
@@ -139,8 +181,12 @@ ALTER TABLE tenancy.tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenants FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.locations FORCE ROW LEVEL SECURITY;
-ALTER TABLE tenancy.location_branding ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tenancy.location_branding FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_branding ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_branding FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_faqs FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_documents FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_stripe_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_stripe_accounts FORCE ROW LEVEL SECURITY;
 
@@ -152,15 +198,41 @@ CREATE POLICY locations_read_policy
     ON tenancy.locations FOR SELECT
     USING (true);
 
-CREATE POLICY location_branding_read_policy
-    ON tenancy.location_branding FOR SELECT
+-- The business's site (stage 5): anyone reads it (its public pages); its
+-- owner changes it. Documents are only ever added (versions).
+CREATE POLICY tenant_branding_read_policy
+    ON tenancy.tenant_branding FOR SELECT
     USING (true);
 
+CREATE POLICY tenant_branding_write_policy
+    ON tenancy.tenant_branding FOR ALL
+    USING (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'))
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'));
+
+CREATE POLICY tenant_faqs_read_policy
+    ON tenancy.tenant_faqs FOR SELECT
+    USING (true);
+
+CREATE POLICY tenant_faqs_write_policy
+    ON tenancy.tenant_faqs FOR ALL
+    USING (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'))
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'));
+
+CREATE POLICY tenant_documents_read_policy
+    ON tenancy.tenant_documents FOR SELECT
+    USING (true);
+
+CREATE POLICY tenant_documents_insert_policy
+    ON tenancy.tenant_documents FOR INSERT
+    WITH CHECK (
+        auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u')
+        AND uploaded_by = auth.current_user_id()
+    );
+
 -- A tenant's Stripe account: read by anyone with a role at one of its
--- locations (a family's checkout needs it; admins see the status);
--- connected and changed by its superadmins (permissions decide who uses
--- the screen). Stripe's webhooks update it through
--- tenancy.sync_stripe_account.
+-- locations (a family's checkout needs it; admins see the status) and by
+-- its owner; connected and changed by the owner (tenant_stripe_account u).
+-- Stripe's webhooks update it through tenancy.sync_stripe_account.
 CREATE POLICY tenant_stripe_accounts_read_policy
     ON tenancy.tenant_stripe_accounts FOR SELECT
     USING (
@@ -170,71 +242,64 @@ CREATE POLICY tenant_stripe_accounts_read_policy
             WHERE l.tenant_id = tenant_stripe_accounts.tenant_id
               AND auth.has_location_role(l.id)
         )
+        OR auth.has_tenant_permission(tenant_id, 'tenant_stripe_account', 'r')
+        -- The platform's tenant list shows whether each takes payments.
+        OR auth.is_platform_admin()
     );
 
 CREATE POLICY tenant_stripe_accounts_write_policy
     ON tenancy.tenant_stripe_accounts FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1
-            FROM auth.location_user_roles lur
-            JOIN auth.roles r
-                ON r.id = lur.role_id
-            JOIN tenancy.locations l
-                ON l.id = lur.location_id
-            WHERE lur.user_id = auth.current_user_id()
-              AND l.tenant_id = tenant_stripe_accounts.tenant_id
-              AND r.code = 'superadmin'
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1
-            FROM auth.location_user_roles lur
-            JOIN auth.roles r
-                ON r.id = lur.role_id
-            JOIN tenancy.locations l
-                ON l.id = lur.location_id
-            WHERE lur.user_id = auth.current_user_id()
-              AND l.tenant_id = tenant_stripe_accounts.tenant_id
-              AND r.code = 'superadmin'
-        )
-    );
+    USING (auth.has_tenant_permission(tenant_id, 'tenant_stripe_account', 'u'))
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_stripe_account', 'u'));
 
--- Superadmins of a tenant can manage it.
-CREATE POLICY tenants_write_policy
-    ON tenancy.tenants FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1
-            FROM auth.location_user_roles lur
-            JOIN auth.roles r
-                ON r.id = lur.role_id
-            JOIN tenancy.locations l
-                ON l.id = lur.location_id
-            WHERE lur.user_id = auth.current_user_id()
-              AND l.tenant_id = tenants.id
-              AND r.code = 'superadmin'
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1
-            FROM auth.location_user_roles lur
-            JOIN auth.roles r
-                ON r.id = lur.role_id
-            JOIN tenancy.locations l
-                ON l.id = lur.location_id
-            WHERE lur.user_id = auth.current_user_id()
-              AND l.tenant_id = tenants.id
-              AND r.code = 'superadmin'
-        )
-    );
+-- The owner changes the business's details. Tenants are created at
+-- registration (server code), never from a user session.
+CREATE POLICY tenants_update_policy
+    ON tenancy.tenants FOR UPDATE
+    USING (auth.has_tenant_permission(id, 'tenant_settings', 'u'))
+    WITH CHECK (auth.has_tenant_permission(id, 'tenant_settings', 'u'));
+
+-- The owner adds and edits the tenant's locations.
+CREATE POLICY locations_insert_policy
+    ON tenancy.locations FOR INSERT
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_locations', 'c'));
+
+CREATE POLICY locations_update_policy
+    ON tenancy.locations FOR UPDATE
+    USING (auth.has_tenant_permission(tenant_id, 'tenant_locations', 'u'))
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_locations', 'u'));
 
 
 -- =====================================================
 -- AUTH
 -- =====================================================
+
+-- Platform admins (schema/0003): themselves, and by email while logging in.
+ALTER TABLE auth.platform_admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.platform_admins FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY platform_admins_self_policy
+    ON auth.platform_admins FOR SELECT
+    USING (id = NULLIF(current_setting('app.platform_admin_id', true), '')::uuid);
+
+CREATE POLICY platform_admins_login_policy
+    ON auth.platform_admins FOR SELECT
+    USING (email = NULLIF(current_setting('app.login_email', true), ''));
+
+CREATE POLICY platform_admins_update_policy
+    ON auth.platform_admins FOR UPDATE
+    USING (id = NULLIF(current_setting('app.platform_admin_id', true), '')::uuid)
+    WITH CHECK (id = NULLIF(current_setting('app.platform_admin_id', true), '')::uuid);
+
+-- Invites are the platform's. Registration reads and uses one through
+-- auth.usable_invite_email and auth.register_tenant.
+ALTER TABLE auth.tenant_invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth.tenant_invites FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_invites_platform_policy
+    ON auth.tenant_invites FOR ALL
+    USING (auth.is_platform_admin())
+    WITH CHECK (auth.is_platform_admin());
 
 ALTER TABLE auth.roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.roles FORCE ROW LEVEL SECURITY;

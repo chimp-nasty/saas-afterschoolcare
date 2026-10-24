@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -17,7 +17,7 @@ export const KIOSK_SESSION_HEADER = 'X-Kiosk-Session';
 // by its httpOnly device cookie; the person by `token`. Every call is
 // silent: the kiosk shows outcomes on screen, not as toasts.
 export function createFamilyKioskApi(locationCode: string) {
-	const baseUrl = `${PUBLIC_API_URL}/kiosk/v1/${locationCode}`;
+	const baseUrl = `${API_BASE}/kiosk/v1/${locationCode}`;
 	const session = (token: string) => ({ [KIOSK_SESSION_HEADER]: token });
 
 	return {

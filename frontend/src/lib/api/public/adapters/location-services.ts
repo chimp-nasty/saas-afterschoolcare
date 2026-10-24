@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -13,7 +13,7 @@ export function createLocationServicesApi(
     fetcher?: typeof fetch
 ) {
     const baseUrl =
-        `${PUBLIC_API_URL}/location-services/v1`;
+        `${API_BASE}/location-services/v1`;
 
     return {
         list() {

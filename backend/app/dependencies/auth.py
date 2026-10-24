@@ -1,9 +1,8 @@
-from urllib.parse import urlparse
 from collections.abc import Callable
 from uuid import UUID
 
 from sqlalchemy.orm import Session
-from fastapi import Cookie, Depends, Header
+from fastapi import Cookie, Depends, Request
 
 from app.core.config import settings
 from app.dependencies.db import get_db
@@ -19,9 +18,11 @@ from app.tenancy.repositories.tenant import TenantRepository
 
 
 def get_current_token_context(
+    request: Request,
     access_token: str | None = Cookie(
         default=None,
     ),
+    db: Session = Depends(get_db),
 ) -> TokenContext:
     if not access_token:
         raise JwtInvalidError()
@@ -30,10 +31,18 @@ def get_current_token_context(
         access_token,
     )
 
-    return build_token_context(
+    ctx = build_token_context(
         claims,
     )
-    
+
+    # A token only counts on its own tenant's site.
+    tenant = _resolve_tenant(request=request, db=db)
+
+    if ctx.tenant_id != tenant.id:
+        raise JwtInvalidError()
+
+    return ctx
+
 
 def require_permission(
     *,
@@ -46,6 +55,40 @@ def require_permission(
         ),
     ) -> TokenContext:
         actions = ctx.permissions.get(
+            resource,
+        )
+
+        # A token without a location (Business settings) has no location
+        # permissions; refused here too, so routes can rely on one.
+        if (
+            ctx.location_id is None
+            or actions is None
+            or action not in actions
+        ):
+            raise PermissionNotFoundError()
+
+        return ctx
+
+    return dependency
+
+
+def require_tenant_permission(
+    *,
+    resource: str,
+    action: str,
+) -> Callable[..., TokenContext]:
+    """
+    A permission across the whole tenant (docs/tenant-administration.md),
+    held by its owner whichever location they're logged in at. Kept apart
+    from require_permission: a location permission never satisfies it, nor
+    the other way round. RLS checks the grant again, live.
+    """
+    def dependency(
+        ctx: TokenContext = Depends(
+            get_current_token_context,
+        ),
+    ) -> TokenContext:
+        actions = ctx.tenant_permissions.get(
             resource,
         )
 
@@ -62,17 +105,16 @@ def require_permission(
 
 def _resolve_tenant(
     *,
-    origin: str | None,
+    request: Request,
     db: Session,
 ):
     """
-    The tenant whose site the request came from: tenant1.<BASE_DOMAIN>, or a
-    tenant's own custom domain.
+    The tenant whose site the request is for: tenant1.<BASE_DOMAIN>, or a
+    tenant's own custom domain. Read from the Host header, which the load
+    balancer (and Vite's proxy in dev) passes through unchanged; the API is
+    served on each tenant's own site, under /api.
     """
-    if not origin:
-        raise LocationNotFoundError()
-
-    hostname = urlparse(origin).hostname
+    hostname = request.url.hostname
 
     if not hostname:
         raise LocationNotFoundError()
@@ -98,25 +140,37 @@ def _resolve_tenant(
             custom_domain=hostname,
         )
 
-    if not tenant:
+    # A tenant the platform has switched off answers as if it didn't exist.
+    if not tenant or not tenant.is_active:
         raise LocationNotFoundError()
 
     return tenant
 
 
+def site_origin(
+    request: Request,
+) -> str:
+    """
+    The site the request is for (scheme, host and port), for links back to
+    it such as Stripe's return URLs. location_site_url checks it belongs to
+    the tenant.
+    """
+    return f"{request.url.scheme}://{request.url.netloc}"
+
+
 def resolve_tenant_id(
-    origin: str | None = Header(default=None),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UUID:
-    return _resolve_tenant(origin=origin, db=db).id
+    return _resolve_tenant(request=request, db=db).id
 
 
 def resolve_location_id(
     location_code: str,
-    origin: str | None = Header(default=None),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UUID:
-    tenant = _resolve_tenant(origin=origin, db=db)
+    tenant = _resolve_tenant(request=request, db=db)
 
     location = LocationRepository(db=db).get_by_tenant_and_code(
         tenant_id=tenant.id,

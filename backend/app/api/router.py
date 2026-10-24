@@ -10,6 +10,11 @@ from app.public.routes.families import router as families_router
 # tenancy
 from app.tenancy.routes.location_branding import router as location_branding_router
 from app.tenancy.routes.stripe_account import router as stripe_account_router
+from app.tenancy.routes.business import router as business_router
+
+# platform
+from app.platform.routes.platform import router as platform_router
+from app.platform.routes.registration import router as registration_router
 
 # public
 from app.public.routes.customer import router as customer_router
@@ -46,6 +51,11 @@ api_router.include_router(families_router)
 # tenancy
 api_router.include_router(location_branding_router)
 api_router.include_router(stripe_account_router)
+api_router.include_router(business_router)
+
+# platform
+api_router.include_router(platform_router)
+api_router.include_router(registration_router)
 
 # public
 api_router.include_router(customer_router)

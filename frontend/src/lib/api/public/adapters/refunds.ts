@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
@@ -9,7 +9,7 @@ export function createRefundsApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/refunds/v1`;
+		`${API_BASE}/refunds/v1`;
 
 	return {
 		// One booking (one child, one day). Pending until Stripe confirms.

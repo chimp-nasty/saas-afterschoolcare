@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -11,7 +11,7 @@ export function createAttendanceApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/attendance/v1`;
+		`${API_BASE}/attendance/v1`;
 
 	return {
 		// A day's roll (default today, at the location's date).

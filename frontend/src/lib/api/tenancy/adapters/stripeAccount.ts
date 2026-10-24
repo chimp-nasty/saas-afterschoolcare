@@ -1,21 +1,27 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
 import type { StripeAccountStatusResponse, StripeOnboardingResponse } from '$lib/api/schema';
 
 
-// Admin › Payments: the business's Stripe account (Stripe Connect). Admins
-// read its status; superadmins connect it and turn payments off or on.
+// The business's Stripe account (Stripe Connect). A centre's admins read its
+// status (Admin › Payments); the owner manages it in Business settings ›
+// Payments (tenantStatus and the rest).
 export function createStripeAccountApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/stripe-account/v1`;
+		`${API_BASE}/stripe-account/v1`;
 
 	return {
 		status() {
 			return apiWrapper<StripeAccountStatusResponse>(`${baseUrl}/`, { method: 'GET', fetcher });
+		},
+
+		// The same, for the owner in Business settings (no location needed).
+		tenantStatus() {
+			return apiWrapper<StripeAccountStatusResponse>(`${baseUrl}/tenant`, { method: 'GET', fetcher });
 		},
 
 		// A one-time link to Stripe's onboarding (it returns to this page).

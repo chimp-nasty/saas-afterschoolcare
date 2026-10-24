@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -35,7 +35,7 @@ export type StaffCredentials = {
 // and the run sheet without personal details; everything else carries a
 // staff member and their PIN. Silent: the kiosk shows outcomes on screen.
 export function createStaffKioskApi(locationCode: string) {
-	const baseUrl = `${PUBLIC_API_URL}/staff-kiosk/v1/${locationCode}`;
+	const baseUrl = `${API_BASE}/staff-kiosk/v1/${locationCode}`;
 	const as = (staff: StaffCredentials) => ({ 'X-Kiosk-Staff': staff.userId, 'X-Kiosk-Pin': staff.pin });
 	const dated = (path: string, date?: string) => {
 		const query = buildQueryParams({ date });

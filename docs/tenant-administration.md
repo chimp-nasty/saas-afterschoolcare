@@ -40,7 +40,7 @@ Schema changes edit the original files (root `CLAUDE.md`).
 - `auth.tenant_owners (tenant_id PRIMARY KEY, user_id UNIQUE)`: one owner per tenant, one tenant per owner. Lives in `auth` because `tenancy` is created before `auth.users`.
 - Trigger on `tenancy.locations` insert: give the tenant's owner the superadmin role at the new location. It is plpgsql because roles are seeded after the schema.
 - `auth.platform_admins (id, email, password_hash, ...)`: their own credentials, never in `auth.users`, so the platform login can't sign in to a tenant and the reverse.
-- `auth.has_tenant_permission(p_tenant_id, p_resource, p_action)` and `auth.current_tenant_id()`: read the grants live.
+- `auth.has_tenant_permission(p_tenant_id, p_resource, p_action)`: reads the grants live; the tenant comes from the row (no `app.tenant_id` setting: the token is already tied to the site, and the Stripe OAuth callback runs on the platform's site).
 - `auth.is_platform_admin()`: true when the request set `app.platform_admin_id`.
 
 **RLS (`0005`/`0007`)**
@@ -64,7 +64,7 @@ claims: user_id, tenant_id, location_id | null,
 - `get_current_token_context`: decodes the token, then requires the token's `tenant_id` to be the request host's tenant.
 - `require_permission`: unchanged rule; a token without a location has no location permissions, so it gets 403.
 - `require_tenant_permission(resource, action)`: checks `tenant_permissions`; ignores the location.
-- `get_rls_db`: sets `app.user_id`, `app.tenant_id`, and `app.location_id` (empty when there is none).
+- `get_rls_db`: sets `app.user_id` and `app.location_id` (empty when there is none).
 - `/auth/v1/session`: location optional; adds the tenant permissions, so the account menu can show "Business settings".
 - One helper issues every token (location login, business login, switching location), so the claims can't drift.
 - **Host:** same-origin GETs carry no `Origin` header, so the tenant comes from the `Host` header, which Google's load balancer passes through unchanged (in dev, Vite's proxy keeps it). Unknown hosts get 404. Absolute links (emails, Stripe return URLs) are built from the tenant's stored hosts, never the raw header.
@@ -78,9 +78,9 @@ claims: user_id, tenant_id, location_id | null,
 | `POST /auth/v1/business/login` | none (login) | Tenant from the host; refuses users without tenant permissions there; token has no location. |
 | `POST /auth/v1/switch-location/{location_code}` | a valid token | Location must be in the token's tenant and the user must have a role there; reissues the cookie with that location's permissions and the current tenant permissions. |
 | `GET /business/v1/overview` | `tenant_settings r` | Checklist: locations, Stripe, details, domain. |
-| `GET/PATCH /business/v1/settings` | `tenant_settings r/u` | Business name, legal name, ABN, contacts, introduction, logo. |
-| `GET/POST/PATCH /business/v1/locations` | `tenant_locations r/c/u` | List, add and edit locations (name, code, address, timezone, contact). The trigger makes the owner superadmin at a new one. |
-| Stripe Connect routes (existing) | `tenant_stripe_account r/u` | Same service, keyed by `ctx.tenant_id` instead of the location's tenant. |
+| `GET/PUT /business/v1/settings` | `tenant_settings r/u` | Business name, legal name, ABN, contacts, introduction, logo. |
+| `GET/POST /business/v1/locations`, `PUT /business/v1/locations/{id}` | `tenant_locations r/c/u` | List, add and edit locations (name, code, address, timezone, contact). The trigger makes the owner superadmin at a new one. |
+| Stripe Connect routes (existing) | `tenant_stripe_account r/u` | Keyed by `ctx.tenant_id`; return links go to `/business/payments`; `GET /stripe-account/v1/tenant` is the owner's status. |
 | `GET /stripe-account/v1/status` (location admin) | `stripe_account r` | Read-only, so a location's admins can see whether it can take payments. |
 | `GET/PUT/DELETE /business/v1/domain` | `tenant_domains r/u` | Stage 6. |
 | `POST /platform/v1/login` | none (login) | Platform admins only; platform audience. |
@@ -98,11 +98,17 @@ claims: user_id, tenant_id, location_id | null,
 
 Each stage ends with a dev rebuild and a test run.
 
-1. **Same-origin API and tenant binding:** Vite proxies `/api` to the backend; the frontend calls `/api`; the tenant comes from the forwarded host; tokens carry `tenant_id` and it's checked; location becomes optional; `get_rls_db` sets the tenant; `SameSite=Lax`. Tests: a token from tenant 1 is refused on tenant 2's host.
-2. **Tenant permissions:** scope column, `user_tenant_permissions`, `tenant_owners`, the location-insert trigger, reserved codes, `has_tenant_permission`, tenancy RLS rewritten, seeds; `tenant_permissions` in the token; `require_tenant_permission`.
-3. **`/business`:** business login, switching location, overview, locations, settings, Stripe moved over (location admin page read-only).
-4. **Platform owner and registration:** `platform_admins`, invites, registration, the console.
-5. **Landing page:** business details on `/`.
+1. **Same-origin API and tenant binding** (built 23 October 2026): the app serves every route under `/api` (webhook paths unchanged); Vite proxies `/api` in dev, keeping the browser's `Host`; the frontend calls `/api` (`frontend/src/lib/api/base.ts`) and builds as a static single-page app (`adapter-static`); the tenant comes from `Host`; tokens carry `tenant_id`, refused on another tenant's site; changes need an `Origin` matching `Host` (`app/middleware/same_origin.py`, CORS removed); cookies `SameSite=Lax`, no `Domain`. Tests: `tests/test_tenant_site.py`.
+2. **Tenant permissions** (built 23 October 2026): scope column, `user_tenant_permissions`, `tenant_owners`, the owner-superadmin triggers, reserved codes, `has_tenant_permission`, tenancy RLS rewritten, seeds (`sa1user`/`sa2user` own tenants 1 and 2); `tenant_permissions` in the token; `require_tenant_permission`; Stripe writes need `tenant_stripe_account u`. Tests: `tests/test_tenant_permissions.py`.
+3. **`/business`** (built 23 October 2026): optional location in the token; business details (legal name, ABN with its check, phone, introduction); location names required, Australian time zones, codes changeable (old links fall back to the landing page); business login, switching location, overview, locations, settings, Stripe moved over (location admin page read-only). Tests: `tests/test_business.py`.
+4. **Platform owner and registration** (built 23 October 2026): on the platform's own site (the bare base domain; `PUBLIC_PLATFORM_HOST` in `frontend/.env`). `auth.platform_admins` with their own `platform_token` cookie and token audience; `auth.tenant_invites` (one-time link shown once to copy and send by hand, a week to use, revocable); `auth.register_tenant` creates the tenant, its owner and their tenant permissions and uses the invite, all at once; `auth.set_tenant_active` (platform admins only) switches a business off: its site and logins answer 404, Stripe's webhooks still settle; reserved tenant codes. Console at `/platform` (Businesses, Invites); registration at `/register?invite=…`. Tests: `tests/test_platform.py`.
+
+   A platform admin in production is added by hand (no screen), from `backend/` with the production `DATABASE_ADMIN_URL`:
+
+   ```
+   ./venv/Scripts/python -c "import os; from sqlalchemy import create_engine, text; from app.core.security import hash_password; e = create_engine(os.environ['DATABASE_ADMIN_URL']); c = e.connect(); c.execute(text('INSERT INTO auth.platform_admins (email, password_hash, first_name, last_name) VALUES (:e, :p, :f, :l)'), dict(e='you@example.com', p=hash_password(password='a long password'), f='First', l='Last')); c.commit()"
+   ```
+5. **Landing page and branding** (built 24 October 2026): one brand per business, `tenancy.tenant_branding` (logo, square site icon, two colours; `location_branding` dropped), used by the landing page and every centre's pages. `tenancy.tenants.tagline`; `tenancy.tenant_faqs` (up to 20, in order); `tenancy.tenant_documents` (privacy and terms PDFs, versioned, never changed or removed). Files upload straight to the bucket (`pending/`), then the server checks them (Pillow for images: PNG/JPEG/WebP up to 1 MB, the icon a square PNG of at least 192px; PDFs up to 5 MB) and moves them to `branding/` or `policies/`. Public: `/api/location-branding/v1/public/business` and `/site-files/{logo|icon|privacy|terms}` (a redirect to a short-lived link; the icon falls back to the logo, then `/favicon.svg`). Owner: Business settings › Your site (`/api/business/v1/site…`, `tenant_settings`). Family sign-up links the current terms and records the version accepted (`customer_profile.terms_document_id`, fixed once set). Tests: `tests/test_site.py`.
 6. **Custom domains:** see section 7.
 
 ## 7. Custom domains (stage 6)

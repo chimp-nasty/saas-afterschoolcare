@@ -28,7 +28,7 @@
     let activeTab = $state<string>(actionTabs.NEW);
     let busyId = $state<string | null>(null);
 
-    const centre = $derived(data.location.display_name ?? data.location.location_name ?? data.location.tenant_name);
+    const centre = $derived(data.location.location_name);
 
     const tabs = $derived([
         { id: actionTabs.NEW, label: data.unread.length ? `New (${data.unread.length})` : "New" },

@@ -47,7 +47,7 @@
         <PageHeader title="Book sessions" />
 
         <Notice tone="warning">
-            {data.location.display_name ?? data.location.location_name} isn't taking bookings online yet. Please check back soon.
+            {data.location.location_name} isn't taking bookings online yet. Please check back soon.
         </Notice>
     {:else if !missing.length}
         <CreateBookingFlow

@@ -15,15 +15,14 @@ from app.errors.payments import (
     StripeOAuthUnavailableError,
 )
 from app.integrations.payments.stripe.client import StripeClient
-from app.tenancy.repositories.location import LocationRepository
 from app.tenancy.repositories.stripe_account import TenantStripeAccountRepository
 from app.tenancy.repositories.tenant import TenantRepository
 from app.tenancy.schemas.stripe_account import StripeAccountStatusResponse, StripeOnboardingResponse
-from app.tenancy.site_url import location_site_url
+from app.tenancy.site_url import tenant_site_url
 from app.tenancy.stripe_oauth_state import OAuthState, decode_state, encode_state
 
 # Where Stripe's OAuth returns (registered in Stripe's OAuth settings).
-OAUTH_CALLBACK_PATH = "/stripe-account/v1/oauth/callback"
+OAUTH_CALLBACK_PATH = "/api/stripe-account/v1/oauth/callback"
 
 
 logger = logging.getLogger("app.payments")
@@ -31,12 +30,13 @@ logger = logging.getLogger("app.payments")
 
 class StripeConnectService:
     """
-    Admin › Payments (slice 5): the business's own Stripe account (Stripe
-    Connect, a Standard account with direct charges). Admins see whether
-    it can take payments (stripe_account r); superadmins connect it, either
+    Business settings › Payments (/business/payments; slice 5): the
+    business's own Stripe account (Stripe Connect, a Standard account with
+    direct charges). Admins see whether
+    it can take payments (stripe_account r); the tenant's owner connects it, either
     linking the account they already have ("Connect with Stripe", OAuth)
     or making a new one through Stripe's hosted onboarding, refresh its
-    status, and turn payments off and on in our app (stripe_account u).
+    status, and turn payments off and on in our app (tenant_stripe_account u).
     Whether bookings and checkouts may happen is the database's
     (tenancy.payments_account).
     """
@@ -46,25 +46,22 @@ class StripeConnectService:
         *,
         db: Session,
         stripe_account_repository: TenantStripeAccountRepository,
-        location_repository: LocationRepository,
         tenant_repository: TenantRepository,
         rls_context: RlsContextRepository,
     ):
         self.db = db
         self.rls_context = rls_context
         self.stripe_account_repository = stripe_account_repository
-        self.location_repository = location_repository
         self.tenant_repository = tenant_repository
 
     def status(
         self,
         *,
-        location_id: UUID,
+        tenant_id: UUID,
     ) -> StripeAccountStatusResponse:
-        location = self.location_repository.get_by_id(id=location_id)
-        account = self.stripe_account_repository.get_for_tenant(tenant_id=location.tenant_id)
+        account = self.stripe_account_repository.get_for_tenant(tenant_id=tenant_id)
         takes_payments = self.db.execute(
-            select(func.tenancy.payments_account(location_id))
+            select(func.tenancy.tenant_payments_account(tenant_id))
         ).scalar() is not None
 
         return StripeAccountStatusResponse(
@@ -84,7 +81,7 @@ class StripeConnectService:
     def oauth_link(
         self,
         *,
-        location_id: UUID,
+        tenant_id: UUID,
         user_id: UUID,
         origin: str | None,
     ) -> StripeOnboardingResponse:
@@ -92,17 +89,16 @@ class StripeConnectService:
         "Connect with Stripe": Stripe's page to log in and link the
         business's existing account. Stripe returns to the API's callback
         (one registered address for every tenant), which sends them back to
-        this location's site.
+        Business settings on their own site.
         """
         if not settings.STRIPE_CONNECT_CLIENT_ID:
             raise StripeOAuthUnavailableError()
 
-        location = self.location_repository.get_by_id(id=location_id)
-        tenant = self.tenant_repository.get_by_id(id=location.tenant_id)
-        site_url = location_site_url(location=location, tenant=tenant, origin=origin)
+        tenant = self.tenant_repository.get_by_id(id=tenant_id)
+        site_url = self._business_url(tenant=tenant, origin=origin)
 
         url = StripeClient().oauth_authorize_url(
-            state=encode_state(OAuthState(user_id=user_id, location_id=location_id, site_url=site_url)),
+            state=encode_state(OAuthState(user_id=user_id, tenant_id=tenant_id, site_url=site_url)),
             redirect_uri=f"{settings.API_BASE_URL.rstrip('/')}{OAUTH_CALLBACK_PATH}",
         )
 
@@ -117,17 +113,17 @@ class StripeConnectService:
     ) -> str | None:
         """
         Stripe's return from "Connect with Stripe": link the account and say
-        where to send the browser (Admin › Payments, with how it went), or
+        where to send the browser (Business settings › Payments, with how it went), or
         None when the state isn't ours (nowhere safe to send them). The
-        account is saved as the person who started it, so RLS lets only a
-        superadmin of that business link it.
+        account is saved as the person who started it, so RLS lets only the
+        owner of that business link it.
         """
         started = decode_state(state) if state else None
 
         if not started:
             return None
 
-        back = f"{started.site_url}/admin/payments?stripe="
+        back = f"{started.site_url}/payments?stripe="
 
         if error or not code:
             return f"{back}cancelled"
@@ -148,36 +144,33 @@ class StripeConnectService:
     @transactional
     def _link_account(self, *, started: OAuthState, account_id: str) -> None:
         self.rls_context.set_user_id(user_id=started.user_id)
-        self.rls_context.set_location_id(location_id=started.location_id)
 
-        location = self.location_repository.get_by_id(id=started.location_id)
         stripe_account = StripeClient().get_account(account_id=account_id)
 
         self.stripe_account_repository.connect(
-            tenant_id=location.tenant_id,
+            tenant_id=started.tenant_id,
             stripe_account_id=account_id,
             charges_enabled=stripe_account.charges_enabled,
             payouts_enabled=stripe_account.payouts_enabled,
             details_submitted=stripe_account.details_submitted,
             is_linked=True,
         )
-        self._log("stripe_account_linked", location.tenant_id, account_id)
+        self._log("stripe_account_linked", started.tenant_id, account_id)
 
     def onboarding_link(
         self,
         *,
-        location_id: UUID,
+        tenant_id: UUID,
         origin: str | None,
     ) -> StripeOnboardingResponse:
         """
         Stripe's hosted onboarding for the business: a new Standard account
         the first time (or after the old one revoked our access), then the
         same account until onboarding is finished. Stripe sends them back
-        to Admin › Payments.
+        to Business settings › Payments.
         """
-        location = self.location_repository.get_by_id(id=location_id)
-        tenant = self.tenant_repository.get_by_id(id=location.tenant_id)
-        site_url = location_site_url(location=location, tenant=tenant, origin=origin)
+        tenant = self.tenant_repository.get_by_id(id=tenant_id)
+        site_url = self._business_url(tenant=tenant, origin=origin)
         account = self.stripe_account_repository.get_for_tenant(tenant_id=tenant.id)
 
         # A business's own linked account isn't ours to onboard: it finishes
@@ -194,8 +187,8 @@ class StripeConnectService:
 
         url = StripeClient().create_onboarding_link(
             account_id=account_id,
-            refresh_url=f"{site_url}/admin/payments?stripe=refresh",
-            return_url=f"{site_url}/admin/payments?stripe=return",
+            refresh_url=f"{site_url}/payments?stripe=refresh",
+            return_url=f"{site_url}/payments?stripe=return",
         )
 
         return StripeOnboardingResponse(url=url)
@@ -219,10 +212,10 @@ class StripeConnectService:
     def refresh(
         self,
         *,
-        location_id: UUID,
+        tenant_id: UUID,
     ) -> StripeAccountStatusResponse:
         """Ask Stripe for the account's flags now (the webhook does this too)."""
-        account = self._account(location_id)
+        account = self._account(tenant_id)
         stripe_account = StripeClient().get_account(account_id=account.stripe_account_id)
 
         self.stripe_account_repository.set_flags(
@@ -232,20 +225,20 @@ class StripeConnectService:
             details_submitted=stripe_account.details_submitted,
         )
 
-        return self.status(location_id=location_id)
+        return self.status(tenant_id=tenant_id)
 
     @transactional
     def set_disconnected(
         self,
         *,
-        location_id: UUID,
+        tenant_id: UUID,
         disconnected: bool,
     ) -> StripeAccountStatusResponse:
         """
         Turn payments off in our app (or back on). New bookings stop while
         off; the account stays linked, so past payments can still be refunded.
         """
-        account = self._account(location_id)
+        account = self._account(tenant_id)
 
         self.stripe_account_repository.set_disconnected(account=account, disconnected=disconnected)
         self._log(
@@ -254,16 +247,19 @@ class StripeConnectService:
             account.stripe_account_id,
         )
 
-        return self.status(location_id=location_id)
+        return self.status(tenant_id=tenant_id)
 
-    def _account(self, location_id: UUID):
-        location = self.location_repository.get_by_id(id=location_id)
-        account = self.stripe_account_repository.get_for_tenant(tenant_id=location.tenant_id)
+    def _account(self, tenant_id: UUID):
+        account = self.stripe_account_repository.get_for_tenant(tenant_id=tenant_id)
 
         if not account:
             raise StripeAccountNotFoundError()
 
         return account
+
+    def _business_url(self, *, tenant, origin: str | None) -> str:
+        """Business settings on the tenant's own site, for Stripe to return to."""
+        return f"{tenant_site_url(tenant=tenant, origin=origin)}/business"
 
     def _log(self, event: str, tenant_id: UUID, account_id: str) -> None:
         logger.info(

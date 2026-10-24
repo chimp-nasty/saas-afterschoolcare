@@ -257,7 +257,7 @@ class CreateBookingService:
         location_id: UUID,
         origin: str | None,
     ) -> str:
-        """The location's site, checked against the request's Origin."""
+        """The location's site, checked against the site the request came to."""
         location = self.location_repository.get_by_id(id=location_id)
         tenant = self.tenant_repository.get_by_id(id=location.tenant_id)
 

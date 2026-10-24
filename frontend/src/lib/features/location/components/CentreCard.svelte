@@ -26,7 +26,7 @@
         href?: string;
     } = $props();
 
-    const name = $derived(location.display_name ?? location.location_name);
+    const name = $derived(location.location_name);
 </script>
 
 <Card border>

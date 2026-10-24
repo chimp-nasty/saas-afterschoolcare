@@ -83,8 +83,8 @@ def test_public_services_are_per_location(api: Api, tenant2_admin):
 # defaults, not offered until an admin prices it.
 def test_new_location_gets_its_services(api: Api):
     [(location_id,)] = api.sql(
-        "INSERT INTO tenancy.locations (tenant_id, code, address_line_1, suburb, state, postcode) "
-        "SELECT id, 'new-location', '9 Test Street', 'Brisbane City', 'QLD', '4000' "
+        "INSERT INTO tenancy.locations (tenant_id, code, name, address_line_1, suburb, state, postcode) "
+        "SELECT id, 'new-location', 'New location', '9 Test Street', 'Brisbane City', 'QLD', '4000' "
         "FROM tenancy.tenants WHERE code = 'tenant2' "
         "RETURNING id"
     )
@@ -211,20 +211,6 @@ def test_public_locations_list_the_tenants_centres(api: Api):
     assert tenant2.status_code == 200, tenant2.text
     assert {loc["location_code"] for loc in tenant1.json()["data"]} >= {"location1", "location2"}
     assert {loc["tenant_code"] for loc in tenant2.json()["data"]} == {"tenant2"}
-
-
-# A location saved without a name is still listed, under its code, rather
-# than breaking the public pages.
-def test_public_location_without_a_name_uses_its_code(api: Api):
-    api.sql(
-        "INSERT INTO tenancy.locations (tenant_id, code, address_line_1, suburb, state, postcode) "
-        "SELECT id, 'unnamed', '8 Test Street', 'Brisbane City', 'QLD', '4000' "
-        "FROM tenancy.tenants WHERE code = 'tenant2'"
-    )
-
-    locations = api.client(tenant="tenant2").get("/location-branding/v1/public").json()["data"]
-
-    assert next(loc for loc in locations if loc["location_code"] == "unnamed")["location_name"] == "unnamed"
 
 
 # The service days list returns every matching day rather than stopping at a

@@ -5,46 +5,16 @@ from sqlalchemy import select
 from app.db.repository import Repository
 from app.db.models import (
     Location,
-    LocationBranding,
     Tenant,
+    TenantBranding,
 )
 
 
 class LocationBrandingRepository(Repository):
-    def create(
-        self,
-        *,
-        location_id: UUID,
-        display_name: str | None = None,
-        logo_key: str | None = None,
-        primary_color: str | None = None,
-        secondary_color: str | None = None,
-        font_family: str | None = None,
-    ) -> LocationBranding:
-        record = LocationBranding(
-            location_id=location_id,
-            display_name=display_name,
-            logo_key=logo_key,
-            primary_color=primary_color,
-            secondary_color=secondary_color,
-            font_family=font_family,
-        )
-
-        self.db.add(record)
-        self.db.flush()
-
-        return record
-
-    def get_by_id(
-        self,
-        *,
-        id: UUID,
-    ) -> LocationBranding | None:
-        return (
-            self.db.query(LocationBranding)
-            .filter(LocationBranding.id == id)
-            .first()
-        )
+    """
+    Locations as the public pages show them, with their business's
+    branding (one brand per business: tenancy.tenant_branding).
+    """
 
     def list_locations_with_branding_by_tenant_id(
         self,
@@ -56,15 +26,15 @@ class LocationBrandingRepository(Repository):
             select(
                 Location,
                 Tenant,
-                LocationBranding,
+                TenantBranding,
             )
             .join(
                 Tenant,
                 Tenant.id == Location.tenant_id,
             )
             .outerjoin(
-                LocationBranding,
-                LocationBranding.location_id == Location.id,
+                TenantBranding,
+                TenantBranding.tenant_id == Location.tenant_id,
             )
             .where(
                 Location.tenant_id == tenant_id,
@@ -84,15 +54,15 @@ class LocationBrandingRepository(Repository):
             select(
                 Location,
                 Tenant,
-                LocationBranding,
+                TenantBranding,
             )
             .join(
                 Tenant,
                 Tenant.id == Location.tenant_id,
             )
             .outerjoin(
-                LocationBranding,
-                LocationBranding.location_id == Location.id,
+                TenantBranding,
+                TenantBranding.tenant_id == Location.tenant_id,
             )
             .where(
                 Location.id == location_id,

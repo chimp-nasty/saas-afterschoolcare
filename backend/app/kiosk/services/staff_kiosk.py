@@ -42,7 +42,7 @@ class StaffKioskService:
     ) -> KioskInfoResponse:
         location = self.location_repository.get_by_id(id=device.location_id)
 
-        return KioskInfoResponse(kind="staff", location_name=location.name or location.code)
+        return KioskInfoResponse(kind="staff", location_name=location.name)
 
     def staff(
         self,

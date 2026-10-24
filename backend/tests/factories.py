@@ -310,15 +310,17 @@ class Api:
         """
         A new client with its own cookie jar and rate-limit bucket.
 
-        HTTPS because the auth cookie is Secure; Origin because login and
-        signup resolve the tenant from it; a unique X-Forwarded-For so the
-        rate limiter (keyed by client IP) treats each client separately.
+        On the tenant's own site, under /api, as the browser sees it: the
+        host decides the tenant. HTTPS because the auth cookie is Secure;
+        Origin because changes must come from the same site; a unique
+        X-Forwarded-For so the rate limiter (keyed by client IP) treats each
+        client separately.
         """
         n = next(self._client_ids)
 
         return TestClient(
             app,
-            base_url="https://testserver",
+            base_url=f"https://{tenant}.{settings.BASE_DOMAIN}/api",
             headers={
                 "Origin": f"https://{tenant}.{settings.BASE_DOMAIN}",
                 "X-Forwarded-For": f"10.{n // 65536 % 256}.{n // 256 % 256}.{n % 256}",
@@ -677,7 +679,7 @@ class Api:
             event = {**event, "account": account_id}
 
         return self.client().post(
-            "/api/v1/webhooks/stripe/connect" if account_id else "/api/v1/webhooks/stripe",
+            "/v1/webhooks/stripe/connect" if account_id else "/v1/webhooks/stripe",
             content=json.dumps(event),
             headers={"Stripe-Signature": signature},
         )

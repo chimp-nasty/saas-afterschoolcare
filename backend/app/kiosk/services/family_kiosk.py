@@ -259,5 +259,5 @@ class FamilyKioskService:
 
         return KioskInfoResponse(
             kind=getattr(kind, "value", kind),
-            location_name=location.name or location.code,
+            location_name=location.name,
         )

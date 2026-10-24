@@ -7,6 +7,9 @@ export type AuthState = {
 	email: string | null;
 	firstName: string | null;
 	roles: string[];
+	// What they may do across the whole business ({resource: actions}): the
+	// owner's, which shows "Business settings"; empty for everyone else.
+	tenantPermissions: Record<string, string[]>;
 };
 
 function emptyAuthState(): AuthState {
@@ -16,7 +19,8 @@ function emptyAuthState(): AuthState {
 		userId: null,
 		email: null,
 		firstName: null,
-		roles: []
+		roles: [],
+		tenantPermissions: {}
 	};
 }
 

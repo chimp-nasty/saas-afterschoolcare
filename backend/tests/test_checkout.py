@@ -42,8 +42,9 @@ def test_booking_opens_a_checkout(api: Api, customer, fake_stripe):
     assert [item.amount_cents for item in created["line_items"]] == [data["amount"]]
 
 
-# A booking request from another website is refused (400), so Stripe can't
-# be told to send customers back to a site that isn't ours.
+# A booking request sent from another website is refused (403) before it
+# reaches the booking code, so Stripe can't be told to send customers back
+# to a site that isn't ours.
 def test_checkout_rejects_another_sites_origin(api: Api, customer):
     child = api.new_child(customer)
 
@@ -56,8 +57,8 @@ def test_checkout_rejects_another_sites_origin(api: Api, customer):
         },
     )
 
-    assert response.status_code == 400
-    assert response.json()["msg"] == "Bookings must be made from this location's site"
+    assert response.status_code == 403
+    assert response.json()["msg"] == "This request didn't come from this site."
 
 
 # Straight after booking, the payment and the booking are both PENDING, for

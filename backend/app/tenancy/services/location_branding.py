@@ -14,9 +14,7 @@ def _to_public_location(location, tenant, branding) -> PublicLocationResponse:
 
         location_id=location.id,
         location_code=location.code,
-        # locations.name is optional; families always need something to
-        # call it, so fall back to its code.
-        location_name=location.name or location.code,
+        location_name=location.name,
 
         address_line_1=location.address_line_1,
         address_line_2=location.address_line_2,
@@ -31,11 +29,9 @@ def _to_public_location(location, tenant, branding) -> PublicLocationResponse:
         phone=location.phone,
         email=location.email,
 
-        display_name=branding.display_name if branding else None,
-        logo_key=branding.logo_key if branding else None,
+        has_logo=bool(branding and branding.logo_key),
         primary_color=branding.primary_color if branding else None,
         secondary_color=branding.secondary_color if branding else None,
-        font_family=branding.font_family if branding else None,
     )
 
 

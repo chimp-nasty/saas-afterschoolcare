@@ -21,6 +21,22 @@ class RlsContextRepository(Repository):
             )
         )
 
+    def set_platform_admin_id(
+        self,
+        *,
+        platform_admin_id: UUID,
+    ) -> None:
+        """A platform admin's request (the platform's site only): auth.is_platform_admin."""
+        self.db.execute(
+            select(
+                func.set_config(
+                    "app.platform_admin_id",
+                    str(platform_admin_id),
+                    True,
+                )
+            )
+        )
+
     def set_location_id(
         self,
         *,

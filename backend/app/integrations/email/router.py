@@ -11,7 +11,7 @@ from app.integrations.email.webhook import SesWebhookService
 # message; SesWebhookService rejects anything unsigned, forged, stale or
 # from another topic.
 router = APIRouter(
-    prefix="/api/v1/webhooks",
+    prefix="/v1/webhooks",
     tags=["webhooks"],
 )
 

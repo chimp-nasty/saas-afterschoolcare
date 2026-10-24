@@ -2,6 +2,24 @@
 -- TENANTS
 -- =====================================================
 
+-- An Australian Business Number: 11 digits passing the ABR's check
+-- (subtract 1 from the first digit, weight the digits 10, 1, 3, 5, ... 19,
+-- and the sum divides by 89).
+CREATE FUNCTION tenancy.is_valid_abn(p_abn text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+    SELECT p_abn ~ '^[0-9]{11}$'
+       AND (
+           SELECT sum(
+               (substr(p_abn, i, 1)::int - CASE WHEN i = 1 THEN 1 ELSE 0 END)
+               * (ARRAY[10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19])[i]
+           )
+           FROM generate_series(1, 11) AS i
+       ) % 89 = 0;
+$$;
+
 CREATE TABLE tenancy.tenants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -9,6 +27,15 @@ CREATE TABLE tenancy.tenants (
     code VARCHAR(50) NOT NULL,
     custom_domain VARCHAR(255),
     email VARCHAR(255),
+
+    -- The business's details (Business settings, its owner): shown to
+    -- families and on its landing page. Unset until the owner fills them in.
+    legal_name VARCHAR(200),
+    abn CHAR(11),
+    phone VARCHAR(50),
+    about VARCHAR(1000),
+    -- The landing page's headline ("After school care, made easy").
+    tagline VARCHAR(120),
 
     terms_accepted_at TIMESTAMPTZ NOT NULL,
     terms_version VARCHAR(50) NOT NULL DEFAULT 'v1',
@@ -23,7 +50,18 @@ CREATE TABLE tenancy.tenants (
         UNIQUE (custom_domain),
 
     CONSTRAINT ck_tenants_code_format
-        CHECK (code ~ '^[a-z][a-z0-9-]*$')
+        CHECK (code ~ '^[a-z][a-z0-9-]*$'),
+
+    -- The code is the tenant's subdomain (after3.<platform domain>); these
+    -- belong to the platform.
+    CONSTRAINT ck_tenants_code_reserved
+        CHECK (code NOT IN ('www', 'api', 'platform', 'admin', 'mail', 'app')),
+
+    CONSTRAINT ck_tenants_name_not_blank
+        CHECK (btrim(name) <> ''),
+
+    CONSTRAINT ck_tenants_abn
+        CHECK (abn IS NULL OR tenancy.is_valid_abn(abn))
 );
 
 
@@ -36,7 +74,9 @@ CREATE TABLE tenancy.locations (
 
     tenant_id UUID NOT NULL,
 
-    name VARCHAR(200),
+    name VARCHAR(200) NOT NULL,
+    -- The first part of its address (/varsity). The owner may change it;
+    -- old links then lead to the tenant's landing page.
     code VARCHAR(50) NOT NULL,
     -- Where the location's services run, shown to families (a service may
     -- get its own venue later). Australian addresses only.
@@ -81,6 +121,25 @@ CREATE TABLE tenancy.locations (
     CONSTRAINT ck_locations_code_format
         CHECK (code ~ '^[a-z][a-z0-9-]*$'),
 
+    -- The code is the first part of the location's address (/varsity),
+    -- where the site's own pages also live (/business, /api).
+    CONSTRAINT ck_locations_code_reserved
+        CHECK (code NOT IN (
+            'business', 'api', 'platform', 'register',
+            'kiosk', 'staff', 'login', 'demo'
+        )),
+
+    CONSTRAINT ck_locations_name_not_blank
+        CHECK (btrim(name) <> ''),
+
+    CONSTRAINT ck_locations_timezone
+        CHECK (timezone IN (
+            'Australia/Brisbane', 'Australia/Sydney', 'Australia/Melbourne',
+            'Australia/Hobart', 'Australia/Adelaide', 'Australia/Darwin',
+            'Australia/Perth', 'Australia/Broken_Hill', 'Australia/Lord_Howe',
+            'Australia/Eucla'
+        )),
+
     CONSTRAINT ck_locations_address_not_blank
         CHECK (btrim(address_line_1) <> '' AND btrim(suburb) <> ''),
 
@@ -96,35 +155,92 @@ CREATE TABLE tenancy.locations (
 
 
 -- =====================================================
--- LOCATION BRANDING
+-- TENANT BRANDING
 -- =====================================================
 
-CREATE TABLE tenancy.location_branding (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+-- How the business looks, on its landing page and every centre's pages
+-- (one brand per business; docs/tenant-administration.md, stage 5). Set by
+-- its owner in Business settings › Your site. Files live in the document
+-- bucket under branding/tenants/{tenant}/ (keys hold only IDs). No row, or
+-- an empty field, means the app's defaults.
+CREATE TABLE tenancy.tenant_branding (
+    tenant_id UUID PRIMARY KEY,
 
-    location_id UUID NOT NULL,
-
-    display_name VARCHAR(200),
+    -- Any shape: the page header and landing page.
     logo_key TEXT,
-    primary_color VARCHAR(50),
-    secondary_color VARCHAR(50),
-    font_family VARCHAR(100),
+    -- Square: the browser tab, bookmarks and home screens. Without one the
+    -- logo is used, then the platform's icon.
+    icon_key TEXT,
 
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    primary_color VARCHAR(7),
+    secondary_color VARCHAR(7),
+
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    CONSTRAINT fk_location_branding_location
-        FOREIGN KEY (location_id)
-        REFERENCES tenancy.locations (id)
+    CONSTRAINT fk_tenant_branding_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_location_branding_location
-        UNIQUE (location_id)
+    CONSTRAINT ck_tenant_branding_colors
+        CHECK (
+            (primary_color IS NULL OR primary_color ~ '^#[0-9A-Fa-f]{6}$')
+            AND (secondary_color IS NULL OR secondary_color ~ '^#[0-9A-Fa-f]{6}$')
+        )
 );
 
-CREATE TRIGGER trg_location_branding_updated_at
-    BEFORE UPDATE ON tenancy.location_branding
+CREATE TRIGGER trg_tenant_branding_updated_at
+    BEFORE UPDATE ON tenancy.tenant_branding
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+-- =====================================================
+-- TENANT FAQS
+-- =====================================================
+
+-- Questions and answers on the landing page, in the owner's order. Saved
+-- as a whole list (Business settings › Your site); at most 20.
+CREATE TABLE tenancy.tenant_faqs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    tenant_id UUID NOT NULL,
+
+    position INTEGER NOT NULL,
+    question VARCHAR(200) NOT NULL,
+    answer VARCHAR(2000) NOT NULL,
+
+    CONSTRAINT fk_tenant_faqs_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_tenant_faqs_position
+        UNIQUE (tenant_id, position),
+
+    CONSTRAINT ck_tenant_faqs_text
+        CHECK (btrim(question) <> '' AND btrim(answer) <> '')
+);
+
+CREATE FUNCTION tenancy.enforce_tenant_faq_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF (SELECT count(*) FROM tenancy.tenant_faqs WHERE tenant_id = NEW.tenant_id) > 20 THEN
+        RAISE EXCEPTION 'A business has at most 20 questions'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_tenant_faqs_limit',
+                  TABLE = 'tenant_faqs',
+                  SCHEMA = 'tenancy';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_tenant_faqs_limit
+    AFTER INSERT ON tenancy.tenant_faqs
+    FOR EACH ROW EXECUTE FUNCTION tenancy.enforce_tenant_faq_limit();
 
 -- =====================================================
 -- TENANT STRIPE ACCOUNTS (Stripe Connect)
@@ -175,12 +291,12 @@ CREATE TRIGGER trg_tenant_stripe_accounts_updated_at
     BEFORE UPDATE ON tenancy.tenant_stripe_accounts
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- The Stripe account a location's payments go to, or NULL while it can't
+-- The Stripe account a tenant's payments go to, or NULL while it can't
 -- take payments (not connected, onboarding unfinished, disconnected in our
 -- app, or access revoked). New bookings and checkouts need one (the
 -- booking rules, trg_payment_attempts_account). SECURITY DEFINER: anyone
 -- may ask whether a centre takes bookings (the public site shows it).
-CREATE FUNCTION tenancy.payments_account(p_location_id UUID)
+CREATE FUNCTION tenancy.tenant_payments_account(p_tenant_id UUID)
 RETURNS text
 LANGUAGE sql
 STABLE
@@ -188,14 +304,25 @@ SECURITY DEFINER
 SET search_path = pg_catalog, tenancy
 AS $$
     SELECT a.stripe_account_id::text
-    FROM tenancy.locations l
-    JOIN tenancy.tenant_stripe_accounts a
-        ON a.tenant_id = l.tenant_id
-    WHERE l.id = p_location_id
+    FROM tenancy.tenant_stripe_accounts a
+    WHERE a.tenant_id = p_tenant_id
       AND a.charges_enabled
       AND a.details_submitted
       AND a.disconnected_at IS NULL
       AND a.revoked_at IS NULL;
+$$;
+
+-- The same for a location: its tenant's account.
+CREATE FUNCTION tenancy.payments_account(p_location_id UUID)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, tenancy
+AS $$
+    SELECT tenancy.tenant_payments_account(l.tenant_id)
+    FROM tenancy.locations l
+    WHERE l.id = p_location_id;
 $$;
 
 -- What Stripe says about a connected account (its account.updated and

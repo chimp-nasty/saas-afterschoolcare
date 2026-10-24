@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     COOKIE_NAME: str = "access_token"
     COOKIE_SECURE: bool = True
     COOKIE_HTTPONLY: bool = True
-    COOKIE_SAMESITE: str = "none"
+    # Lax: the API is on the same site as the pages (under /api), and
+    # cookies have no Domain, so each belongs to one tenant's site.
+    COOKIE_SAMESITE: str = "lax"
     COOKIE_PATH: str = "/"
 
     # JWT
@@ -44,9 +46,10 @@ class Settings(BaseSettings):
     # options > OAuth. Unset hides the option.
     STRIPE_CONNECT_CLIENT_ID: str | None = None
 
-    # The API's public address. Stripe's OAuth returns to
-    # {API_BASE_URL}/stripe-account/v1/oauth/callback, which must be listed
-    # as a redirect URI in Stripe's OAuth settings.
+    # The platform's own site (not a tenant's), where the API also answers
+    # under /api. Stripe's OAuth returns to
+    # {API_BASE_URL}/api/stripe-account/v1/oauth/callback, which must be
+    # listed as a redirect URI in Stripe's OAuth settings.
     API_BASE_URL: str = "http://localhost:8000"
 
     # Document storage (app/integrations/storage). Australian regions only:

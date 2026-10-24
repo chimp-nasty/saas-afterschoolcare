@@ -8,7 +8,10 @@
 	import OnboardForm from '$lib/features/customer/components/OnboardForm.svelte';
 
 	import { createCustomerApi } from '$lib/api/public/adapters/customer';
+	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { RegistrationRequest } from '$lib/api/schema';
+
+	let { data } = $props();
 
 	const customerApi = createCustomerApi();
 
@@ -34,7 +37,7 @@
 <Page>
 	<PageHeader title="Create an account" />
 
-	<OnboardForm onsubmit={register} />
+	<OnboardForm termsUrl={data.hasTerms ? siteFileUrl('terms') : null} onsubmit={register} />
 
 	<p class="text-center text-sm text-(--text-muted)">
 		Already have an account?

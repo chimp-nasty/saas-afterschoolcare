@@ -1,4 +1,5 @@
 <script lang="ts">
+	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
 
@@ -11,8 +12,11 @@
 	};
 
 	let {
+		termsUrl = null,
 		onsubmit
 	}: {
+		// The business's terms PDF, when it has uploaded one.
+		termsUrl?: string | null;
 		onsubmit: SubmitHandler<RegistrationRequest>;
 	} = $props();
 
@@ -100,4 +104,9 @@
 			<input {id} type="checkbox" bind:checked={body.terms_accepted} required />
 		{/snippet}
 	</Field>
+
+	<!-- The business's current terms (the version accepted is recorded). -->
+	{#if termsUrl}
+		<HyperTextLink href={termsUrl} external>Read the terms and conditions</HyperTextLink>
+	{/if}
 </Form>

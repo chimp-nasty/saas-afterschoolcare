@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -12,7 +12,7 @@ import type {
 
 
 export type ActionFilter = Omit<
-    NonNullable<operations['list_actions_action_v1__get']['parameters']['query']>,
+    NonNullable<operations['list_actions_api_action_v1__get']['parameters']['query']>,
     keyof Pagination
 >;
 
@@ -21,7 +21,7 @@ export function createActionsApi(
     fetcher?: typeof fetch
 ) {
     const baseUrl =
-        `${PUBLIC_API_URL}/action/v1`;
+        `${API_BASE}/action/v1`;
 
     return {
         list(

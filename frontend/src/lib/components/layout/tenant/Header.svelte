@@ -6,6 +6,7 @@
 
 	import Button from '$lib/components/actions/Button.svelte';
 	import { auth } from '$lib/auth/state.svelte';
+	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 
 	let {
 		onMenu
@@ -29,9 +30,15 @@
 	"
 >
 	<div class="flex min-h-12 w-full items-center gap-4">
-		<p class="mr-auto text-sm font-semibold text-(--text)">
-			{page.data.location.tenant_name} - {page.data.location.location_code}
-		</p>
+		<div class="mr-auto flex min-w-0 items-center gap-3">
+			{#if page.data.location.has_logo}
+				<img src={siteFileUrl('logo')} alt="" class="h-9 w-auto max-w-32 object-contain" />
+			{/if}
+
+			<p class="truncate text-sm font-semibold text-(--text)">
+				{page.data.location.tenant_name} - {page.data.location.location_name}
+			</p>
+		</div>
 
 		{#if $auth.authenticated}
 			<p class="hidden text-sm text-(--text-muted) md:block">

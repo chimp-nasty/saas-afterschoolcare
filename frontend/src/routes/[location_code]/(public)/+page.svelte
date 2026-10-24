@@ -20,7 +20,7 @@
 
 	let { data } = $props();
 
-	const name = $derived(data.location.display_name ?? data.location.location_name);
+	const name = $derived(data.location.location_name);
 </script>
 
 <Page>

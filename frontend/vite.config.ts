@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
-import adapter from '@sveltejs/adapter-vercel';
+import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
@@ -12,9 +12,19 @@ export default defineConfig({
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
 				runes: ({ filename }) => filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			// A single-page app (no page renders on the server): every path
+			// serves index.html, behind the same load balancer as the API.
+			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
+	server: {
+		// The API is on the same site, under /api (as in production). The
+		// browser's Host (e.g. tenant1.localhost:5173) is passed on unchanged:
+		// the API reads the tenant from it.
+		proxy: {
+			'/api': { target: 'http://localhost:8000', changeOrigin: false }
+		}
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

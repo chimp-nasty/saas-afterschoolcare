@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 import { buildQueryParams } from '$lib/api/param';
@@ -20,12 +20,12 @@ import type {
 
 
 export type ListBookingsFilter = Omit<
-	NonNullable<operations['list_bookings_booking_v1__get']['parameters']['query']>,
+	NonNullable<operations['list_bookings_api_booking_v1__get']['parameters']['query']>,
 	keyof Pagination
 >;
 
 export type ListBookingGroupsFilter = Omit<
-	NonNullable<operations['list_booking_groups_booking_v1_groups_get']['parameters']['query']>,
+	NonNullable<operations['list_booking_groups_api_booking_v1_groups_get']['parameters']['query']>,
 	keyof Pagination
 >;
 
@@ -34,7 +34,7 @@ export function createBookingApi(
 	fetcher?: typeof fetch
 ) {
 	const baseUrl =
-		`${PUBLIC_API_URL}/booking/v1`;
+		`${API_BASE}/booking/v1`;
 
 	return {
 		create(body: CreateBookingRequest) {

@@ -2,11 +2,11 @@ from uuid import UUID
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
-from app.dependencies.auth import require_permission
+from app.dependencies.auth import require_permission, site_origin
 from app.dependencies.rls import get_rls_db
 from app.dependencies.service import get_service
 from app.public.services.bookings_create import CreateBookingService
@@ -90,7 +90,7 @@ def get_booking_group(
 @router.post("/groups/{booking_group_id}/checkout")
 def create_booking_group_checkout(
     booking_group_id: UUID,
-    origin: str | None = Header(default=None),
+    origin: str = Depends(site_origin),
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
@@ -176,7 +176,7 @@ def reinstate_booking(
 @router.post("/", status_code=201)
 def create_booking(
     body: CreateBookingRequest,
-    origin: str | None = Header(default=None),
+    origin: str = Depends(site_origin),
     ctx: TokenContext = Depends(
         require_permission(
             resource="bookings",
