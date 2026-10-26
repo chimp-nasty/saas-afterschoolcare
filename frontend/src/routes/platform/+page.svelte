@@ -55,7 +55,9 @@
 	>
 		{#snippet row(tenant)}
 			<span class="font-semibold">{tenant.name}</span>
-			<span class="text-sm text-(--text-muted)">{tenant.code}</span>
+			<span class="text-sm text-(--text-muted)">
+				{tenant.custom_domain ?? tenant.code}{#if tenant.domains_in_progress}&nbsp;· {tenant.domains_in_progress} setting up{/if}
+			</span>
 			<span class="text-sm">{tenant.invited_email ?? '—'}</span>
 			<span>{tenant.location_count}</span>
 			<span>

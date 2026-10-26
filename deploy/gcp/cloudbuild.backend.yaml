@@ -1,0 +1,28 @@
+# Builds the API image and pushes it to Artifact Registry. Deploying it to
+# Cloud Run is a separate step (deploy/gcp/README.md, "Release the API").
+#
+# From the repo root:
+#   gcloud builds submit . --config=deploy/gcp/cloudbuild.backend.yaml \
+#     --ignore-file=deploy/gcp/build.gcloudignore ... (see the runbook)
+
+steps:
+  # BuildKit, so deploy/docker/backend.Dockerfile.dockerignore applies:
+  # only backend/app and backend/requirements.txt reach the image.
+  - name: gcr.io/cloud-builders/docker
+    env: ["DOCKER_BUILDKIT=1"]
+    args:
+      - build
+      - --file=deploy/docker/backend.Dockerfile
+      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/api:${_TAG}
+      - backend
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/api:${_TAG}
+
+substitutions:
+  _REGION: australia-southeast1
+  _REPOSITORY: app
+  _TAG: manual
+
+options:
+  logging: CLOUD_LOGGING_ONLY

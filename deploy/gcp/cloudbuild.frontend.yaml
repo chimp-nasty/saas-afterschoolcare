@@ -1,0 +1,45 @@
+# Builds the site (static files) for one environment and copies it to that
+# environment's site bucket. Built per environment: the platform's host is
+# fixed into the build (PUBLIC_PLATFORM_HOST).
+#
+# From the repo root:
+#   gcloud builds submit . --config=deploy/gcp/cloudbuild.frontend.yaml \
+#     --ignore-file=deploy/gcp/build.gcloudignore ... (see the runbook)
+
+steps:
+  - id: install
+    name: node:22
+    dir: frontend
+    entrypoint: npm
+    args: ["ci"]
+
+  - id: build
+    name: node:22
+    dir: frontend
+    entrypoint: npm
+    args: ["run", "build"]
+    env: ["PUBLIC_PLATFORM_HOST=${_PLATFORM_HOST}"]
+
+  # Content-named files first, cached for a year and never deleted (a tab
+  # still open on the previous release keeps loading its files). Then
+  # everything else, never cached, so a new index.html shows at once and
+  # only ever points at files already uploaded.
+  - id: publish
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        gcloud storage rsync frontend/build/_app/immutable gs://${_SITE_BUCKET}/_app/immutable \
+          --recursive --cache-control="public, max-age=31536000, immutable"
+        gcloud storage rsync frontend/build gs://${_SITE_BUCKET} \
+          --recursive --exclude="^_app/immutable/" --delete-unmatched-destination-objects \
+          --cache-control="no-cache"
+
+substitutions:
+  _PLATFORM_HOST: ""
+  _SITE_BUCKET: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY

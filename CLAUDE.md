@@ -30,7 +30,7 @@ Mind the file order: a SQL-language function body is checked when it's created, 
 - Routes call services, never repositories. One router per resource (`app/public/routes/*.py`), prefix `/<resource>/v1`, every handler returns `ApiResponse[...]`.
 - Services own transactions (`@transactional` from `app/db/transaction.py`) and business logging. Services are built by `get_service(...)`, which injects any `Repository` subclass named in `__init__` by type.
 - Repositories own queries and never commit. Models in `app/db/models.py` are generated from the database (don't edit); request/response models live in `schemas/`.
-- Stripe is only called through `StripeClient` (`app/integrations/payments/stripe/client.py`). Each tenant is paid into its own connected account (Stripe Connect, Standard, direct charges): pass the payment's `stripe_account_id` (`StripeClient(account_id=...)`); the database picks it (`tenancy.payments_account`) and refuses bookings and checkouts while the tenant can't take payments. Events on connected accounts arrive on `/api/v1/webhooks/stripe/connect`. Setup: `infra/stripe/README.md`. Our database is the only source of prices: checkout and refunds send amounts directly; there's no Stripe catalogue.
+- Stripe is only called through `StripeClient` (`app/integrations/payments/stripe/client.py`). Each tenant is paid into its own connected account (Stripe Connect, Standard, direct charges): pass the payment's `stripe_account_id` (`StripeClient(account_id=...)`); the database picks it (`tenancy.payments_account`) and refuses bookings and checkouts while the tenant can't take payments. Events on connected accounts arrive on `/api/v1/webhooks/stripe/connect`. Setup: `deploy/stripe/README.md`. Our database is the only source of prices: checkout and refunds send amounts directly; there's no Stripe catalogue.
 
 ### Rules live in the database
 
@@ -60,6 +60,6 @@ Mind the file order: a SQL-language function body is checked when it's created, 
 
 ## Not built yet (MVP order)
 
-Tenant configuration and Stripe Connect. Later: a review of customer-facing wording (explanations, guides, rule descriptions; text only), and the audit trail after the MVP. The portal split (staff portal, admin portal, staff kiosk) and its rules are in `docs/portals.md`, kiosk procedures in `docs/kiosk-procedures.md`; email deployment steps (webhook subscription, SES tenants) are in `infra/email/ses/README.md`.
+Tenant configuration and Stripe Connect. Later: a review of customer-facing wording (explanations, guides, rule descriptions; text only), and the audit trail after the MVP. The portal split (staff portal, admin portal, staff kiosk) and its rules are in `docs/portals.md`, kiosk procedures in `docs/kiosk-procedures.md`; email deployment steps (webhook subscription, SES tenants) are in `deploy/email/ses/README.md`. Deployment (Google Cloud runbook, Dockerfile, environment settings) lives in `deploy/` (`deploy/README.md`); nothing deployment-specific goes in `backend/` or `frontend/`.
 
 Timestamps that are compared with each other (attendance, ID checks, shifts) are stamped by the database's clock (`now()`), never the app server's.

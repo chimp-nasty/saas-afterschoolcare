@@ -1,0 +1,5 @@
+# Port 80: every request goes to the same address over HTTPS.
+name: web-http
+defaultUrlRedirect:
+  httpsRedirect: true
+  redirectResponseCode: MOVED_PERMANENTLY_DEFAULT

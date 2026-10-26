@@ -25,6 +25,10 @@ class PlatformTenantResponse(BaseModel):
     location_count: int
     payments_connected: bool
     takes_payments: bool
+    # Its live main domain, and how many of its domains are being set up
+    # (pending, proven, suspended or failed).
+    custom_domain: str | None
+    domains_in_progress: int
 
 
 class SetTenantActiveRequest(BaseModel):

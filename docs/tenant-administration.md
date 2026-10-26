@@ -109,11 +109,31 @@ Each stage ends with a dev rebuild and a test run.
    ./venv/Scripts/python -c "import os; from sqlalchemy import create_engine, text; from app.core.security import hash_password; e = create_engine(os.environ['DATABASE_ADMIN_URL']); c = e.connect(); c.execute(text('INSERT INTO auth.platform_admins (email, password_hash, first_name, last_name) VALUES (:e, :p, :f, :l)'), dict(e='you@example.com', p=hash_password(password='a long password'), f='First', l='Last')); c.commit()"
    ```
 5. **Landing page and branding** (built 24 October 2026): one brand per business, `tenancy.tenant_branding` (logo, square site icon, two colours; `location_branding` dropped), used by the landing page and every centre's pages. `tenancy.tenants.tagline`; `tenancy.tenant_faqs` (up to 20, in order); `tenancy.tenant_documents` (privacy and terms PDFs, versioned, never changed or removed). Files upload straight to the bucket (`pending/`), then the server checks them (Pillow for images: PNG/JPEG/WebP up to 1 MB, the icon a square PNG of at least 192px; PDFs up to 5 MB) and moves them to `branding/` or `policies/`. Public: `/api/location-branding/v1/public/business` and `/site-files/{logo|icon|privacy|terms}` (a redirect to a short-lived link; the icon falls back to the logo, then `/favicon.svg`). Owner: Business settings › Your site (`/api/business/v1/site…`, `tenant_settings`). Family sign-up links the current terms and records the version accepted (`customer_profile.terms_document_id`, fixed once set). Tests: `tests/test_site.py`.
-6. **Custom domains:** see section 7.
+6. **Custom domains:** see section 7. 6a (deployment) is the runbook `deploy/gcp/README.md`. 6b was built 26 October 2026:
+   - **Data and rules:** `tenancy.tenant_domains` and `tenancy.tenant_certificates`, whose states and rules are in `schema/0002`. Owners can only add domains and mark them for removal. The domain check, which has its own RLS channel (`auth.is_domain_check`), moves domains along and sets `tenants.custom_domain`.
+   - **Code:**
+     - `app/integrations/domains/`: Google, plus a local stand-in for dev where everything is found at once (`DOMAINS_PROVIDER`).
+     - `app/tenancy/services/domain_check.py`: the state machine.
+     - `domains.py`: the owner's side.
+     - `POST /api/internal/v1/domain-check`: Cloud Scheduler's endpoint, platform host only, with `X-Domain-Check-Secret`.
+   - **Screens:**
+     - Business settings › Domains (`tenant_domains r/u`): records with copy buttons and a "found" tick, Check now and Remove.
+     - The platform's list shows the live domain.
+   - **Tests:** `tests/test_domains.py`, using `FakeDomains`.
 
 ## 7. Custom domains (stage 6)
 
 Researched 23 October 2026 against Google Cloud, Stripe, Caddy, Cloudflare and AWS documentation. Prices for the load balancer are estimates; check them in the GCP calculator for australia-southeast1.
+
+**Agreed 26 October 2026** (these replace anything below that disagrees):
+- **Two parts.** 6a is the deployment itself, a runbook rather than Terraform: `deploy/gcp/README.md`, dev first (`saas-afterschoolcare-dev`, `dev.sessionpilot.com.au`). 6b is custom domains in the app, built and tested with a fake Google and DNS (as with `FakeStripe`), and only using the real ones when deployed.
+- **The platform domain is `sessionpilot.com.au`**, in Cloud DNS in its own project (`sessionpilot-dns`). Each environment's project holds its own subdomain's zone.
+- **The site is served from a bucket.** `/api/*` goes to Cloud Run and everything else to the site bucket, with deep links rewritten to `index.html` at the load balancer. If that rewrite doesn't work, the site goes in a small nginx container instead.
+- **Each business has one main domain and up to 4 redirect domains** (e.g. `after3recclub.com.au`, with `.au`, `.com` and `.online` sending visitors to it), each with `www`. Every domain is verified in the same way. A redirect domain must be verified before it redirects.
+- **Redirects happen at the load balancer.** The app adds a host rule per live domain: a 301 to the main domain that keeps the path. The generated host's pages redirect too, but `/api` on it never does.
+- **One certificate per business**, covering all its verified domains. When the set changes it's replaced, and the old one serves until the new one is active. The 100-certificate limit therefore counts businesses, not domains.
+- **The background check** is Cloud Scheduler calling an internal endpoint every 5 minutes. The endpoint is only accepted on the platform host, with a secret header. Owners also get "Check now". Unverified claims expire after 7 days.
+- **No email to owners for now.** A domain's state, including failed or suspended, shows in Business settings › Domain.
 
 **Choice: a regional external Application Load Balancer in Sydney with Google-managed certificates (Certificate Manager).**
 - TLS ends in australia-southeast1 only. The global load balancer and Cloudflare end TLS at the edge nearest the visitor, which can be overseas (a parent travelling): a data-residency question we avoid.

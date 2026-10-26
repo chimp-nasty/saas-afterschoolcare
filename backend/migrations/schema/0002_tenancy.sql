@@ -357,3 +357,256 @@ BEGIN
     RETURN FOUND;
 END;
 $$;
+
+
+-- =====================================================
+-- TENANT DOMAINS (custom domains)
+-- =====================================================
+
+-- A business's own domains (docs/tenant-administration.md, section 7): one
+-- main domain, where its site then lives, and up to 4 redirect domains
+-- sending visitors to it. The owner adds and removes them (Business
+-- settings › Domains); everything else is done by the domain check, server
+-- code that moves each one along (app/tenancy/services/domain_check.py):
+--
+--   pending_dns  added; waiting for the owner's DNS records. The TXT record
+--                proves which business owns the domain, so several may
+--                claim it while pending: the first to prove it gets it.
+--                Given up after 7 days.
+--   verified     proven; waiting for the business's certificate to cover it
+--                and for the domain to point at us
+--   active       live. An active main domain is tenants.custom_domain.
+--   suspended    its records were missing on 3 daily checks in a row; back
+--                to active when they return
+--   failed       given up (failure_reason); the owner removes it and tries
+--                again
+--   removing     the owner removed it: it stops working at once, and the row
+--                goes once its certificate and authorizations are deleted
+CREATE TABLE tenancy.tenant_domains (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    tenant_id UUID NOT NULL,
+
+    -- Lower case, no trailing dot, international names in punycode.
+    hostname VARCHAR(253) NOT NULL,
+    is_main BOOLEAN NOT NULL,
+    -- www.<hostname> too: on the certificate, and sent to the main domain.
+    include_www BOOLEAN NOT NULL,
+
+    state VARCHAR(20) NOT NULL DEFAULT 'pending_dns',
+    failure_reason VARCHAR(300),
+
+    -- The TXT record's value (its name is set by the app).
+    verification_token VARCHAR(64) NOT NULL,
+
+    -- Google Certificate Manager's DNS authorizations, and the CNAME record
+    -- each needs, for the hostname and for www.
+    dns_authorization TEXT NOT NULL,
+    auth_record_name VARCHAR(300) NOT NULL,
+    auth_record_value VARCHAR(300) NOT NULL,
+    www_dns_authorization TEXT,
+    www_auth_record_name VARCHAR(300),
+    www_auth_record_value VARCHAR(300),
+
+    -- What the last check found, shown to the owner record by record.
+    txt_seen BOOLEAN NOT NULL DEFAULT FALSE,
+    auth_seen BOOLEAN NOT NULL DEFAULT FALSE,
+    address_seen BOOLEAN NOT NULL DEFAULT FALSE,
+    www_auth_seen BOOLEAN NOT NULL DEFAULT FALSE,
+    www_address_seen BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Daily checks of a live domain that failed in a row.
+    failed_checks SMALLINT NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_checked_at TIMESTAMPTZ,
+    verified_at TIMESTAMPTZ,
+    active_at TIMESTAMPTZ,
+
+    CONSTRAINT fk_tenant_domains_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT ck_tenant_domains_state
+        CHECK (state IN ('pending_dns', 'verified', 'active', 'suspended', 'failed', 'removing')),
+
+    CONSTRAINT ck_tenant_domains_hostname
+        CHECK (hostname ~ '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$'),
+
+    CONSTRAINT ck_tenant_domains_www
+        CHECK (
+            NOT (include_www AND hostname LIKE 'www.%')
+            AND include_www = (www_dns_authorization IS NOT NULL)
+            AND include_www = (www_auth_record_name IS NOT NULL)
+            AND include_www = (www_auth_record_value IS NOT NULL)
+        )
+);
+
+-- Once proven, a domain is one business's.
+CREATE UNIQUE INDEX uq_tenant_domains_hostname_proven
+    ON tenancy.tenant_domains (hostname)
+    WHERE state IN ('verified', 'active', 'suspended', 'removing');
+
+-- A business adds each domain once (again after it failed).
+CREATE UNIQUE INDEX uq_tenant_domains_tenant_hostname
+    ON tenancy.tenant_domains (tenant_id, hostname)
+    WHERE state <> 'failed';
+
+CREATE UNIQUE INDEX uq_tenant_domains_main
+    ON tenancy.tenant_domains (tenant_id)
+    WHERE is_main AND state NOT IN ('failed', 'removing');
+
+-- The owner adds domains and removes them; only the domain check (no user
+-- session) moves them along. Redirect domains need a main domain to send
+-- visitors to (at most 4), and the main domain goes last. plpgsql: the auth
+-- helpers are defined in schema/0005.
+CREATE FUNCTION tenancy.enforce_tenant_domain_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP = 'INSERT' AND NOT NEW.is_main THEN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM tenancy.tenant_domains d
+            WHERE d.tenant_id = NEW.tenant_id
+              AND d.is_main
+              AND d.state NOT IN ('failed', 'removing')
+        ) THEN
+            RAISE EXCEPTION 'Add a main domain before redirect domains'
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_tenant_domains_main_first',
+                      TABLE = 'tenant_domains',
+                      SCHEMA = 'tenancy';
+        END IF;
+
+        IF (
+            SELECT count(*)
+            FROM tenancy.tenant_domains d
+            WHERE d.tenant_id = NEW.tenant_id
+              AND NOT d.is_main
+              AND d.state NOT IN ('failed', 'removing')
+        ) >= 4 THEN
+            RAISE EXCEPTION 'A business has at most 4 redirect domains'
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_tenant_domains_redirect_limit',
+                      TABLE = 'tenant_domains',
+                      SCHEMA = 'tenancy';
+        END IF;
+    END IF;
+
+    IF auth.current_user_id() IS NOT NULL THEN
+        IF TG_OP = 'INSERT' AND (
+            NEW.state <> 'pending_dns'
+            OR NEW.txt_seen OR NEW.auth_seen OR NEW.address_seen
+            OR NEW.www_auth_seen OR NEW.www_address_seen
+            OR NEW.verified_at IS NOT NULL OR NEW.active_at IS NOT NULL
+        ) THEN
+            RAISE EXCEPTION 'Only the domain check moves a domain along'
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_tenant_domains_server_only',
+                      TABLE = 'tenant_domains',
+                      SCHEMA = 'tenancy';
+        END IF;
+
+        IF TG_OP = 'UPDATE' AND (
+            NEW.state <> 'removing'
+            OR (to_jsonb(NEW) - 'state') IS DISTINCT FROM (to_jsonb(OLD) - 'state')
+        ) THEN
+            RAISE EXCEPTION 'Only the domain check moves a domain along'
+                USING ERRCODE = 'check_violation',
+                      CONSTRAINT = 'ck_tenant_domains_server_only',
+                      TABLE = 'tenant_domains',
+                      SCHEMA = 'tenancy';
+        END IF;
+    END IF;
+
+    IF TG_OP = 'UPDATE'
+       AND NEW.state = 'removing'
+       AND OLD.state <> 'removing'
+       AND NEW.is_main
+       AND EXISTS (
+           SELECT 1
+           FROM tenancy.tenant_domains d
+           WHERE d.tenant_id = NEW.tenant_id
+             AND NOT d.is_main
+             AND d.state NOT IN ('failed', 'removing')
+       ) THEN
+        RAISE EXCEPTION 'Remove the redirect domains before the main domain'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_tenant_domains_redirects_first',
+                  TABLE = 'tenant_domains',
+                  SCHEMA = 'tenancy';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_tenant_domains_rules
+    BEFORE INSERT OR UPDATE ON tenancy.tenant_domains
+    FOR EACH ROW EXECUTE FUNCTION tenancy.enforce_tenant_domain_rules();
+
+-- The business's main domain once it's live, set and cleared by the domain
+-- check only: never from a user session (the owner changes the business's
+-- other details on the same row).
+CREATE FUNCTION tenancy.enforce_custom_domain_server_only()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.custom_domain IS DISTINCT FROM OLD.custom_domain
+       AND auth.current_user_id() IS NOT NULL THEN
+        RAISE EXCEPTION 'Only the domain check sets the main domain'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_tenants_custom_domain_server_only',
+                  TABLE = 'tenants',
+                  SCHEMA = 'tenancy';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_tenants_custom_domain
+    BEFORE UPDATE ON tenancy.tenants
+    FOR EACH ROW EXECUTE FUNCTION tenancy.enforce_custom_domain_server_only();
+
+
+-- =====================================================
+-- TENANT CERTIFICATES (custom domains)
+-- =====================================================
+
+-- One Google-managed certificate per business covering all its proven
+-- domains (and their www), so the load balancer's certificate limit counts
+-- businesses, not domains. When the set changes a new one is issued; the
+-- old one keeps serving until the new one is attached, then it's retired
+-- (detached, deleted, and the row goes). Only the domain check writes here.
+CREATE TABLE tenancy.tenant_certificates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    tenant_id UUID NOT NULL,
+
+    -- Google's certificate id.
+    name VARCHAR(63) NOT NULL,
+    -- The hostnames it covers: sorted, comma-separated.
+    hostnames TEXT NOT NULL,
+
+    state VARCHAR(20) NOT NULL DEFAULT 'issuing',
+    failure_reason VARCHAR(300),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- On the load balancer: its domains can go live.
+    attached_at TIMESTAMPTZ,
+
+    CONSTRAINT fk_tenant_certificates_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_tenant_certificates_name
+        UNIQUE (name),
+
+    CONSTRAINT ck_tenant_certificates_state
+        CHECK (state IN ('issuing', 'active', 'failed', 'retiring'))
+);

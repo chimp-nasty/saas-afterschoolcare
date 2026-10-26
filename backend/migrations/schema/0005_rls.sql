@@ -51,6 +51,18 @@ AS $$
     );
 $$;
 
+-- The request is the domain check's (app/tenancy/services/domain_check.py):
+-- server code with no user, moving every business's custom domains along
+-- (app.channel, set only by that service).
+CREATE FUNCTION auth.is_domain_check()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT current_setting('app.channel', true) = 'domain_check'
+       AND auth.current_user_id() IS NULL;
+$$;
+
 -- The current user holds a tenant permission (docs/tenant-administration.md)
 -- for the tenant: read from the grants each time, so taking one away works
 -- at once, whatever the token still says.
@@ -189,6 +201,10 @@ ALTER TABLE tenancy.tenant_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_documents FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_stripe_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_stripe_accounts FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_domains ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_domains FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_certificates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_certificates FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY tenants_read_policy
     ON tenancy.tenants FOR SELECT
@@ -252,12 +268,50 @@ CREATE POLICY tenant_stripe_accounts_write_policy
     USING (auth.has_tenant_permission(tenant_id, 'tenant_stripe_account', 'u'))
     WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_stripe_account', 'u'));
 
--- The owner changes the business's details. Tenants are created at
+-- The owner changes the business's details; the domain check sets its live
+-- main domain (custom_domain, schema/0002). Tenants are created at
 -- registration (server code), never from a user session.
 CREATE POLICY tenants_update_policy
     ON tenancy.tenants FOR UPDATE
-    USING (auth.has_tenant_permission(id, 'tenant_settings', 'u'))
-    WITH CHECK (auth.has_tenant_permission(id, 'tenant_settings', 'u'));
+    USING (auth.has_tenant_permission(id, 'tenant_settings', 'u') OR auth.is_domain_check())
+    WITH CHECK (auth.has_tenant_permission(id, 'tenant_settings', 'u') OR auth.is_domain_check());
+
+-- Custom domains (schema/0002): the owner sees them, adds them and marks
+-- them for removal (the triggers allow nothing more); the platform's list
+-- shows them; the domain check sees and changes every business's.
+CREATE POLICY tenant_domains_read_policy
+    ON tenancy.tenant_domains FOR SELECT
+    USING (
+        auth.has_tenant_permission(tenant_id, 'tenant_domains', 'r')
+        OR auth.is_platform_admin()
+        OR auth.is_domain_check()
+    );
+
+CREATE POLICY tenant_domains_insert_policy
+    ON tenancy.tenant_domains FOR INSERT
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_domains', 'u'));
+
+CREATE POLICY tenant_domains_update_policy
+    ON tenancy.tenant_domains FOR UPDATE
+    USING (auth.has_tenant_permission(tenant_id, 'tenant_domains', 'u') OR auth.is_domain_check())
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_domains', 'u') OR auth.is_domain_check());
+
+CREATE POLICY tenant_domains_delete_policy
+    ON tenancy.tenant_domains FOR DELETE
+    USING (auth.is_domain_check());
+
+CREATE POLICY tenant_certificates_read_policy
+    ON tenancy.tenant_certificates FOR SELECT
+    USING (
+        auth.has_tenant_permission(tenant_id, 'tenant_domains', 'r')
+        OR auth.is_platform_admin()
+        OR auth.is_domain_check()
+    );
+
+CREATE POLICY tenant_certificates_write_policy
+    ON tenancy.tenant_certificates FOR ALL
+    USING (auth.is_domain_check())
+    WITH CHECK (auth.is_domain_check());
 
 -- The owner adds and edits the tenant's locations.
 CREATE POLICY locations_insert_policy

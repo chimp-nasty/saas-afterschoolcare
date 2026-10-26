@@ -70,3 +70,79 @@ class FaqLimitError(ApplicationError):
     status_code = status.HTTP_400_BAD_REQUEST
     message = "You can have at most 20 questions"
     result = "failed"
+
+
+# Custom domains (Business settings › Domains, schema/0002), mapped in
+# app/errors/database.py where the database decides.
+class DomainsNotAvailableError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "Custom domains aren't available yet"
+    result = "failed"
+
+
+class DomainPlatformError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "That's one of our own addresses. Enter your business's domain"
+    result = "failed"
+
+
+class DomainNotFoundError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Not found"
+    result = "denied"
+
+
+class DomainHostnameInvalidError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Enter a domain like after3.com.au"
+    result = "failed"
+
+
+class DomainAlreadyAddedError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "You've already added that domain"
+    result = "failed"
+
+
+class DomainMainExistsError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "You already have a main domain. Remove it first to use another"
+    result = "failed"
+
+
+class DomainMainFirstError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Add your main domain before domains that send visitors to it"
+    result = "failed"
+
+
+class DomainRedirectLimitError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "You can have at most 4 domains sending visitors to your main domain"
+    result = "failed"
+
+
+class DomainRedirectsFirstError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "Remove the domains that send visitors to your main domain first"
+    result = "failed"
+
+
+class DomainServerOnlyError(ApplicationError):
+    status_code = status.HTTP_403_FORBIDDEN
+    message = "Domains are moved along by their checks, not by hand"
+    result = "denied"
+
+
+class DomainProviderError(ApplicationError):
+    status_code = status.HTTP_502_BAD_GATEWAY
+    message = "We couldn't set up the domain just now. Please try again in a few minutes"
+    result = "failed"
+
+
+# The scheduled domain check (Cloud Scheduler): anything else is told
+# there's nothing here.
+class DomainCheckDeniedError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Not found"
+    result = "denied"

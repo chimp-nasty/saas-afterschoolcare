@@ -83,6 +83,12 @@ GRANT INSERT, UPDATE ON tenancy.tenant_branding TO app_user;
 GRANT INSERT, UPDATE, DELETE ON tenancy.tenant_faqs TO app_user;
 GRANT INSERT ON tenancy.tenant_documents TO app_user;
 
+-- Custom domains: the owner adds and removes domains; the domain check
+-- moves them along, manages certificates and deletes what's removed (RLS
+-- and schema/0002's triggers decide which).
+GRANT INSERT, UPDATE, DELETE ON tenancy.tenant_domains TO app_user;
+GRANT INSERT, UPDATE, DELETE ON tenancy.tenant_certificates TO app_user;
+
 
 -- =====================================================
 -- SEQUENCES

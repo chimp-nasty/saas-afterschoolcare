@@ -1,0 +1,33 @@
+# What `gcloud builds submit` uploads from the repo root (--ignore-file).
+# An allow-list: only what the two builds need leaves your machine. .env
+# files, venv/, node_modules/, tests and the rest of deploy/ never do.
+/*
+
+!/backend/
+/backend/*
+!/backend/app/
+!/backend/requirements.txt
+
+!/frontend/
+/frontend/*
+!/frontend/src/
+!/frontend/static/
+!/frontend/package.json
+!/frontend/package-lock.json
+!/frontend/vite.config.ts
+!/frontend/tsconfig.json
+!/frontend/.npmrc
+
+!/deploy/
+/deploy/*
+!/deploy/docker/
+!/deploy/gcp/
+/deploy/gcp/*
+!/deploy/gcp/cloudbuild.backend.yaml
+!/deploy/gcp/cloudbuild.frontend.yaml
+
+# Never, wherever they are.
+**/.env
+**/.env.*
+**/__pycache__/
+**/node_modules/

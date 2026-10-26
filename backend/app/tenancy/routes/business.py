@@ -15,6 +15,7 @@ from app.tenancy.schemas.business import (
     BusinessSettingsRequest,
     BusinessSettingsResponse,
 )
+from app.tenancy.schemas.domain import AddDomainRequest, DomainResponse, DomainsResponse
 from app.tenancy.schemas.site import (
     ConfirmSiteUploadRequest,
     FaqsRequest,
@@ -24,6 +25,7 @@ from app.tenancy.schemas.site import (
     StartSiteUploadRequest,
 )
 from app.tenancy.services.business import BusinessService
+from app.tenancy.services.domains import DomainService
 from app.tenancy.services.site import SiteService
 
 
@@ -31,7 +33,8 @@ from app.tenancy.services.site import SiteService
 # owner whichever location they're logged in at, or none
 # (docs/tenant-administration.md). Tenant permissions only: tenant_settings
 # for its details and its site (Your site), tenant_locations for its
-# locations. Stripe is in stripe_account.py.
+# locations, tenant_domains for its own domains. Stripe is in
+# stripe_account.py.
 router = APIRouter(
     prefix="/business/v1",
     tags=["business"],
@@ -39,6 +42,7 @@ router = APIRouter(
 
 _service = get_service(BusinessService, db_dependency=get_rls_db)
 _site_service = get_service(SiteService, db_dependency=get_rls_db)
+_domain_service = get_service(DomainService, db_dependency=get_rls_db)
 
 
 @router.get("/overview")
@@ -174,4 +178,53 @@ def remove_site_image(
         ok=True,
         msg="Logo removed" if kind == "logo" else "Site icon removed",
         data=service.remove_image(tenant_id=ctx.tenant_id, kind=kind),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Domains (stage 6): the business's own domains, the DNS records each needs
+# and how far it's got. tenant_domains r to see them, u to add, remove and
+# check them (all the owner's).
+# ---------------------------------------------------------------------------
+
+
+@router.get("/domains")
+def list_domains(
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_domains", action="r")),
+    service: DomainService = Depends(_domain_service),
+) -> ApiResponse[DomainsResponse]:
+    return ApiResponse(ok=True, msg="Fetched your domains", data=service.list_domains(tenant_id=ctx.tenant_id))
+
+
+@router.post("/domains", status_code=201)
+def add_domain(
+    body: AddDomainRequest,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_domains", action="u")),
+    service: DomainService = Depends(_domain_service),
+) -> ApiResponse[DomainResponse]:
+    return ApiResponse(ok=True, msg="Domain added", data=service.add_domain(tenant_id=ctx.tenant_id, body=body))
+
+
+@router.post("/domains/check")
+def check_domains(
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_domains", action="u")),
+    service: DomainService = Depends(_domain_service),
+) -> ApiResponse[DomainsResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Domains checked",
+        data=service.check_now(tenant_id=ctx.tenant_id, user_id=ctx.user_id),
+    )
+
+
+@router.delete("/domains/{domain_id}")
+def remove_domain(
+    domain_id: UUID,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_domains", action="u")),
+    service: DomainService = Depends(_domain_service),
+) -> ApiResponse[DomainsResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Domain removed",
+        data=service.remove_domain(tenant_id=ctx.tenant_id, user_id=ctx.user_id, domain_id=domain_id),
     )

@@ -3,12 +3,15 @@ import { API_BASE } from '$lib/api/base';
 import { apiWrapper } from '$lib/api/wrapper';
 
 import type {
+	AddDomainRequest,
 	BusinessLocationRequest,
 	BusinessLocationResponse,
 	BusinessOverviewResponse,
 	BusinessSettingsRequest,
 	BusinessSettingsResponse,
 	ConfirmSiteUploadRequest,
+	DomainResponse,
+	DomainsResponse,
 	FaqItem,
 	SiteRequest,
 	SiteResponse,
@@ -74,6 +77,23 @@ export function createBusinessApi(
 
 		removeImage(kind: 'logo' | 'icon') {
 			return apiWrapper<SiteResponse>(`${baseUrl}/site/${kind}`, { method: 'DELETE', fetcher });
+		},
+
+		// Domains (stage 6): the business's own domains and their DNS records.
+		domains() {
+			return apiWrapper<DomainsResponse>(`${baseUrl}/domains`, { method: 'GET', fetcher });
+		},
+
+		addDomain(body: AddDomainRequest) {
+			return apiWrapper<DomainResponse>(`${baseUrl}/domains`, { method: 'POST', body, fetcher });
+		},
+
+		checkDomains() {
+			return apiWrapper<DomainsResponse>(`${baseUrl}/domains/check`, { method: 'POST', fetcher });
+		},
+
+		removeDomain(domainId: string) {
+			return apiWrapper<DomainsResponse>(`${baseUrl}/domains/${domainId}`, { method: 'DELETE', fetcher });
 		}
 	};
 }

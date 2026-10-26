@@ -33,6 +33,13 @@ from app.errors.platform import (
 )
 from app.errors.tenancy import (
     AbnInvalidError,
+    DomainAlreadyAddedError,
+    DomainHostnameInvalidError,
+    DomainMainExistsError,
+    DomainMainFirstError,
+    DomainRedirectLimitError,
+    DomainRedirectsFirstError,
+    DomainServerOnlyError,
     FaqLimitError,
     SiteColourError,
     LocationCodeReservedError,
@@ -218,6 +225,16 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     # The business's site (stage 5).
     "ck_tenant_branding_colors": SiteColourError,
     "ck_tenant_faqs_limit": FaqLimitError,
+    # Custom domains (schema/0002).
+    "ck_tenant_domains_hostname": DomainHostnameInvalidError,
+    "ck_tenant_domains_www": DomainHostnameInvalidError,
+    "uq_tenant_domains_tenant_hostname": DomainAlreadyAddedError,
+    "uq_tenant_domains_main": DomainMainExistsError,
+    "ck_tenant_domains_main_first": DomainMainFirstError,
+    "ck_tenant_domains_redirect_limit": DomainRedirectLimitError,
+    "ck_tenant_domains_redirects_first": DomainRedirectsFirstError,
+    "ck_tenant_domains_server_only": DomainServerOnlyError,
+    "ck_tenants_custom_domain_server_only": DomainServerOnlyError,
 }
 
 

@@ -122,7 +122,7 @@ Destroying the child's profile and other records is handled under the child-reco
 
 The lifecycle rules only clean up abandoned uploads. Real records under `documents/` are **never** deleted by lifecycle rules (see principle 5). The S3 equivalent is in section 15.
 
-The files below are kept in `infra/storage/gcs/`, with a CORS file per environment (`child-documents-cors.dev.json` for local development).
+The files below are kept in `deploy/storage/gcs/`, with a CORS file per environment (`child-documents-cors.dev.json` for local development).
 
 `child-documents-lifecycle.json`:
 

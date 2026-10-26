@@ -795,6 +795,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/business/v1/domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Domains */
+        get: operations["list_domains_api_business_v1_domains_get"];
+        put?: never;
+        /** Add Domain */
+        post: operations["add_domain_api_business_v1_domains_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/domains/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check Domains */
+        post: operations["check_domains_api_business_v1_domains_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/domains/{domain_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Domain */
+        delete: operations["remove_domain_api_business_v1_domains__domain_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/internal/v1/domain-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Domain Check */
+        post: operations["run_domain_check_api_internal_v1_domain_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/login": {
         parameters: {
             query?: never;
@@ -2269,6 +2338,18 @@ export interface components {
             /** Cited At */
             cited_at: string | null;
         };
+        /** AddDomainRequest */
+        AddDomainRequest: {
+            /** Hostname */
+            hostname: string;
+            /** Is Main */
+            is_main: boolean;
+            /**
+             * Include Www
+             * @default true
+             */
+            include_www: boolean;
+        };
         /**
          * AddStaffRequest
          * @description Add someone to the location's staff; new accounts are emailed an invite.
@@ -2463,6 +2544,30 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["CustomerProfileResponse"] | null;
+        };
+        /** ApiResponse[DomainCheckResponse] */
+        ApiResponse_DomainCheckResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["DomainCheckResponse"] | null;
+        };
+        /** ApiResponse[DomainResponse] */
+        ApiResponse_DomainResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["DomainResponse"] | null;
+        };
+        /** ApiResponse[DomainsResponse] */
+        ApiResponse_DomainsResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["DomainsResponse"] | null;
         };
         /** ApiResponse[FamilyMessageResponse] */
         ApiResponse_FamilyMessageResponse_: {
@@ -3922,6 +4027,70 @@ export interface components {
              */
             updated_at: string;
         };
+        /** DnsRecordResponse */
+        DnsRecordResponse: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "TXT" | "CNAME" | "A";
+            /** Name */
+            name: string;
+            /** Value */
+            value: string;
+            /** Seen */
+            seen: boolean;
+            /** Purpose */
+            purpose: string;
+        };
+        /** DomainCheckResponse */
+        DomainCheckResponse: {
+            /** Businesses Checked */
+            businesses_checked: number;
+        };
+        /** DomainResponse */
+        DomainResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Hostname */
+            hostname: string;
+            /** Is Main */
+            is_main: boolean;
+            /** Include Www */
+            include_www: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending_dns" | "verified" | "active" | "suspended" | "failed" | "removing";
+            /** Failure Reason */
+            failure_reason: string | null;
+            /** Records */
+            records: components["schemas"]["DnsRecordResponse"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Checked At */
+            last_checked_at: string | null;
+            /** Active At */
+            active_at: string | null;
+        };
+        /** DomainsResponse */
+        DomainsResponse: {
+            /** Available */
+            available: boolean;
+            /** Generated Host */
+            generated_host: string;
+            /** Live Domain */
+            live_domain: string | null;
+            /** Domains */
+            domains: components["schemas"]["DomainResponse"][];
+        };
         /**
          * EmergencyRelation
          * @enum {string}
@@ -4744,6 +4913,10 @@ export interface components {
             payments_connected: boolean;
             /** Takes Payments */
             takes_payments: boolean;
+            /** Custom Domain */
+            custom_domain: string | null;
+            /** Domains In Progress */
+            domains_in_progress: number;
         };
         /**
          * PublicBusinessResponse
@@ -5719,6 +5892,7 @@ export type AccountResponse = components['schemas']['AccountResponse'];
 export type AccountRoleResponse = components['schemas']['AccountRoleResponse'];
 export type ActionPlanResponse = components['schemas']['ActionPlanResponse'];
 export type ActionResponse = components['schemas']['ActionResponse'];
+export type AddDomainRequest = components['schemas']['AddDomainRequest'];
 export type AddStaffRequest = components['schemas']['AddStaffRequest'];
 export type AddStaffResponse = components['schemas']['AddStaffResponse'];
 export type ApiResponseAccountResponse = components['schemas']['ApiResponse_AccountResponse_'];
@@ -5742,6 +5916,9 @@ export type ApiResponseCreateBookingResponse = components['schemas']['ApiRespons
 export type ApiResponseCreateServiceDaysResponse = components['schemas']['ApiResponse_CreateServiceDaysResponse_'];
 export type ApiResponseCreatedInviteResponse = components['schemas']['ApiResponse_CreatedInviteResponse_'];
 export type ApiResponseCustomerProfileResponse = components['schemas']['ApiResponse_CustomerProfileResponse_'];
+export type ApiResponseDomainCheckResponse = components['schemas']['ApiResponse_DomainCheckResponse_'];
+export type ApiResponseDomainResponse = components['schemas']['ApiResponse_DomainResponse_'];
+export type ApiResponseDomainsResponse = components['schemas']['ApiResponse_DomainsResponse_'];
 export type ApiResponseFamilyMessageResponse = components['schemas']['ApiResponse_FamilyMessageResponse_'];
 export type ApiResponseFamilyResponse = components['schemas']['ApiResponse_FamilyResponse_'];
 export type ApiResponseInviteDetailsResponse = components['schemas']['ApiResponse_InviteDetailsResponse_'];
@@ -5852,6 +6029,10 @@ export type CreateServiceDaysResponse = components['schemas']['CreateServiceDays
 export type CreatedInviteResponse = components['schemas']['CreatedInviteResponse'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
+export type DnsRecordResponse = components['schemas']['DnsRecordResponse'];
+export type DomainCheckResponse = components['schemas']['DomainCheckResponse'];
+export type DomainResponse = components['schemas']['DomainResponse'];
+export type DomainsResponse = components['schemas']['DomainsResponse'];
 export type EmergencyRelation = components['schemas']['EmergencyRelation'];
 export type FamilyAttendanceResponse = components['schemas']['FamilyAttendanceResponse'];
 export type FamilyBookingResponse = components['schemas']['FamilyBookingResponse'];
@@ -7729,6 +7910,167 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_domains_api_business_v1_domains_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DomainsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_domain_api_business_v1_domains_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddDomainRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DomainResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_domains_api_business_v1_domains_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DomainsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_domain_api_business_v1_domains__domain_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                domain_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DomainsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_domain_check_api_internal_v1_domain_check_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-domain-check-secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DomainCheckResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -10958,6 +11300,8 @@ export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequire
 export const confirmSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConfirmSiteUploadRequest"]["kind"]> = ["logo", "icon", "privacy", "terms"];
 export const createKioskDeviceRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreateKioskDeviceRequest"]["kind"]> = ["family", "staff"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
+export const dnsRecordResponseTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DnsRecordResponse"]["type"]> = ["TXT", "CNAME", "A"];
+export const domainResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DomainResponse"]["state"]> = ["pending_dns", "verified", "active", "suspended", "failed", "removing"];
 export const emergencyRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EmergencyRelation"]> = ["parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
 export const kioskDeviceResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskDeviceResponse"]["kind"]> = ["family", "staff"];
 export const kioskInfoResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskInfoResponse"]["kind"]> = ["family", "staff"];

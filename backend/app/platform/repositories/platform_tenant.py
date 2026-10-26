@@ -3,14 +3,14 @@ from uuid import UUID
 from sqlalchemy import func, select
 
 from app.db.repository import Repository
-from app.db.models import Location, Tenant, TenantInvite, TenantStripeAccount
+from app.db.models import Location, Tenant, TenantDomain, TenantInvite, TenantStripeAccount
 
 
 class PlatformTenantRepository(Repository):
     """Tenants as the platform sees them (RLS: no tenant data beyond this)."""
 
     def list_with_summary(self) -> list:
-        """Every tenant, newest first, with its invite email, location count and Stripe state."""
+        """Every tenant, newest first, with its invite email, location count, Stripe state and domains."""
         location_count = (
             select(func.count(Location.id))
             .where(Location.tenant_id == Tenant.id)
@@ -27,6 +27,14 @@ class PlatformTenantRepository(Repository):
             .where(TenantStripeAccount.tenant_id == Tenant.id)
             .scalar_subquery()
         )
+        domains_in_progress = (
+            select(func.count(TenantDomain.id))
+            .where(
+                TenantDomain.tenant_id == Tenant.id,
+                TenantDomain.state.notin_(("active", "removing")),
+            )
+            .scalar_subquery()
+        )
 
         return self.db.execute(
             select(
@@ -39,6 +47,8 @@ class PlatformTenantRepository(Repository):
                 location_count.label("location_count"),
                 (payments_connected > 0).label("payments_connected"),
                 func.tenancy.tenant_payments_account(Tenant.id).isnot(None).label("takes_payments"),
+                Tenant.custom_domain,
+                domains_in_progress.label("domains_in_progress"),
             ).order_by(Tenant.created_at.desc())
         ).all()
 

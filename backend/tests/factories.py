@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.core.security import hash_password, hash_token
 from app.errors.payments import PaymentProviderError
 from app.integrations.payments.stripe.client import StripeAccount, StripeCheckout, StripeRefund
+from app.integrations.domains.base import CertificateStatus, DnsAuthorization
 from app.integrations.storage.base import SignedUpload, StoredObject
 from app.main import app
 
@@ -133,6 +134,106 @@ class FakeStorage:
     @classmethod
     def keys(cls) -> set[str]:
         return {key for (_, key) in cls.state.objects}
+
+
+@dataclass
+class FakeDomainsState:
+    """What the fake cloud and DNS hold, for tests to set and inspect."""
+
+    # DNS authorizations by name (their domain), and certificates by name:
+    # {"hostnames", "authorizations", "state", "reason"}.
+    authorizations: dict[str, str] = field(default_factory=dict)
+    certificates: dict[str, dict] = field(default_factory=dict)
+    # What the load balancer was last told to serve (None: never).
+    routing: dict | None = None
+    # Public DNS: TXT and CNAME records by name, addresses by name.
+    txt: dict[str, str] = field(default_factory=dict)
+    cname: dict[str, str] = field(default_factory=dict)
+    addresses: dict[str, str] = field(default_factory=dict)
+
+
+class FakeDomains:
+    """
+    Stands in for DomainsClient in the domain services (patched in conftest),
+    so no test talks to Google or DNS. Certificates stay issuing until a test
+    issues them; records exist once a test publishes them.
+    """
+
+    state = FakeDomainsState()
+
+    def create_dns_authorization(self, *, domain):
+        name = f"auth-{uuid.uuid4().hex[:8]}"
+        self.state.authorizations[name] = domain
+
+        return DnsAuthorization(
+            name=name,
+            record_name=f"_acme-challenge_{name}.{domain}.",
+            record_value=f"{name}.test.authorize.certificatemanager.goog.",
+        )
+
+    def delete_dns_authorization(self, *, name):
+        assert not any(name in c["authorizations"] for c in self.state.certificates.values()), "authorization in use"
+        self.state.authorizations.pop(name, None)
+
+    def create_certificate(self, *, name, hostnames, dns_authorizations):
+        assert all(a in self.state.authorizations for a in dns_authorizations)
+        self.state.certificates[name] = {
+            "hostnames": list(hostnames),
+            "authorizations": list(dns_authorizations),
+            "state": "issuing",
+            "reason": None,
+        }
+
+    def certificate_status(self, *, name):
+        certificate = self.state.certificates[name]
+        return CertificateStatus(state=certificate["state"], reason=certificate["reason"])
+
+    def delete_certificate(self, *, name):
+        if self.state.routing:
+            assert name not in self.state.routing["certificates"], "certificate still on the load balancer"
+        self.state.certificates.pop(name, None)
+
+    def apply_routing(self, *, certificates, redirects):
+        self.state.routing = {
+            "certificates": sorted(certificates),
+            "redirects": {r.key: {"hosts": sorted(r.hosts), "target": r.target} for r in redirects},
+        }
+
+    def has_txt(self, *, name, value):
+        return self.state.txt.get(name) == value
+
+    def has_cname(self, *, name, target):
+        return self.state.cname.get(name.rstrip(".")) == target.rstrip(".")
+
+    def points_to(self, *, name, address):
+        return self.state.addresses.get(name) == address
+
+    # -- For tests --
+
+    @classmethod
+    def publish(cls, domain: dict, *, address: bool = True) -> None:
+        """Add the records Business settings shows for a domain (address: the A records too)."""
+        for record in domain["records"]:
+            if record["type"] == "TXT":
+                cls.state.txt[record["name"]] = record["value"]
+            elif record["type"] == "CNAME":
+                cls.state.cname[record["name"]] = record["value"]
+            elif address:
+                cls.state.addresses[record["name"]] = record["value"]
+
+    @classmethod
+    def unpublish(cls, domain: dict) -> None:
+        for record in domain["records"]:
+            for records in (cls.state.txt, cls.state.cname, cls.state.addresses):
+                records.pop(record["name"], None)
+
+    @classmethod
+    def issue_all(cls, state: str = "active", reason: str | None = None) -> None:
+        """Google finishes every certificate it's issuing."""
+        for certificate in cls.state.certificates.values():
+            if certificate["state"] == "issuing":
+                certificate["state"] = state
+                certificate["reason"] = reason
 
 
 def new_phone() -> str:

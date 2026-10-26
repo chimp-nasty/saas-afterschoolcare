@@ -54,6 +54,8 @@ from sqlalchemy import create_engine, text  # noqa: E402
 
 from tests.factories import (  # noqa: E402  (needs the env above)
     Api,
+    FakeDomains,
+    FakeDomainsState,
     FakeEmail,
     FakeEmailState,
     FakeStorage,
@@ -155,6 +157,29 @@ def fake_storage(monkeypatch) -> type[FakeStorage]:
         monkeypatch.setattr(f"{module}.StorageClient", FakeStorage)
 
     return FakeStorage
+
+
+@pytest.fixture(autouse=True)
+def fake_domains(monkeypatch) -> type[FakeDomains]:
+    """
+    The domain services use the fake cloud and DNS instead, empty for each
+    test, with custom domains set up (the load balancer's address and the
+    scheduler's secret).
+    """
+    monkeypatch.setattr(FakeDomains, "state", FakeDomainsState())
+
+    for module in (
+        "app.tenancy.services.domains",
+        "app.tenancy.services.domain_check",
+    ):
+        monkeypatch.setattr(f"{module}.DomainsClient", FakeDomains)
+
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "DOMAINS_TARGET_IP", "203.0.113.10")
+    monkeypatch.setattr(settings, "DOMAINS_CHECK_SECRET", "test-domain-check-secret")
+
+    return FakeDomains
 
 
 @pytest.fixture(scope="session")

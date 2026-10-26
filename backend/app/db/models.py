@@ -411,6 +411,27 @@ class TenantBranding(Base):
 
 
 
+class TenantCertificate(Base):
+    __tablename__ = 'tenant_certificates'
+    __table_args__ = (
+        CheckConstraint("state::text = ANY (ARRAY['issuing'::character varying, 'active'::character varying, 'failed'::character varying, 'retiring'::character varying]::text[])", name='ck_tenant_certificates_state'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_certificates_tenant'),
+        PrimaryKeyConstraint('id', name='tenant_certificates_pkey'),
+        UniqueConstraint('name', name='uq_tenant_certificates_name'),
+        {'schema': 'tenancy'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(63), nullable=False)
+    hostnames: Mapped[str] = mapped_column(Text, nullable=False)
+    state: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'issuing'::character varying"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    failure_reason: Mapped[Optional[str]] = mapped_column(String(300))
+    attached_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+
 class TenantDocument(Base):
     __tablename__ = 'tenant_documents'
     __table_args__ = (
@@ -430,6 +451,47 @@ class TenantDocument(Base):
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     uploaded_by: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     uploaded_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+
+
+
+class TenantDomain(Base):
+    __tablename__ = 'tenant_domains'
+    __table_args__ = (
+        CheckConstraint("NOT (include_www AND hostname::text ~~ 'www.%%'::text) AND include_www = (www_dns_authorization IS NOT NULL) AND include_www = (www_auth_record_name IS NOT NULL) AND include_www = (www_auth_record_value IS NOT NULL)", name='ck_tenant_domains_www'),
+        CheckConstraint("hostname::text ~ '^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$'::text", name='ck_tenant_domains_hostname'),
+        CheckConstraint("state::text = ANY (ARRAY['pending_dns'::character varying, 'verified'::character varying, 'active'::character varying, 'suspended'::character varying, 'failed'::character varying, 'removing'::character varying]::text[])", name='ck_tenant_domains_state'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_domains_tenant'),
+        PrimaryKeyConstraint('id', name='tenant_domains_pkey'),
+        Index('uq_tenant_domains_hostname_proven', 'hostname', postgresql_where="((state)::text = ANY ((ARRAY['verified'::character varying, 'active'::character varying, 'suspended'::character varying, 'removing'::character varying])::text[]))", unique=True),
+        Index('uq_tenant_domains_main', 'tenant_id', postgresql_where="(is_main AND ((state)::text <> ALL ((ARRAY['failed'::character varying, 'removing'::character varying])::text[])))", unique=True),
+        Index('uq_tenant_domains_tenant_hostname', 'tenant_id', 'hostname', postgresql_where="((state)::text <> 'failed'::text)", unique=True),
+        {'schema': 'tenancy'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    hostname: Mapped[str] = mapped_column(String(253), nullable=False)
+    is_main: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    include_www: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    state: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'pending_dns'::character varying"))
+    verification_token: Mapped[str] = mapped_column(String(64), nullable=False)
+    dns_authorization: Mapped[str] = mapped_column(Text, nullable=False)
+    auth_record_name: Mapped[str] = mapped_column(String(300), nullable=False)
+    auth_record_value: Mapped[str] = mapped_column(String(300), nullable=False)
+    txt_seen: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    auth_seen: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    address_seen: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    www_auth_seen: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    www_address_seen: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
+    failed_checks: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('0'))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    failure_reason: Mapped[Optional[str]] = mapped_column(String(300))
+    www_dns_authorization: Mapped[Optional[str]] = mapped_column(Text)
+    www_auth_record_name: Mapped[Optional[str]] = mapped_column(String(300))
+    www_auth_record_value: Mapped[Optional[str]] = mapped_column(String(300))
+    last_checked_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    verified_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    active_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 

@@ -1,11 +1,13 @@
 """
 Dev only: link tenant1 to a Stripe test-mode connected account, so a
-rebuild doesn't need onboarding again (docs: infra/stripe/README.md).
+rebuild doesn't need onboarding again (docs: deploy/stripe/README.md).
 
 Set STRIPE_DEV_ACCOUNT_ID in the backend's .env to the account's id
-(acct_...), after connecting it once through Admin › Payments. Without it,
-nothing is linked: tenant1 isn't taking bookings until a superadmin
-(sa1user@test.com) connects Stripe there.
+(acct_...), after connecting it once through Admin › Payments. Without it
+(or with anything that isn't an acct_ id, e.g. "none", which overrides the
+.env from PowerShell where a variable can't be empty), nothing is linked:
+tenant1 isn't taking bookings until a superadmin (sa1user@test.com)
+connects Stripe there.
 
 The flags are written as ready; Admin › Payments' "Refresh" (or Stripe's
 account.updated webhook) corrects them from Stripe.
@@ -18,7 +20,7 @@ from app.core.config import settings
 
 
 def up(conn: Connection) -> None:
-    if not settings.STRIPE_DEV_ACCOUNT_ID:
+    if not (settings.STRIPE_DEV_ACCOUNT_ID or "").startswith("acct_"):
         return
 
     conn.execute(

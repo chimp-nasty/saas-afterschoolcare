@@ -25,7 +25,7 @@ $TOPIC   = "arn:aws:sns:${REGION}:${ACCOUNT}:oshc-ses-events"
 
 # Filled-in copies of the JSON files.
 foreach ($file in "event-destination", "sns-topic-policy", "iam-send-policy") {
-    (Get-Content "infra/email/ses/$file.json") -replace "<ACCOUNT_ID>", $ACCOUNT |
+    (Get-Content "deploy/email/ses/$file.json") -replace "<ACCOUNT_ID>", $ACCOUNT |
         Set-Content -Encoding ascii "$env:TEMP/$file.json"
 }
 ```

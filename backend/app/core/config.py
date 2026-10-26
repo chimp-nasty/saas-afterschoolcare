@@ -85,6 +85,30 @@ class Settings(BaseSettings):
     # https://{tenant}.<BASE_DOMAIN>; a tenant's custom domain wins.
     FRONTEND_URL_TEMPLATE: str | None = None
 
+    # Custom domains (docs/tenant-administration.md, section 7;
+    # app/integrations/domains). "local" (dev): nothing is asked of Google
+    # and every DNS record is found, so a domain goes live on its first
+    # check. "google" when deployed: Certificate Manager, the load balancer
+    # and public DNS.
+    DOMAINS_PROVIDER: Literal["local", "google"] = "local"
+    # The load balancer's static address: owners point their domains at it.
+    # Unset: adding a domain is refused.
+    DOMAINS_TARGET_IP: str | None = None
+    # The TXT record proving which business owns a domain:
+    # <label>.<domain>, its value a token per business and domain.
+    DOMAINS_VERIFY_LABEL: str = "_sessionpilot"
+    # Cloud Scheduler sends it in X-Domain-Check-Secret on every check.
+    # Unset refuses every call.
+    DOMAINS_CHECK_SECRET: str | None = None
+    # Google Cloud (DOMAINS_PROVIDER=google): where the load balancer is and
+    # the names of its parts (deploy/gcp/README.md, step 10).
+    GCP_PROJECT_ID: str | None = None
+    GCP_REGION: str = "australia-southeast1"
+    LB_URL_MAP: str = "web"
+    LB_HTTPS_PROXY: str = "web-https"
+    LB_API_BACKEND: str = "api"
+    LB_BASE_CERTIFICATE: str = "base-domain"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

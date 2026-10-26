@@ -1,0 +1,42 @@
+# The load balancer's routes (HTTPS), imported by the runbook with
+# PROJECT_ID and REGION filled in:
+#
+#   /api/...           the API (Cloud Run)
+#   /_app/..., files   the site bucket as they are
+#   everything else    the site's index.html (the app routes in the browser)
+#
+# Custom domains (stage 6) add host rules here from the app, e.g. extra
+# domains and generated hosts redirecting to a business's main domain.
+name: web
+defaultService: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/backendBuckets/site
+hostRules:
+  - hosts: ["*"]
+    pathMatcher: app
+pathMatchers:
+  - name: app
+    defaultService: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/backendBuckets/site
+    routeRules:
+      - priority: 1
+        matchRules:
+          - prefixMatch: /api/
+        service: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/backendServices/api
+      - priority: 2
+        matchRules:
+          - prefixMatch: /_app/
+          - fullPathMatch: /favicon.svg
+          - fullPathMatch: /robots.txt
+        service: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/backendBuckets/site
+      - priority: 3
+        matchRules:
+          - fullPathMatch: /
+        service: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/backendBuckets/site
+        routeAction:
+          urlRewrite:
+            pathPrefixRewrite: /index.html
+      - priority: 4
+        matchRules:
+          - pathTemplateMatch: /**
+        service: https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/backendBuckets/site
+        routeAction:
+          urlRewrite:
+            pathTemplateRewrite: /index.html

@@ -65,6 +65,14 @@ class RlsContextRepository(Repository):
                 )
             )
         )
+    def set_domain_check_channel(self) -> None:
+        """
+        This transaction is the domain check's (server code, no user): RLS
+        lets it see and move every business's custom domains
+        (auth.is_domain_check).
+        """
+        self.db.execute(select(func.set_config("app.channel", "domain_check", True)))
+
     def set_kiosk_channel(
         self,
         *,

@@ -1,4 +1,4 @@
-﻿# Codex repository guidance
+# Codex repository guidance
 
 ## Role and authority
 
@@ -12,13 +12,13 @@ Use AGENTS.md for Codex instructions. CLAUDE.md files may be read for project co
 
 ## Architecture and conventions
 
-- This directory is the project root; `backend/`, `frontend/`, `docs/` and `infra/` are sibling directories. Use the working directory appropriate to the component.
+- This directory is the project root; `backend/`, `frontend/`, `docs/` and `deploy/` are sibling directories. Use the working directory appropriate to the component.
 - `backend/app/` is FastAPI with Pydantic schemas and SQLAlchemy repositories, organised into auth, tenancy, platform, kiosk, public application domains and integrations. Routes generally call services; services own transactions and workflows; repositories own persistence and do not commit. Review exceptions on their merits.
 - PostgreSQL schemas are `auth`, `tenancy` and `public`. SQL in `backend/migrations/schema/` defines constraints, triggers, functions and RLS; permission catalogues and grants live in `backend/migrations/seed/`. Database enforcement is part of the application, not merely storage.
 - Tenant APIs run under `/api`, generally with resource-specific `/v1` prefixes. Routes use `ApiResponse` envelopes. Request/response models live in domain `schemas/` directories.
 - `frontend/` uses SvelteKit 5, TypeScript and Tailwind, configured for client rendering and static hosting. Pages/load functions and API adapters coordinate data; shared components primarily own presentation. `frontend/src/lib/api/schema.ts` is generated from OpenAPI; `backend/app/db/models.py` is generated from PostgreSQL.
 - The current early-development schema convention edits original SQL and seeds in place, followed by a user-run rebuild. Do not infer deployed schema state from source files alone.
-- Domain references: `docs/portals.md`, `docs/kiosk-procedures.md`, `docs/tenant-administration.md`, `docs/email-policy.md`, `docs/child-document-retention-policy.md` and integration READMEs under `infra/`. Avoid duplicating them here. Some README and planning status statements are stale; distinguish intended behaviour, implemented behaviour and verified runtime behaviour.
+- Domain references: `docs/portals.md`, `docs/kiosk-procedures.md`, `docs/tenant-administration.md`, `docs/email-policy.md`, `docs/child-document-retention-policy.md` and integration READMEs under `deploy/`. Avoid duplicating them here. Some README and planning status statements are stale; distinguish intended behaviour, implemented behaviour and verified runtime behaviour.
 
 ## Review scope and priorities
 

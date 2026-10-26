@@ -1,0 +1,10 @@
+# An allow-list: nothing reaches the API image unless it's let in here.
+# Keeps out .env files, venv/, tests/, migrations/ and anything added later.
+*
+
+!app/
+!requirements.txt
+
+# Never ship compiled files from a local run.
+**/__pycache__
+**/*.pyc

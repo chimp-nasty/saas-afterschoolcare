@@ -71,6 +71,7 @@
 			items: [
 				{ label: 'Business details', onclick: () => navigate('/settings'), isActive: isActive('/settings') },
 				{ label: 'Centres', onclick: () => navigate('/locations'), isActive: isActive('/locations') },
+				{ label: 'Domains', onclick: () => navigate('/domains'), isActive: isActive('/domains') },
 				{ label: 'Payments', onclick: () => navigate('/payments'), isActive: isActive('/payments') },
 				{ label: 'Your site', onclick: () => navigate('/site'), isActive: isActive('/site') }
 			]
