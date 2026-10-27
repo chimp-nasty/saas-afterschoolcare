@@ -38,6 +38,12 @@ class LocalDomains(DomainProvider):
     def delete_certificate(self, *, name):
         return None
 
+    def list_certificates(self):
+        return []
+
+    def list_dns_authorizations(self):
+        return []
+
     def apply_routing(self, *, certificates, redirects: list[SiteRedirect]):
         logger.info(
             "Routing applied (local: nothing to change)",

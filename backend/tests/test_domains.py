@@ -8,6 +8,7 @@ balancer, and puts the site on the main domain. Google and DNS are the fake
 """
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -373,3 +374,41 @@ def test_database_keeps_domain_states_to_the_check(api: Api, tenant2_owner):
                 db.execute(text(statement), {"id": domain["id"]})
 
             assert "Only the domain check" in str(raised.value)
+
+
+# When the database loses track of a live domain (a dev rebuild wiped its
+# rows), the check takes it off the load balancer and deletes our
+# certificate and Google's authorization for it once they're an hour old.
+# A younger one (a domain being added right now) and the platform's own
+# base-domain are left alone.
+def test_orphaned_google_resources_are_swept(api: Api, tenant2_owner):
+    _make_live(tenant2_owner, _hostname(), include_www=False)
+
+    state = FakeDomains.state
+    [certificate] = list(state.certificates)
+    [authorization] = list(state.authorizations)
+
+    # The platform's own (created by the runbook), and one being added now.
+    state.certificates["base-domain"] = {"hostnames": [], "authorizations": [], "state": "active", "reason": None}
+    state.authorizations["base-domain"] = settings.BASE_DOMAIN
+    state.authorizations["auth-being-added"] = "new.example.com.au"
+    an_hour_and_more_ago = datetime.now(timezone.utc) - timedelta(hours=2)
+
+    for name in (certificate, authorization, "base-domain"):
+        state.created_at[name] = an_hour_and_more_ago
+
+    state.created_at["auth-being-added"] = datetime.now(timezone.utc)
+
+    # The rebuild: the database forgets the domain and its certificate.
+    api.sql("DELETE FROM tenancy.tenant_domains")
+    api.sql("DELETE FROM tenancy.tenant_certificates")
+    api.sql("UPDATE tenancy.tenants SET custom_domain = NULL WHERE custom_domain IS NOT NULL")
+
+    _run_check()
+
+    assert state.routing["certificates"] == []
+    assert certificate not in state.certificates
+    assert authorization not in state.authorizations
+    assert "base-domain" in state.certificates
+    assert "base-domain" in state.authorizations
+    assert "auth-being-added" in state.authorizations

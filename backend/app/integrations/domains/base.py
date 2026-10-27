@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal
 
 
@@ -19,6 +20,18 @@ class DnsAuthorization:
 class CertificateStatus:
     state: Literal["issuing", "active", "failed"]
     reason: str | None = None
+
+
+@dataclass(frozen=True)
+class CloudResource:
+    """
+    A certificate or DNS authorization that exists in Certificate Manager,
+    named as the app stores it (a certificate's id; an authorization's
+    full name), for finding ones the database no longer knows.
+    """
+
+    name: str
+    created_at: datetime
 
 
 @dataclass(frozen=True)
@@ -62,6 +75,14 @@ class DomainProvider(ABC):
     @abstractmethod
     def delete_certificate(self, *, name: str) -> None:
         """Gone already counts as deleted."""
+
+    @abstractmethod
+    def list_certificates(self) -> list[CloudResource]:
+        """Every certificate in the project's region, the platform's own included."""
+
+    @abstractmethod
+    def list_dns_authorizations(self) -> list[CloudResource]:
+        """Every DNS authorization in the project's region, the platform's own included."""
 
     # -- The load balancer --
 

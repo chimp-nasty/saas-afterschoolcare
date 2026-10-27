@@ -117,6 +117,22 @@ class TenantDomainRepository(Repository):
 
         return list(self.db.execute(domains.union(certificates)).scalars())
 
+    def cloud_names(self) -> tuple[set[str], set[str]]:
+        """
+        Every certificate and DNS authorization the database knows (domain
+        check only), as (certificate names, authorization names): anything
+        else of ours at Google is an orphan.
+        """
+        certificates = set(self.db.execute(select(TenantCertificate.name)).scalars())
+        authorizations = {
+            name
+            for row in self.db.execute(select(TenantDomain.dns_authorization, TenantDomain.www_dns_authorization))
+            for name in row
+            if name
+        }
+
+        return certificates, authorizations
+
     def live_sites(self) -> list[tuple[Tenant, list[TenantDomain]]]:
         """
         Every business whose main domain is live, with its live domains

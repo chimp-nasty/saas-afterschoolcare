@@ -3,7 +3,7 @@ import json
 import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import stripe
 from fastapi.testclient import TestClient
@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.security import hash_password, hash_token
 from app.errors.payments import PaymentProviderError
 from app.integrations.payments.stripe.client import StripeAccount, StripeCheckout, StripeRefund
-from app.integrations.domains.base import CertificateStatus, DnsAuthorization
+from app.integrations.domains.base import CertificateStatus, CloudResource, DnsAuthorization
 from app.integrations.storage.base import SignedUpload, StoredObject
 from app.main import app
 
@@ -147,6 +147,9 @@ class FakeDomainsState:
     # {"hostnames", "authorizations", "state", "reason"}.
     authorizations: dict[str, str] = field(default_factory=dict)
     certificates: dict[str, dict] = field(default_factory=dict)
+    # When each authorization and certificate was created (a test can age
+    # one, for the orphan sweep).
+    created_at: dict[str, datetime] = field(default_factory=dict)
     # What the load balancer was last told to serve (None: never).
     routing: dict | None = None
     # Public DNS: TXT and CNAME records by name, addresses by name.
@@ -167,6 +170,7 @@ class FakeDomains:
     def create_dns_authorization(self, *, domain):
         name = f"auth-{uuid.uuid4().hex[:8]}"
         self.state.authorizations[name] = domain
+        self.state.created_at[name] = datetime.now(timezone.utc)
 
         return DnsAuthorization(
             name=name,
@@ -186,6 +190,13 @@ class FakeDomains:
             "state": "issuing",
             "reason": None,
         }
+        self.state.created_at[name] = datetime.now(timezone.utc)
+
+    def list_certificates(self):
+        return [CloudResource(name=name, created_at=self.state.created_at[name]) for name in self.state.certificates]
+
+    def list_dns_authorizations(self):
+        return [CloudResource(name=name, created_at=self.state.created_at[name]) for name in self.state.authorizations]
 
     def certificate_status(self, *, name):
         certificate = self.state.certificates[name]

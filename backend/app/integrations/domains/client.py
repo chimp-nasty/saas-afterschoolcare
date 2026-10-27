@@ -1,7 +1,7 @@
 from functools import cache
 
 from app.core.config import settings
-from app.integrations.domains.base import CertificateStatus, DnsAuthorization, DomainProvider, SiteRedirect
+from app.integrations.domains.base import CertificateStatus, CloudResource, DnsAuthorization, DomainProvider, SiteRedirect
 
 
 @cache
@@ -42,6 +42,12 @@ class DomainsClient:
 
     def delete_certificate(self, *, name: str) -> None:
         self._provider.delete_certificate(name=name)
+
+    def list_certificates(self) -> list[CloudResource]:
+        return self._provider.list_certificates()
+
+    def list_dns_authorizations(self) -> list[CloudResource]:
+        return self._provider.list_dns_authorizations()
 
     def apply_routing(self, *, certificates: list[str], redirects: list[SiteRedirect]) -> None:
         self._provider.apply_routing(certificates=certificates, redirects=redirects)

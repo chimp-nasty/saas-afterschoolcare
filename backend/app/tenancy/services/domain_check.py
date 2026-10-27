@@ -24,6 +24,15 @@ PENDING_DAYS = 7
 # a row suspend one (the generated host takes over until they return).
 LIVE_CHECK_INTERVAL = timedelta(days=1)
 SUSPEND_AFTER_FAILED_CHECKS = 3
+# Our certificates and DNS authorizations at Google that the database no
+# longer knows (a dev rebuild, a crash between steps) are deleted once this
+# old: a younger one may belong to a domain being added right now, created
+# moments before its row is saved.
+ORPHAN_GRACE = timedelta(hours=1)
+# How the app names what it creates there (the platform's own base-domain
+# certificate and authorization are never touched).
+CERTIFICATE_PREFIX = "t-"
+AUTHORIZATION_PREFIX = "auth-"
 
 
 def domain_hostnames(domain: TenantDomain) -> list[str]:
@@ -58,6 +67,8 @@ class DomainCheckService:
     4. Removed domains go once no certificate covers them.
     5. The load balancer: every business's current certificates and
        redirects, then retired certificates are deleted.
+    6. Orphans: anything of ours left at Google that the database doesn't
+       know (ORPHAN_GRACE) is deleted.
     """
 
     def __init__(
@@ -90,6 +101,16 @@ class DomainCheckService:
                 )
 
         self._apply_routing()
+
+        # Housekeeping: a failure here (Google refusing a delete) mustn't
+        # fail the check; it's tried again next time.
+        try:
+            self._sweep_orphans()
+        except Exception:
+            logger.exception(
+                "Orphan sweep failed",
+                extra={"event": "domain_orphan_sweep", "result": "failed", "reason": "-"},
+            )
 
         return len(tenant_ids)
 
@@ -440,6 +461,49 @@ class DomainCheckService:
             changed = True
 
         return changed
+
+    @transactional
+    def _sweep_orphans(self) -> int:
+        """
+        Delete our certificates and DNS authorizations at Google that the
+        database no longer knows, once older than ORPHAN_GRACE. Runs after
+        the load balancer has been brought in line, so none is still
+        serving. Certificates first: Google won't delete an authorization a
+        certificate still uses. Returns how many were deleted.
+        """
+        self._begin()
+
+        certificate_names, authorization_names = self.domain_repository.cloud_names()
+        cutoff = self.domain_repository.now() - ORPHAN_GRACE
+        removed = 0
+
+        for certificate in self.domains.list_certificates():
+            if (
+                certificate.name.startswith(CERTIFICATE_PREFIX)
+                and certificate.name not in certificate_names
+                and certificate.created_at < cutoff
+            ):
+                self.domains.delete_certificate(name=certificate.name)
+                self._log_orphan("certificate", certificate.name)
+                removed += 1
+
+        for authorization in self.domains.list_dns_authorizations():
+            if (
+                authorization.name.rsplit("/", 1)[-1].startswith(AUTHORIZATION_PREFIX)
+                and authorization.name not in authorization_names
+                and authorization.created_at < cutoff
+            ):
+                self.domains.delete_dns_authorization(name=authorization.name)
+                self._log_orphan("dns_authorization", authorization.name)
+                removed += 1
+
+        return removed
+
+    def _log_orphan(self, kind: str, name: str) -> None:
+        logger.info(
+            "Orphaned domain resource deleted",
+            extra={"event": "domain_orphan_deleted", "result": "success", "reason": f"{kind}={name}"},
+        )
 
     def _redirects(self) -> list[SiteRedirect]:
         """

@@ -8,7 +8,7 @@ from google.cloud import certificate_manager_v1 as certificate_manager
 from google.cloud import compute_v1 as compute
 
 from app.core.config import settings
-from app.integrations.domains.base import CertificateStatus, DnsAuthorization, DomainProvider, SiteRedirect
+from app.integrations.domains.base import CertificateStatus, CloudResource, DnsAuthorization, DomainProvider, SiteRedirect
 
 
 logger = logging.getLogger("app.domains")
@@ -125,6 +125,18 @@ class GoogleDomains(DomainProvider):
             )
         except NotFound:
             pass
+
+    def list_certificates(self):
+        return [
+            CloudResource(name=certificate.name.rsplit("/", 1)[-1], created_at=certificate.create_time)
+            for certificate in self._certificates.list_certificates(parent=self._parent)
+        ]
+
+    def list_dns_authorizations(self):
+        return [
+            CloudResource(name=authorization.name, created_at=authorization.create_time)
+            for authorization in self._certificates.list_dns_authorizations(parent=self._parent)
+        ]
 
     def _certificate_path(self, name: str) -> str:
         return f"{self._parent}/certificates/{name}"
