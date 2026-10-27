@@ -1,5 +1,6 @@
 <!--
-    One centre on /locations: its name, the services it runs (times and ages,
+    One centre on /locations: its photo (when it has one), its name, the
+    services it runs (times and ages,
     each linking to its program; prices are on the centre's own pages),
     where it is and how to reach it, and the way in. CentreCard is
     the shorter version for a single centre's details.
@@ -11,7 +12,9 @@
 	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
 	import EmptyState from '$lib/components/text/EmptyState.svelte';
+	import SitePhoto from '$lib/features/business/components/SitePhoto.svelte';
 	import { agesLabel } from '$lib/features/services/policies';
+	import { centrePhotoUrl } from '$lib/api/tenancy/adapters/location-branding';
 
 	import type { LocationServiceSelectionResponse, PublicLocationResponse } from '$lib/api/schema';
 	import { formatTimeRange } from '$lib/utils/helpers';
@@ -28,6 +31,13 @@
 
 <Card border>
 	<div class="flex h-full flex-col gap-5">
+		{#if location.photo}
+			<SitePhoto
+				src={centrePhotoUrl(location.location_code, location.photo.version)}
+				alt={location.photo.alt}
+			/>
+		{/if}
+
 		<div>
 			<p class="label-text">Centre</p>
 

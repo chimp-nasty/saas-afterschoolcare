@@ -20,7 +20,9 @@ export const load: LayoutLoad = async ({
 
 	const locationCode = params.location_code;
 
-	// Resolve location
+	// Resolve location (changing the centre's photo inline refreshes it).
+	depends('app:location');
+
 	const brandingApi = createLocationBrandingApi(fetch);
 
 	const locationResponse =

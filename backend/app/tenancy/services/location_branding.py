@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.errors.tenancy import LocationNotFoundError
 from app.tenancy.schemas.location_branding import PublicLocationResponse
 from app.tenancy.repositories.location_branding import LocationBrandingRepository
+from app.tenancy.services.centre_photo import centre_photo
 
 
 def _to_public_location(location, tenant, branding) -> PublicLocationResponse:
@@ -28,6 +29,8 @@ def _to_public_location(location, tenant, branding) -> PublicLocationResponse:
 
         phone=location.phone,
         email=location.email,
+
+        photo=centre_photo(location),
 
         has_logo=bool(branding and branding.logo_key),
         primary_color=branding.primary_color if branding else None,

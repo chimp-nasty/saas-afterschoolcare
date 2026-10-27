@@ -6,11 +6,13 @@ locations, manages Stripe, and switches into a location to manage it.
 
 import uuid
 from contextlib import contextmanager
+from io import BytesIO
 
 import pytest
+from PIL import Image
 
 from app.auth.jwt.tokens import TokenService
-from tests.factories import Api
+from tests.factories import Api, FakeStorage
 
 
 VALID_ABN = "51824753556"
@@ -262,3 +264,63 @@ def test_cannot_edit_another_businesss_location(api: Api, business, tenant2_busi
     response = tenant2_business.put(f"/business/v1/locations/{location_id}", json={**NEW_LOCATION, "code": "stolen"})
 
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# A centre's photo (docs/public-site.md, stage 9b)
+# ---------------------------------------------------------------------------
+
+
+def _photo(width: int = 3000, height: int = 2000) -> bytes:
+    buffer = BytesIO()
+    Image.new("RGB", (width, height), "#0F172A").save(buffer, format="JPEG")
+
+    return buffer.getvalue()
+
+
+def _upload_photo(client, url: str, content: bytes, content_type: str = "image/jpeg"):
+    """Start an upload, play the browser sending the file, then confirm it."""
+    started = client.post(f"{url}/uploads", json={"content_type": content_type})
+    assert started.status_code == 200, started.text
+    upload = started.json()["data"]
+
+    assert FakeStorage.receive(upload, content)
+
+    return client.post(f"{url}/uploads/confirm", json={"key": upload["key"]})
+
+
+# The owner sets a centre's photo from anywhere (Business settings login):
+# re-saved as a JPEG, shown on the centre's public details with its
+# description and linked publicly; replacing it removes the old file, and
+# removing it takes the description too. Another business's owner can't.
+def test_centre_photo(api: Api, business, tenant2_business):
+    [location] = [loc for loc in business.get("/business/v1/locations").json()["data"] if loc["code"] == "location1"]
+    url = f"/business/v1/locations/{location['id']}/photo"
+    public = api.client()
+
+    try:
+        response = _upload_photo(business, url, _photo())
+        assert response.status_code == 200, response.text
+        first = response.json()["data"]
+
+        assert business.patch(url, json={"alt": "The centre's library"}).status_code == 200
+
+        centre = public.get("/location-branding/v1/public/location1").json()["data"]
+        assert centre["photo"] == {"version": first["version"], "alt": "The centre's library"}
+        assert public.get("/location-branding/v1/public/location1/photo", follow_redirects=False).status_code == 302
+
+        [(first_key,)] = api.sql("SELECT photo_key FROM tenancy.locations WHERE id = :id", id=location["id"])
+        saved = Image.open(BytesIO(FakeStorage.state.objects[(FakeStorage.bucket, first_key)]["content"]))
+        assert saved.size == (2400, 1600)
+
+        assert _upload_photo(business, url, _photo(800, 600)).status_code == 200
+        assert (FakeStorage.bucket, first_key) not in FakeStorage.state.objects
+
+        assert tenant2_business.delete(url).status_code == 404
+
+        assert business.delete(url).status_code == 200
+        centre = public.get("/location-branding/v1/public/location1").json()["data"]
+        assert centre["photo"] is None
+        assert public.get("/location-branding/v1/public/location1/photo").status_code == 404
+    finally:
+        api.sql("UPDATE tenancy.locations SET photo_key = NULL, photo_alt = NULL WHERE id = :id", id=location["id"])

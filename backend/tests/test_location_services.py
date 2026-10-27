@@ -6,8 +6,11 @@ page; only admins change the config.
 
 from contextlib import contextmanager
 from datetime import timedelta
+from io import BytesIO
 
-from tests.factories import Api
+from PIL import Image
+
+from tests.factories import Api, FakeStorage
 
 
 def _service(client, name: str) -> dict:
@@ -22,7 +25,7 @@ def _restored_config(api: Api, service_id: str):
     [row] = api.sql(
         "SELECT is_active, current_price_cents, start_time, end_time, description, late_fee_cents, "
         "refund_cutoff_days, min_child_age, max_child_age, late_fee_grace_minutes, age_label, is_featured, "
-        "inclusions, drop_off_pickup, what_to_bring, activities "
+        "inclusions, drop_off_pickup, what_to_bring, activities, photo_key, photo_alt "
         "FROM public.location_service_config WHERE location_service_id = :id",
         id=service_id,
     )
@@ -36,7 +39,8 @@ def _restored_config(api: Api, service_id: str):
             "refund_cutoff_days = :cutoff, min_child_age = :min_age, max_child_age = :max_age, "
             "late_fee_grace_minutes = :grace, age_label = :age_label, is_featured = :is_featured, "
             "inclusions = :inclusions, drop_off_pickup = :drop_off_pickup, "
-            "what_to_bring = :what_to_bring, activities = :activities "
+            "what_to_bring = :what_to_bring, activities = :activities, "
+            "photo_key = :photo_key, photo_alt = :photo_alt "
             "WHERE location_service_id = :id",
             age_label=row.age_label,
             is_featured=row.is_featured,
@@ -44,6 +48,8 @@ def _restored_config(api: Api, service_id: str):
             drop_off_pickup=row.drop_off_pickup,
             what_to_bring=row.what_to_bring,
             activities=row.activities,
+            photo_key=row.photo_key,
+            photo_alt=row.photo_alt,
             is_active=row.is_active,
             price=row.current_price_cents,
             start_time=row.start_time,
@@ -341,6 +347,38 @@ def test_program_text(api: Api, superadmin):
 
         assert _service(superadmin, "After School Care")["what_to_bring"] is None
         assert superadmin.patch(url, json={"inclusions": "x" * 2001}).status_code == 422
+
+
+# A superadmin at the centre sets a program's photo: re-saved as a JPEG,
+# shown with its description on the public list and linked publicly;
+# removing it takes the description too. A centre admin can't.
+def test_program_photo(api: Api, superadmin, admin):
+    service = _service(superadmin, "After School Care")
+    url = f"/location-services/v1/{service['id']}/photo"
+    buffer = BytesIO()
+    Image.new("RGB", (3000, 2000), "#2563EB").save(buffer, format="JPEG")
+
+    with _restored_config(api, service["id"]):
+        started = superadmin.post(f"{url}/uploads", json={"content_type": "image/jpeg"})
+        assert started.status_code == 200, started.text
+        assert FakeStorage.receive(started.json()["data"], buffer.getvalue())
+
+        confirmed = superadmin.post(f"{url}/uploads/confirm", json={"key": started.json()["data"]["key"]})
+        assert confirmed.status_code == 200, confirmed.text
+
+        superadmin.patch(f"/location-services/v1/{service['id']}/config", json={"photo_alt": "Basketball on the oval"})
+
+        public = {s["id"]: s for s in api.client().get("/location-services/v1/public/location1").json()["data"]}
+        photo = public[service["id"]]["photo"]
+        assert photo["alt"] == "Basketball on the oval"
+
+        link = api.client().get(f"/location-services/v1/public/location1/{service['id']}/photo", follow_redirects=False)
+        assert link.status_code == 302
+
+        assert admin.post(f"{url}/uploads", json={"content_type": "image/jpeg"}).status_code == 403
+
+        assert superadmin.delete(url).status_code == 200
+        assert _service(superadmin, "After School Care")["photo"] is None
 
 
 # The centre's page leads with the featured service, else the first offered,

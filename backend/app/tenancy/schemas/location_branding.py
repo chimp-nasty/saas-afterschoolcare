@@ -2,6 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.tenancy.schemas.site import PhotoResponse
+
 
 class PublicLocationResponse(BaseModel):
     tenant_name: str
@@ -25,6 +27,9 @@ class PublicLocationResponse(BaseModel):
 
     phone: str | None
     email: str | None
+
+    # Its own photo (stage 9b), else none: pages then use the business's.
+    photo: PhotoResponse | None
 
     # The business's branding (one brand per business: tenant_branding).
     has_logo: bool

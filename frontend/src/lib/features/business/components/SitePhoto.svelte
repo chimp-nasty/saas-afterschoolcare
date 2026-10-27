@@ -1,24 +1,22 @@
 <!--
-    One of the business's photos on its public pages (docs/public-site.md,
-    stage 9): filling its space, centred, with the owner's description for
-    screen readers (decorative without one).
+    A photo on the public site (docs/public-site.md, stage 9): the
+    business's, a centre's or a program's, filling its space, centred, with
+    its description for screen readers (decorative without one).
 -->
 <script lang="ts">
-	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
-	import type { PhotoResponse } from '$lib/api/schema';
-
 	let {
-		kind,
-		photo
+		src,
+		alt
 	}: {
-		kind: 'hero_photo' | 'about_photo';
-		photo: PhotoResponse;
+		// Its link, with its version (the adapters' photo URLs).
+		src: string;
+		alt: string | null;
 	} = $props();
 </script>
 
 <img
-	src={siteFileUrl(kind, photo.version)}
-	alt={photo.alt ?? ''}
+	{src}
+	alt={alt ?? ''}
 	class="aspect-[4/3] w-full rounded-2xl bg-(--surface-muted) object-cover"
 	loading="lazy"
 />

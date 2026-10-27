@@ -33,7 +33,10 @@
 	import { auth } from '$lib/auth/state.svelte';
 	import { logout } from '$lib/auth/logout';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
+	import { centrePhotoUrl, siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { ApiResponse } from '$lib/api/wrapper';
+	import EditablePhoto from '$lib/features/business/components/EditablePhoto.svelte';
+	import { uploadPhoto } from '$lib/features/business/siteFiles';
 
 	let { data } = $props();
 
@@ -78,6 +81,46 @@
 				: { label: 'Enrol now', href: route('/register') }
 	);
 
+	// The hero's photo (stage 9b): the centre's own, else the business's.
+	// The owner sets the centre's, like its other details.
+	const businessHeroPhoto = $derived(
+		business?.hero_photo
+			? {
+					src: siteFileUrl('hero_photo', business.hero_photo.version),
+					alt: business.hero_photo.alt,
+					note: "No photo of this centre yet: your business's photo shows here."
+				}
+			: null
+	);
+	const heroPhotoShown = $derived(Boolean(data.location.photo || businessHeroPhoto));
+	const heroPhotoColumn = $derived(heroPhotoShown || canEdit);
+
+	async function uploadCentrePhoto(file: File) {
+		const ok = await uploadPhoto(
+			file,
+			(contentType) => businessApi.startCentrePhotoUpload(data.location.location_id, contentType),
+			(key) => businessApi.confirmCentrePhotoUpload(data.location.location_id, key)
+		);
+
+		if (ok) await invalidate('app:location');
+
+		return ok;
+	}
+
+	async function removeCentrePhoto() {
+		const response = await businessApi.removeCentrePhoto(data.location.location_id);
+
+		if (response.ok) await invalidate('app:location');
+	}
+
+	async function saveCentrePhotoAlt(alt: string | null) {
+		const response = await businessApi.updateCentrePhotoAlt(data.location.location_id, alt);
+
+		if (response.ok) await invalidate('app:location');
+
+		return response;
+	}
+
 	// Save a section, then show the page's new content in its place.
 	async function save<T>(response: Promise<ApiResponse<T>>, done: () => void) {
 		const result = await response;
@@ -92,10 +135,9 @@
 </script>
 
 <!-- The hero: the centre, the business's headline and the ways in beside
-     the business's photo (9b: the centre's own, when it has one), then the
-     facts. -->
+     the centre's photo (else the business's), then the facts. -->
 <SiteSection>
-	<div class={['grid gap-10 lg:items-center', business?.hero_photo && 'lg:grid-cols-2']}>
+	<div class={['grid gap-10 lg:items-center', heroPhotoColumn && 'lg:grid-cols-2']}>
 		<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
 			<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
 
@@ -142,8 +184,21 @@
 			{/if}
 		</div>
 
-		{#if business?.hero_photo}
-			<SitePhoto kind="hero_photo" photo={business.hero_photo} />
+		{#if heroPhotoColumn}
+			<div class={[!heroPhotoShown && 'hidden md:block']}>
+				<EditablePhoto
+					{canEdit}
+					photo={data.location.photo ?? null}
+					src={data.location.photo
+						? centrePhotoUrl(data.locationCode, data.location.photo.version)
+						: null}
+					fallback={businessHeroPhoto}
+					emptyPrompt={`Add a photo of ${name}`}
+					onupload={uploadCentrePhoto}
+					onremove={removeCentrePhoto}
+					onsavealt={saveCentrePhotoAlt}
+				/>
+			</div>
 		{/if}
 	</div>
 
@@ -214,7 +269,10 @@
 					</div>
 
 					{#if business?.about_photo}
-						<SitePhoto kind="about_photo" photo={business.about_photo} />
+						<SitePhoto
+							src={siteFileUrl('about_photo', business.about_photo.version)}
+							alt={business.about_photo.alt}
+						/>
 					{/if}
 				</div>
 

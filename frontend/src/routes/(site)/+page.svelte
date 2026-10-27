@@ -30,6 +30,7 @@
 	import { uploadSiteFile } from '$lib/features/business/siteFiles';
 
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
+	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { ApiResponse } from '$lib/api/wrapper';
 
 	let { data } = $props();
@@ -157,7 +158,7 @@
 				<div class={[!business?.hero_photo && 'hidden md:block']}>
 					<EditablePhoto
 						{canEdit}
-						kind="hero_photo"
+						src={business?.hero_photo ? siteFileUrl('hero_photo', business.hero_photo.version) : null}
 						photo={business?.hero_photo ?? null}
 						emptyPrompt="Add a photo beside your headline"
 						onupload={(file) => uploadPhoto('hero_photo', file)}
@@ -252,7 +253,7 @@
 					<div class={[!business?.about_photo && 'hidden md:block']}>
 						<EditablePhoto
 							{canEdit}
-							kind="about_photo"
+							src={business?.about_photo ? siteFileUrl('about_photo', business.about_photo.version) : null}
 							photo={business?.about_photo ?? null}
 							emptyPrompt="Add a photo beside your about text"
 							onupload={(file) => uploadPhoto('about_photo', file)}

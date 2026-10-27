@@ -17,6 +17,8 @@ import type {
 	SiteRequest,
 	SiteResponse,
 	SiteUploadResponse,
+	PhotoResponse,
+	StartPhotoUploadRequest,
 	StartSiteUploadRequest
 } from '$lib/api/schema';
 
@@ -52,6 +54,40 @@ export function createBusinessApi(
 
 		updateLocation(locationId: string, body: BusinessLocationRequest) {
 			return apiWrapper<BusinessLocationResponse>(`${baseUrl}/locations/${locationId}`, { method: 'PUT', body, fetcher });
+		},
+
+		// A centre's photo (stage 9b), inline on its page: upload (then
+		// uploadToStorage, then confirm), its description, taking it off.
+		startCentrePhotoUpload(locationId: string, contentType: StartPhotoUploadRequest['content_type']) {
+			return apiWrapper<SiteUploadResponse>(`${baseUrl}/locations/${locationId}/photo/uploads`, {
+				method: 'POST',
+				body: { content_type: contentType },
+				fetcher,
+				quiet: true
+			});
+		},
+
+		confirmCentrePhotoUpload(locationId: string, key: string) {
+			return apiWrapper<PhotoResponse | null>(`${baseUrl}/locations/${locationId}/photo/uploads/confirm`, {
+				method: 'POST',
+				body: { key },
+				fetcher
+			});
+		},
+
+		updateCentrePhotoAlt(locationId: string, alt: string | null) {
+			return apiWrapper<PhotoResponse | null>(`${baseUrl}/locations/${locationId}/photo`, {
+				method: 'PATCH',
+				body: { alt },
+				fetcher
+			});
+		},
+
+		removeCentrePhoto(locationId: string) {
+			return apiWrapper<PhotoResponse | null>(`${baseUrl}/locations/${locationId}/photo`, {
+				method: 'DELETE',
+				fetcher
+			});
 		},
 
 		// Your site (stage 5): headline, colours, logo and icon, FAQs, policies.

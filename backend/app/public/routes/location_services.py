@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
@@ -8,6 +9,7 @@ from app.dependencies.auth import require_permission, resolve_location_id
 from app.dependencies.db import get_db
 from app.dependencies.rls import get_rls_db
 from app.dependencies.service import get_service
+from app.errors.tenancy import SiteFileNotFoundError
 from app.public.services.location_service import LocationServiceService
 from app.public.schemas.location_service import (
     FeaturedServiceResponse,
@@ -15,6 +17,7 @@ from app.public.schemas.location_service import (
     LocationServiceSettingsResponse,
     UpdateLocationServiceConfigRequest,
 )
+from app.tenancy.schemas.site import ConfirmPhotoUploadRequest, SiteUploadResponse, StartPhotoUploadRequest
 
 
 router = APIRouter(
@@ -122,3 +125,77 @@ def list_location_services(
         msg="Fetched services",
         data=result
     )
+
+
+# A program's photo (docs/public-site.md, stage 9b), set inline on the
+# programs page by a superadmin there (location_services u): a signed upload
+# straight to storage, then confirm it; taking it off. Its description is
+# saved with the rest of the config (PATCH .../config, photo_alt).
+@router.post("/{location_service_id}/photo/uploads")
+def start_program_photo_upload(
+    location_service_id: UUID,
+    body: StartPhotoUploadRequest,
+    ctx: TokenContext = Depends(require_permission(resource="location_services", action="u")),
+    service: LocationServiceService = Depends(get_service(LocationServiceService, db_dependency=get_rls_db)),
+) -> ApiResponse[SiteUploadResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Upload started",
+        data=service.start_photo_upload(
+            location_service_id=location_service_id,
+            location_id=ctx.location_id,
+            content_type=body.content_type,
+        ),
+    )
+
+
+@router.post("/{location_service_id}/photo/uploads/confirm")
+def confirm_program_photo_upload(
+    location_service_id: UUID,
+    body: ConfirmPhotoUploadRequest,
+    ctx: TokenContext = Depends(require_permission(resource="location_services", action="u")),
+    service: LocationServiceService = Depends(get_service(LocationServiceService, db_dependency=get_rls_db)),
+) -> ApiResponse[LocationServiceSettingsResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Photo saved",
+        data=service.confirm_photo_upload(
+            location_service_id=location_service_id,
+            location_id=ctx.location_id,
+            user_id=ctx.user_id,
+            key=body.key,
+        ),
+    )
+
+
+@router.delete("/{location_service_id}/photo")
+def remove_program_photo(
+    location_service_id: UUID,
+    ctx: TokenContext = Depends(require_permission(resource="location_services", action="u")),
+    service: LocationServiceService = Depends(get_service(LocationServiceService, db_dependency=get_rls_db)),
+) -> ApiResponse[LocationServiceSettingsResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Photo removed",
+        data=service.remove_photo(
+            location_service_id=location_service_id,
+            location_id=ctx.location_id,
+            user_id=ctx.user_id,
+        ),
+    )
+
+
+# The program's photo on the public programs page: a redirect to a
+# short-lived link (its link carries the photo's version, ?v=). Public.
+@router.get("/public/{location_code}/{location_service_id}/photo")
+def get_program_photo(
+    location_service_id: UUID,
+    location_id: UUID = Depends(resolve_location_id),
+    service: LocationServiceService = Depends(get_service(LocationServiceService, db_dependency=get_db)),
+) -> RedirectResponse:
+    url = service.photo_url(location_service_id=location_service_id, location_id=location_id)
+
+    if url is None:
+        raise SiteFileNotFoundError()
+
+    return RedirectResponse(url, status_code=302, headers={"Cache-Control": "private, max-age=600"})

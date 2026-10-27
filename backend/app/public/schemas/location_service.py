@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from app.public.schemas.enums import CurrencyCode
+from app.tenancy.schemas.site import PhotoResponse
 
 
 class LocationServiceSelectionResponse(BaseModel):
@@ -39,6 +40,9 @@ class LocationServiceSelectionResponse(BaseModel):
     what_to_bring: str | None
     activities: str | None
 
+    # The program's photo (stage 9b), at the top of it on the programs page.
+    photo: PhotoResponse | None = None
+
     refund_cutoff_days: int
 
     # 0 means no late fee.
@@ -54,6 +58,7 @@ FREE_TEXT_FIELDS = (
     "drop_off_pickup",
     "what_to_bring",
     "activities",
+    "photo_alt",
 )
 
 
@@ -85,6 +90,8 @@ class UpdateLocationServiceConfigRequest(BaseModel):
     drop_off_pickup: str | None = Field(default=None, max_length=2000)
     what_to_bring: str | None = Field(default=None, max_length=2000)
     activities: str | None = Field(default=None, max_length=2000)
+    # The program photo's description for screen readers.
+    photo_alt: str | None = Field(default=None, max_length=200)
 
     late_fee_cents: int | None = Field(default=None, ge=0)
     late_fee_grace_minutes: int | None = Field(default=None, ge=0)

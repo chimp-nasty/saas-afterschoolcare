@@ -1,9 +1,9 @@
 <!--
-    One of the business's photos, edited inline where it's shown
-    (EditablePhoto): upload a new one or remove it (straight away), and its
-    description for screen readers (saved with Save). Photos are re-saved
-    for the web without their metadata, so where they were taken isn't
-    published.
+    A photo on the public site (the business's, a centre's or a program's),
+    edited inline where it's shown (EditablePhoto): upload a new one or
+    remove it (straight away), and its description for screen readers
+    (saved with Save). Photos are re-saved for the web without their
+    metadata, so where they were taken isn't published.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -14,21 +14,25 @@
 	import SiteFileUpload from './SiteFileUpload.svelte';
 	import SitePhoto from './SitePhoto.svelte';
 
-	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { PhotoResponse } from '$lib/api/schema';
 	import type { ApiResponse } from '$lib/api/wrapper';
-	import { SITE_FILE_ACCEPT } from '../siteFiles';
+	import { PHOTO_ACCEPT } from '../siteFiles';
 
 	let {
-		kind,
 		photo,
+		src,
+		fallbackNote,
 		onupload,
 		onremove,
 		onsavealt,
 		oncancel
 	}: {
-		kind: 'hero_photo' | 'about_photo';
 		photo: PhotoResponse | null;
+		// The photo's link, when there is one.
+		src: string | null;
+		// Said when there's no photo of its own but another shows in its
+		// place (a centre showing the business's photo).
+		fallbackNote?: string;
 		onupload: (file: File) => Promise<boolean>;
 		onremove: () => Promise<void>;
 		onsavealt: (alt: string | null) => Promise<ApiResponse<unknown>>;
@@ -51,25 +55,25 @@
 </script>
 
 <Form {isLoading} handleSubmit={submit} submitLabel="Save" {oncancel}>
-	{#if photo}
+	{#if photo && src}
 		<div class="max-w-md">
-			<SitePhoto {kind} {photo} />
+			<SitePhoto {src} alt={photo.alt} />
 		</div>
 	{/if}
 
 	<SiteFileUpload
 		title="Photo"
 		description="PNG, JPEG or WebP, up to 8 MB. Saved for the web, without the details cameras add (such as where it was taken)."
-		accept={SITE_FILE_ACCEPT[kind].join(',')}
-		status={photo ? 'This photo is on your site.' : 'No photo yet.'}
-		viewHref={photo ? siteFileUrl(kind, photo.version) : null}
+		accept={PHOTO_ACCEPT.join(',')}
+		status={photo ? 'This photo is on your site.' : (fallbackNote ?? 'No photo yet.')}
+		viewHref={photo ? src : null}
 		{onupload}
 		{onremove}
 	/>
 
-	<Notice tone="warning"
-		>Only use photos of children whose families have agreed to them being on your website.</Notice
-	>
+	<Notice tone="warning">
+		Only use photos of children whose families have agreed to them being on your website.
+	</Notice>
 
 	{#if photo}
 		<Field label="Description, for people using screen readers (optional)">

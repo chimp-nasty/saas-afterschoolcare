@@ -137,6 +137,8 @@ class LocationServiceRepository(Repository):
                 LocationServiceConfig.drop_off_pickup,
                 LocationServiceConfig.what_to_bring,
                 LocationServiceConfig.activities,
+                LocationServiceConfig.photo_key,
+                LocationServiceConfig.photo_alt,
                 LocationServiceConfig.refund_cutoff_days,
                 LocationServiceConfig.late_fee_cents,
                 LocationServiceConfig.late_fee_grace_minutes,

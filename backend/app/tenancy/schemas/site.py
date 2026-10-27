@@ -88,6 +88,28 @@ class PhotoResponse(BaseModel):
     alt: str | None
 
 
+class StartPhotoUploadRequest(BaseModel):
+    """A centre's or a program's photo (stage 9b); checked again once stored."""
+
+    content_type: Literal["image/png", "image/jpeg", "image/webp"]
+
+
+class ConfirmPhotoUploadRequest(BaseModel):
+    # The upload's key, from its start.
+    key: str = Field(min_length=1, max_length=300)
+
+
+class PhotoAltRequest(BaseModel):
+    """A photo's description for screen readers; empty clears it."""
+
+    alt: PhotoAlt | None = None
+
+    @field_validator("alt", mode="before")
+    @classmethod
+    def empty_is_none(cls, value: str | None) -> str | None:
+        return value or None
+
+
 class SiteResponse(BaseModel):
     tagline: str | None
     hero_text: str | None

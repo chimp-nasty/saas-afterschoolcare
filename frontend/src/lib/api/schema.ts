@@ -503,6 +503,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/location-branding/v1/public/{location_code}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Centre Photo */
+        get: operations["get_centre_photo_api_location_branding_v1_public__location_code__photo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stripe-account/v1/": {
         parameters: {
             query?: never;
@@ -707,6 +724,58 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/locations/{location_id}/photo/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Centre Photo Upload */
+        post: operations["start_centre_photo_upload_api_business_v1_locations__location_id__photo_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/locations/{location_id}/photo/uploads/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Centre Photo Upload */
+        post: operations["confirm_centre_photo_upload_api_business_v1_locations__location_id__photo_uploads_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/v1/locations/{location_id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Centre Photo */
+        delete: operations["remove_centre_photo_api_business_v1_locations__location_id__photo_delete"];
+        options?: never;
+        head?: never;
+        /** Update Centre Photo Alt */
+        patch: operations["update_centre_photo_alt_api_business_v1_locations__location_id__photo_patch"];
         trace?: never;
     };
     "/api/business/v1/site": {
@@ -1441,6 +1510,74 @@ export interface paths {
         };
         /** List Location Services */
         get: operations["list_location_services_api_location_services_v1__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-services/v1/{location_service_id}/photo/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Program Photo Upload */
+        post: operations["start_program_photo_upload_api_location_services_v1__location_service_id__photo_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-services/v1/{location_service_id}/photo/uploads/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Program Photo Upload */
+        post: operations["confirm_program_photo_upload_api_location_services_v1__location_service_id__photo_uploads_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-services/v1/{location_service_id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Program Photo */
+        delete: operations["remove_program_photo_api_location_services_v1__location_service_id__photo_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-services/v1/public/{location_code}/{location_service_id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Program Photo */
+        get: operations["get_program_photo_api_location_services_v1_public__location_code___location_service_id__photo_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2884,6 +3021,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["FeaturedServiceResponse"] | null;
         };
+        /** ApiResponse[Union[PhotoResponse, NoneType]] */
+        ApiResponse_Union_PhotoResponse__NoneType__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PhotoResponse"] | null;
+        };
         /** ApiResponse[bool] */
         ApiResponse_bool_: {
             /** Ok */
@@ -3833,6 +3978,11 @@ export interface components {
             is_active: boolean;
             review_status: components["schemas"]["MedicalReviewStatus"];
         };
+        /** ConfirmPhotoUploadRequest */
+        ConfirmPhotoUploadRequest: {
+            /** Key */
+            key: string;
+        };
         /** ConfirmSiteUploadRequest */
         ConfirmSiteUploadRequest: {
             /**
@@ -4732,6 +4882,7 @@ export interface components {
             what_to_bring: string | null;
             /** Activities */
             activities: string | null;
+            photo?: components["schemas"]["PhotoResponse"] | null;
             /** Refund Cutoff Days */
             refund_cutoff_days: number;
             /** Late Fee Cents */
@@ -4786,6 +4937,7 @@ export interface components {
             what_to_bring: string | null;
             /** Activities */
             activities: string | null;
+            photo?: components["schemas"]["PhotoResponse"] | null;
             /** Refund Cutoff Days */
             refund_cutoff_days: number;
             /** Late Fee Cents */
@@ -4931,6 +5083,14 @@ export interface components {
          * @enum {string}
          */
         PaymentStatus: "PENDING" | "PAID" | "REFUNDED" | "FAILED";
+        /**
+         * PhotoAltRequest
+         * @description A photo's description for screen readers; empty clears it.
+         */
+        PhotoAltRequest: {
+            /** Alt */
+            alt?: string | null;
+        };
         /**
          * PhotoResponse
          * @description A photo the site has: its description, and a version that changes when
@@ -5108,6 +5268,7 @@ export interface components {
             phone: string | null;
             /** Email */
             email: string | null;
+            photo: components["schemas"]["PhotoResponse"] | null;
             /** Has Logo */
             has_logo: boolean;
             /** Primary Color */
@@ -5834,6 +5995,17 @@ export interface components {
             /** Ended At */
             ended_at: string | null;
         };
+        /**
+         * StartPhotoUploadRequest
+         * @description A centre's or a program's photo (stage 9b); checked again once stored.
+         */
+        StartPhotoUploadRequest: {
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "image/png" | "image/jpeg" | "image/webp";
+        };
         /** StartSiteUploadRequest */
         StartSiteUploadRequest: {
             /**
@@ -5989,6 +6161,8 @@ export interface components {
             what_to_bring?: string | null;
             /** Activities */
             activities?: string | null;
+            /** Photo Alt */
+            photo_alt?: string | null;
             /** Late Fee Cents */
             late_fee_cents?: number | null;
             /** Late Fee Grace Minutes */
@@ -6110,6 +6284,7 @@ export type ApiResponseStaffShiftResponse = components['schemas']['ApiResponse_S
 export type ApiResponseStripeAccountStatusResponse = components['schemas']['ApiResponse_StripeAccountStatusResponse_'];
 export type ApiResponseStripeOnboardingResponse = components['schemas']['ApiResponse_StripeOnboardingResponse_'];
 export type ApiResponseUnionFeaturedServiceResponseNoneType = components['schemas']['ApiResponse_Union_FeaturedServiceResponse__NoneType__'];
+export type ApiResponseUnionPhotoResponseNoneType = components['schemas']['ApiResponse_Union_PhotoResponse__NoneType__'];
 export type ApiResponseBool = components['schemas']['ApiResponse_bool_'];
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
 export type ApiResponseListActionPlanResponse = components['schemas']['ApiResponse_list_ActionPlanResponse__'];
@@ -6171,6 +6346,7 @@ export type ChildNoteResponse = components['schemas']['ChildNoteResponse'];
 export type ChildResponse = components['schemas']['ChildResponse'];
 export type ChildSearchResultResponse = components['schemas']['ChildSearchResultResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
+export type ConfirmPhotoUploadRequest = components['schemas']['ConfirmPhotoUploadRequest'];
 export type ConfirmSiteUploadRequest = components['schemas']['ConfirmSiteUploadRequest'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
@@ -6231,6 +6407,7 @@ export type MedicalReviewResponse = components['schemas']['MedicalReviewResponse
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
 export type MedicalReviewSummaryResponse = components['schemas']['MedicalReviewSummaryResponse'];
 export type PaymentStatus = components['schemas']['PaymentStatus'];
+export type PhotoAltRequest = components['schemas']['PhotoAltRequest'];
 export type PhotoResponse = components['schemas']['PhotoResponse'];
 export type PickupRelation = components['schemas']['PickupRelation'];
 export type PickupResponse = components['schemas']['PickupResponse'];
@@ -6276,6 +6453,7 @@ export type StaffKioskUndoRequest = components['schemas']['StaffKioskUndoRequest
 export type StaffKioskVerifyResponse = components['schemas']['StaffKioskVerifyResponse'];
 export type StaffPinStatusResponse = components['schemas']['StaffPinStatusResponse'];
 export type StaffShiftResponse = components['schemas']['StaffShiftResponse'];
+export type StartPhotoUploadRequest = components['schemas']['StartPhotoUploadRequest'];
 export type StartSiteUploadRequest = components['schemas']['StartSiteUploadRequest'];
 export type StripeAccountStatusResponse = components['schemas']['StripeAccountStatusResponse'];
 export type StripeOnboardingResponse = components['schemas']['StripeOnboardingResponse'];
@@ -7430,6 +7608,37 @@ export interface operations {
             };
         };
     };
+    get_centre_photo_api_location_branding_v1_public__location_code__photo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_stripe_account_api_stripe_account_v1__get: {
         parameters: {
             query?: never;
@@ -7867,6 +8076,150 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_BusinessLocationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_centre_photo_upload_api_business_v1_locations__location_id__photo_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartPhotoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteUploadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_centre_photo_upload_api_business_v1_locations__location_id__photo_uploads_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPhotoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Union_PhotoResponse__NoneType__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_centre_photo_api_business_v1_locations__location_id__photo_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Union_PhotoResponse__NoneType__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_centre_photo_alt_api_business_v1_locations__location_id__photo_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoAltRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Union_PhotoResponse__NoneType__"];
                 };
             };
             /** @description Validation Error */
@@ -9600,6 +9953,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_list_LocationServiceSelectionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_program_photo_upload_api_location_services_v1__location_service_id__photo_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_service_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartPhotoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteUploadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_program_photo_upload_api_location_services_v1__location_service_id__photo_uploads_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_service_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPhotoUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_LocationServiceSettingsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_program_photo_api_location_services_v1__location_service_id__photo_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_service_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_LocationServiceSettingsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_program_photo_api_location_services_v1_public__location_code___location_service_id__photo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_service_id: string;
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -11545,6 +12037,7 @@ export const staffKioskBulkRequestActionValues: ReadonlyArray<FlattenedDeepRequi
 export const staffKioskShiftRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskShiftRequest"]["action"]> = ["start", "end"];
 export const staffKioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskSignRequest"]["action"]> = ["in", "out"];
 export const staffKioskUndoRequestStepValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskUndoRequest"]["step"]> = ["sign_in", "sign_out"];
+export const startPhotoUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartPhotoUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp"];
 export const startSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const startSiteUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

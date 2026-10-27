@@ -153,6 +153,8 @@ def fake_storage(monkeypatch) -> type[FakeStorage]:
         "app.public.services.child_documents_create",
         "app.public.services.child_documents_read",
         "app.tenancy.services.site",
+        "app.tenancy.services.centre_photo",
+        "app.public.services.location_service",
     ):
         monkeypatch.setattr(f"{module}.StorageClient", FakeStorage)
 

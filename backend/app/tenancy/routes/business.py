@@ -16,16 +16,21 @@ from app.tenancy.schemas.business import (
 )
 from app.tenancy.schemas.domain import AddDomainRequest, DomainResponse, DomainsResponse
 from app.tenancy.schemas.site import (
+    ConfirmPhotoUploadRequest,
     ConfirmSiteUploadRequest,
     FaqsRequest,
     HighlightsRequest,
     ImageKind,
+    PhotoAltRequest,
+    PhotoResponse,
     SiteRequest,
     SiteResponse,
     SiteUploadResponse,
+    StartPhotoUploadRequest,
     StartSiteUploadRequest,
 )
 from app.tenancy.services.business import BusinessService
+from app.tenancy.services.centre_photo import CentrePhotoService
 from app.tenancy.services.domains import DomainService
 from app.tenancy.services.site import SiteService
 
@@ -43,6 +48,7 @@ router = APIRouter(
 
 _service = get_service(BusinessService, db_dependency=get_rls_db)
 _site_service = get_service(SiteService, db_dependency=get_rls_db)
+_centre_photo_service = get_service(CentrePhotoService, db_dependency=get_rls_db)
 _domain_service = get_service(DomainService, db_dependency=get_rls_db)
 
 
@@ -107,6 +113,64 @@ def update_location(
         ok=True,
         msg="Centre saved",
         data=service.update_location(tenant_id=ctx.tenant_id, location_id=location_id, body=body),
+    )
+
+
+# A centre's photo (docs/public-site.md, stage 9b), set inline on its page:
+# a signed upload straight to storage, then confirm it; its description;
+# taking it off. tenant_locations u, like the centre's other details.
+@router.post("/locations/{location_id}/photo/uploads")
+def start_centre_photo_upload(
+    location_id: UUID,
+    body: StartPhotoUploadRequest,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_locations", action="u")),
+    service: CentrePhotoService = Depends(_centre_photo_service),
+) -> ApiResponse[SiteUploadResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Upload started",
+        data=service.start_upload(tenant_id=ctx.tenant_id, location_id=location_id, content_type=body.content_type),
+    )
+
+
+@router.post("/locations/{location_id}/photo/uploads/confirm")
+def confirm_centre_photo_upload(
+    location_id: UUID,
+    body: ConfirmPhotoUploadRequest,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_locations", action="u")),
+    service: CentrePhotoService = Depends(_centre_photo_service),
+) -> ApiResponse[PhotoResponse | None]:
+    return ApiResponse(
+        ok=True,
+        msg="Photo saved",
+        data=service.confirm_upload(tenant_id=ctx.tenant_id, location_id=location_id, key=body.key),
+    )
+
+
+@router.patch("/locations/{location_id}/photo")
+def update_centre_photo_alt(
+    location_id: UUID,
+    body: PhotoAltRequest,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_locations", action="u")),
+    service: CentrePhotoService = Depends(_centre_photo_service),
+) -> ApiResponse[PhotoResponse | None]:
+    return ApiResponse(
+        ok=True,
+        msg="Photo saved",
+        data=service.update_alt(tenant_id=ctx.tenant_id, location_id=location_id, alt=body.alt),
+    )
+
+
+@router.delete("/locations/{location_id}/photo")
+def remove_centre_photo(
+    location_id: UUID,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_locations", action="u")),
+    service: CentrePhotoService = Depends(_centre_photo_service),
+) -> ApiResponse[PhotoResponse | None]:
+    return ApiResponse(
+        ok=True,
+        msg="Photo removed",
+        data=service.remove(tenant_id=ctx.tenant_id, location_id=location_id),
     )
 
 

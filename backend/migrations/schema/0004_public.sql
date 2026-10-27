@@ -106,6 +106,10 @@ CREATE TABLE public.location_service_config (
     drop_off_pickup VARCHAR(2000),
     what_to_bring VARCHAR(2000),
     activities VARCHAR(2000),
+    -- The program's photo, at the top of it on the programs page (stage
+    -- 9b): re-saved without its metadata, with an optional description.
+    photo_key TEXT,
+    photo_alt VARCHAR(200),
     -- The service the centre's page leads with (docs/public-site.md): its
     -- times, ages and next session. At most one per location
     -- (uq_location_service_config_featured); none means the first offered.

@@ -17,6 +17,11 @@ export function siteFileUrl(kind: SiteFileKind, version?: string): string {
 	return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 }
 
+// A centre's own photo (stage 9b), with its version like the business's.
+export function centrePhotoUrl(locationCode: string, version: string): string {
+	return `${API_BASE}/location-branding/v1/public/${locationCode}/photo?v=${encodeURIComponent(version)}`;
+}
+
 
 export function createLocationBrandingApi(
 	fetcher?: typeof fetch

@@ -18,6 +18,7 @@
 	import { uploadSiteFile } from '$lib/features/business/siteFiles';
 
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
+	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { SiteRequest } from '$lib/api/schema';
 
 	let { data } = $props();
@@ -106,7 +107,7 @@
 			<div class={[!business?.about_photo && 'hidden md:block']}>
 				<EditablePhoto
 					canEdit={data.isOwner}
-					kind="about_photo"
+					src={business?.about_photo ? siteFileUrl('about_photo', business.about_photo.version) : null}
 					photo={business?.about_photo ?? null}
 					emptyPrompt="Add a photo beside your about text"
 					onupload={uploadPhoto}

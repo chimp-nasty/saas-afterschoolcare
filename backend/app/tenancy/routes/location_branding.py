@@ -11,6 +11,7 @@ from app.core.cache.cache import cached
 from app.core.cache.stores import cache_stores
 
 from app.errors.tenancy import SiteFileNotFoundError
+from app.tenancy.services.centre_photo import CentrePhotoService
 from app.tenancy.services.location_branding import LocationBrandingService
 from app.tenancy.services.site import SiteService
 from app.tenancy.schemas.location_branding import PublicLocationResponse
@@ -146,3 +147,19 @@ def get_bookings_open(
         msg="Fetched whether bookings are open",
         data=service.bookings_open(location_id=location_id),
     )
+
+
+# The centre's photo (stage 9b): a redirect to a short-lived link to it.
+# Public. Its link carries the photo's version (?v=), so a new one isn't
+# hidden by a cached redirect.
+@router.get("/public/{location_code}/photo")
+def get_centre_photo(
+    location_id: UUID = Depends(resolve_location_id),
+    service: CentrePhotoService = Depends(get_service(CentrePhotoService, db_dependency=get_db)),
+) -> RedirectResponse:
+    url = service.public_url(location_id=location_id)
+
+    if url is None:
+        raise SiteFileNotFoundError()
+
+    return RedirectResponse(url, status_code=302, headers={"Cache-Control": "private, max-age=600"})

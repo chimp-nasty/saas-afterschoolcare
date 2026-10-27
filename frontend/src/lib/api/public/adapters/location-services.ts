@@ -4,10 +4,19 @@ import { apiWrapper } from '$lib/api/wrapper';
 
 import type {
     FeaturedServiceResponse,
+    SiteUploadResponse,
+    StartPhotoUploadRequest,
     UpdateLocationServiceConfigRequest,
     LocationServiceSelectionResponse,
     LocationServiceSettingsResponse,
 } from '$lib/api/schema';
+
+
+// A program's photo (stage 9b) on the public programs page, with its
+// version so a new one isn't hidden by a cached link.
+export function programPhotoUrl(locationCode: string, locationServiceId: string, version: string): string {
+    return `${API_BASE}/location-services/v1/public/${locationCode}/${locationServiceId}/photo?v=${encodeURIComponent(version)}`;
+}
 
 
 export function createLocationServicesApi(
@@ -74,6 +83,33 @@ export function createLocationServicesApi(
                     fetcher
                 }
             );
+        },
+
+        // A program's photo (stage 9b), inline on the programs page: upload
+        // (then uploadToStorage, then confirm), taking it off. Its
+        // description is saved with updateConfig (photo_alt).
+        startPhotoUpload(location_service_id: string, contentType: StartPhotoUploadRequest['content_type']) {
+            return apiWrapper<SiteUploadResponse>(`${baseUrl}/${location_service_id}/photo/uploads`, {
+                method: 'POST',
+                body: { content_type: contentType },
+                fetcher,
+                quiet: true
+            });
+        },
+
+        confirmPhotoUpload(location_service_id: string, key: string) {
+            return apiWrapper<LocationServiceSettingsResponse>(`${baseUrl}/${location_service_id}/photo/uploads/confirm`, {
+                method: 'POST',
+                body: { key },
+                fetcher
+            });
+        },
+
+        removePhoto(location_service_id: string) {
+            return apiWrapper<LocationServiceSettingsResponse>(`${baseUrl}/${location_service_id}/photo`, {
+                method: 'DELETE',
+                fetcher
+            });
         }
     }
 }

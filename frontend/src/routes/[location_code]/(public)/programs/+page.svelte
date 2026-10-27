@@ -18,7 +18,12 @@
 	import ProgramForm from '$lib/features/services/components/ProgramForm.svelte';
 
 	import { auth } from '$lib/auth/state.svelte';
-	import { createLocationServicesApi } from '$lib/api/public/adapters/location-services';
+	import {
+		createLocationServicesApi,
+		programPhotoUrl
+	} from '$lib/api/public/adapters/location-services';
+	import EditablePhoto from '$lib/features/business/components/EditablePhoto.svelte';
+	import { uploadPhoto } from '$lib/features/business/siteFiles';
 	import type { UpdateLocationServiceConfigRequest } from '$lib/api/schema';
 
 	let { data } = $props();
@@ -46,6 +51,33 @@
 			await invalidate('app:programs');
 			done();
 		}
+
+		return response;
+	}
+
+	// A program's photo (stage 9b): an upload or removal takes effect at once.
+	async function uploadProgramPhoto(id: string, file: File) {
+		const ok = await uploadPhoto(
+			file,
+			(contentType) => servicesApi.startPhotoUpload(id, contentType),
+			(key) => servicesApi.confirmPhotoUpload(id, key)
+		);
+
+		if (ok) await invalidate('app:programs');
+
+		return ok;
+	}
+
+	async function removeProgramPhoto(id: string) {
+		const response = await servicesApi.removePhoto(id);
+
+		if (response.ok) await invalidate('app:programs');
+	}
+
+	async function saveProgramPhotoAlt(id: string, alt: string | null) {
+		const response = await servicesApi.updateConfig(id, { photo_alt: alt });
+
+		if (response.ok) await invalidate('app:programs');
 
 		return response;
 	}
@@ -80,15 +112,43 @@
 
 {#each data.services as service, index (service.id)}
 	<SiteSection id={service.id} tone={index % 2 === 0 ? 'muted' : 'plain'}>
-		<EditableSection {canEdit} label={`the ${service.service_name} program`}>
-			<div class="pr-14">
-				<Program {service} />
-			</div>
+		<!-- The program beside its photo, when it has one or can be given one. -->
+		<div
+			class={[
+				'grid gap-10 lg:items-start',
+				(service.photo || canEdit) && 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]'
+			]}
+		>
+			<EditableSection {canEdit} label={`the ${service.service_name} program`}>
+				<div class="pr-14">
+					<Program {service} />
+				</div>
 
-			{#snippet editor(done)}
-				<ProgramForm {service} onsubmit={(body) => save(service.id, body, done)} oncancel={done} />
-			{/snippet}
-		</EditableSection>
+				{#snippet editor(done)}
+					<ProgramForm
+						{service}
+						onsubmit={(body) => save(service.id, body, done)}
+						oncancel={done}
+					/>
+				{/snippet}
+			</EditableSection>
+
+			{#if service.photo || canEdit}
+				<div class={[!service.photo && 'hidden md:block']}>
+					<EditablePhoto
+						{canEdit}
+						photo={service.photo ?? null}
+						src={service.photo
+							? programPhotoUrl(data.locationCode, service.id, service.photo.version)
+							: null}
+						emptyPrompt={`Add a photo of ${service.service_name}`}
+						onupload={(file) => uploadProgramPhoto(service.id, file)}
+						onremove={() => removeProgramPhoto(service.id)}
+						onsavealt={(alt) => saveProgramPhotoAlt(service.id, alt)}
+					/>
+				</div>
+			{/if}
+		</div>
 	</SiteSection>
 {:else}
 	<SiteSection tone="muted">
@@ -102,7 +162,8 @@
 			<h2 class="headline-text">Ready to start?</h2>
 
 			<ActionBar start>
-				<Button variant="ghost" onclick={() => goto(`/${data.locationCode}`)}>Back to {name}</Button>
+				<Button variant="ghost" onclick={() => goto(`/${data.locationCode}`)}>Back to {name}</Button
+				>
 				<Button onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
 			</ActionBar>
 		</div>

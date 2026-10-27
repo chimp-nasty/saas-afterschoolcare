@@ -96,6 +96,13 @@ CREATE TABLE tenancy.locations (
     phone VARCHAR(50),
     email VARCHAR(255),
 
+    -- Its photo on its page's hero (else the business's) and its card on
+    -- /locations (docs/public-site.md, stage 9b), re-saved without its
+    -- metadata, with an optional description for screen readers. Set by
+    -- the business's owner, inline on the centre's page.
+    photo_key TEXT,
+    photo_alt VARCHAR(200),
+
     -- "Today" depends on where the location is: session times, booking
     -- and refund cut-offs and attendance all use it.
     timezone TEXT NOT NULL DEFAULT 'Australia/Brisbane',

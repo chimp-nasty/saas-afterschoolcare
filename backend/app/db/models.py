@@ -391,6 +391,8 @@ class Location(Base):
     google_place_id: Mapped[Optional[str]] = mapped_column(Text)
     phone: Mapped[Optional[str]] = mapped_column(String(50))
     email: Mapped[Optional[str]] = mapped_column(String(255))
+    photo_key: Mapped[Optional[str]] = mapped_column(Text)
+    photo_alt: Mapped[Optional[str]] = mapped_column(String(200))
 
 
 
@@ -954,6 +956,8 @@ class LocationServiceConfig(Base):
     drop_off_pickup: Mapped[Optional[str]] = mapped_column(String(2000))
     what_to_bring: Mapped[Optional[str]] = mapped_column(String(2000))
     activities: Mapped[Optional[str]] = mapped_column(String(2000))
+    photo_key: Mapped[Optional[str]] = mapped_column(Text)
+    photo_alt: Mapped[Optional[str]] = mapped_column(String(200))
     updated_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 

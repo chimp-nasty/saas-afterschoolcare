@@ -1,6 +1,6 @@
 # Public site: new look, centre pages and programs
 
-**Status: agreed 27 October 2026; stages 1 to 8 built.** Build in the stages below, stopping after each for a rebuild, tests and a look in the browser.
+**Status: agreed 27 October 2026; stages 1 to 9 built.** Build in the stages below, stopping after each for a rebuild, tests and a look in the browser.
 
 Every business gets the same public site layout, styled from its own logo, colours, text and photos. The starting point was After 3's mockup (`docs/reference-imgs/`), adapted to the platform: its brief is After 3's (high-school students, its imagery rules) and isn't followed where it doesn't fit other businesses.
 
@@ -100,7 +100,7 @@ Each ends with something to look at; **DB** stages need a dev rebuild.
 8. **The programs page** `/{location}/programs` (built with 7): each offered service in full, edited inline by a superadmin logged in at the centre; each program has its own anchor (its id). Linked from the header's Programs, the centre page's View program and its list of programs, and each service on `/locations`. Like the centre page, no sidebar.
 9. **Photos (DB), edited inline** (user decision, 27 October 2026), each with an optional description for screen readers. Stored in the documents bucket like the logo, but **re-saved** as a JPEG at most 2400px on its longest side, which drops all metadata (a phone photo's EXIF can hold where it was taken); uploads up to 8 MB, PNG, JPEG or WebP. Each editor notes that photos of children need their families' agreement. Every slot optional.
    - **9a:** the business's hero photo (beside the headline on `/`; the centre page uses it until 9b) and about photo (`/`, `/about`, the centre page), edited inline by the owner (`EditablePhoto`). Links carry the photo's version (`?v=`) so a replaced photo isn't hidden by a cached redirect.
-   - **9b:** a centre's photo (its page's hero, else the business's; its card on `/locations`) and each program's photo, edited inline by a superadmin logged in at the centre.
+   - **9b:** a centre's photo (`tenancy.locations.photo_key`/`photo_alt`: its page's hero, else the business's; its card on `/locations`), set by the **owner** from anywhere, like the centre's other details (`/business/v1/locations/{id}/photo…`, `tenant_locations` u); and each program's photo (`location_service_config.photo_key`/`photo_alt`: beside the program on its page), set by a superadmin logged in at the centre like the program's text (`/location-services/v1/{id}/photo…`; its description through the config's `photo_alt`). Both go through `PhotoUploads` (`app/integrations/storage/photo_uploads.py`), under `branding/locations/{location}/…`.
 10. **Embedded map:** turn each centre's address into coordinates when it's saved (the `latitude`, `longitude` and `google_place_id` columns already exist), and embed Google Maps in Find us and on `/locations`. Needs a Maps key; how to restrict it with businesses on their own domains is decided then.
 
 Out of scope: the customer-facing wording review (planned separately), a fuller `/about`, centre notices.
