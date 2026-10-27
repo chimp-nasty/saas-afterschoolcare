@@ -25,7 +25,9 @@
 	<!-- The platform's own home page: its own header, no business. -->
 	<Layout>
 		{#snippet header()}
-			<PlatformHeader />
+			<!-- Log in is a stub: business logins only work on a business's own
+			     site ({tenant}.{base domain}/business/login) for now. -->
+			<PlatformHeader menuLead={[{ label: 'Log in', href: '/business/login' }]} />
 		{/snippet}
 
 		{@render children()}

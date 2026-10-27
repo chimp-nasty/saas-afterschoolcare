@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from sqlalchemy import Row, text
+
 from app.db.repository import Repository
 from app.db.models import PaymentAttempt
 
@@ -47,6 +49,33 @@ class PaymentAttemptRepository(Repository):
             .filter(PaymentAttempt.id == id)
             .first()
         )
+
+    def lock_by_id(
+        self,
+        *,
+        id: UUID,
+    ) -> PaymentAttempt | None:
+        """
+        The attempt, locked until this transaction ends, read fresh: two
+        settlers (a webhook and the success page) queue here, and the second
+        sees what the first decided.
+        """
+        return (
+            self.db.query(PaymentAttempt)
+            .filter(PaymentAttempt.id == id)
+            .populate_existing()
+            .with_for_update()
+            .first()
+        )
+
+    def list_pending_checkouts(self) -> list[Row]:
+        """
+        Every business's attempts still waiting on Stripe, for the scheduled
+        payment check (public.pending_checkouts; its channel must be set).
+        """
+        return self.db.execute(
+            text("SELECT payment_attempt_id, user_id, location_id FROM public.pending_checkouts()")
+        ).all()
 
     def get_latest_by_booking_group_id(
         self,

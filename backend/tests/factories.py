@@ -320,6 +320,7 @@ class FakeStripe:
             checkout_session_id=session_id,
             payment_intent_id=None,
             status="open",
+            payment_status="unpaid",
         )
 
         self.state.sessions[session_id] = checkout
@@ -340,6 +341,11 @@ class FakeStripe:
         return checkout
 
     def get_checkout_session(self, *, checkout_session_id):
+        # Like Stripe for a session it doesn't know (e.g. one made by an
+        # earlier test, whose fake state is gone).
+        if checkout_session_id not in self.state.sessions:
+            raise PaymentProviderError(log_reason=f"No such checkout.session: {checkout_session_id}")
+
         return self.state.sessions[checkout_session_id]
 
     def expire_checkout_session(self, *, checkout_session_id):
@@ -798,6 +804,22 @@ class Api:
             content=json.dumps(event),
             headers={"Stripe-Signature": signature},
         )
+
+    @staticmethod
+    def pay_at_stripe(checkout_session_id: str, *, payment_status: str = "paid") -> None:
+        """
+        The family finishes paying on Stripe, but no webhook is delivered
+        (the endpoint is down or misconfigured). Only asking Stripe shows it.
+        """
+        checkout = FakeStripe.state.sessions[checkout_session_id]
+        checkout.status = "complete"
+        checkout.payment_status = payment_status
+        checkout.payment_intent_id = f"pi_test_{uuid.uuid4().hex[:12]}"
+
+    @staticmethod
+    def expire_at_stripe(checkout_session_id: str) -> None:
+        """Stripe expires the session, and its webhook is never delivered."""
+        FakeStripe.state.sessions[checkout_session_id].status = "expired"
 
     def refund_webhook(
         self,

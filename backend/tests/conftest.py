@@ -104,6 +104,7 @@ def fake_stripe(monkeypatch) -> type[FakeStripe]:
         "app.public.services.bookings_update",
         "app.public.services.refunds_create",
         "app.integrations.payments.stripe.webhook",
+        "app.integrations.payments.stripe.settlement",
         "app.tenancy.services.stripe_connect",
     ):
         monkeypatch.setattr(f"{module}.StripeClient", FakeStripe)

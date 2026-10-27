@@ -74,7 +74,8 @@ export async function apiWrapper<T>(
 
 				toast.success(response.msg);
 			} else {
-				toast.error(response.msg);
+				// Errors stay longer than successes: they need reading.
+				toast.error(response.msg, { duration: 4000 });
 			}
 		}
 

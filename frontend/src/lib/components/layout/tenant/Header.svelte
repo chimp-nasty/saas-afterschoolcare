@@ -4,8 +4,10 @@
 
     - from md: `links` in a row, then `desktopActions` (e.g. Log in, Enrol now)
     - always: `actions` (e.g. the bell)
-    - on a phone: a menu button opening a drawer from the right with `links`
-      then `menuItems` (e.g. Log in, Enrol now, Log out) as rows
+    - on a phone: a menu button opening a drawer from the right with
+      `menuLead` (e.g. Log in, or a family's Home and Bookings), `links`, then
+      `menuItems` (e.g. Log out) as rows; a link already in `menuLead` isn't
+      repeated
 
     Staff and admins pass `onMenu` instead, and their menu button opens the
     sidebar's drawer.
@@ -30,6 +32,7 @@
 		title,
 		hasLogo,
 		links = [],
+		menuLead = [],
 		menuItems = [],
 		actions,
 		desktopActions,
@@ -42,7 +45,8 @@
 		title: string;
 		hasLogo: boolean;
 		links?: HeaderLink[];
-		// The phone drawer only, after the links.
+		// The phone drawer only: before the links, and after them.
+		menuLead?: HeaderMenuItem[];
 		menuItems?: HeaderMenuItem[];
 		actions?: Snippet;
 		desktopActions?: Snippet;
@@ -63,7 +67,11 @@
 	// after, so the transitions have something to run on.
 	let visible = $state(false);
 
-	const rows = $derived<HeaderMenuItem[]>([...links, ...menuItems]);
+	const rows = $derived<HeaderMenuItem[]>([
+		...menuLead,
+		...links.filter((link) => !menuLead.some((item) => item.href === link.href)),
+		...menuItems
+	]);
 
 	function open() {
 		if (onMenu) {

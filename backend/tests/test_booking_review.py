@@ -153,19 +153,19 @@ def test_cannot_cancel_a_paid_group(api: Api, customer):
 
 
 # If the customer has paid on Stripe but the webhook hasn't arrived yet,
-# cancelling is refused and the booking stays PENDING, so the money isn't
-# taken for a cancelled booking.
-def test_cannot_cancel_once_paid_on_stripe(api: Api, customer, fake_stripe):
+# cancelling is refused, so the money isn't taken for a cancelled booking,
+# and the payment is confirmed there and then.
+def test_cannot_cancel_once_paid_on_stripe(api: Api, customer):
     # Paid on Stripe, but the webhook hasn't arrived yet.
     data, _ = _pending_group(api, customer)
-    fake_stripe.state.sessions[api.session_id(data["checkout_url"])].status = "complete"
+    api.pay_at_stripe(api.session_id(data["checkout_url"]))
 
     response = customer.client.post(
         f"/booking/v1/groups/{data['booking_group_id']}/cancel"
     )
 
     assert response.status_code == 400
-    assert _group(customer, data["booking_group_id"]).json()["data"]["status"] == "PENDING"
+    assert _group(customer, data["booking_group_id"]).json()["data"]["status"] == "CONFIRMED"
 
 
 # Cancelling works once; cancelling the same booking again is refused as a

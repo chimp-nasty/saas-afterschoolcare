@@ -1,7 +1,8 @@
 <!--
-    Stripe sends the user here after checkout (?session_id=...). This page
-    only shows the result: the Stripe webhook is what confirms the bookings,
-    and it can land a few seconds after the redirect, so poll briefly.
+    Stripe sends the user here after checkout (?session_id=...). Loading the
+    status checks the payment with Stripe, so a paid card booking usually
+    shows as confirmed at once; a slower payment (or Stripe unreachable)
+    stays pending, so poll briefly.
 -->
 <script lang="ts">
     import { onMount } from "svelte";

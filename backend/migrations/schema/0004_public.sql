@@ -1786,7 +1786,7 @@ CREATE TABLE public.payment_attempts (
     -- When the checkout was opened, which can be well before it was paid.
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    -- Set by the webhook when the attempt moves to SUCCEEDED.
+    -- Set when the attempt moves to SUCCEEDED (webhook or payment check).
     paid_at TIMESTAMPTZ,
 
     CONSTRAINT fk_payment_attempts_booking_group
@@ -1833,6 +1833,27 @@ $$;
 CREATE TRIGGER trg_payment_attempts_account
     BEFORE INSERT ON public.payment_attempts
     FOR EACH ROW EXECUTE FUNCTION public.set_payment_attempt_account();
+
+-- Attempts still waiting on Stripe, for the scheduled payment check
+-- (app/public/services/payment_check.py), which asks Stripe about each in
+-- case its webhook was missed (docs/payment-confirmation.md). Only that
+-- check gets rows (app.channel, set only by it), and only the ids it needs
+-- to act as each family, which it then does. SECURITY DEFINER: it spans
+-- every business.
+CREATE FUNCTION public.pending_checkouts()
+RETURNS TABLE (payment_attempt_id UUID, user_id UUID, location_id UUID)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT pa.id, pa.user_id, pa.location_id
+    FROM public.payment_attempts pa
+    WHERE current_setting('app.channel', true) = 'payment_check'
+      AND pa.stripe_status = 'PENDING'
+      AND pa.stripe_checkout_session_id IS NOT NULL
+    ORDER BY pa.created_at;
+$$;
 
 
 -- =====================================================

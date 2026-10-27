@@ -73,6 +73,14 @@ class RlsContextRepository(Repository):
         """
         self.db.execute(select(func.set_config("app.channel", "domain_check", True)))
 
+    def set_payment_check_channel(self) -> None:
+        """
+        This transaction is the scheduled payment check's (server code, no
+        user): public.pending_checkouts lists every business's pending
+        payment attempts for it.
+        """
+        self.db.execute(select(func.set_config("app.channel", "payment_check", True)))
+
     def set_kiosk_channel(
         self,
         *,

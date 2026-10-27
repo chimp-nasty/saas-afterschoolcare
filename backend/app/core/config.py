@@ -100,6 +100,9 @@ class Settings(BaseSettings):
     # Cloud Scheduler sends it in X-Domain-Check-Secret on every check.
     # Unset refuses every call.
     DOMAINS_CHECK_SECRET: str | None = None
+    # The scheduled payment check (docs/payment-confirmation.md): Cloud
+    # Scheduler sends it in X-Payment-Check-Secret. Unset refuses every call.
+    PAYMENT_CHECK_SECRET: str | None = None
     # Google Cloud (DOMAINS_PROVIDER=google): where the load balancer is and
     # the names of its parts (deploy/gcp/README.md, step 10).
     GCP_PROJECT_ID: str | None = None

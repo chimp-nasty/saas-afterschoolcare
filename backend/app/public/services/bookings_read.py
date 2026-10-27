@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from uuid import UUID
 
@@ -9,6 +10,8 @@ from app.errors.bookings import (
     BookingNotFoundError,
     CheckoutNotFoundError,
 )
+from app.errors.payments import PaymentProviderError
+from app.integrations.payments.stripe.settlement import confirm_with_stripe
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.schemas.booking import (
@@ -22,9 +25,12 @@ from app.public.schemas.booking import (
     CheckoutStatusResponse,
     ListBookingsFilterRequest
 )
-from app.public.schemas.enums import BookingStatus
+from app.public.schemas.enums import BookingStatus, StripeStatus
 from app.public.services.attendance import location_today
 from app.tenancy.repositories.location import LocationRepository
+
+
+logger = logging.getLogger("app.payments")
 
 
 # A group's bookings are settled together, but a group can still mix
@@ -135,8 +141,10 @@ class ReadBookingService:
         checkout_session_id: str,
     ) -> CheckoutStatusResponse:
         """
-        What the success page shows after Stripe's redirect. Read-only: only
-        the webhook changes payment state.
+        What the success page shows after Stripe's redirect. A pending
+        payment is checked with Stripe first and settled if it's been paid,
+        so a missed webhook doesn't leave the family stuck on "awaiting
+        payment". If Stripe can't be reached it shows what we know.
         """
         attempt = self.payment_attempt_repository.get_by_checkout_session_id(
             checkout_session_id=checkout_session_id,
@@ -144,6 +152,22 @@ class ReadBookingService:
 
         if not attempt:
             raise CheckoutNotFoundError()
+
+        if attempt.stripe_status == StripeStatus.PENDING:
+            try:
+                confirm_with_stripe(attempt)
+            except PaymentProviderError as exc:
+                logger.warning(
+                    "Couldn't check the payment with Stripe",
+                    extra={
+                        "event": "stripe_payment_check_unavailable",
+                        "result": "skipped",
+                        "reason": f"payment_attempt_id={attempt.id}; {exc.log_reason}",
+                    },
+                )
+
+            # Settled on its own session; read what it decided.
+            self.db.refresh(attempt)
 
         rows = self.booking_repository.list_context_with_filters(
             booking_group_id=attempt.booking_group_id,

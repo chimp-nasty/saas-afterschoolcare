@@ -1,5 +1,4 @@
 <script lang="ts">
-    import Button from "$lib/components/actions/Button.svelte";
     import TabbedPanels from "$lib/components/controls/TabbedPanels.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
@@ -11,7 +10,6 @@
     import { invalidate } from "$app/navigation";
 
     import { accountTabs } from "$lib/navigation/tabs";
-    import { logout } from "$lib/auth/logout";
 	import { createCustomerApi } from "$lib/api/public/adapters/customer";
 	import { createAccountApi } from "$lib/api/auth/adapters/account";
 	import type { ChangePasswordRequest, UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/schema";
@@ -81,13 +79,4 @@
             {/if}
         {/snippet}
     </TabbedPanels>
-
-    <!-- Customers have no sidebar on mobile, so logging out lives here. -->
-    <Button
-        variant="ghost"
-        fullWidth
-        onclick={() => logout(data.locationCode)}
-    >
-        Log out
-    </Button>
 </Page>

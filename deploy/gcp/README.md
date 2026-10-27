@@ -212,11 +212,14 @@ Then:
 Put-Secret JWT_SECRET_KEY ([Convert]::ToBase64String((New-RandomBytes 48)))
 # Cloud Scheduler's proof when it calls the domain check (step 12).
 Put-Secret DOMAINS_CHECK_SECRET (-join ((New-RandomBytes 32) | ForEach-Object { $_.ToString('x2') }))
+# Cloud Scheduler's proof when it calls the payment check (step 11).
+Put-Secret PAYMENT_CHECK_SECRET (-join ((New-RandomBytes 32) | ForEach-Object { $_.ToString('x2') }))
 Put-Secret DATABASE_URL (Read-Secret "DATABASE_URL (app_user, see step 7)")
 Put-Secret STRIPE_SECRET_KEY (Read-Secret "STRIPE_SECRET_KEY (the deployed dev sandbox's, sk_test_..., step 11)")
 
 # The webhook secrets exist once the endpoints do (step 11); start with
-# placeholders so the API can start.
+# placeholders so the API can start. Bookings are refused (503) until
+# they're real, so nobody pays without the payment being recorded.
 Put-Secret STRIPE_WEBHOOK_SECRET unset
 Put-Secret STRIPE_CONNECT_WEBHOOK_SECRET unset
 ```
@@ -284,7 +287,7 @@ gcloud run deploy "$API_SERVICE" `
   --service-account="$API_SA" `
   --ingress=internal-and-cloud-load-balancing --allow-unauthenticated `
   --env-vars-file="deploy/gcp/env/api.$ENV_NAME.yaml" `
-  --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,STRIPE_CONNECT_WEBHOOK_SECRET=STRIPE_CONNECT_WEBHOOK_SECRET:latest,DOMAINS_CHECK_SECRET=DOMAINS_CHECK_SECRET:latest" `
+  --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,STRIPE_CONNECT_WEBHOOK_SECRET=STRIPE_CONNECT_WEBHOOK_SECRET:latest,DOMAINS_CHECK_SECRET=DOMAINS_CHECK_SECRET:latest,PAYMENT_CHECK_SECRET=PAYMENT_CHECK_SECRET:latest" `
   --cpu=1 --memory=512Mi --min-instances=0 --max-instances=2 `
   --region="$REGION" --project="$PROJECT_ID"
 ```
@@ -432,7 +435,23 @@ Deployed dev gets **its own Stripe sandbox**, with webhook endpoints registered 
 4. Log in to Business settings on the deployed site (`https://tenant1.dev.sessionpilot.com.au/business`) and connect Stripe under Payments. Note the connected account's id for later rebuilds (step 7).
 5. Optional, for "Connect your Stripe account": add the redirect URI `https://dev.sessionpilot.com.au/api/stripe-account/v1/oauth/callback` to the sandbox's OAuth settings, and put its client id in `env/api.dev.yaml` (`STRIPE_CONNECT_CLIENT_ID`).
 
-Check: make a booking and pay with a test card. The booking becomes paid, and the sandbox's webhook page shows the events answered with `200`.
+6. **The payment check every 5 minutes** (Cloud Scheduler, calling the API on the platform's site with the secret from step 6). It asks Stripe about every payment still pending and settles the ones Stripe has finished with, so a missed webhook (endpoint down, wrong secret) can't leave a paid booking stuck (`docs/payment-confirmation.md`):
+
+   ```powershell
+   gcloud services enable cloudscheduler.googleapis.com --project="$PROJECT_ID"
+
+   $CHECK_SECRET = gcloud secrets versions access latest --secret=PAYMENT_CHECK_SECRET --project="$PROJECT_ID"
+   gcloud scheduler jobs create http payment-check `
+     --schedule="*/5 * * * *" --time-zone="Australia/Sydney" `
+     --uri="https://$BASE_DOMAIN/api/internal/v1/payment-check" --http-method=POST `
+     --headers="X-Payment-Check-Secret=$CHECK_SECRET" `
+     --attempt-deadline=300s --location="$REGION" --project="$PROJECT_ID" --format="value(name)"
+   Remove-Variable CHECK_SECRET
+   ```
+
+   As with the domain check (step 12.3), the secret lives in the job's settings; if you change it, update the job's header too.
+
+Check: make a booking and pay with a test card. The booking becomes paid, and the sandbox's webhook page shows the events answered with `200`. Then `gcloud scheduler jobs run payment-check --location="$REGION" --project="$PROJECT_ID"`: the API's logs show `POST /api/internal/v1/payment-check` answered `200`. Any `stripe_payment_reconciled` warning in the logs means a payment was confirmed without its webhook, so check the endpoints.
 
 ## 12. Custom domains
 

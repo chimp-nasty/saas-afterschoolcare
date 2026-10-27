@@ -30,6 +30,7 @@ from app.public.routes.child_documents import router as child_documents_router
 from app.public.routes.medical_reviews import router as medical_reviews_router
 from app.public.routes.kiosk_devices import router as kiosk_devices_router
 from app.public.routes.attendance import router as attendance_router
+from app.public.routes.payment_check import router as payment_check_router
 
 # kiosk
 from app.kiosk.routes.family_kiosk import router as family_kiosk_router
@@ -72,6 +73,7 @@ api_router.include_router(child_documents_router)
 api_router.include_router(medical_reviews_router)
 api_router.include_router(kiosk_devices_router)
 api_router.include_router(attendance_router)
+api_router.include_router(payment_check_router)
 
 # kiosk
 api_router.include_router(family_kiosk_router)

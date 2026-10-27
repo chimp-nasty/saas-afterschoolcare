@@ -34,6 +34,8 @@
 				relative
 				h-full
 				w-4/5
+				overflow-y-auto
+				overscroll-contain
 				bg-(--surface)
 				shadow-xl
 			"

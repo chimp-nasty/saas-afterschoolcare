@@ -1,18 +1,28 @@
 # Payment confirmation without depending on webhooks
 
-**Status: backlog, noted 26 October 2026. Not agreed or built.**
+**Status: built 28 October 2026 (ideas 1–3, and the logging part of 4). Alerting is still to do, with monitoring.**
 
 ## The problem
 
-A booking is only marked paid when Stripe's webhook arrives (`checkout.session.completed`, handled in `app/integrations/payments/stripe/webhook.py`). Nothing checks that the webhooks are set up before a family is sent to Stripe. If an environment has no endpoints, the wrong signing secret (e.g. the `unset` placeholders from the deploy runbook), or Stripe can't reach the API, the family pays and their booking never becomes paid: Stripe has the money, our database doesn't know.
+A booking used to be marked paid only when Stripe's webhook arrived (`checkout.session.completed`). If an environment had no endpoints, the wrong signing secret (e.g. the `unset` placeholders from the deploy runbook), or Stripe couldn't reach the API, the family paid and their booking never became paid: Stripe had the money, our database didn't know. Worse:
 
-The same happens, more rarely, in production if a webhook delivery is delayed or the endpoint is down for a while.
+- Cancelling saw the session was complete and refused with "already paid", leaving it to a webhook that never came.
+- "Continue to payment" only reused an *open* session, so a completed one fell through to a brand new checkout: the family could pay twice.
+- Missed events aren't replayed by `stripe listen` (local dev), so it never recovered there. Stripe retries deliveries for up to 3 days in production, but a pending booking only holds its place for 60 minutes (`booking_hold_lapsed`, schema 0009).
 
-## Ideas, in order of value
+## What's built
 
-1. **Refuse checkout while payments can't be confirmed.** The API knows when its own setup is incomplete: a webhook secret missing or still a placeholder. Treat that like a tenant whose Stripe account can't take payments: bookings and checkouts are refused with a clear message, and Business settings › Payments says what's missing. A stronger version also asks Stripe (`WebhookEndpoint.list`) that both endpoints exist, are enabled, point at this environment and listen for the events we need, and records the result (on start-up, or from the platform console), so a misconfigured environment can't take money.
-2. **Confirm on return.** When the family lands back on the success page, the API fetches that Checkout Session from Stripe (on the tenant's connected account) and settles it through the same `_settle` path the webhook uses. Settling is already safe to repeat, so whichever arrives first wins. Cards are then confirmed even with no webhooks; delayed payment methods and refunds still need them.
-3. **Reconcile in the background.** A scheduled job (Cloud Scheduler, like the domain check) looks for payment attempts still pending after, say, 15 minutes and asks Stripe for each session's real state. This catches families who closed the tab before returning, and webhook outages.
-4. **Notice failures.** Log (and later alert on) webhook signature failures and on attempts that the reconcile job had to settle, since either means the endpoint is wrong or unreachable.
+All of it settles through one place, `PaymentSettlementService` (`app/integrations/payments/stripe/settlement.py`), which the webhook uses too. Settling locks the payment attempt and only moves a PENDING one, so whichever path gets there first wins and the rest change nothing (one confirmation email).
 
-1 stops the case seen in deployed dev; 2 and 3 make confirmation not depend on webhooks alone.
+1. **Refuse checkout while payments can't be confirmed.** If the webhook secret for the endpoint a payment's events would arrive on is empty or not a real `whsec_...` secret (e.g. `unset`), booking is refused with 503 before the family is sent to Stripe (`webhooks_configured` in `client.py`).
+2. **Confirm on sight.** Whenever we ask Stripe about a checkout and it says it's paid, it's settled there and then, on a transaction of its own, so it stays settled even when the request is then refused:
+   - the success page (`GET /booking/v1/checkout/{session}`); if Stripe can't be reached it shows what we know
+   - cancelling a pending group: refused with "already paid", but the booking is now confirmed
+   - continuing to payment, or sending the same booking again: never opens a second checkout
+   - a completed checkout still waiting on a delayed method (bank debit) can't be paid again or cancelled: 409 "still processing"
+3. **Reconcile in the background.** `POST /internal/v1/payment-check` (Cloud Scheduler every 5 minutes, `X-Payment-Check-Secret`, deploy runbook step 11) asks Stripe about every pending attempt and settles those it has finished with, paid or expired. This catches families who closed the tab, and webhook outages, well inside the 60 minute hold. The list comes from `public.pending_checkouts()` (schema 0004), which answers only the `payment_check` channel; each attempt is then settled acting as its family, as the webhook does.
+4. **Notice failures.** A payment settled without its webhook logs `stripe_payment_reconciled` (warning), and money taken for bookings already released logs `stripe_paid_without_bookings` (error, a refund is needed). Alerting on these and on webhook signature failures comes with monitoring.
+
+Not built: asking Stripe (`WebhookEndpoint.list`) that both endpoints exist and listen for the right events. The secret check catches the misconfiguration seen in deployed dev; the payment check covers the rest.
+
+Tests: `backend/tests/test_payment_confirmation.py`.

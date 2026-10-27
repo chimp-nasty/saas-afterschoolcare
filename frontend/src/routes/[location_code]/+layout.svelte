@@ -119,7 +119,7 @@
 		}
 
 		if ($auth.roles.includes('customer')) {
-			const familyItems = [link('Account', '/account'), link('Bookings', '/bookings')];
+			const familyItems = [link('Account', '/account'), link('Bookings', '/bookings'), link('Messages', '/actions')];
 
 			// Families only: no headings. Staff who are also a family here get
 			// their family's links as a group like the rest.
@@ -182,6 +182,24 @@
 		...(isOwner ? [BUSINESS_LINK] : [])
 	]);
 
+	// The phone menu's first rows: the way in when logged out; a family's
+	// own pages, Home first (then the site's links, and Log out last).
+	const menuLead = $derived(
+		!$auth.authenticated
+			? [
+					{ label: 'Log in', href: route('/login') },
+					{ label: 'Enrol now', href: route('/register') }
+				]
+			: isCustomerOnly
+				? [
+						homeLink,
+						{ label: 'Bookings', href: route('/bookings') },
+						{ label: 'Account', href: route('/account') },
+						{ label: 'Messages', href: route('/actions') }
+					]
+				: []
+	);
+
 	async function logout() {
 		isLoggingOut = true;
 
@@ -241,14 +259,8 @@
 			title={`${data.location.tenant_name} - ${data.location.location_name}`}
 			hasLogo={data.location.has_logo}
 			links={headerLinks}
-			menuItems={!$auth.authenticated
-				? [
-						{ label: 'Log in', href: route('/login') },
-						{ label: 'Enrol now', href: route('/register') }
-					]
-				: isCustomerOnly
-					? [{ label: 'Log out', onclick: logout }]
-					: []}
+			{menuLead}
+			menuItems={isCustomerOnly ? [{ label: 'Log out', onclick: logout }] : []}
 			note={$auth.authenticated && !isCustomerOnly ? `Logged in as ${$auth.firstName ?? $auth.email}` : null}
 			onMenu={$auth.authenticated && !isCustomerOnly ? () => (sidebarOpen = true) : undefined}
 			flush={isCentrePage}

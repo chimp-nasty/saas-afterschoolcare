@@ -1915,6 +1915,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/internal/v1/payment-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Payment Check */
+        post: operations["run_payment_check_api_internal_v1_payment_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/kiosk/v1/{location_code}/pair": {
         parameters: {
             query?: never;
@@ -2852,6 +2869,14 @@ export interface components {
             msg: string;
             /** Data */
             data?: null;
+        };
+        /** ApiResponse[PaymentCheckResponse] */
+        ApiResponse_PaymentCheckResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PaymentCheckResponse"] | null;
         };
         /** ApiResponse[PickupResponse] */
         ApiResponse_PickupResponse_: {
@@ -5078,6 +5103,11 @@ export interface components {
             /** Document Count */
             document_count: number;
         };
+        /** PaymentCheckResponse */
+        PaymentCheckResponse: {
+            /** Payments Checked */
+            payments_checked: number;
+        };
         /**
          * PaymentStatus
          * @enum {string}
@@ -6263,6 +6293,7 @@ export type ApiResponseKioskTodayResponse = components['schemas']['ApiResponse_K
 export type ApiResponseLocationServiceSettingsResponse = components['schemas']['ApiResponse_LocationServiceSettingsResponse_'];
 export type ApiResponseMedicalReviewResponse = components['schemas']['ApiResponse_MedicalReviewResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
+export type ApiResponsePaymentCheckResponse = components['schemas']['ApiResponse_PaymentCheckResponse_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
 export type ApiResponsePlatformSessionResponse = components['schemas']['ApiResponse_PlatformSessionResponse_'];
 export type ApiResponsePublicBusinessResponse = components['schemas']['ApiResponse_PublicBusinessResponse_'];
@@ -6406,6 +6437,7 @@ export type MedicalReviewDecisionRequest = components['schemas']['MedicalReviewD
 export type MedicalReviewResponse = components['schemas']['MedicalReviewResponse'];
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
 export type MedicalReviewSummaryResponse = components['schemas']['MedicalReviewSummaryResponse'];
+export type PaymentCheckResponse = components['schemas']['PaymentCheckResponse'];
 export type PaymentStatus = components['schemas']['PaymentStatus'];
 export type PhotoAltRequest = components['schemas']['PhotoAltRequest'];
 export type PhotoResponse = components['schemas']['PhotoResponse'];
@@ -10932,6 +10964,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_RunSheetResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_payment_check_api_internal_v1_payment_check_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-payment-check-secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PaymentCheckResponse_"];
                 };
             };
             /** @description Validation Error */

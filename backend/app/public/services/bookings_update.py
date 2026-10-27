@@ -12,7 +12,9 @@ from app.errors.bookings import (
     BookingNotFoundError,
     BookingNotReinstatableError,
 )
+from app.errors.payments import PaymentProcessingError
 from app.integrations.payments.stripe.client import StripeClient
+from app.integrations.payments.stripe.settlement import confirm_with_stripe, is_paid
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
@@ -71,17 +73,27 @@ class UpdateBookingService:
         )
 
         if attempt and attempt.stripe_checkout_session_id:
-            stripe = StripeClient(account_id=attempt.stripe_account_id)
-            checkout = stripe.get_checkout_session(
-                checkout_session_id=attempt.stripe_checkout_session_id,
-            )
+            # Paid on Stripe but its webhook missed: settled now (and kept,
+            # though this cancel is refused), so it isn't left stuck.
+            checkout = confirm_with_stripe(attempt)
 
-            # Paid, but the webhook hasn't landed yet: it will confirm them.
-            if checkout.status == "complete":
+            # Settled meanwhile (a webhook just arrived): paid or released.
+            if checkout is None:
+                self.db.refresh(attempt)
+
+                if attempt.stripe_status == StripeStatus.SUCCEEDED:
+                    raise BookingGroupAlreadyPaidError()
+
+                raise BookingAttemptFinishedError()
+
+            if is_paid(checkout):
                 raise BookingGroupAlreadyPaidError()
 
+            if checkout.status == "complete":
+                raise PaymentProcessingError()
+
             if checkout.status == "open":
-                stripe.expire_checkout_session(
+                StripeClient(account_id=attempt.stripe_account_id).expire_checkout_session(
                     checkout_session_id=attempt.stripe_checkout_session_id,
                 )
 

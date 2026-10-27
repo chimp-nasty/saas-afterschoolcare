@@ -55,3 +55,25 @@ class StripeAccountLinkedError(ApplicationError):
     status_code = status.HTTP_409_CONFLICT
     message = "This is your own Stripe account. Finish setting it up in your Stripe dashboard, then refresh the status here."
     result = "denied"
+
+
+class PaymentsUnavailableError(ApplicationError):
+    """Our webhook secrets aren't set up, so a payment couldn't be confirmed."""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    message = "Payments aren't available right now. Please try again later."
+    result = "denied"
+
+
+class PaymentProcessingError(ApplicationError):
+    """A delayed payment method (e.g. bank debit) is still settling on Stripe."""
+
+    status_code = status.HTTP_409_CONFLICT
+    message = "Your payment is still processing. We'll email you once it goes through."
+    result = "denied"
+
+
+class PaymentCheckDeniedError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Not found"
+    result = "denied"

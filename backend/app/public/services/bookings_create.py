@@ -11,11 +11,14 @@ from app.errors.bookings import (
     BookingGroupAlreadyPaidError,
     InvalidBookingServiceDaysError,
 )
+from app.errors.payments import PaymentProcessingError, PaymentsUnavailableError
 from app.integrations.payments.stripe.client import (
     CheckoutLineItem,
     StripeCheckout,
     StripeClient,
+    webhooks_configured,
 )
+from app.integrations.payments.stripe.settlement import confirm_with_stripe, is_paid
 from app.tenancy.repositories.location import LocationRepository
 from app.tenancy.repositories.tenant import TenantRepository
 from app.tenancy.site_url import location_site_url
@@ -27,7 +30,7 @@ from app.public.schemas.booking import (
     BookingConflictRow,
     CheckoutUrlResponse,
 )
-from app.public.schemas.enums import BookingStatus
+from app.public.schemas.enums import BookingStatus, StripeStatus
 from app.public.services.bookings_read import resolve_group_status
 from app.db.models import Booking, BookingGroup
 from app.public.repositories.booking_group import BookingGroupRepository
@@ -147,8 +150,8 @@ class CreateBookingService:
                     )
                 )
 
-        # Bookings hold their places as PENDING until the Stripe webhook
-        # confirms or expires them (app/integrations/payments/stripe/webhook.py).
+        # Bookings hold their places as PENDING until the payment is settled
+        # (app/integrations/payments/stripe/settlement.py).
         checkout = self._start_checkout(
             booking_group=booking_group,
             bookings=bookings,
@@ -289,6 +292,11 @@ class CreateBookingService:
             currency=currency,
         )
 
+        # Its events arrive on the Connect endpoint when it's in a tenant's
+        # account (the platform's for seeds).
+        if not webhooks_configured(connect=attempt.stripe_account_id is not None):
+            raise PaymentsUnavailableError()
+
         line_items = []
 
         for booking in bookings:
@@ -344,9 +352,24 @@ class CreateBookingService:
         )
 
         if latest and latest.stripe_checkout_session_id:
-            checkout = StripeClient(account_id=latest.stripe_account_id).get_checkout_session(
-                checkout_session_id=latest.stripe_checkout_session_id,
-            )
+            # Settled on Stripe even if its webhook was missed, so a paid
+            # group is never sent to a second checkout.
+            checkout = confirm_with_stripe(latest)
+
+            # Settled meanwhile (a webhook just arrived): paid or released.
+            if checkout is None:
+                self.db.refresh(latest)
+
+                if latest.stripe_status == StripeStatus.SUCCEEDED:
+                    raise BookingGroupAlreadyPaidError()
+
+                raise BookingAttemptFinishedError()
+
+            if is_paid(checkout):
+                raise BookingGroupAlreadyPaidError()
+
+            if checkout.status == "complete":
+                raise PaymentProcessingError()
 
             if checkout.status == "open":
                 return checkout

@@ -24,12 +24,28 @@ _STRIPE_V2_VERSION = "2026-09-30.endive"
 _STRIPE_V2_TIMEOUT_SECONDS = 30
 
 
+def webhooks_configured(*, connect: bool) -> bool:
+    """
+    Whether the webhook endpoint a payment's events arrive on has a real
+    signing secret (not empty, nor the deploy runbook's "unset"
+    placeholder). Without one, a family could pay and nothing would ever
+    hear of it, so checkout is refused (docs/payment-confirmation.md).
+    `connect`: the Connect endpoint, for tenants' connected accounts.
+    """
+    secret = settings.STRIPE_CONNECT_WEBHOOK_SECRET if connect else settings.STRIPE_WEBHOOK_SECRET
+
+    return bool(secret) and secret.startswith("whsec_")
+
+
 @dataclass
 class StripeCheckout:
     checkout_url: str | None
     checkout_session_id: str
     payment_intent_id: str | None
     status: str  # "open", "complete" or "expired"
+    # "paid", "unpaid" (a delayed method still settling, or not paid yet)
+    # or "no_payment_required".
+    payment_status: str
 
 
 @dataclass
@@ -69,6 +85,7 @@ def _to_checkout(session) -> StripeCheckout:
         checkout_session_id=session.id,
         payment_intent_id=session.payment_intent,
         status=session.status,
+        payment_status=session.payment_status,
     )
 
 

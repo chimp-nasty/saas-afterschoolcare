@@ -6,8 +6,8 @@ from app.middleware.rate_limit import InMemoryRateLimitMiddleware
 from app.middleware.same_origin import SameOriginMiddleware
 
 
-# Called by Stripe, SES and Cloud Scheduler (the domain check), not
-# browsers: no rate limit, no Origin.
+# Called by Stripe, SES and Cloud Scheduler (the domain and payment
+# checks), not browsers: no rate limit, no Origin.
 WEBHOOK_PATHS = {
     "/api/v1/webhooks/stripe",
     "/api/v1/webhooks/stripe/",
@@ -17,6 +17,8 @@ WEBHOOK_PATHS = {
     "/api/v1/webhooks/ses/",
     "/api/internal/v1/domain-check",
     "/api/internal/v1/domain-check/",
+    "/api/internal/v1/payment-check",
+    "/api/internal/v1/payment-check/",
 }
 
 

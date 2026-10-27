@@ -1,6 +1,7 @@
 """
-Stripe checkout: creating a booking opens a checkout session, and only the
-webhook moves payment state (see tests.factories.FakeStripe).
+Stripe checkout: creating a booking opens a checkout session, and Stripe's
+webhook settles it (see tests.factories.FakeStripe). Settling without the
+webhook, when it's missed, is in test_payment_confirmation.py.
 """
 
 import uuid

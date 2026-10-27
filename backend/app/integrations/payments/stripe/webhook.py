@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timezone
 from uuid import UUID
 
 import stripe
@@ -8,18 +7,15 @@ from sqlalchemy.orm import Session
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.auth.repositories.user import UserRepository
 from app.db.transaction import transactional
-from app.errors.payments import InvalidWebhookError, PaymentProviderError
-from app.integrations.email.messages import (
-    BookingConfirmationEmail,
-    RefundConfirmationEmail,
-    short_reference,
-)
+from app.errors.payments import InvalidWebhookError
+from app.integrations.email.messages import RefundConfirmationEmail, short_reference
 from app.integrations.email.outbox import EmailOutbox
 from app.integrations.payments.stripe.client import StripeClient
+from app.integrations.payments.stripe.settlement import PaymentSettlementService
 from app.public.repositories.booking import BookingRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.repositories.refund import RefundRepository
-from app.public.schemas.enums import BookingStatus, PaymentStatus, RefundStatus, StripeStatus
+from app.public.schemas.enums import RefundStatus
 from app.tenancy.repositories.stripe_account import TenantStripeAccountRepository
 
 
@@ -28,9 +24,10 @@ logger = logging.getLogger("app.payments")
 
 class StripeWebhookService:
     """
-    The only place payment state changes. The success redirect just reads
-    it (ReadBookingService.get_checkout_status), because a user can close
-    the tab before it loads or open it without paying.
+    Stripe's events. Payments are settled through PaymentSettlementService,
+    which is also used when Stripe is asked directly in case a webhook was
+    missed (the success page, cancelling, continuing to payment, the
+    scheduled payment check; docs/payment-confirmation.md).
 
     Two endpoints: the platform's, and Stripe Connect's (`connect`) for
     events on tenants' connected accounts, where their checkouts and
@@ -59,6 +56,13 @@ class StripeWebhookService:
         self.stripe_account_repository = stripe_account_repository
         self.stripe = StripeClient()
         self.emails = EmailOutbox(db)
+        self.settlement = PaymentSettlementService(
+            db=db,
+            rls_context=rls_context,
+            payment_attempt_repository=payment_attempt_repository,
+            booking_repository=booking_repository,
+            user_repository=user_repository,
+        )
 
     def handle(
         self,
@@ -190,114 +194,26 @@ class StripeWebhookService:
 
         # A webhook has no logged-in user, so act as the booking's user at
         # its location; RLS then applies as it would for them. The metadata
-        # is trusted because the signature was verified.
-        self.rls_context.set_user_id(user_id=UUID(metadata["user_id"]))
-        self.rls_context.set_location_id(location_id=UUID(metadata["location_id"]))
-
-        attempt = self.payment_attempt_repository.get_by_id(
-            id=UUID(metadata["payment_attempt_id"]),
+        # is trusted because the signature was verified. Stripe retries
+        # deliveries, and the payment may have been settled without the
+        # webhook: only a PENDING attempt moves.
+        attempt = self.settlement.lock_pending(
+            payment_attempt_id=UUID(metadata["payment_attempt_id"]),
+            user_id=UUID(metadata["user_id"]),
+            location_id=UUID(metadata["location_id"]),
         )
 
-        # Stripe retries deliveries; only a PENDING attempt moves.
-        if not attempt or attempt.stripe_status != StripeStatus.PENDING:
+        if not attempt:
             return
 
         if self._from_other_account("payment_attempt", attempt.stripe_account_id, account_id, attempt.id):
             return
 
-        attempt.stripe_status = (
-            StripeStatus.SUCCEEDED if succeeded else StripeStatus.FAILED
+        self.settlement.settle(
+            attempt=attempt,
+            succeeded=succeeded,
+            payment_intent_id=session.get("payment_intent"),
         )
-
-        if session.get("payment_intent"):
-            attempt.stripe_payment_intent_id = session["payment_intent"]
-
-        if succeeded:
-            attempt.paid_at = datetime.now(timezone.utc)
-
-            if attempt.stripe_payment_intent_id:
-                attempt.stripe_receipt_url = self._receipt_url(
-                    payment_intent_id=attempt.stripe_payment_intent_id,
-                    account_id=attempt.stripe_account_id,
-                )
-
-            confirmed = self.booking_repository.settle_pending_for_group(
-                booking_group_id=attempt.booking_group_id,
-                booking_status=BookingStatus.CONFIRMED,
-                payment_status=PaymentStatus.PAID,
-            )
-
-            # Paid, but the bookings were already released (cancelled, or
-            # their hold lapsed before this webhook arrived). The money was
-            # taken for nothing: this needs a refund.
-            if confirmed == 0:
-                logger.error(
-                    "Payment received for bookings that are no longer pending",
-                    extra={
-                        "event": "stripe_paid_without_bookings",
-                        "result": "refund_required",
-                        "reason": (
-                            f"payment_attempt_id={attempt.id}; "
-                            f"booking_group_id={attempt.booking_group_id}; "
-                            f"checkout_session_id={session.get('id')}"
-                        ),
-                    },
-                )
-
-                return
-
-            # Only here once per payment: a repeated event finds the attempt
-            # no longer pending and stops above.
-            family = self.user_repository.get_by_id(id=attempt.user_id)
-
-            self.emails.queue(BookingConfirmationEmail(
-                location_id=attempt.location_id,
-                user_id=family.id,
-                to_email=family.email,
-                first_name=family.first_name,
-                reference=short_reference("BK", attempt.booking_group_id),
-                total_cents=attempt.total_cents,
-                currency=attempt.currency,
-            ))
-
-            return
-
-        # A resumed checkout makes a newer attempt for the same bookings;
-        # the old session expiring must not release them.
-        latest = self.payment_attempt_repository.get_latest_by_booking_group_id(
-            booking_group_id=attempt.booking_group_id,
-        )
-
-        if latest and latest.id == attempt.id:
-            self.booking_repository.settle_pending_for_group(
-                booking_group_id=attempt.booking_group_id,
-                booking_status=BookingStatus.EXPIRED,
-                payment_status=PaymentStatus.FAILED,
-            )
-
-    def _receipt_url(
-        self,
-        *,
-        payment_intent_id: str,
-        account_id: str | None,
-    ) -> str | None:
-        """
-        The payment's receipt link, if Stripe can give it now. A failed
-        lookup never stops the payment settling: the booking page just
-        goes without "View receipt".
-        """
-        try:
-            return StripeClient(account_id=account_id).get_receipt_url(payment_intent_id=payment_intent_id)
-        except PaymentProviderError as exc:
-            logger.warning(
-                "Couldn't fetch the Stripe receipt",
-                extra={
-                    "event": "stripe_receipt_unavailable",
-                    "result": "skipped",
-                    "reason": f"payment_intent_id={payment_intent_id}; {exc.log_reason}",
-                },
-            )
-            return None
 
     @transactional
     def _settle_refund(
