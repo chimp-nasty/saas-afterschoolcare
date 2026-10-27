@@ -27,6 +27,7 @@
 	import SitePhoto from '$lib/features/business/components/SitePhoto.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
 	import CentreFacts from '$lib/features/location/components/CentreFacts.svelte';
+	import CentreMap from '$lib/features/location/components/CentreMap.svelte';
 	import NextSessionCard from '$lib/features/services/components/NextSessionCard.svelte';
 	import ServiceCard from '$lib/features/services/components/ServiceCard.svelte';
 
@@ -324,11 +325,17 @@
 	{/if}
 </SiteSection>
 
+<!-- Find us: the address card beside the map (stage 10; without a Maps
+     key, just the card). -->
 <SiteSection id="find-us">
 	<SiteHeading title="Find us" />
 
-	<div class="max-w-xl">
-		<CentreCard location={data.location} />
+	<div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
+		<div class="max-w-xl">
+			<CentreCard location={data.location} />
+		</div>
+
+		<CentreMap location={data.location} />
 	</div>
 </SiteSection>
 

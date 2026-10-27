@@ -295,13 +295,19 @@ If `--allow-unauthenticated` is refused, an organisation policy blocks public se
 
 ## 9. Release the site
 
+The site's Google Maps key (step 13) is read from Google each time, so it never sits in the repo; before step 13 is done it's empty and pages show "View on map" links instead of maps.
+
 ```powershell
+$MAPS_KEY_NAME = gcloud services api-keys list --project="$PROJECT_ID" `
+  --filter="displayName='Maps embed (public site)'" --format="value(name)"
+$MAPS_EMBED_KEY = if ($MAPS_KEY_NAME) { gcloud services api-keys get-key-string $MAPS_KEY_NAME --format="value(keyString)" } else { "" }
+
 gcloud builds submit . --config=deploy/gcp/cloudbuild.frontend.yaml `
   --ignore-file=deploy/gcp/build.gcloudignore `
   --gcs-source-staging-dir="gs://$BUILD_BUCKET/source" `
   --service-account="projects/$PROJECT_ID/serviceAccounts/$BUILD_SA" `
   --region="$REGION" --project="$PROJECT_ID" `
-  --substitutions="_PLATFORM_HOST=$BASE_DOMAIN,_SITE_BUCKET=$SITE_BUCKET"
+  --substitutions="_PLATFORM_HOST=$BASE_DOMAIN,_SITE_BUCKET=$SITE_BUCKET,_MAPS_EMBED_KEY=$MAPS_EMBED_KEY"
 ```
 
 Check: `gcloud storage ls "gs://$SITE_BUCKET"` shows `index.html`, `favicon.svg`, `robots.txt` and `_app/`.
@@ -462,6 +468,23 @@ The secret is kept in the job's settings, readable by anyone who can view the pr
 Check: `gcloud scheduler jobs run domain-check --location="$REGION" --project="$PROJECT_ID"`, then the API's logs show `POST /api/internal/v1/domain-check` answered `200`.
 
 **12.4 Try it** with a domain whose DNS you can change (e.g. `after3recclub.online`): log in to Business settings on a business's site, open **Domains**, add it as the main domain, and add the records shown where that domain's DNS is managed. It usually reaches **Live** within an hour, and the business's generated host then sends visitors to it.
+
+## 13. Maps on the centres' pages
+
+Each centre's page (Find us) and its card on `/locations` show its address on a Google map, through the **Maps Embed API**: free, with no usage limit, so its key is restricted to that API alone and not to websites (businesses' own domains come and go; a copied key can't run up a bill). The key is public by nature (the browser sends it). The project's billing account must be linked (step 1), as for any Google Maps API, though embeds aren't charged.
+
+```powershell
+gcloud services enable maps-embed-backend.googleapis.com apikeys.googleapis.com --project="$PROJECT_ID"
+
+gcloud services api-keys create --display-name="Maps embed (public site)" `
+  --api-target=service=maps-embed-backend.googleapis.com --project="$PROJECT_ID"
+```
+
+Then release the site (step 9), which reads the key and builds it in. Check: a centre's page shows a map under Find us.
+
+Locally, put the key (`gcloud services api-keys get-key-string ...`, or Google Cloud console › APIs & Services › Credentials) in `frontend/.env` as `PUBLIC_GOOGLE_MAPS_EMBED_KEY`, and restart `npm run dev`. Left empty, pages show "View on map" links instead.
+
+Embedded maps load Google's content (and its cookies) when they scroll into view; mention Google Maps in the businesses' privacy policies.
 
 ## Local development
 

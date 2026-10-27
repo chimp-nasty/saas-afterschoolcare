@@ -18,7 +18,9 @@ steps:
     dir: frontend
     entrypoint: npm
     args: ["run", "build"]
-    env: ["PUBLIC_PLATFORM_HOST=${_PLATFORM_HOST}"]
+    # Public build settings: the platform's host, and the Google Maps Embed
+    # key (public, limited to that API; empty: no embedded maps).
+    env: ["PUBLIC_PLATFORM_HOST=${_PLATFORM_HOST}", "PUBLIC_GOOGLE_MAPS_EMBED_KEY=${_MAPS_EMBED_KEY}"]
 
   # Content-named files first, cached for a year and never deleted (a tab
   # still open on the previous release keeps loading its files). Then
@@ -39,6 +41,7 @@ steps:
 
 substitutions:
   _PLATFORM_HOST: ""
+  _MAPS_EMBED_KEY: ""
   _SITE_BUCKET: ""
 
 options:

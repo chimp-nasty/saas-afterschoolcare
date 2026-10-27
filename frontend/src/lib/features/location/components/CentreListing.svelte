@@ -13,6 +13,7 @@
 	import Card from '$lib/components/layout/Card.svelte';
 	import EmptyState from '$lib/components/text/EmptyState.svelte';
 	import SitePhoto from '$lib/features/business/components/SitePhoto.svelte';
+	import CentreMap from './CentreMap.svelte';
 	import { agesLabel } from '$lib/features/services/policies';
 	import { centrePhotoUrl } from '$lib/api/tenancy/adapters/location-branding';
 
@@ -68,6 +69,10 @@
 
 			<div>
 				<HyperTextLink href={mapsUrl(location)} external>Open in maps</HyperTextLink>
+			</div>
+
+			<div class="mt-2">
+				<CentreMap {location} compact />
 			</div>
 
 			{#if location.phone}
