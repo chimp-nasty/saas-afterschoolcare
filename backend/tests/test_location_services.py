@@ -21,7 +21,8 @@ def _restored_config(api: Api, service_id: str):
     """Put a service's config back after a test (every test shares it)."""
     [row] = api.sql(
         "SELECT is_active, current_price_cents, start_time, end_time, description, late_fee_cents, "
-        "refund_cutoff_days, min_child_age, max_child_age, late_fee_grace_minutes, age_label, is_featured "
+        "refund_cutoff_days, min_child_age, max_child_age, late_fee_grace_minutes, age_label, is_featured, "
+        "inclusions, drop_off_pickup, what_to_bring, activities "
         "FROM public.location_service_config WHERE location_service_id = :id",
         id=service_id,
     )
@@ -33,10 +34,16 @@ def _restored_config(api: Api, service_id: str):
             "current_price_cents = :price, start_time = :start_time, end_time = :end_time, "
             "description = :description, late_fee_cents = :late_fee, "
             "refund_cutoff_days = :cutoff, min_child_age = :min_age, max_child_age = :max_age, "
-            "late_fee_grace_minutes = :grace, age_label = :age_label, is_featured = :is_featured "
+            "late_fee_grace_minutes = :grace, age_label = :age_label, is_featured = :is_featured, "
+            "inclusions = :inclusions, drop_off_pickup = :drop_off_pickup, "
+            "what_to_bring = :what_to_bring, activities = :activities "
             "WHERE location_service_id = :id",
             age_label=row.age_label,
             is_featured=row.is_featured,
+            inclusions=row.inclusions,
+            drop_off_pickup=row.drop_off_pickup,
+            what_to_bring=row.what_to_bring,
+            activities=row.activities,
             is_active=row.is_active,
             price=row.current_price_cents,
             start_time=row.start_time,
@@ -301,6 +308,39 @@ def test_age_label_and_featured_service(api: Api, superadmin):
         superadmin.patch(f"/location-services/v1/{after_school['id']}/config", json={"age_label": " "})
 
         assert _service(superadmin, "After School Care")["age_label"] is None
+
+
+# A superadmin writes a service's program (what's included, drop-off and
+# pickup, what to bring, activities); anyone sees it on the public list,
+# saving one field leaves the others, and blank clears it.
+def test_program_text(api: Api, superadmin):
+    service = _service(superadmin, "After School Care")
+    url = f"/location-services/v1/{service['id']}/config"
+
+    with _restored_config(api, service["id"]):
+        response = superadmin.patch(
+            url,
+            json={
+                "inclusions": " Afternoon tea ",
+                "drop_off_pickup": "Collect from the library.",
+                "what_to_bring": "A water bottle.",
+                "activities": "Sport and art.",
+            },
+        )
+        assert response.status_code == 200, response.text
+
+        superadmin.patch(url, json={"activities": "Sport, art and games."})
+
+        public = {s["id"]: s for s in api.client().get("/location-services/v1/public/location1").json()["data"]}
+        program = public[service["id"]]
+        assert program["inclusions"] == "Afternoon tea"
+        assert program["drop_off_pickup"] == "Collect from the library."
+        assert program["activities"] == "Sport, art and games."
+
+        superadmin.patch(url, json={"what_to_bring": "  "})
+
+        assert _service(superadmin, "After School Care")["what_to_bring"] is None
+        assert superadmin.patch(url, json={"inclusions": "x" * 2001}).status_code == 422
 
 
 # The centre's page leads with the featured service, else the first offered,

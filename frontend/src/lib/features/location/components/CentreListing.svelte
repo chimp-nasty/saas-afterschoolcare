@@ -1,7 +1,7 @@
 <!--
-    One centre on /locations: its name, the services it runs (times and ages;
-    prices are on the centre's own page), where it is and how to reach it,
-    and the way in. CentreCard is
+    One centre on /locations: its name, the services it runs (times and ages,
+    each linking to its program; prices are on the centre's own pages),
+    where it is and how to reach it, and the way in. CentreCard is
     the shorter version for a single centre's details.
 -->
 <script lang="ts">
@@ -36,13 +36,16 @@
 
 		<div class="flex flex-col gap-3">
 			{#each services as service (service.id)}
-				<div class="border-b border-(--border) pb-3 last:border-b-0 last:pb-0">
-					<p class="text-base font-semibold text-(--text)">{service.service_name}</p>
+				<a
+					href={`/${location.location_code}/programs#${service.id}`}
+					class="flex flex-col border-b border-(--border) pb-3 last:border-b-0 last:pb-0 hover:text-(--primary)"
+				>
+					<span class="text-base font-semibold text-(--primary)">{service.service_name}</span>
 
-					<p class="text-sm text-(--text-muted)">
+					<span class="text-sm text-(--text-muted)">
 						{formatTimeRange(service.start_time, service.end_time)} · {agesLabel(service)}
-					</p>
-				</div>
+					</span>
+				</a>
 			{:else}
 				<EmptyState message="Services will be listed here soon." />
 			{/each}

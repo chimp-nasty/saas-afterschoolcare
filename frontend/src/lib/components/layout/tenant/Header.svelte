@@ -130,11 +130,18 @@
 		</a>
 
 		{#if links.length > 0}
-			<nav class="hidden items-center gap-6 md:flex" aria-label="Site">
-				{#each links as link (link.href)}
+			<!-- Links with a dot between them (the accent colour, decoration
+			     only). Hovering one nudges it right, turns it the main colour
+			     and underlines it in the accent. -->
+			<nav class="hidden items-center gap-3 md:flex" aria-label="Site">
+				{#each links as link, index (link.href)}
+					{#if index > 0}
+						<span class="size-1.5 shrink-0 rounded-full bg-(--accent)" aria-hidden="true"></span>
+					{/if}
+
 					<a
 						href={link.href}
-						class="flex min-h-11 items-center text-sm font-semibold text-(--text) hover:text-(--primary)"
+						class="flex min-h-11 items-center px-1 text-sm font-semibold text-(--text) decoration-(--accent) decoration-2 underline-offset-[6px] transition duration-200 hover:text-(--primary) hover:underline focus-visible:text-(--primary) focus-visible:underline motion-safe:hover:translate-x-1"
 					>
 						{link.label}
 					</a>

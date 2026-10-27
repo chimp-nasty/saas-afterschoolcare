@@ -133,7 +133,7 @@
 			</ActionBar>
 		{:else}
 			<ActionBar start>
-				<Button variant="ghost" onclick={() => goto('#services')}>View program</Button>
+				<Button variant="ghost" onclick={() => goto(route('/programs'))}>View program</Button>
 				<Button onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
 			</ActionBar>
 		{/if}
@@ -171,7 +171,7 @@
 			{#if featured}
 				<NextSessionCard service={featured} date={data.featured?.next_session_date ?? null}>
 					<Button fullWidth onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
-					<Button variant="ghost" fullWidth onclick={() => goto('#services')}>View program</Button>
+					<Button variant="ghost" fullWidth onclick={() => goto(route('/programs'))}>View program</Button>
 					<HyperTextLink href="#find-us">Location details</HyperTextLink>
 				</NextSessionCard>
 			{/if}
@@ -180,7 +180,7 @@
 {/if}
 
 <!-- About the program: the business's about text and this centre's
-     services (stage 8 links each to its program). -->
+     services, each linking to its program. -->
 {#if business?.about || data.services.length > 0 || canEdit}
 	<SiteSection>
 		<div class="grid gap-8 lg:grid-cols-2">
@@ -217,7 +217,7 @@
 						{#each data.services as service (service.id)}
 							<li class="border-b border-(--border) last:border-b-0">
 								<a
-									href="#services"
+									href={route(`/programs#${service.id}`)}
 									class="flex min-h-12 items-center justify-between gap-4 text-base font-semibold text-(--text) hover:text-(--primary)"
 								>
 									{service.service_name}

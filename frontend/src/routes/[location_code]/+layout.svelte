@@ -146,11 +146,13 @@
 		page.url.pathname === route('/kiosk') || page.url.pathname.startsWith(`${route('/kiosk')}/`)
 	);
 
-	// The centre's own page (/varsity): part of the public site, laid out in
-	// full-width bands (docs/public-site.md), with no sidebar even when
-	// logged in (the header's Home leads back in).
+	// The centre's own pages (/varsity and /varsity/programs): part of the
+	// public site, laid out in full-width bands (docs/public-site.md), with
+	// no sidebar even when logged in (the header's Home leads back in).
 	const isCentrePage = $derived(
-		page.url.pathname === route('') || page.url.pathname === route('/')
+		page.url.pathname === route('') ||
+			page.url.pathname === route('/') ||
+			page.url.pathname === route('/programs')
 	);
 
 	// Customers (only) navigate with a bottom bar on mobile.
@@ -164,22 +166,19 @@
 		{ label: 'Account', href: route('/account'), icon: User, isActive: isActive('/account') }
 	]);
 
-	// The public site's pages (docs/public-site.md, section 2). Until its
-	// own page is built (stage 8), Programs is the centre page's services.
-	const programsLink = $derived({ label: 'Programs', href: `${route('')}#services` });
+	// The public site's pages (docs/public-site.md, section 2).
+	const programsLink = $derived({ label: 'Programs', href: route('/programs') });
 
-	// Logged out: the whole site. Families: About and Programs (their own
-	// pages are in the bottom bar and sidebar). Everyone logged in here gets
-	// Home (/home: the admin home, a family's bookings; staff go on to their
-	// account). The business's owner: Business as well, last.
+	// Logged out: the whole site. Everyone logged in here: About, Programs
+	// and Home (/home: the admin home, a family's bookings; staff go on to
+	// their account). The business's owner: Business as well, last.
 	const homeLink = $derived({ label: 'Home', href: route('/home') });
 
+	// Staff included: the owner and superadmins edit those pages' words there.
 	const headerLinks = $derived([
 		...(!$auth.authenticated
 			? [programsLink, LOCATIONS_LINK, ABOUT_LINK]
-			: isCustomerOnly
-				? [ABOUT_LINK, programsLink, homeLink]
-				: [homeLink]),
+			: [ABOUT_LINK, programsLink, homeLink]),
 		...(isOwner ? [BUSINESS_LINK] : [])
 	]);
 

@@ -946,6 +946,10 @@ class LocationServiceConfig(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     description: Mapped[Optional[str]] = mapped_column(Text)
     age_label: Mapped[Optional[str]] = mapped_column(String(40))
+    inclusions: Mapped[Optional[str]] = mapped_column(String(2000))
+    drop_off_pickup: Mapped[Optional[str]] = mapped_column(String(2000))
+    what_to_bring: Mapped[Optional[str]] = mapped_column(String(2000))
+    activities: Mapped[Optional[str]] = mapped_column(String(2000))
     updated_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 

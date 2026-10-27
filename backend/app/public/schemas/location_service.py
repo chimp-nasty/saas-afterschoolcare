@@ -33,11 +33,28 @@ class LocationServiceSelectionResponse(BaseModel):
     # The one the centre's page leads with (at most one per location).
     is_featured: bool
 
+    # The program, on the centre's programs page (each optional).
+    inclusions: str | None
+    drop_off_pickup: str | None
+    what_to_bring: str | None
+    activities: str | None
+
     refund_cutoff_days: int
 
     # 0 means no late fee.
     late_fee_cents: int
     late_fee_grace_minutes: int
+
+
+# The settings that are free text: trimmed, and sent blank they're cleared.
+FREE_TEXT_FIELDS = (
+    "description",
+    "age_label",
+    "inclusions",
+    "drop_off_pickup",
+    "what_to_bring",
+    "activities",
+)
 
 
 class UpdateLocationServiceConfigRequest(BaseModel):
@@ -62,16 +79,23 @@ class UpdateLocationServiceConfigRequest(BaseModel):
     # True makes this the centre page's service, in place of any other.
     is_featured: bool | None = None
 
+    # The program's text (the programs page, edited inline there). Blank
+    # clears each.
+    inclusions: str | None = Field(default=None, max_length=2000)
+    drop_off_pickup: str | None = Field(default=None, max_length=2000)
+    what_to_bring: str | None = Field(default=None, max_length=2000)
+    activities: str | None = Field(default=None, max_length=2000)
+
     late_fee_cents: int | None = Field(default=None, ge=0)
     late_fee_grace_minutes: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _blank_text_is_none(self) -> "UpdateLocationServiceConfigRequest":
-        if self.description is not None:
-            self.description = self.description.strip() or None
+        for field in FREE_TEXT_FIELDS:
+            value = getattr(self, field)
 
-        if self.age_label is not None:
-            self.age_label = self.age_label.strip() or None
+            if value is not None:
+                setattr(self, field, value.strip() or None)
 
         return self
 

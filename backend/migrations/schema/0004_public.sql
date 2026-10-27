@@ -99,6 +99,13 @@ CREATE TABLE public.location_service_config (
     -- Shown instead of "Ages X–Y" (e.g. "Years 7 to 12"); the limits above
     -- still decide who can book.
     age_label VARCHAR(40),
+    -- The program, as the centre's programs page describes it
+    -- (docs/public-site.md, section 4), after the description. Each is
+    -- optional; written by a superadmin there, inline on the page.
+    inclusions VARCHAR(2000),
+    drop_off_pickup VARCHAR(2000),
+    what_to_bring VARCHAR(2000),
+    activities VARCHAR(2000),
     -- The service the centre's page leads with (docs/public-site.md): its
     -- times, ages and next session. At most one per location
     -- (uq_location_service_config_featured); none means the first offered.

@@ -6,6 +6,7 @@ from app.db.transaction import transactional
 from app.errors.services import LocationServiceNotFoundError
 from app.public.repositories.location_service import LocationServiceRepository
 from app.public.schemas.location_service import (
+    FREE_TEXT_FIELDS,
     FeaturedServiceResponse,
     LocationServiceSelectionResponse,
     LocationServiceSettingsResponse,
@@ -50,7 +51,7 @@ class LocationServiceService:
         values = {
             field: value
             for field, value in body.model_dump(exclude_unset=True).items()
-            if value is not None or field in ("description", "age_label")
+            if value is not None or field in FREE_TEXT_FIELDS
         }
 
         # One featured service per location (uq_location_service_config_featured).

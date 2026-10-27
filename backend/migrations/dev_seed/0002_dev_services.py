@@ -339,13 +339,17 @@ def up(conn: Connection) -> None:
             )
 
         # Tenant 1's first centre leads with After School Care (the
-        # centre page, docs/public-site.md); the others use the first
-        # offered service.
+        # centre page, docs/public-site.md), with its program written up;
+        # the others use the first offered service and have no program text.
         if (tenant_code, location_code) == ("tenant1", "location1"):
             conn.execute(
                 text("""
                     UPDATE public.location_service_config
-                    SET is_featured = TRUE
+                    SET is_featured = TRUE,
+                        inclusions = 'Afternoon tea, supervised homework time and all activity materials.',
+                        drop_off_pickup = 'Students come straight to the library after the bell. Collect them from the library foyer by 6pm; staff check who is collecting.',
+                        what_to_bring = 'A water bottle, a hat and any homework.',
+                        activities = 'Sport on the oval, art and music, games and a quiet study space.'
                     WHERE location_service_id = :location_service_id;
                 """),
                 {"location_service_id": location_services["after_school_care"]},

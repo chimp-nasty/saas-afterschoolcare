@@ -4724,6 +4724,14 @@ export interface components {
             age_label: string | null;
             /** Is Featured */
             is_featured: boolean;
+            /** Inclusions */
+            inclusions: string | null;
+            /** Drop Off Pickup */
+            drop_off_pickup: string | null;
+            /** What To Bring */
+            what_to_bring: string | null;
+            /** Activities */
+            activities: string | null;
             /** Refund Cutoff Days */
             refund_cutoff_days: number;
             /** Late Fee Cents */
@@ -4770,6 +4778,14 @@ export interface components {
             age_label: string | null;
             /** Is Featured */
             is_featured: boolean;
+            /** Inclusions */
+            inclusions: string | null;
+            /** Drop Off Pickup */
+            drop_off_pickup: string | null;
+            /** What To Bring */
+            what_to_bring: string | null;
+            /** Activities */
+            activities: string | null;
             /** Refund Cutoff Days */
             refund_cutoff_days: number;
             /** Late Fee Cents */
@@ -5944,6 +5960,14 @@ export interface components {
             age_label?: string | null;
             /** Is Featured */
             is_featured?: boolean | null;
+            /** Inclusions */
+            inclusions?: string | null;
+            /** Drop Off Pickup */
+            drop_off_pickup?: string | null;
+            /** What To Bring */
+            what_to_bring?: string | null;
+            /** Activities */
+            activities?: string | null;
             /** Late Fee Cents */
             late_fee_cents?: number | null;
             /** Late Fee Grace Minutes */
