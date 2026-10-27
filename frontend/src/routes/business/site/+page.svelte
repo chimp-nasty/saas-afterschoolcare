@@ -7,7 +7,6 @@
 -->
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import { toast } from 'svelte-sonner';
 
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
@@ -18,10 +17,10 @@
 	import SiteFileUpload from '$lib/features/business/components/SiteFileUpload.svelte';
 	import SiteForm from '$lib/features/business/components/SiteForm.svelte';
 
-	import { uploadToStorage } from '$lib/api/storage';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
+	import { SITE_FILE_ACCEPT, uploadSiteFile } from '$lib/features/business/siteFiles';
 	import { siteFileUrl, type SiteFileKind } from '$lib/api/tenancy/adapters/location-branding';
-	import type { SiteRequest, StartSiteUploadRequest } from '$lib/api/schema';
+	import type { SiteRequest } from '$lib/api/schema';
 	import { formatTimestamp } from '$lib/utils/helpers';
 
 	let { data } = $props();
@@ -29,22 +28,6 @@
 	const businessApi = createBusinessApi();
 
 	const site = $derived(data.site);
-
-	// The types each file may be (checked again by the server, which reads
-	// the file itself).
-	const ACCEPT: Record<SiteFileKind, StartSiteUploadRequest['content_type'][]> = {
-		logo: ['image/png', 'image/jpeg', 'image/webp'],
-		icon: ['image/png'],
-		privacy: ['application/pdf'],
-		terms: ['application/pdf']
-	};
-
-	const WRONG_TYPE: Record<SiteFileKind, string> = {
-		logo: 'Choose a PNG, JPEG or WebP image.',
-		icon: 'Choose a square PNG image.',
-		privacy: 'Choose a PDF.',
-		terms: 'Choose a PDF.'
-	};
 
 	async function refresh() {
 		await invalidate('app:business-site');
@@ -59,30 +42,12 @@
 	}
 
 
-	// Start the upload, send the file straight to storage, then have the
-	// server check it and use it.
 	async function upload(kind: SiteFileKind, file: File): Promise<boolean> {
-		const contentType = ACCEPT[kind].find((type) => type === file.type);
+		const ok = await uploadSiteFile(businessApi, kind, file);
 
-		if (!contentType) {
-			toast.error(WRONG_TYPE[kind]);
-			return false;
-		}
+		if (ok) await refresh();
 
-		const started = await businessApi.startUpload({ kind, content_type: contentType });
-
-		if (!started.ok || !started.data) return false;
-
-		if (!(await uploadToStorage(started.data, file))) {
-			toast.error("The file couldn't be uploaded. Check it's small enough and try again.");
-			return false;
-		}
-
-		const confirmed = await businessApi.confirmUpload({ kind, key: started.data.key });
-
-		if (confirmed.ok) await refresh();
-
-		return confirmed.ok;
+		return ok;
 	}
 
 	async function removeImage(kind: 'logo' | 'icon') {
@@ -127,7 +92,7 @@
 				<SiteFileUpload
 					title="Logo"
 					description="Shown at the top of your pages. PNG, JPEG or WebP, up to 1 MB."
-					accept={ACCEPT.logo.join(',')}
+					accept={SITE_FILE_ACCEPT.logo.join(',')}
 					status={site.has_logo ? 'Your logo is showing.' : 'No logo yet: your business name shows instead.'}
 					viewHref={site.has_logo ? siteFileUrl('logo') : null}
 					onupload={(file) => upload('logo', file)}
@@ -137,7 +102,7 @@
 				<SiteFileUpload
 					title="Site icon"
 					description="The small picture in the browser tab and on phone home screens. A square PNG, at least 192 by 192 pixels, up to 1 MB."
-					accept={ACCEPT.icon.join(',')}
+					accept={SITE_FILE_ACCEPT.icon.join(',')}
 					status={site.has_icon ? 'Your icon is showing.' : site.has_logo ? 'No icon yet: your logo is used.' : 'No icon yet.'}
 					viewHref={site.has_icon ? siteFileUrl('icon') : null}
 					onupload={(file) => upload('icon', file)}
@@ -151,7 +116,7 @@
 				<SiteFileUpload
 					title="Privacy policy"
 					description="A PDF up to 5 MB, linked at the foot of your home page. Each upload replaces it on your site; earlier versions are kept."
-					accept={ACCEPT.privacy.join(',')}
+					accept={SITE_FILE_ACCEPT.privacy.join(',')}
 					status={documentStatus('privacy')}
 					viewHref={hasDocument('privacy') ? siteFileUrl('privacy') : null}
 					onupload={(file) => upload('privacy', file)}
@@ -160,7 +125,7 @@
 				<SiteFileUpload
 					title="Terms"
 					description="A PDF up to 5 MB. Families accept your current terms when they sign up, and which version they accepted is kept."
-					accept={ACCEPT.terms.join(',')}
+					accept={SITE_FILE_ACCEPT.terms.join(',')}
 					status={documentStatus('terms')}
 					viewHref={hasDocument('terms') ? siteFileUrl('terms') : null}
 					onupload={(file) => upload('terms', file)}

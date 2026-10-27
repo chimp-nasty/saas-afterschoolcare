@@ -177,6 +177,15 @@ CREATE TABLE tenancy.tenant_branding (
     -- logo is used, then the platform's icon.
     icon_key TEXT,
 
+    -- The public site's photos (docs/public-site.md, stage 9): beside the
+    -- landing page's headline (and a centre's, when it has none of its
+    -- own) and beside the about text. Re-saved as JPEGs without their
+    -- metadata. Each has an optional description for screen readers.
+    hero_photo_key TEXT,
+    hero_photo_alt VARCHAR(200),
+    about_photo_key TEXT,
+    about_photo_alt VARCHAR(200),
+
     -- The public site's three colours (docs/public-site.md): main actions
     -- and headings, supporting elements, and highlights. Backgrounds and
     -- neutrals are the app's.

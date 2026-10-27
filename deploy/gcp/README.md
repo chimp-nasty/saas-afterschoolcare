@@ -133,7 +133,7 @@ gcloud storage buckets update "gs://$DOCUMENT_BUCKET" `
   --cors-file=deploy/storage/gcs/child-documents-cors.json
 ```
 
-The documents bucket's CORS allows any origin: every business has its own host (and later its own domains), and Cloud Storage can't match `*.dev.sessionpilot.com.au`. That's safe because CORS isn't what protects the bucket: every upload and download needs a short-lived link signed by the API, and no cookies are involved. Local development keeps `child-documents-cors.dev.json` on its own bucket.
+The documents bucket's CORS allows any origin: every business has its own host (and later its own domains), and Cloud Storage can't match `*.dev.sessionpilot.com.au`. That's safe because CORS isn't what protects the bucket: every upload and download needs a short-lived link signed by the API, and no cookies are involved. Local development has its own bucket with `child-documents-cors.local.json` (see "Local development" below).
 
 ## 4. Service accounts
 
@@ -462,6 +462,22 @@ The secret is kept in the job's settings, readable by anyone who can view the pr
 Check: `gcloud scheduler jobs run domain-check --location="$REGION" --project="$PROJECT_ID"`, then the API's logs show `POST /api/internal/v1/domain-check` answered `200`.
 
 **12.4 Try it** with a domain whose DNS you can change (e.g. `after3recclub.online`): log in to Business settings on a business's site, open **Domains**, add it as the main domain, and add the records shown where that domain's DNS is managed. It usually reaches **Live** within an hour, and the business's generated host then sends visitors to it.
+
+## Local development
+
+Your machine's API (`backend/.env`) uses its **own** documents bucket, never an environment's: each database only knows about its own files. It signs upload and download links as the service account your Application Default Credentials impersonate (`gcloud auth application-default login --impersonate-service-account=docs-api@saas-afterschoolcare-dev.iam.gserviceaccount.com`). Once, from the repo root:
+
+```powershell
+gcloud storage buckets create gs://saas-afterschoolcare-local-documents --location=australia-southeast1 `
+  --uniform-bucket-level-access --public-access-prevention --project=saas-afterschoolcare-dev
+gcloud storage buckets update gs://saas-afterschoolcare-local-documents `
+  --lifecycle-file=deploy/storage/gcs/child-documents-lifecycle.json `
+  --cors-file=deploy/storage/gcs/child-documents-cors.local.json
+gcloud storage buckets add-iam-policy-binding gs://saas-afterschoolcare-local-documents `
+  --member="serviceAccount:docs-api@saas-afterschoolcare-dev.iam.gserviceaccount.com" --role=roles/storage.objectAdmin
+```
+
+Then `DOCUMENT_BUCKET=saas-afterschoolcare-local-documents` in `backend/.env`. Its CORS lets the local site's hosts (`localhost:5173`, `tenant1.localhost:5173`, `tenant2.localhost:5173`) upload; a business registered locally under another code needs its host added there (and the update above run again).
 
 ## Later
 

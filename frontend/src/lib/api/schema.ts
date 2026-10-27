@@ -3839,7 +3839,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "logo" | "icon" | "privacy" | "terms";
+            kind: "logo" | "icon" | "hero_photo" | "about_photo" | "privacy" | "terms";
             /** Key */
             key: string;
         };
@@ -4932,6 +4932,18 @@ export interface components {
          */
         PaymentStatus: "PENDING" | "PAID" | "REFUNDED" | "FAILED";
         /**
+         * PhotoResponse
+         * @description A photo the site has: its description, and a version that changes when
+         *     it's replaced (add it to the file's link, so browsers don't show the old
+         *     one from their cache).
+         */
+        PhotoResponse: {
+            /** Version */
+            version: string;
+            /** Alt */
+            alt: string | null;
+        };
+        /**
          * PickupRelation
          * @enum {string}
          */
@@ -5031,6 +5043,8 @@ export interface components {
             hero_text: string | null;
             /** About */
             about: string | null;
+            hero_photo: components["schemas"]["PhotoResponse"] | null;
+            about_photo: components["schemas"]["PhotoResponse"] | null;
             /** Email */
             email: string | null;
             /** Phone */
@@ -5588,9 +5602,10 @@ export interface components {
         /**
          * SiteRequest
          * @description The site's words and colours. Only the fields sent are changed, so each
-         *     editor sends its own: the hero's headline (tagline) and paragraph and
-         *     the about text inline on the pages, the colours from Your site. A field
-         *     sent empty is cleared (colours: back to the app's defaults).
+         *     editor sends its own: the hero's headline (tagline) and paragraph, the
+         *     about text and the photos' descriptions inline on the pages, the colours
+         *     from Your site. A field sent empty is cleared (colours: back to the
+         *     app's defaults).
          */
         SiteRequest: {
             /** Tagline */
@@ -5605,6 +5620,10 @@ export interface components {
             secondary_color?: string | null;
             /** Accent Color */
             accent_color?: string | null;
+            /** Hero Photo Alt */
+            hero_photo_alt?: string | null;
+            /** About Photo Alt */
+            about_photo_alt?: string | null;
         };
         /** SiteResponse */
         SiteResponse: {
@@ -5612,6 +5631,8 @@ export interface components {
             tagline: string | null;
             /** Hero Text */
             hero_text: string | null;
+            hero_photo: components["schemas"]["PhotoResponse"] | null;
+            about_photo: components["schemas"]["PhotoResponse"] | null;
             /** Primary Color */
             primary_color: string | null;
             /** Secondary Color */
@@ -5819,7 +5840,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "logo" | "icon" | "privacy" | "terms";
+            kind: "logo" | "icon" | "hero_photo" | "about_photo" | "privacy" | "terms";
             /**
              * Content Type
              * @enum {string}
@@ -6210,6 +6231,7 @@ export type MedicalReviewResponse = components['schemas']['MedicalReviewResponse
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
 export type MedicalReviewSummaryResponse = components['schemas']['MedicalReviewSummaryResponse'];
 export type PaymentStatus = components['schemas']['PaymentStatus'];
+export type PhotoResponse = components['schemas']['PhotoResponse'];
 export type PickupRelation = components['schemas']['PickupRelation'];
 export type PickupResponse = components['schemas']['PickupResponse'];
 export type PlatformSessionResponse = components['schemas']['PlatformSessionResponse'];
@@ -7320,7 +7342,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                kind: "logo" | "icon" | "privacy" | "terms";
+                kind: "logo" | "icon" | "hero_photo" | "about_photo" | "privacy" | "terms";
             };
             cookie?: never;
         };
@@ -8069,7 +8091,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                kind: "logo" | "icon";
+                kind: "logo" | "icon" | "hero_photo" | "about_photo";
             };
             cookie?: {
                 access_token?: string | null;
@@ -11492,8 +11514,8 @@ type ReadonlyArray<T> = [
 ] extends [
     unknown[]
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
-export const pathsApiLocationBrandingV1SiteFilesKindGetParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/location-branding/v1/site-files/{kind}"]["get"]["parameters"]["path"]["kind"]> = ["logo", "icon", "privacy", "terms"];
-export const pathsApiBusinessV1SiteKindDeleteParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/business/v1/site/{kind}"]["delete"]["parameters"]["path"]["kind"]> = ["logo", "icon"];
+export const pathsApiLocationBrandingV1SiteFilesKindGetParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/location-branding/v1/site-files/{kind}"]["get"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
+export const pathsApiBusinessV1SiteKindDeleteParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/business/v1/site/{kind}"]["delete"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
 export const addStaffRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AddStaffRequest"]["role"]> = ["staff", "admin"];
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingGroupScope"]> = ["upcoming", "history"];
@@ -11502,7 +11524,7 @@ export const businessLocationRequestTimezoneValues: ReadonlyArray<FlattenedDeepR
 export const changeStaffRoleRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChangeStaffRoleRequest"]["role"]> = ["staff", "admin"];
 export const childDocumentTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentType"]> = ["medical_action_plan", "asthma_action_plan", "allergy_anaphylaxis_plan", "other"];
 export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentUploadStatus"]> = ["pending", "uploaded", "failed"];
-export const confirmSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConfirmSiteUploadRequest"]["kind"]> = ["logo", "icon", "privacy", "terms"];
+export const confirmSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConfirmSiteUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const createKioskDeviceRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreateKioskDeviceRequest"]["kind"]> = ["family", "staff"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
 export const dnsRecordResponseTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DnsRecordResponse"]["type"]> = ["TXT", "CNAME", "A"];
@@ -11523,6 +11545,6 @@ export const staffKioskBulkRequestActionValues: ReadonlyArray<FlattenedDeepRequi
 export const staffKioskShiftRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskShiftRequest"]["action"]> = ["start", "end"];
 export const staffKioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskSignRequest"]["action"]> = ["in", "out"];
 export const staffKioskUndoRequestStepValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskUndoRequest"]["step"]> = ["sign_in", "sign_out"];
-export const startSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["kind"]> = ["logo", "icon", "privacy", "terms"];
+export const startSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const startSiteUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];

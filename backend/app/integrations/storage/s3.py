@@ -79,6 +79,12 @@ class S3Storage(StorageProvider):
         except (BotoCoreError, ClientError) as exc:
             raise StorageProviderError(log_reason=f"s3 copy: {exc}") from exc
 
+    def write(self, *, bucket, key, content, content_type):
+        try:
+            self._client.put_object(Bucket=bucket, Key=key, Body=content, ContentType=content_type)
+        except (BotoCoreError, ClientError) as exc:
+            raise StorageProviderError(log_reason=f"s3 write: {exc}") from exc
+
     def delete(self, *, bucket, key):
         # S3 deletes are idempotent: a missing key isn't an error.
         try:

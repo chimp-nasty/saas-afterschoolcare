@@ -35,7 +35,8 @@ def site_restored(api: Api):
 
     api.sql(
         "UPDATE tenancy.tenant_branding SET primary_color = :p, secondary_color = :s, accent_color = :a, "
-        "logo_key = NULL, icon_key = NULL "
+        "logo_key = NULL, icon_key = NULL, hero_photo_key = NULL, hero_photo_alt = NULL, "
+        "about_photo_key = NULL, about_photo_alt = NULL "
         "WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')",
         p=branding.primary_color,
         s=branding.secondary_color,
@@ -204,6 +205,54 @@ def test_logo(api: Api, tenant2_owner, site_restored):
     assert logo.status_code == 302
     assert logo.headers["location"].startswith("https://storage.test/")
     assert icon.headers["location"] == logo.headers["location"]
+
+
+# A photo is re-saved as a JPEG at most 2400 pixels on its longest side,
+# with none of its metadata (a phone's EXIF can say where it was taken), and
+# linked publicly with its description; each upload is a new version.
+# Removing it takes its description too. A file that isn't an image is
+# refused.
+def test_hero_photo(api: Api, tenant2_owner, site_restored):
+    exif = Image.Exif()
+    exif[0x010E] = "Taken at the school gate"  # ImageDescription
+    buffer = BytesIO()
+    Image.new("RGB", (3000, 2000), "#5E2BFF").save(buffer, format="JPEG", exif=exif)
+
+    response = _upload(tenant2_owner, "hero_photo", buffer.getvalue(), "image/jpeg")
+    assert response.status_code == 200, response.text
+
+    tenant2_owner.put("/business/v1/site", json={"hero_photo_alt": "Students on the oval"})
+    photo = _public(api)["hero_photo"]
+    assert photo["alt"] == "Students on the oval"
+
+    [(key,)] = api.sql(
+        "SELECT hero_photo_key FROM tenancy.tenant_branding "
+        "WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')"
+    )
+    assert key.endswith(f"/{photo['version']}.jpg")
+
+    saved = Image.open(BytesIO(FakeStorage.state.objects[(FakeStorage.bucket, key)]["content"]))
+    assert saved.format == "JPEG"
+    assert saved.size == (2400, 1600)
+    assert len(saved.getexif()) == 0
+
+    link = api.client(tenant="tenant2").get("/location-branding/v1/site-files/hero_photo", follow_redirects=False)
+    assert link.status_code == 302
+
+    assert _upload(tenant2_owner, "hero_photo", _image(800, 600, "PNG"), "image/png").status_code == 200
+    assert _public(api)["hero_photo"]["version"] != photo["version"]
+    assert (FakeStorage.bucket, key) not in FakeStorage.state.objects
+
+    assert _upload(tenant2_owner, "about_photo", b"%PDF-1.4 not a photo", "image/png").status_code == 400
+
+    assert tenant2_owner.delete("/business/v1/site/hero_photo").status_code == 200
+    assert _public(api)["hero_photo"] is None
+
+    [(alt,)] = api.sql(
+        "SELECT hero_photo_alt FROM tenancy.tenant_branding "
+        "WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')"
+    )
+    assert alt is None
 
 
 # The site icon must be a square PNG of at least 192 pixels; a file that

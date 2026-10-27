@@ -102,6 +102,9 @@ class FakeStorage:
     def copy(self, *, bucket, source_key, target_key):
         self.state.objects[(bucket, target_key)] = dict(self.state.objects[(bucket, source_key)])
 
+    def write(self, *, bucket, key, content, content_type):
+        self.state.objects[(bucket, key)] = {"content": content, "content_type": content_type, "metadata": {}}
+
     def delete(self, *, bucket, key):
         self.state.objects.pop((bucket, key), None)
 

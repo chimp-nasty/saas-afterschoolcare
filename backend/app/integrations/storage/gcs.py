@@ -78,6 +78,12 @@ class GcsStorage(StorageProvider):
         except (GoogleAPIError, GoogleAuthError) as exc:
             raise StorageProviderError(log_reason=f"gcs copy: {exc}") from exc
 
+    def write(self, *, bucket, key, content, content_type):
+        try:
+            self._client.bucket(bucket).blob(key).upload_from_string(content, content_type=content_type)
+        except (GoogleAPIError, GoogleAuthError) as exc:
+            raise StorageProviderError(log_reason=f"gcs write: {exc}") from exc
+
     def delete(self, *, bucket, key):
         try:
             self._client.bucket(bucket).blob(key).delete()

@@ -14,12 +14,13 @@ from app.errors.tenancy import (
     SiteIconShapeError,
 )
 from app.integrations.storage.client import StorageClient
-from app.integrations.storage.images import check_image
+from app.integrations.storage.images import check_image, prepare_photo
 from app.tenancy.repositories.tenant import TenantRepository
 from app.tenancy.repositories.tenant_site import TenantSiteRepository
 from app.tenancy.schemas.site import (
     FaqItem,
     HighlightItem,
+    PhotoResponse,
     PublicBusinessResponse,
     PublicFaqResponse,
     SiteDocumentResponse,
@@ -33,6 +34,7 @@ logger = logging.getLogger("app.tenancy")
 
 # Upload limits (ck_tenant_documents_size for policies).
 MAX_IMAGE_BYTES = 1024 * 1024
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
 MAX_DOCUMENT_BYTES = 5 * 1024 * 1024
 MIN_ICON_PIXELS = 192
 
@@ -42,6 +44,8 @@ UPLOAD_EXPIRES_IN = timedelta(minutes=15)
 DOWNLOAD_EXPIRES_IN = timedelta(hours=1)
 
 IMAGE_KINDS = {"logo", "icon"}
+# Re-saved as JPEGs without their metadata (images.prepare_photo).
+PHOTO_KINDS = {"hero_photo", "about_photo"}
 DOCUMENT_KINDS = {"privacy", "terms"}
 
 _IMAGE_TYPES = {"png": "image/png", "jpg": "image/jpeg", "webp": "image/webp"}
@@ -50,8 +54,9 @@ _DOCUMENT_NAMES = {"privacy": "Privacy policy.pdf", "terms": "Terms.pdf"}
 
 class SiteService:
     """
-    The business's site (docs/tenant-administration.md, stage 5): its
-    landing page's headline, colours, logo and icon, FAQs and policy PDFs.
+    The business's site (docs/tenant-administration.md, stage 5;
+    docs/public-site.md): its words, colours, logo and icon, photos,
+    highlights, FAQs and policy PDFs.
     The owner changes them in Business settings › Your site (RLS checks the
     tenant permission on every write); anyone reads them.
 
@@ -97,6 +102,8 @@ class SiteService:
         return SiteResponse(
             tagline=tenant.tagline,
             hero_text=tenant.hero_text,
+            hero_photo=_photo(branding, "hero_photo"),
+            about_photo=_photo(branding, "about_photo"),
             primary_color=branding.primary_color if branding else None,
             secondary_color=branding.secondary_color if branding else None,
             accent_color=branding.accent_color if branding else None,
@@ -128,15 +135,18 @@ class SiteService:
         # Only what this editor sent (SiteRequest).
         sent = body.model_dump(include=body.model_fields_set)
         words = {field: sent[field] for field in ("tagline", "hero_text", "about") if field in sent}
-        colours = {
-            field: sent[field] for field in ("primary_color", "secondary_color", "accent_color") if field in sent
+        # The colours and photo descriptions live on the branding row.
+        branding = {
+            field: sent[field]
+            for field in ("primary_color", "secondary_color", "accent_color", "hero_photo_alt", "about_photo_alt")
+            if field in sent
         }
 
         if words:
             self.tenant_repository.update(tenant=tenant, values=words)
 
-        if colours:
-            self.site_repository.save_branding(tenant_id=tenant_id, values=colours)
+        if branding:
+            self.site_repository.save_branding(tenant_id=tenant_id, values=branding)
             self._branding_changed()
 
         self._log("site_updated", tenant_id)
@@ -190,7 +200,7 @@ class SiteService:
         signed = self.storage.create_upload(
             key=key,
             content_type=content_type,
-            max_size_bytes=MAX_DOCUMENT_BYTES if is_document else MAX_IMAGE_BYTES,
+            max_size_bytes=_max_bytes(kind),
             metadata={"tenant-id": str(tenant_id), "kind": kind},
             expires_in=UPLOAD_EXPIRES_IN,
         )
@@ -222,7 +232,8 @@ class SiteService:
             raise SiteFileNotReceivedError()
 
         is_document = kind in DOCUMENT_KINDS
-        max_bytes = MAX_DOCUMENT_BYTES if is_document else MAX_IMAGE_BYTES
+        max_bytes = _max_bytes(kind)
+        photo: bytes | None = None
 
         try:
             if not 1 <= stored.size_bytes <= max_bytes:
@@ -230,7 +241,14 @@ class SiteService:
 
             content = self.storage.read_start(bucket=bucket, key=key, length=max_bytes)
 
-            if is_document:
+            if kind in PHOTO_KINDS:
+                photo = prepare_photo(content)
+
+                if photo is None:
+                    raise SiteFileInvalidError(log_reason=f"{kind}: not an allowed image")
+
+                extension = "jpg"
+            elif is_document:
                 if not content.startswith(b"%PDF-"):
                     raise SiteFileInvalidError(log_reason=f"{kind}: not a PDF")
 
@@ -252,7 +270,12 @@ class SiteService:
         folder = "policies" if is_document else "branding"
         final_key = f"{folder}/tenants/{tenant_id}/{kind}/{uuid.uuid4()}.{extension}"
 
-        self.storage.copy(bucket=bucket, source_key=key, target_key=final_key)
+        # A photo is the re-saved one; anything else is the file as sent.
+        if photo is not None:
+            self.storage.write(bucket=bucket, key=final_key, content=photo, content_type="image/jpeg")
+        else:
+            self.storage.copy(bucket=bucket, source_key=key, target_key=final_key)
+
         self.storage.delete(bucket=bucket, key=key)
 
         if is_document:
@@ -277,7 +300,7 @@ class SiteService:
         tenant_id: UUID,
         kind: str,
     ) -> SiteResponse:
-        """The logo or icon taken off (policies are only ever replaced)."""
+        """An image or photo taken off (policies are only ever replaced)."""
         self._replace_image(tenant_id=tenant_id, kind=kind, key=None)
         self._log(f"{kind}_removed", tenant_id)
 
@@ -287,7 +310,13 @@ class SiteService:
         branding = self.site_repository.get_branding(tenant_id=tenant_id)
         old_key = getattr(branding, f"{kind}_key") if branding else None
 
-        self.site_repository.save_branding(tenant_id=tenant_id, values={f"{kind}_key": key})
+        values = {f"{kind}_key": key}
+
+        # A photo taken off takes its description with it.
+        if kind in PHOTO_KINDS and key is None:
+            values[f"{kind}_alt"] = None
+
+        self.site_repository.save_branding(tenant_id=tenant_id, values=values)
         self._branding_changed()
 
         # Nothing links to the old file once replaced.
@@ -311,6 +340,8 @@ class SiteService:
             tagline=tenant.tagline,
             hero_text=tenant.hero_text,
             about=tenant.about,
+            hero_photo=_photo(branding, "hero_photo"),
+            about_photo=_photo(branding, "about_photo"),
             email=tenant.email,
             phone=tenant.phone,
             primary_color=branding.primary_color if branding else None,
@@ -333,8 +364,8 @@ class SiteService:
         kind: str,
     ) -> str | None:
         """
-        A short-lived link to the business's logo, icon (else its logo) or
-        current policy, or None when it has none.
+        A short-lived link to the business's logo, icon (else its logo),
+        photo or current policy, or None when it has none.
         """
         if kind in DOCUMENT_KINDS:
             document = self.site_repository.current_document(tenant_id=tenant_id, kind=kind)
@@ -348,7 +379,11 @@ class SiteService:
             key = None
 
             if branding:
-                key = (branding.icon_key or branding.logo_key) if kind == "icon" else branding.logo_key
+                key = (
+                    (branding.icon_key or branding.logo_key)
+                    if kind == "icon"
+                    else getattr(branding, f"{kind}_key")
+                )
 
             if not key:
                 return None
@@ -377,3 +412,22 @@ class SiteService:
             "Business site changed",
             extra={"event": event, "result": "success", "reason": f"tenant_id={tenant_id}"},
         )
+
+
+def _max_bytes(kind: str) -> int:
+    """How big an upload of this kind may be."""
+    if kind in DOCUMENT_KINDS:
+        return MAX_DOCUMENT_BYTES
+
+    return MAX_PHOTO_BYTES if kind in PHOTO_KINDS else MAX_IMAGE_BYTES
+
+
+def _photo(branding, kind: str) -> PhotoResponse | None:
+    """A photo the business has (hero_photo, about_photo), or None."""
+    key = getattr(branding, f"{kind}_key", None) if branding else None
+
+    if not key:
+        return None
+
+    # The file's own id: new with every upload.
+    return PhotoResponse(version=key.rsplit("/", 1)[-1].split(".", 1)[0], alt=getattr(branding, f"{kind}_alt"))

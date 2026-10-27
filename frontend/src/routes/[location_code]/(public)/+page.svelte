@@ -24,6 +24,7 @@
 	import HeroForm from '$lib/features/business/components/HeroForm.svelte';
 	import HighlightEditor from '$lib/features/business/components/HighlightEditor.svelte';
 	import Highlights from '$lib/features/business/components/Highlights.svelte';
+	import SitePhoto from '$lib/features/business/components/SitePhoto.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
 	import CentreFacts from '$lib/features/location/components/CentreFacts.svelte';
 	import NextSessionCard from '$lib/features/services/components/NextSessionCard.svelte';
@@ -51,7 +52,9 @@
 	// The service the page leads with (the featured one, else the first
 	// offered): its details are in the services list.
 	const featured = $derived(
-		data.featured ? (data.services.find((service) => service.id === data.featured?.location_service_id) ?? null) : null
+		data.featured
+			? (data.services.find((service) => service.id === data.featured?.location_service_id) ?? null)
+			: null
 	);
 
 	const isFamily = $derived($auth.authenticated && $auth.roles.includes('customer'));
@@ -88,59 +91,68 @@
 	}
 </script>
 
-<!-- The hero: the centre, the business's headline and the ways in, then
-     the facts (stage 9 adds a photo). -->
+<!-- The hero: the centre, the business's headline and the ways in beside
+     the business's photo (9b: the centre's own, when it has one), then the
+     facts. -->
 <SiteSection>
-	<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
-		<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
+	<div class={['grid gap-10 lg:items-center', business?.hero_photo && 'lg:grid-cols-2']}>
+		<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
+			<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
 
-		<p class="label-text">{name}</p>
+			<p class="label-text">{name}</p>
 
-		<EditableSection {canEdit} label="the headline">
-			<div class="flex flex-col gap-5 pr-14">
-				<h1 class="display-text">{business?.tagline ?? name}</h1>
+			<EditableSection {canEdit} label="the headline">
+				<div class="flex flex-col gap-5 pr-14">
+					<h1 class="display-text">{business?.tagline ?? name}</h1>
 
-				<p class="text-base text-(--text-muted) md:text-lg">
-					{business?.hero_text ?? 'See what we offer, then book and pay online.'}
-				</p>
-			</div>
+					<p class="text-base text-(--text-muted) md:text-lg">
+						{business?.hero_text ?? 'See what we offer, then book and pay online.'}
+					</p>
+				</div>
 
-			{#snippet editor(done)}
-				<HeroForm
-					initial={{ tagline: business?.tagline ?? null, hero_text: business?.hero_text ?? null }}
-					onsubmit={(body) => save(businessApi.updateSite(body), done)}
-					oncancel={done}
-				/>
-			{/snippet}
-		</EditableSection>
+				{#snippet editor(done)}
+					<HeroForm
+						initial={{ tagline: business?.tagline ?? null, hero_text: business?.hero_text ?? null }}
+						onsubmit={(body) => save(businessApi.updateSite(body), done)}
+						oncancel={done}
+					/>
+				{/snippet}
+			</EditableSection>
 
-		{#if data.signedInElsewhere}
-			<!-- Logged in at another of the tenant's centres; that session
+			{#if data.signedInElsewhere}
+				<!-- Logged in at another of the tenant's centres; that session
 			     doesn't count here (routes/[location_code]/+layout.ts). -->
-			<Notice>
-				You're logged in at {data.signedInElsewhere.locationName}. Log out to
-				use this centre instead.
-			</Notice>
+				<Notice>
+					You're logged in at {data.signedInElsewhere.locationName}. Log out to use this centre
+					instead.
+				</Notice>
 
-			<ActionBar start>
-				<Button variant="ghost" onclick={() => logout(data.locationCode)}>
-					Log out
-				</Button>
+				<ActionBar start>
+					<Button variant="ghost" onclick={() => logout(data.locationCode)}>Log out</Button>
 
-				<Button onclick={() => goto(`/${data.signedInElsewhere?.locationCode}/home`)}>
-					Go to {data.signedInElsewhere.locationName}
-				</Button>
-			</ActionBar>
-		{:else}
-			<ActionBar start>
-				<Button variant="ghost" onclick={() => goto(route('/programs'))}>View program</Button>
-				<Button onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
-			</ActionBar>
+					<Button onclick={() => goto(`/${data.signedInElsewhere?.locationCode}/home`)}>
+						Go to {data.signedInElsewhere.locationName}
+					</Button>
+				</ActionBar>
+			{:else}
+				<ActionBar start>
+					<Button variant="ghost" onclick={() => goto(route('/programs'))}>View program</Button>
+					<Button onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
+				</ActionBar>
+			{/if}
+		</div>
+
+		{#if business?.hero_photo}
+			<SitePhoto kind="hero_photo" photo={business.hero_photo} />
 		{/if}
 	</div>
 
 	<div class="border-t border-(--border) pt-6">
-		<CentreFacts location={data.location} service={featured} weekdays={data.featured?.weekdays ?? []} />
+		<CentreFacts
+			location={data.location}
+			service={featured}
+			weekdays={data.featured?.weekdays ?? []}
+		/>
 	</div>
 </SiteSection>
 
@@ -171,7 +183,9 @@
 			{#if featured}
 				<NextSessionCard service={featured} date={data.featured?.next_session_date ?? null}>
 					<Button fullWidth onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
-					<Button variant="ghost" fullWidth onclick={() => goto(route('/programs'))}>View program</Button>
+					<Button variant="ghost" fullWidth onclick={() => goto(route('/programs'))}
+						>View program</Button
+					>
 					<HyperTextLink href="#find-us">Location details</HyperTextLink>
 				</NextSessionCard>
 			{/if}
@@ -193,11 +207,15 @@
 				<div class="flex flex-col gap-6 pr-14">
 					<SiteHeading title={`About ${business?.name ?? data.location.tenant_name}`} />
 
-					<p class="whitespace-pre-line text-base text-(--text) md:text-lg">{aboutTaste}</p>
+					<p class="text-base whitespace-pre-line text-(--text) md:text-lg">{aboutTaste}</p>
 
 					<div>
 						<HyperTextLink href="/about">More about us</HyperTextLink>
 					</div>
+
+					{#if business?.about_photo}
+						<SitePhoto kind="about_photo" photo={business.about_photo} />
+					{/if}
 				</div>
 
 				{#snippet editor(done)}
@@ -221,7 +239,9 @@
 									class="flex min-h-12 items-center justify-between gap-4 text-base font-semibold text-(--text) hover:text-(--primary)"
 								>
 									{service.service_name}
-									<span class="text-sm font-semibold text-(--text-muted)">{service.age_label ?? ''}</span>
+									<span class="text-sm font-semibold text-(--text-muted)"
+										>{service.age_label ?? ''}</span
+									>
 								</a>
 							</li>
 						{/each}

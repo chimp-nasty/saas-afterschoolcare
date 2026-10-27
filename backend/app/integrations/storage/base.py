@@ -69,6 +69,17 @@ class StorageProvider(ABC):
     ) -> None: ...
 
     @abstractmethod
+    def write(
+        self,
+        *,
+        bucket: str,
+        key: str,
+        content: bytes,
+        content_type: str,
+    ) -> None:
+        """Store bytes the API made itself (e.g. a re-saved photo)."""
+
+    @abstractmethod
     def delete(
         self,
         *,

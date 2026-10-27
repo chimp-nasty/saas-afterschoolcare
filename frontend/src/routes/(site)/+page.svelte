@@ -26,6 +26,8 @@
 	import HighlightEditor from '$lib/features/business/components/HighlightEditor.svelte';
 	import Highlights from '$lib/features/business/components/Highlights.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
+	import EditablePhoto from '$lib/features/business/components/EditablePhoto.svelte';
+	import { uploadSiteFile } from '$lib/features/business/siteFiles';
 
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
 	import type { ApiResponse } from '$lib/api/wrapper';
@@ -63,60 +65,113 @@
 
 		return result;
 	}
+
+	type PhotoKind = 'hero_photo' | 'about_photo';
+
+	// The photos (stage 9): an upload or removal takes effect at once.
+	async function uploadPhoto(kind: PhotoKind, file: File) {
+		const ok = await uploadSiteFile(businessApi, kind, file);
+
+		if (ok) await invalidate('app:business-site');
+
+		return ok;
+	}
+
+	async function removePhoto(kind: PhotoKind) {
+		const response = await businessApi.removeImage(kind);
+
+		if (response.ok) await invalidate('app:business-site');
+	}
+
+	async function savePhotoAlt(kind: PhotoKind, alt: string | null) {
+		const response = await businessApi.updateSite({ [`${kind}_alt`]: alt });
+
+		if (response.ok) await invalidate('app:business-site');
+
+		return response;
+	}
+
+	// Room for a photo when there is one, or its owner may add one.
+	const heroPhotoColumn = $derived(Boolean(business?.hero_photo) || canEdit);
+	const aboutPhotoColumn = $derived(Boolean(business?.about_photo) || canEdit);
 </script>
 
 {#if data.platform}
 	<!-- The platform's own site: no business here (the layout gives it a
 	     padded page and the platform's header). -->
 	<Page>
-		<PageHeader title="After school care bookings" description="Businesses sign up by invitation." />
+		<PageHeader
+			title="After school care bookings"
+			description="Businesses sign up by invitation."
+		/>
 
 		<HyperTextLink href="/platform/login">Platform login</HyperTextLink>
 	</Page>
 {:else}
-	<!-- The hero: the business's headline and paragraph, then its
-	     highlights (stage 9 adds its photo). -->
+	<!-- The hero: the business's headline and paragraph beside its photo,
+	     then its highlights. -->
 	<SiteSection>
-		<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
-			<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
+		<div class={['grid gap-10 lg:items-center', heroPhotoColumn && 'lg:grid-cols-2']}>
+			<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
+				<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
 
-			<EditableSection {canEdit} label="the headline">
-				<div class="flex flex-col gap-5 pr-14">
-					{#if business?.tagline}
-						<p class="label-text">{name}</p>
-					{/if}
+				<EditableSection {canEdit} label="the headline">
+					<div class="flex flex-col gap-5 pr-14">
+						{#if business?.tagline}
+							<p class="label-text">{name}</p>
+						{/if}
 
-					<h1 class="display-text">{business?.tagline ?? name}</h1>
+						<h1 class="display-text">{business?.tagline ?? name}</h1>
 
-					<p class="text-base text-(--text-muted) md:text-lg">
-						{business?.hero_text ?? 'Choose your centre to see its services and book.'}
-					</p>
-				</div>
+						<p class="text-base text-(--text-muted) md:text-lg">
+							{business?.hero_text ?? 'Choose your centre to see its services and book.'}
+						</p>
+					</div>
 
-				{#snippet editor(done)}
-					<HeroForm
-						initial={{ tagline: business?.tagline ?? null, hero_text: business?.hero_text ?? null }}
-						onsubmit={(body) => save(businessApi.updateSite(body), done)}
-						oncancel={done}
+					{#snippet editor(done)}
+						<HeroForm
+							initial={{
+								tagline: business?.tagline ?? null,
+								hero_text: business?.hero_text ?? null
+							}}
+							onsubmit={(body) => save(businessApi.updateSite(body), done)}
+							oncancel={done}
+						/>
+					{/snippet}
+				</EditableSection>
+
+				{#if data.locations.length > 0}
+					<ActionBar start>
+						{#if data.locations.length === 1}
+							<Button onclick={() => goto(`/${data.locations[0].location_code}`)}>
+								Go to {data.locations[0].location_name}
+							</Button>
+						{:else}
+							<Button onclick={() => goto('/locations')}>Find your centre</Button>
+						{/if}
+					</ActionBar>
+				{/if}
+			</div>
+
+			{#if heroPhotoColumn}
+				<div class={[!business?.hero_photo && 'hidden md:block']}>
+					<EditablePhoto
+						{canEdit}
+						kind="hero_photo"
+						photo={business?.hero_photo ?? null}
+						emptyPrompt="Add a photo beside your headline"
+						onupload={(file) => uploadPhoto('hero_photo', file)}
+						onremove={() => removePhoto('hero_photo')}
+						onsavealt={(alt) => savePhotoAlt('hero_photo', alt)}
 					/>
-				{/snippet}
-			</EditableSection>
-
-			{#if data.locations.length > 0}
-				<ActionBar start>
-					{#if data.locations.length === 1}
-						<Button onclick={() => goto(`/${data.locations[0].location_code}`)}>
-							Go to {data.locations[0].location_name}
-						</Button>
-					{:else}
-						<Button onclick={() => goto('/locations')}>Find your centre</Button>
-					{/if}
-				</ActionBar>
+				</div>
 			{/if}
 		</div>
 
 		{#if highlights.length > 0 || canEdit}
-			<div class={['border-t border-(--border) pt-8', highlights.length === 0 && 'hidden md:block']}>
+			<div
+				class={['border-t border-(--border) pt-8', highlights.length === 0 && 'hidden md:block']}
+			>
 				<EditableSection
 					{canEdit}
 					label="the highlights"
@@ -156,37 +211,57 @@
 			</div>
 		{:else}
 			<Card border>
-				<EmptyState message="We couldn't find any centres here. Use the link your centre gave you." />
+				<EmptyState
+					message="We couldn't find any centres here. Use the link your centre gave you."
+				/>
 			</Card>
 		{/if}
 	</SiteSection>
 
 	{#if business?.about || canEdit}
 		<SiteSection desktopOnly={!business?.about}>
-			<EditableSection
-				{canEdit}
-				label="your about text"
-				isEmpty={!business?.about}
-				emptyPrompt="Add a few words about your business"
-			>
-				<div class="flex flex-col gap-6">
-					<SiteHeading title={`About ${name}`} />
+			<div class={['grid gap-10 lg:items-center', aboutPhotoColumn && 'lg:grid-cols-2']}>
+				<EditableSection
+					{canEdit}
+					label="your about text"
+					isEmpty={!business?.about}
+					emptyPrompt="Add a few words about your business"
+				>
+					<div class="flex flex-col gap-6">
+						<SiteHeading title={`About ${name}`} />
 
-					<p class="max-w-3xl whitespace-pre-line text-base text-(--text) md:text-lg">{aboutTaste}</p>
+						<p class="max-w-3xl text-base whitespace-pre-line text-(--text) md:text-lg">
+							{aboutTaste}
+						</p>
 
-					<div>
-						<HyperTextLink href="/about">More about us</HyperTextLink>
+						<div>
+							<HyperTextLink href="/about">More about us</HyperTextLink>
+						</div>
 					</div>
-				</div>
 
-				{#snippet editor(done)}
-					<AboutForm
-						initial={business?.about ?? null}
-						onsubmit={(body) => save(businessApi.updateSite(body), done)}
-						oncancel={done}
-					/>
-				{/snippet}
-			</EditableSection>
+					{#snippet editor(done)}
+						<AboutForm
+							initial={business?.about ?? null}
+							onsubmit={(body) => save(businessApi.updateSite(body), done)}
+							oncancel={done}
+						/>
+					{/snippet}
+				</EditableSection>
+
+				{#if aboutPhotoColumn}
+					<div class={[!business?.about_photo && 'hidden md:block']}>
+						<EditablePhoto
+							{canEdit}
+							kind="about_photo"
+							photo={business?.about_photo ?? null}
+							emptyPrompt="Add a photo beside your about text"
+							onupload={(file) => uploadPhoto('about_photo', file)}
+							onremove={() => removePhoto('about_photo')}
+							onsavealt={(alt) => savePhotoAlt('about_photo', alt)}
+						/>
+					</div>
+				{/if}
+			</div>
 		</SiteSection>
 	{/if}
 

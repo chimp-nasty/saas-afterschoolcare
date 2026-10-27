@@ -82,6 +82,10 @@ class StorageClient:
     def copy(self, *, bucket: str, source_key: str, target_key: str) -> None:
         self._storage.copy(bucket=bucket, source_key=source_key, target_key=target_key)
 
+    def write(self, *, bucket: str, key: str, content: bytes, content_type: str) -> None:
+        """Store bytes the API made itself (e.g. a re-saved photo)."""
+        self._storage.write(bucket=bucket, key=key, content=content, content_type=content_type)
+
     def delete(self, *, bucket: str, key: str) -> None:
         self._storage.delete(bucket=bucket, key=key)
 

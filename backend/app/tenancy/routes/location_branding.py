@@ -1,4 +1,3 @@
-from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -15,7 +14,7 @@ from app.errors.tenancy import SiteFileNotFoundError
 from app.tenancy.services.location_branding import LocationBrandingService
 from app.tenancy.services.site import SiteService
 from app.tenancy.schemas.location_branding import PublicLocationResponse
-from app.tenancy.schemas.site import PublicBusinessResponse
+from app.tenancy.schemas.site import PublicBusinessResponse, SiteFileKind
 
 
 router = APIRouter(
@@ -69,13 +68,14 @@ def get_public_business(
     )
 
 
-# The business's logo, site icon (its logo if it has none) or current
+# The business's logo, site icon (its logo if it has none), photo or current
 # policy PDF: a redirect to a short-lived link to the file. Public. With no
-# icon or logo at all, the platform's own icon.
+# icon or logo at all, the platform's own icon. A photo's link carries its
+# version (?v=), so a new one isn't hidden by a cached redirect.
 # Not under /public/ (a centre's code goes there).
 @router.get("/site-files/{kind}")
 def get_public_file(
-    kind: Literal["logo", "icon", "privacy", "terms"],
+    kind: SiteFileKind,
     tenant_id: UUID = Depends(
         resolve_tenant_id,
     ),

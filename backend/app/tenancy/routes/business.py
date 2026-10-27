@@ -1,4 +1,3 @@
-from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -20,6 +19,7 @@ from app.tenancy.schemas.site import (
     ConfirmSiteUploadRequest,
     FaqsRequest,
     HighlightsRequest,
+    ImageKind,
     SiteRequest,
     SiteResponse,
     SiteUploadResponse,
@@ -183,15 +183,19 @@ def confirm_site_upload(
     )
 
 
+# Logo and icon in Your site; photos inline on the pages.
+_REMOVED = {"logo": "Logo removed", "icon": "Site icon removed", "hero_photo": "Photo removed", "about_photo": "Photo removed"}
+
+
 @router.delete("/site/{kind}")
 def remove_site_image(
-    kind: Literal["logo", "icon"],
+    kind: ImageKind,
     ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_settings", action="u")),
     service: SiteService = Depends(_site_service),
 ) -> ApiResponse[SiteResponse]:
     return ApiResponse(
         ok=True,
-        msg="Logo removed" if kind == "logo" else "Site icon removed",
+        msg=_REMOVED[kind],
         data=service.remove_image(tenant_id=ctx.tenant_id, kind=kind),
     )
 

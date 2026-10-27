@@ -84,7 +84,7 @@ export function createBusinessApi(
 			return apiWrapper<SiteResponse>(`${baseUrl}/site/uploads/confirm`, { method: 'POST', body, fetcher });
 		},
 
-		removeImage(kind: 'logo' | 'icon') {
+		removeImage(kind: 'logo' | 'icon' | 'hero_photo' | 'about_photo') {
 			return apiWrapper<SiteResponse>(`${baseUrl}/site/${kind}`, { method: 'DELETE', fetcher });
 		},
 

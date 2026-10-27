@@ -5,12 +5,16 @@ import { apiWrapper } from '$lib/api/wrapper';
 import type { PublicBusinessResponse, PublicLocationResponse } from '$lib/api/schema';
 
 
-// The business's logo, site icon (its logo if none, else the platform's) and
-// current policy PDFs: links that redirect to the file (stage 5).
-export type SiteFileKind = 'logo' | 'icon' | 'privacy' | 'terms';
+// The business's logo, site icon (its logo if none, else the platform's),
+// photos and current policy PDFs: links that redirect to the file. A
+// photo's link carries its version, so a new one isn't hidden by a cached
+// redirect to the old.
+export type SiteFileKind = 'logo' | 'icon' | 'hero_photo' | 'about_photo' | 'privacy' | 'terms';
 
-export function siteFileUrl(kind: SiteFileKind): string {
-	return `${API_BASE}/location-branding/v1/site-files/${kind}`;
+export function siteFileUrl(kind: SiteFileKind, version?: string): string {
+	const url = `${API_BASE}/location-branding/v1/site-files/${kind}`;
+
+	return version ? `${url}?v=${encodeURIComponent(version)}` : url;
 }
 
 
