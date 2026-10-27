@@ -65,6 +65,16 @@ These keep features looking like one app. They're written for the customer-facin
 - `PageHeader` takes `title` (sentence case), optional `eyebrow` (e.g. "Step 2 of 3"), `description` and an `actions` snippet.
 - Customers navigate with `BottomNav` on mobile and the sidebar on desktop; staff and admin use the sidebar (drawer on mobile).
 
+### Public site pages
+
+The business's pages (`/`, and later `/locations`, `/about`) and a centre's own page (`/{location}`, later `/{location}/programs`) are the public site (`docs/public-site.md`), laid out differently from customer pages:
+
+- The tenant `Layout` gets `flush` (no padding) and the page is a stack of `SiteSection` bands: full width, content in a `max-w-6xl` column, alternating `tone` (`plain`, `muted`, `tint`). No `Page`/`PageHeader`.
+- Each band's heading is `SiteHeading`; the hero's headline is an `h1` with `display-text`. Both text roles are defined in `layout.css`.
+- Still mobile first: one column on a phone, grids (`md:grid-cols-2`, `lg:grid-cols-3`) only from `md`.
+- Colours: `--primary` for actions, `--secondary-soft` for tinted bands, `--accent` only as decoration (bars, icons), never for text, since a business may pick one too light to read. Never `--secondary` or `--accent` at full strength behind text.
+- A hero's buttons go in `<ActionBar start>`: together on the left, main action first, from `md`.
+
 ### Surfaces
 
 - `Card` is the only surface. It has default padding; don't add your own `p-*` to it (cards whose rows run edge to edge, like `DataCard` or the per-child sections in `ReviewBooking`, pass `padded={false}`). No bordered card inside another card: a list of cards is a plain `flex flex-col gap-4`.
@@ -82,6 +92,7 @@ These keep features looking like one app. They're written for the customer-facin
 | Role | Classes |
 |---|---|
 | Page title | `text-2xl font-extrabold text-(--text)` (via `PageHeader`) |
+| Public site hero / band title | `display-text` / `headline-text` (via `SiteHeading`); public site pages only |
 | Section title | `text-lg font-extrabold text-(--text)` |
 | Label (fields, data rows, card titles, eyebrows, filters, table headers) | `label-text` (`text-xs font-extrabold uppercase tracking-wide text-(--text-muted)`, defined once in `layout.css`) |
 | Body | `text-base text-(--text)`; values `font-semibold` |

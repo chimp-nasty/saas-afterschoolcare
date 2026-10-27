@@ -25,12 +25,16 @@
 	// the owner chooses theirs.
 	const DEFAULT_PRIMARY = '#5e2bff';
 	const DEFAULT_SECONDARY = '#e8ffc2';
+	const DEFAULT_ACCENT = '#f59e0b';
 
 	// The saved values when the form opens; it then owns its edits.
 	let tagline = $state(untrack(() => initial.tagline ?? ''));
-	let ownColours = $state(untrack(() => Boolean(initial.primary_color || initial.secondary_color)));
+	let ownColours = $state(
+		untrack(() => Boolean(initial.primary_color || initial.secondary_color || initial.accent_color))
+	);
 	let primary = $state(untrack(() => initial.primary_color ?? DEFAULT_PRIMARY));
 	let secondary = $state(untrack(() => initial.secondary_color ?? DEFAULT_SECONDARY));
+	let accent = $state(untrack(() => initial.accent_color ?? DEFAULT_ACCENT));
 
 	let errors = $state<FormErrors<SiteRequest>>({});
 	let isLoading = $state(false);
@@ -43,7 +47,8 @@
 			const response = await onsubmit({
 				tagline: tagline || null,
 				primary_color: ownColours ? primary : null,
-				secondary_color: ownColours ? secondary : null
+				secondary_color: ownColours ? secondary : null,
+				accent_color: ownColours ? accent : null
 			});
 
 			errors = response.fieldErrors;
@@ -63,7 +68,7 @@
 	<CheckboxRow bind:checked={ownColours} title="Use our own colours" help="Otherwise your pages use the app's colours." />
 
 	{#if ownColours}
-		<div class="grid grid-cols-2 gap-4">
+		<div class="grid grid-cols-3 gap-4">
 			<Field label="Main colour" error={errors.primary_color}>
 				{#snippet children(id)}
 					<input {id} type="color" class="h-12 w-full" bind:value={primary} />
@@ -75,6 +80,17 @@
 					<input {id} type="color" class="h-12 w-full" bind:value={secondary} />
 				{/snippet}
 			</Field>
+
+			<Field label="Accent colour" error={errors.accent_color}>
+				{#snippet children(id)}
+					<input {id} type="color" class="h-12 w-full" bind:value={accent} />
+				{/snippet}
+			</Field>
 		</div>
+
+		<p class="text-sm text-(--text-muted)">
+			The main colour is for buttons and headings, the second for backgrounds (softened), and the
+			accent for small highlights.
+		</p>
 	{/if}
 </Form>

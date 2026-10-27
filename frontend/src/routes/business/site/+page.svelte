@@ -114,7 +114,12 @@
 		<SectionHeading title="Headline and colours" />
 
 		<SiteForm
-			initial={{ tagline: site.tagline, primary_color: site.primary_color, secondary_color: site.secondary_color }}
+			initial={{
+				tagline: site.tagline,
+				primary_color: site.primary_color,
+				secondary_color: site.secondary_color,
+				accent_color: site.accent_color
+			}}
 			onsubmit={saveSite}
 		/>
 

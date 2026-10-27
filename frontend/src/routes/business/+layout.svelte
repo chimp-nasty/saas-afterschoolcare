@@ -88,11 +88,20 @@
 {/snippet}
 
 {#if isLogin}
-	<Layout primaryColor={data.branding.primaryColor} secondaryColor={data.branding.secondaryColor}>
+	<Layout
+		primaryColor={data.branding.primaryColor}
+		secondaryColor={data.branding.secondaryColor}
+		accentColor={data.branding.accentColor}
+	>
 		{@render children()}
 	</Layout>
 {:else if data.session}
-	<Layout sidebar={sidebar} primaryColor={data.branding.primaryColor} secondaryColor={data.branding.secondaryColor}>
+	<Layout
+		sidebar={sidebar}
+		primaryColor={data.branding.primaryColor}
+		secondaryColor={data.branding.secondaryColor}
+		accentColor={data.branding.accentColor}
+	>
 		{#snippet header()}
 			<header class="sticky top-0 z-40 mb-6 w-full border-b border-(--border) bg-(--surface)/90 p-4 backdrop-blur-md">
 				<div class="flex min-h-12 w-full items-center gap-4">

@@ -1,17 +1,18 @@
 <!--
     The location's landing page, before login: what it offers (times, ages,
-    prices, policies), where it is, and how to get started.
+    prices, policies), where it is, and how to get started. Laid out as the
+    public site's bands (docs/public-site.md); stage 6 rebuilds it as the
+    full centre page.
 -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
 
 	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import Button from '$lib/components/actions/Button.svelte';
-	import Page from '$lib/components/layout/Page.svelte';
-	import PageHeader from '$lib/components/layout/PageHeader.svelte';
+	import SiteSection from '$lib/components/layout/SiteSection.svelte';
 	import EmptyState from '$lib/components/text/EmptyState.svelte';
 	import Notice from '$lib/components/text/Notice.svelte';
-	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
+	import SiteHeading from '$lib/components/text/SiteHeading.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
 	import ServiceCard from '$lib/features/services/components/ServiceCard.svelte';
 
@@ -23,54 +24,73 @@
 	const name = $derived(data.location.location_name);
 </script>
 
-<Page>
-	<PageHeader
-		title={`Welcome to ${name}`}
-		description="See what we offer, then book and pay online."
-	/>
+<SiteSection>
+	<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
+		<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
 
-	{#if data.signedInElsewhere}
-		<!-- Logged in at another of the tenant's centres; that session
-		     doesn't count here (routes/[location_code]/+layout.ts). -->
-		<Notice>
-			You're logged in at {data.signedInElsewhere.locationName}. Log out to
-			use this centre instead.
-		</Notice>
+		<p class="label-text">Your centre</p>
 
-		<ActionBar>
-			<Button variant="ghost" onclick={() => logout(data.locationCode)}>
-				Log out
-			</Button>
+		<h1 class="display-text">{name}</h1>
 
-			<Button onclick={() => goto(`/${data.signedInElsewhere?.locationCode}/home`)}>
-				Go to {data.signedInElsewhere.locationName}
-			</Button>
-		</ActionBar>
-	{:else if $auth.authenticated}
-		<Button fullWidth onclick={() => goto(`/${data.locationCode}/home`)}>
-			Go to your bookings
-		</Button>
-	{:else}
-		<ActionBar>
-			<Button variant="ghost" onclick={() => goto(`/${data.locationCode}/register`)}>
-				Create an account
-			</Button>
+		<p class="text-base text-(--text-muted) md:text-lg">
+			See what we offer, then book and pay online.
+		</p>
 
-			<Button onclick={() => goto(`/${data.locationCode}/login`)}>
-				Log in
-			</Button>
-		</ActionBar>
-	{/if}
+		{#if data.signedInElsewhere}
+			<!-- Logged in at another of the tenant's centres; that session
+			     doesn't count here (routes/[location_code]/+layout.ts). -->
+			<Notice>
+				You're logged in at {data.signedInElsewhere.locationName}. Log out to
+				use this centre instead.
+			</Notice>
 
-	<section class="flex flex-col gap-4">
-		<SectionHeading title="Our services" />
+			<ActionBar start>
+				<Button variant="ghost" onclick={() => logout(data.locationCode)}>
+					Log out
+				</Button>
 
-		{#each data.services as service (service.id)}
-			<ServiceCard {service} />
+				<Button onclick={() => goto(`/${data.signedInElsewhere?.locationCode}/home`)}>
+					Go to {data.signedInElsewhere.locationName}
+				</Button>
+			</ActionBar>
+		{:else if $auth.authenticated}
+			<ActionBar start>
+				<Button onclick={() => goto(`/${data.locationCode}/home`)}>
+					Go to your bookings
+				</Button>
+			</ActionBar>
 		{:else}
-			<EmptyState message="Services will be listed here soon." />
-		{/each}
-	</section>
+			<ActionBar start>
+				<Button variant="ghost" onclick={() => goto(`/${data.locationCode}/login`)}>
+					Log in
+				</Button>
 
-	<CentreCard location={data.location} />
-</Page>
+				<Button onclick={() => goto(`/${data.locationCode}/register`)}>
+					Enrol now
+				</Button>
+			</ActionBar>
+		{/if}
+	</div>
+</SiteSection>
+
+<SiteSection id="services" tone="muted">
+	<SiteHeading title="Our services" />
+
+	{#if data.services.length > 0}
+		<div class="grid gap-4 md:grid-cols-2">
+			{#each data.services as service (service.id)}
+				<ServiceCard {service} />
+			{/each}
+		</div>
+	{:else}
+		<EmptyState message="Services will be listed here soon." />
+	{/if}
+</SiteSection>
+
+<SiteSection>
+	<SiteHeading title="Find us" />
+
+	<div class="max-w-xl">
+		<CentreCard location={data.location} />
+	</div>
+</SiteSection>

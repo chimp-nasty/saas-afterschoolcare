@@ -20,6 +20,9 @@ html {
 	--secondary: #E8FFC2;
 	--secondary-strong: #548C0D;
 
+	/* Highlights on the public site (docs/public-site.md): eyebrows, icons. */
+	--accent: #F59E0B;
+
   	--success: #16a34a;
 	--success-soft: #dcfce7;
 	--success-text: #166534;
@@ -38,14 +41,19 @@ html {
 }
 
 /*
- * Derived from --primary. Declared again on the tenant layout (which swaps
- * --primary for the location's brand colour), because a var() is resolved
- * where it's declared: on :root alone these would keep the default purple.
+ * Derived from the brand colours. Declared again on the tenant layout (which
+ * swaps them for the business's), because a var() is resolved where it's
+ * declared: on :root alone these would keep the defaults.
  */
 :root,
 [data-tenant-theme] {
 	--primary-hover: color-mix(in oklab, var(--primary) 82%, black);
 	--primary-soft: color-mix(in oklab, var(--primary) 10%, white);
+
+	/* Tinted backgrounds: a business may choose a strong secondary or
+	   accent, so they're never used at full strength behind text. */
+	--secondary-soft: color-mix(in oklab, var(--secondary) 15%, white);
+	--accent-soft: color-mix(in oklab, var(--accent) 15%, white);
 
 	--hyperlink: var(--primary);
 	--hyperlink-hover: var(--primary-hover);
@@ -124,6 +132,20 @@ body {
 	@apply text-xs font-extrabold uppercase tracking-wide;
 
 	color: var(--text-muted);
+}
+
+/* The public site's large headings (docs/public-site.md): the hero's
+   headline, then each band's title. Customer pages keep PageHeader. */
+@utility display-text {
+	@apply text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl;
+
+	color: var(--text);
+}
+
+@utility headline-text {
+	@apply text-2xl font-extrabold leading-tight tracking-tight md:text-4xl;
+
+	color: var(--text);
 }
 
 @keyframes bell-ring {

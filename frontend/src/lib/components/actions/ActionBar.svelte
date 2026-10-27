@@ -16,9 +16,14 @@
 
     let {
         sticky = false,
+        start = false,
         children,
     }: {
         sticky?: boolean;
+        // From md, the buttons sit together on the left, main action first,
+        // instead of spread apart (a public site hero's calls to action).
+        // The order in the markup is unchanged: secondary first, main last.
+        start?: boolean;
         children: Snippet;
     } = $props();
 
@@ -27,7 +32,8 @@
 
 <div
     class={[
-        "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+        "flex flex-col gap-3 md:items-center",
+        start ? "md:flex-row-reverse md:justify-end" : "md:flex-row md:justify-between",
         sticky && [
             "sticky bottom-(--bottom-nav-height) z-30 -mx-4 border-t border-(--border) bg-(--surface)/95 px-4 py-3 backdrop-blur-md",
             "md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none",

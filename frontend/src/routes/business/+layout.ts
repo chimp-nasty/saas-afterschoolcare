@@ -19,7 +19,8 @@ export const load: LayoutLoad = async ({ depends, fetch }) => {
 	// The business's colours, like every other page of its site.
 	const branding = {
 		primaryColor: businessResponse.data?.primary_color ?? null,
-		secondaryColor: businessResponse.data?.secondary_color ?? null
+		secondaryColor: businessResponse.data?.secondary_color ?? null,
+		accentColor: businessResponse.data?.accent_color ?? null
 	};
 
 	const session =

@@ -7,7 +7,9 @@
 
 	import { CalendarDays, House, User } from 'lucide-svelte';
 
+	import Button from '$lib/components/actions/Button.svelte';
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
+	import ActionsBell from '$lib/components/layout/tenant/ActionsBell.svelte';
 	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Footer from '$lib/components/layout/tenant/Footer.svelte';
 	import Sidebar, { type SidebarItem, type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
@@ -142,6 +144,12 @@
 		page.url.pathname === route('/kiosk') || page.url.pathname.startsWith(`${route('/kiosk')}/`)
 	);
 
+	// The centre's own page (/varsity): part of the public site, laid out in
+	// full-width bands (docs/public-site.md).
+	const isCentrePage = $derived(
+		page.url.pathname === route('') || page.url.pathname === route('/')
+	);
+
 	// Customers (only) navigate with a bottom bar on mobile.
 	const isCustomerOnly = $derived(
 		$auth.roles.includes('customer') && !isStaff
@@ -152,6 +160,23 @@
 		{ label: 'Bookings', href: route('/bookings'), icon: CalendarDays, isActive: isActive('/bookings') },
 		{ label: 'Account', href: route('/account'), icon: User, isActive: isActive('/account') }
 	]);
+
+	// The public site's pages (docs/public-site.md, section 2). Until they're
+	// built, Programs is the centre page's services and Locations and About
+	// are the business page's sections (stages 3 and 8).
+	const programsLink = $derived({ label: 'Programs', href: `${route('')}#services` });
+	const locationsLink = { label: 'Locations', href: '/#centres' };
+	const aboutLink = { label: 'About', href: '/#about' };
+
+	// Logged out: the whole site. Families: About and Programs (their own
+	// pages are in the bottom bar and sidebar). Staff: none.
+	const headerLinks = $derived(
+		!$auth.authenticated
+			? [programsLink, locationsLink, aboutLink]
+			: isCustomerOnly
+				? [aboutLink, programsLink]
+				: []
+	);
 
 	async function logout() {
 		isLoggingOut = true;
@@ -178,10 +203,22 @@
 	<BottomNav items={bottomNavItems} />
 {/snippet}
 
+{#snippet bell()}
+	<ActionsBell />
+{/snippet}
+
+<!-- Logged out: the header's way in beside the links (desktop; the phone's
+     drawer lists them as rows). -->
+{#snippet getStarted()}
+	<Button variant="ghost" onclick={() => goto(route('/login'))}>Log in</Button>
+	<Button onclick={() => goto(route('/register'))}>Enrol now</Button>
+{/snippet}
+
 {#if isKiosk}
 	<Layout
 		primaryColor={data.location.primary_color}
 		secondaryColor={data.location.secondary_color}
+		accentColor={data.location.accent_color}
 	>
 		{@render children()}
 	</Layout>
@@ -189,13 +226,30 @@
 <Layout
 	primaryColor={data.location.primary_color}
 	secondaryColor={data.location.secondary_color}
+	accentColor={data.location.accent_color}
+	flush={isCentrePage}
 	sidebar={$auth.authenticated ? sidebar : undefined}
 	bottomNav={$auth.authenticated && isCustomerOnly ? bottomNav : undefined}
 >
 	{#snippet header()}
-		<!-- Customers use the BottomNav on mobile, so no menu. -->
 		<Header
-			onMenu={isCustomerOnly ? undefined : () => sidebarOpen = true}
+			homeHref={route('')}
+			title={`${data.location.tenant_name} - ${data.location.location_name}`}
+			hasLogo={data.location.has_logo}
+			links={headerLinks}
+			menuItems={!$auth.authenticated
+				? [
+						{ label: 'Log in', href: route('/login') },
+						{ label: 'Enrol now', href: route('/register') }
+					]
+				: isCustomerOnly
+					? [{ label: 'Log out', onclick: logout }]
+					: []}
+			note={$auth.authenticated && !isCustomerOnly ? `Logged in as ${$auth.firstName ?? $auth.email}` : null}
+			onMenu={$auth.authenticated && !isCustomerOnly ? () => (sidebarOpen = true) : undefined}
+			flush={isCentrePage}
+			actions={$auth.roles.includes('customer') ? bell : undefined}
+			desktopActions={$auth.authenticated ? undefined : getStarted}
 		/>
 	{/snippet}
 

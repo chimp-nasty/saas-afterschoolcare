@@ -128,7 +128,7 @@
 
     const STATUS_STYLES: Record<ServiceDayStatus, string> = {
         [ServiceDayStatus.AVAILABLE]:
-            "border border-(--success)/20 bg-(--success-soft) text-(--success-text) hover:bg-(--secondary)",
+            "border border-(--success)/20 bg-(--success-soft) text-(--success-text) hover:bg-(--secondary-soft)",
 
         [ServiceDayStatus.LOW]:
             "border border-(--warning)/40 bg-(--warning-soft) text-(--warning-text) hover:brightness-95",

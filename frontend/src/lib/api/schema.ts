@@ -4937,6 +4937,8 @@ export interface components {
             primary_color: string | null;
             /** Secondary Color */
             secondary_color: string | null;
+            /** Accent Color */
+            accent_color: string | null;
             /** Has Logo */
             has_logo: boolean;
             /** Has Privacy */
@@ -4994,6 +4996,8 @@ export interface components {
             primary_color: string | null;
             /** Secondary Color */
             secondary_color: string | null;
+            /** Accent Color */
+            accent_color: string | null;
         };
         /**
          * RefundResponse
@@ -5488,6 +5492,8 @@ export interface components {
             primary_color?: string | null;
             /** Secondary Color */
             secondary_color?: string | null;
+            /** Accent Color */
+            accent_color?: string | null;
         };
         /** SiteResponse */
         SiteResponse: {
@@ -5497,6 +5503,8 @@ export interface components {
             primary_color: string | null;
             /** Secondary Color */
             secondary_color: string | null;
+            /** Accent Color */
+            accent_color: string | null;
             /** Has Logo */
             has_logo: boolean;
             /** Has Icon */
