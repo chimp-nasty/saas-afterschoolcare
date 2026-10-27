@@ -1,8 +1,9 @@
 <!--
-    The highlights under the hero (Business settings › Your site): up to 4,
-    each an icon from a fixed set with a title and a line. Choosing an icon
-    suggests its wording, which the owner may change. Before any are saved
-    it starts with four suggestions; nothing shows on the site until saved.
+    The highlights under the hero, edited inline (EditableSection): up to 4,
+    each an icon from a fixed set (picked from the icons themselves) with a
+    title and a line. Choosing an icon suggests its wording, which the owner
+    may change. Before any are saved it starts with four suggestions;
+    nothing shows on the site until saved.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -27,10 +28,13 @@
 
 	let {
 		initial,
-		onsubmit
+		onsubmit,
+		oncancel
 	}: {
 		initial: HighlightItem[];
 		onsubmit: (highlights: HighlightItem[]) => Promise<ApiResponse<unknown>>;
+		// Inline (EditableSection): back to the section without saving.
+		oncancel?: () => void;
 	} = $props();
 
 	// The saved list when the editor opens (or the suggestions); it then owns
@@ -85,26 +89,41 @@
 	}
 </script>
 
-<Form {isLoading} handleSubmit={submit} submitLabel="Save highlights">
+<Form {isLoading} handleSubmit={submit} submitLabel="Save highlights" {oncancel}>
 	{#if isSuggested}
 		<Notice>These are suggestions: change them as you like. They show on your site once you save.</Notice>
 	{/if}
 
 	{#each highlights as highlight, index (index)}
 		<div class="flex flex-col gap-3 border-b border-(--border) pb-4">
-			<Field label={`Highlight ${index + 1}: icon`}>
-				{#snippet children(id)}
-					<select
-						{id}
-						value={highlight.icon}
-						onchange={(event) => chooseIcon(highlight, event.currentTarget.value as HighlightIcon)}
-					>
-						{#each HIGHLIGHT_ICONS as icon (icon)}
-							<option value={icon}>{HIGHLIGHT_PRESETS[icon].title}</option>
-						{/each}
-					</select>
-				{/snippet}
-			</Field>
+			<!-- The icons as they look on the site; the chosen one is marked. -->
+			<div class="flex flex-col gap-2">
+				<p class="label-text" id={`highlight-${index}-icon`}>Highlight {index + 1}: icon</p>
+
+				<div class="flex flex-wrap gap-2" role="radiogroup" aria-labelledby={`highlight-${index}-icon`}>
+					{#each HIGHLIGHT_ICONS as icon (icon)}
+						{@const Icon = HIGHLIGHT_PRESETS[icon].icon}
+						{@const chosen = highlight.icon === icon}
+
+						<button
+							type="button"
+							role="radio"
+							aria-checked={chosen}
+							aria-label={HIGHLIGHT_PRESETS[icon].title}
+							title={HIGHLIGHT_PRESETS[icon].title}
+							class={[
+								'flex size-12 items-center justify-center rounded-lg border-2 transition',
+								chosen
+									? 'border-(--primary) bg-(--accent-soft) text-(--primary)'
+									: 'border-(--border) bg-(--surface) text-(--text-muted) hover:border-(--primary) hover:text-(--primary)'
+							]}
+							onclick={() => chooseIcon(highlight, icon)}
+						>
+							<Icon size={22} aria-hidden="true" />
+						</button>
+					{/each}
+				</div>
+			</div>
 
 			<Field label="Title">
 				{#snippet children(id)}

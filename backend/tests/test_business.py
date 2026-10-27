@@ -187,7 +187,6 @@ def test_business_details(api: Api, business):
         "abn": "51 824 753 556",
         "email": "hello@tenant1.example.com",
         "phone": "07 3000 0000",
-        "about": "After school care in Brisbane.",
     }
 
     with _settings_restored(api, "tenant1"):

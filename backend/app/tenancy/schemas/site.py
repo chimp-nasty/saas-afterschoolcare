@@ -20,17 +20,22 @@ HighlightIcon = Literal["shield", "community", "activities", "location", "homewo
 
 class SiteRequest(BaseModel):
     """
-    The hero's headline (tagline) and paragraph, and the business's colours
-    (empty: the app's defaults).
+    The site's words and colours. Only the fields sent are changed, so each
+    editor sends its own: the hero's headline (tagline) and paragraph and
+    the about text inline on the pages, the colours from Your site. A field
+    sent empty is cleared (colours: back to the app's defaults).
     """
 
     tagline: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] | None = None
     hero_text: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] | None = None
+    about: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = None
     primary_color: Colour | None = None
     secondary_color: Colour | None = None
     accent_color: Colour | None = None
 
-    @field_validator("tagline", "hero_text", "primary_color", "secondary_color", "accent_color", mode="before")
+    @field_validator(
+        "tagline", "hero_text", "about", "primary_color", "secondary_color", "accent_color", mode="before"
+    )
     @classmethod
     def empty_is_none(cls, value: str | None) -> str | None:
         return value or None

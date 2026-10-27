@@ -16,10 +16,13 @@
 
 	let {
 		initial,
-		onsubmit
+		onsubmit,
+		oncancel
 	}: {
 		initial: FaqItem[];
 		onsubmit: (faqs: FaqItem[]) => Promise<ApiResponse<unknown>>;
+		// Inline (EditableSection): back to the section without saving.
+		oncancel?: () => void;
 	} = $props();
 
 	// The saved list when the editor opens; it then owns its edits.
@@ -45,7 +48,7 @@
 	}
 </script>
 
-<Form {isLoading} handleSubmit={submit} submitLabel="Save questions">
+<Form {isLoading} handleSubmit={submit} submitLabel="Save questions" {oncancel}>
 	{#each faqs as faq, index (index)}
 		<div class="flex flex-col gap-3 border-b border-(--border) pb-4">
 			<Field label={`Question ${index + 1}`}>

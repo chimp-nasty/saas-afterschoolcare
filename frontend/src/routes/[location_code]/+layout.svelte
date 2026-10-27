@@ -4,7 +4,7 @@
 
 	import { setSession, clearSession, auth } from '$lib/auth/state.svelte';
 	import { logout as logoutAndLeave } from '$lib/auth/logout';
-	import { ABOUT_LINK, BUSINESS_LINK, LOCATIONS_LINK, isBusinessOwner } from '$lib/navigation/siteLinks';
+	import { ABOUT_LINK, BUSINESS_LINK, LOCATIONS_LINK } from '$lib/navigation/siteLinks';
 
 	import { CalendarDays, House, User } from 'lucide-svelte';
 
@@ -64,7 +64,8 @@
 		['admin', 'superadmin'].some((role) => $auth.roles.includes(role))
 	);
 
-	const isOwner = $derived(isBusinessOwner($auth.tenantPermissions));
+	// Logged in anywhere on the site (+layout.ts), not only here.
+	const isOwner = $derived(data.isOwner);
 
 	function link(label: string, path: string): SidebarItem {
 		return { label, onclick: () => navigate(path), isActive: isActive(path) };
@@ -146,7 +147,8 @@
 	);
 
 	// The centre's own page (/varsity): part of the public site, laid out in
-	// full-width bands (docs/public-site.md).
+	// full-width bands (docs/public-site.md), with no sidebar even when
+	// logged in (the header's Home leads back in).
 	const isCentrePage = $derived(
 		page.url.pathname === route('') || page.url.pathname === route('/')
 	);
@@ -167,14 +169,17 @@
 	const programsLink = $derived({ label: 'Programs', href: `${route('')}#services` });
 
 	// Logged out: the whole site. Families: About and Programs (their own
-	// pages are in the bottom bar and sidebar). Staff: none. The business's
-	// owner: Business as well, after the rest.
+	// pages are in the bottom bar and sidebar). Everyone logged in here gets
+	// Home (/home: the admin home, a family's bookings; staff go on to their
+	// account). The business's owner: Business as well, last.
+	const homeLink = $derived({ label: 'Home', href: route('/home') });
+
 	const headerLinks = $derived([
 		...(!$auth.authenticated
 			? [programsLink, LOCATIONS_LINK, ABOUT_LINK]
 			: isCustomerOnly
-				? [ABOUT_LINK, programsLink]
-				: []),
+				? [ABOUT_LINK, programsLink, homeLink]
+				: [homeLink]),
 		...(isOwner ? [BUSINESS_LINK] : [])
 	]);
 
@@ -228,7 +233,7 @@
 	secondaryColor={data.location.secondary_color}
 	accentColor={data.location.accent_color}
 	flush={isCentrePage}
-	sidebar={$auth.authenticated ? sidebar : undefined}
+	sidebar={$auth.authenticated && !isCentrePage ? sidebar : undefined}
 	bottomNav={$auth.authenticated && isCustomerOnly ? bottomNav : undefined}
 >
 	{#snippet header()}

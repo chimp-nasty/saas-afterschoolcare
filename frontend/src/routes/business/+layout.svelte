@@ -16,7 +16,7 @@
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 	import { auth, clearSession, setSession } from '$lib/auth/state.svelte';
-	import { BUSINESS_HEADER_LINKS } from '$lib/navigation/siteLinks';
+	import { ABOUT_LINK, BUSINESS_HEADER_LINKS, LOCATIONS_LINK } from '$lib/navigation/siteLinks';
 
 	let { data, children } = $props();
 
@@ -92,6 +92,15 @@
 		secondaryColor={data.branding.secondaryColor}
 		accentColor={data.branding.accentColor}
 	>
+		{#snippet header()}
+			<Header
+				homeHref="/"
+				title={data.branding.name}
+				hasLogo={data.branding.hasLogo}
+				links={[LOCATIONS_LINK, ABOUT_LINK]}
+			/>
+		{/snippet}
+
 		{@render children()}
 	</Layout>
 {:else if data.session}

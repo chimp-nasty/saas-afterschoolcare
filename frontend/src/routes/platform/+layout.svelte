@@ -7,9 +7,7 @@
 	import { page } from '$app/state';
 	import { goto, invalidate } from '$app/navigation';
 
-	import { Menu } from 'lucide-svelte';
-
-	import Button from '$lib/components/actions/Button.svelte';
+	import PlatformHeader from '$lib/components/layout/PlatformHeader.svelte';
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Sidebar, { type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
 	import Drawer from '$lib/components/overlays/Drawer.svelte';
@@ -67,26 +65,16 @@
 
 {#if isLogin}
 	<Layout>
+		{#snippet header()}
+			<PlatformHeader />
+		{/snippet}
+
 		{@render children()}
 	</Layout>
 {:else if data.session}
 	<Layout sidebar={sidebar}>
 		{#snippet header()}
-			<header class="sticky top-0 z-40 mb-6 w-full border-b border-(--border) bg-(--surface)/90 p-4 backdrop-blur-md">
-				<div class="flex min-h-12 w-full items-center gap-4">
-					<p class="mr-auto text-sm font-semibold text-(--text)">Platform</p>
-
-					<p class="hidden text-sm text-(--text-muted) md:block">
-						Logged in as {data.session?.email}
-					</p>
-
-					<div class="md:hidden">
-						<Button variant="ghost" onclick={() => (sidebarOpen = true)} aria-label="Menu">
-							<Menu size={20} />
-						</Button>
-					</div>
-				</div>
-			</header>
+			<PlatformHeader note={`Logged in as ${data.session?.email}`} onMenu={() => (sidebarOpen = true)} />
 		{/snippet}
 
 		{@render children()}

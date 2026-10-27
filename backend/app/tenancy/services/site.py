@@ -125,17 +125,21 @@ class SiteService:
     ) -> SiteResponse:
         tenant = self.tenant_repository.get_by_id(id=tenant_id)
 
-        self.tenant_repository.update(tenant=tenant, values={"tagline": body.tagline, "hero_text": body.hero_text})
-        self.site_repository.save_branding(
-            tenant_id=tenant_id,
-            values={
-                "primary_color": body.primary_color,
-                "secondary_color": body.secondary_color,
-                "accent_color": body.accent_color,
-            },
-        )
+        # Only what this editor sent (SiteRequest).
+        sent = body.model_dump(include=body.model_fields_set)
+        words = {field: sent[field] for field in ("tagline", "hero_text", "about") if field in sent}
+        colours = {
+            field: sent[field] for field in ("primary_color", "secondary_color", "accent_color") if field in sent
+        }
+
+        if words:
+            self.tenant_repository.update(tenant=tenant, values=words)
+
+        if colours:
+            self.site_repository.save_branding(tenant_id=tenant_id, values=colours)
+            self._branding_changed()
+
         self._log("site_updated", tenant_id)
-        self._branding_changed()
 
         return self.get_site(tenant_id=tenant_id)
 

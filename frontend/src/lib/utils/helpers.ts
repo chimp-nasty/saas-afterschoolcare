@@ -63,6 +63,31 @@ export function formatTime(value: string): string {
 }
 
 // "3:00pm – 6:00pm"
+// Weekdays (ISO: 1 Monday to 7 Sunday) as families read them: runs of
+// three or more collapse ("Mon–Fri"), the rest are listed ("Mon, Wed, Fri";
+// "Sat, Sun").
+export function formatWeekdays(days: number[]): string {
+	const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	const sorted = [...new Set(days)].filter((day) => day >= 1 && day <= 7).sort((a, b) => a - b);
+	const parts: string[] = [];
+
+	for (let index = 0; index < sorted.length; ) {
+		let end = index;
+
+		while (end + 1 < sorted.length && sorted[end + 1] === sorted[end] + 1) end++;
+
+		if (end - index >= 2) {
+			parts.push(`${names[sorted[index] - 1]}–${names[sorted[end] - 1]}`);
+		} else {
+			for (let day = index; day <= end; day++) parts.push(names[sorted[day] - 1]);
+		}
+
+		index = end + 1;
+	}
+
+	return parts.join(', ');
+}
+
 export function formatTimeRange(start: string, end: string): string {
     return `${formatTime(start)} – ${formatTime(end)}`;
 }

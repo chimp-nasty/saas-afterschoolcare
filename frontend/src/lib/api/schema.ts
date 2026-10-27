@@ -3551,6 +3551,7 @@ export interface components {
          * BusinessSettingsRequest
          * @description The business's details, all at once (the settings form sends every
          *     field). The ABN's check digits are the database's (ck_tenants_abn).
+         *     The about text is page text, edited on /about (SiteRequest).
          */
         BusinessSettingsRequest: {
             /** Name */
@@ -3563,8 +3564,6 @@ export interface components {
             email?: string | null;
             /** Phone */
             phone?: string | null;
-            /** About */
-            about?: string | null;
         };
         /** BusinessSettingsResponse */
         BusinessSettingsResponse: {
@@ -3580,8 +3579,6 @@ export interface components {
             email: string | null;
             /** Phone */
             phone: string | null;
-            /** About */
-            about: string | null;
         };
         /** ChangePasswordRequest */
         ChangePasswordRequest: {
@@ -5574,14 +5571,18 @@ export interface components {
         };
         /**
          * SiteRequest
-         * @description The hero's headline (tagline) and paragraph, and the business's colours
-         *     (empty: the app's defaults).
+         * @description The site's words and colours. Only the fields sent are changed, so each
+         *     editor sends its own: the hero's headline (tagline) and paragraph and
+         *     the about text inline on the pages, the colours from Your site. A field
+         *     sent empty is cleared (colours: back to the app's defaults).
          */
         SiteRequest: {
             /** Tagline */
             tagline?: string | null;
             /** Hero Text */
             hero_text?: string | null;
+            /** About */
+            about?: string | null;
             /** Primary Color */
             primary_color?: string | null;
             /** Secondary Color */

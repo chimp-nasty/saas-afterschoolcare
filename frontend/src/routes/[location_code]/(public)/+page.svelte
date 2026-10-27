@@ -1,40 +1,118 @@
 <!--
-    The location's landing page, before login: what it offers (times, ages,
-    prices, policies), where it is, and how to get started. Laid out as the
-    public site's bands (docs/public-site.md); stage 6 rebuilds it as the
-    full centre page.
+    The centre's page (docs/public-site.md, section 3), service first: the
+    business's headline under the centre's name and the ways in, the facts
+    (where, when, who), the highlights beside the next session, about the
+    program, the services (with prices), where to find it and the FAQs.
+    The business's owner edits the words in place on desktop (the same text
+    as the landing page: EditableSection, section 6). A section with nothing
+    to show is left out.
 -->
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 
 	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import Button from '$lib/components/actions/Button.svelte';
+	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
+	import EditableSection from '$lib/components/layout/EditableSection.svelte';
 	import SiteSection from '$lib/components/layout/SiteSection.svelte';
 	import EmptyState from '$lib/components/text/EmptyState.svelte';
 	import Notice from '$lib/components/text/Notice.svelte';
 	import SiteHeading from '$lib/components/text/SiteHeading.svelte';
+	import AboutForm from '$lib/features/business/components/AboutForm.svelte';
+	import FaqEditor from '$lib/features/business/components/FaqEditor.svelte';
+	import FaqList from '$lib/features/business/components/FaqList.svelte';
+	import HeroForm from '$lib/features/business/components/HeroForm.svelte';
+	import HighlightEditor from '$lib/features/business/components/HighlightEditor.svelte';
+	import Highlights from '$lib/features/business/components/Highlights.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
+	import CentreFacts from '$lib/features/location/components/CentreFacts.svelte';
+	import NextSessionCard from '$lib/features/services/components/NextSessionCard.svelte';
 	import ServiceCard from '$lib/features/services/components/ServiceCard.svelte';
 
 	import { auth } from '$lib/auth/state.svelte';
 	import { logout } from '$lib/auth/logout';
+	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
+	import type { ApiResponse } from '$lib/api/wrapper';
 
 	let { data } = $props();
 
+	const businessApi = createBusinessApi();
+
+	// About this long here, then "More about us".
+	const ABOUT_TASTE = 280;
+
 	const name = $derived(data.location.location_name);
+	const business = $derived(data.business);
+	const canEdit = $derived(data.isOwner);
+
+	const highlights = $derived(business?.highlights ?? []);
+	const faqs = $derived(business?.faqs ?? []);
+
+	// The service the page leads with (the featured one, else the first
+	// offered): its details are in the services list.
+	const featured = $derived(
+		data.featured ? (data.services.find((service) => service.id === data.featured?.location_service_id) ?? null) : null
+	);
+
+	const isFamily = $derived($auth.authenticated && $auth.roles.includes('customer'));
+
+	const aboutTaste = $derived.by(() => {
+		const about = business?.about ?? '';
+
+		return about.length > ABOUT_TASTE ? `${about.slice(0, ABOUT_TASTE).trimEnd()}…` : about;
+	});
+
+	function route(path: string) {
+		return `/${data.locationCode}${path}`;
+	}
+
+	// The main way in: enrolling, or booking once a family is logged in here.
+	const mainAction = $derived(
+		isFamily
+			? { label: 'Book a session', href: route('/bookings/new') }
+			: $auth.authenticated
+				? { label: 'Go to home', href: route('/home') }
+				: { label: 'Enrol now', href: route('/register') }
+	);
+
+	// Save a section, then show the page's new content in its place.
+	async function save<T>(response: Promise<ApiResponse<T>>, done: () => void) {
+		const result = await response;
+
+		if (result.ok) {
+			await invalidate('app:business-site');
+			done();
+		}
+
+		return result;
+	}
 </script>
 
+<!-- The hero: the centre, the business's headline and the ways in, then
+     the facts (stage 9 adds a photo). -->
 <SiteSection>
 	<div class="flex max-w-3xl flex-col gap-5 py-4 md:py-8">
 		<span class="h-1 w-12 rounded-full bg-(--accent)" aria-hidden="true"></span>
 
-		<p class="label-text">Your centre</p>
+		<p class="label-text">{name}</p>
 
-		<h1 class="display-text">{name}</h1>
+		<EditableSection {canEdit} label="the headline">
+			<div class="flex flex-col gap-5 pr-14">
+				<h1 class="display-text">{business?.tagline ?? name}</h1>
 
-		<p class="text-base text-(--text-muted) md:text-lg">
-			See what we offer, then book and pay online.
-		</p>
+				<p class="text-base text-(--text-muted) md:text-lg">
+					{business?.hero_text ?? 'See what we offer, then book and pay online.'}
+				</p>
+			</div>
+
+			{#snippet editor(done)}
+				<HeroForm
+					initial={{ tagline: business?.tagline ?? null, hero_text: business?.hero_text ?? null }}
+					onsubmit={(body) => save(businessApi.updateSite(body), done)}
+					oncancel={done}
+				/>
+			{/snippet}
+		</EditableSection>
 
 		{#if data.signedInElsewhere}
 			<!-- Logged in at another of the tenant's centres; that session
@@ -53,25 +131,106 @@
 					Go to {data.signedInElsewhere.locationName}
 				</Button>
 			</ActionBar>
-		{:else if $auth.authenticated}
-			<ActionBar start>
-				<Button onclick={() => goto(`/${data.locationCode}/home`)}>
-					Go to your bookings
-				</Button>
-			</ActionBar>
 		{:else}
 			<ActionBar start>
-				<Button variant="ghost" onclick={() => goto(`/${data.locationCode}/login`)}>
-					Log in
-				</Button>
-
-				<Button onclick={() => goto(`/${data.locationCode}/register`)}>
-					Enrol now
-				</Button>
+				<Button variant="ghost" onclick={() => goto('#services')}>View program</Button>
+				<Button onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
 			</ActionBar>
 		{/if}
 	</div>
+
+	<div class="border-t border-(--border) pt-6">
+		<CentreFacts location={data.location} service={featured} weekdays={data.featured?.weekdays ?? []} />
+	</div>
 </SiteSection>
+
+<!-- The highlights beside the next session (on a phone, the card after
+     them). -->
+{#if highlights.length > 0 || featured || canEdit}
+	<SiteSection tone="muted" desktopOnly={highlights.length === 0 && !featured}>
+		<div class="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(16rem,1fr)] lg:items-start">
+			<div class={[highlights.length === 0 && 'hidden md:block']}>
+				<EditableSection
+					{canEdit}
+					label="the highlights"
+					isEmpty={highlights.length === 0}
+					emptyPrompt="Add highlights under your headline"
+				>
+					<Highlights {highlights} />
+
+					{#snippet editor(done)}
+						<HighlightEditor
+							initial={highlights}
+							onsubmit={(items) => save(businessApi.replaceHighlights(items), done)}
+							oncancel={done}
+						/>
+					{/snippet}
+				</EditableSection>
+			</div>
+
+			{#if featured}
+				<NextSessionCard service={featured} date={data.featured?.next_session_date ?? null}>
+					<Button fullWidth onclick={() => goto(mainAction.href)}>{mainAction.label}</Button>
+					<Button variant="ghost" fullWidth onclick={() => goto('#services')}>View program</Button>
+					<HyperTextLink href="#find-us">Location details</HyperTextLink>
+				</NextSessionCard>
+			{/if}
+		</div>
+	</SiteSection>
+{/if}
+
+<!-- About the program: the business's about text and this centre's
+     services (stage 8 links each to its program). -->
+{#if business?.about || data.services.length > 0 || canEdit}
+	<SiteSection>
+		<div class="grid gap-8 lg:grid-cols-2">
+			<EditableSection
+				{canEdit}
+				label="your about text"
+				isEmpty={!business?.about}
+				emptyPrompt="Add a few words about your business"
+			>
+				<div class="flex flex-col gap-6 pr-14">
+					<SiteHeading title={`About ${business?.name ?? data.location.tenant_name}`} />
+
+					<p class="whitespace-pre-line text-base text-(--text) md:text-lg">{aboutTaste}</p>
+
+					<div>
+						<HyperTextLink href="/about">More about us</HyperTextLink>
+					</div>
+				</div>
+
+				{#snippet editor(done)}
+					<AboutForm
+						initial={business?.about ?? null}
+						onsubmit={(body) => save(businessApi.updateSite(body), done)}
+						oncancel={done}
+					/>
+				{/snippet}
+			</EditableSection>
+
+			{#if data.services.length > 0}
+				<div class="flex flex-col gap-4">
+					<p class="label-text">Programs offered</p>
+
+					<ul class="flex flex-col">
+						{#each data.services as service (service.id)}
+							<li class="border-b border-(--border) last:border-b-0">
+								<a
+									href="#services"
+									class="flex min-h-12 items-center justify-between gap-4 text-base font-semibold text-(--text) hover:text-(--primary)"
+								>
+									{service.service_name}
+									<span class="text-sm font-semibold text-(--text-muted)">{service.age_label ?? ''}</span>
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+		</div>
+	</SiteSection>
+{/if}
 
 <SiteSection id="services" tone="muted">
 	<SiteHeading title="Our services" />
@@ -87,10 +246,35 @@
 	{/if}
 </SiteSection>
 
-<SiteSection>
+<SiteSection id="find-us">
 	<SiteHeading title="Find us" />
 
 	<div class="max-w-xl">
 		<CentreCard location={data.location} />
 	</div>
 </SiteSection>
+
+{#if faqs.length > 0 || canEdit}
+	<SiteSection tone="tint" desktopOnly={faqs.length === 0}>
+		<EditableSection
+			{canEdit}
+			label="the questions and answers"
+			isEmpty={faqs.length === 0}
+			emptyPrompt="Add questions families often ask"
+		>
+			<div class="flex flex-col gap-6">
+				<SiteHeading title="Frequently asked questions" />
+
+				<FaqList {faqs} />
+			</div>
+
+			{#snippet editor(done)}
+				<FaqEditor
+					initial={faqs}
+					onsubmit={(items) => save(businessApi.replaceFaqs(items), done)}
+					oncancel={done}
+				/>
+			{/snippet}
+		</EditableSection>
+	</SiteSection>
+{/if}

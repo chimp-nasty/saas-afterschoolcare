@@ -64,6 +64,7 @@ These keep features looking like one app. They're written for the customer-facin
 - `Page` is centred. Customer pages are always `narrow` (`max-w-xl`): one column on every screen, so desktop sees the same layout centred. `wide` is for admin pages only.
 - `PageHeader` takes `title` (sentence case), optional `eyebrow` (e.g. "Step 2 of 3"), `description` and an `actions` snippet.
 - Customers navigate with `BottomNav` on mobile and the sidebar on desktop; staff and admin use the sidebar (drawer on mobile).
+- Every page has the site's header (`Header` in the tenant `Layout`'s `header` snippet; `PlatformHeader` on the platform's own site), logins and error pages included. The one exception is the kiosk tablet (`/{location}/kiosk`), which families and staff use in person and mustn't navigate away from.
 
 ### Public site pages
 
@@ -74,6 +75,7 @@ The business's pages (`/`, `/locations`, `/about`: the `routes/(site)` group, wh
 - Still mobile first: one column on a phone, grids (`md:grid-cols-2`, `lg:grid-cols-3`) only from `md`.
 - Colours: `--primary` for actions, `--secondary-soft` for tinted bands, `--accent` only as decoration (bars, icons), never for text, since a business may pick one too light to read. Never `--secondary` or `--accent` at full strength behind text.
 - A hero's buttons go in `<ActionBar start>`: together on the left, main action first, from `md`.
+- Page text is edited where it's shown, never in a settings screen: wrap each editable part in `EditableSection` (`canEdit` from the page's data, the view as its children, an `editor(done)` snippet holding an ordinary form with `oncancel={done}`). The page saves, invalidates its data and calls `done()`. Editing is desktop only; an empty section shows its editor a prompt and everyone else nothing (`SiteSection desktopOnly` for a band that would otherwise be empty on a phone).
 
 ### Surfaces
 

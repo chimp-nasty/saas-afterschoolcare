@@ -1,8 +1,9 @@
 <!--
-    Business settings › Your site: what the business's landing page and
-    every centre's pages look like (headline, colours, logo, site icon),
-    its questions and answers, and its policies (each upload a new version,
-    so what families accepted stays on record).
+    Business settings › Your site: how the business's pages look (colours,
+    logo, site icon) and its policies (each upload a new version, so what
+    families accepted stays on record). The pages' words (headline,
+    highlights, about, questions) are edited on the pages themselves
+    (docs/public-site.md, section 6).
 -->
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
@@ -11,16 +12,16 @@
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
+	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
+	import Notice from '$lib/components/text/Notice.svelte';
 	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
-	import FaqEditor from '$lib/features/business/components/FaqEditor.svelte';
-	import HighlightEditor from '$lib/features/business/components/HighlightEditor.svelte';
 	import SiteFileUpload from '$lib/features/business/components/SiteFileUpload.svelte';
 	import SiteForm from '$lib/features/business/components/SiteForm.svelte';
 
 	import { uploadToStorage } from '$lib/api/storage';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
 	import { siteFileUrl, type SiteFileKind } from '$lib/api/tenancy/adapters/location-branding';
-	import type { FaqItem, HighlightItem, SiteRequest, StartSiteUploadRequest } from '$lib/api/schema';
+	import type { SiteRequest, StartSiteUploadRequest } from '$lib/api/schema';
 	import { formatTimestamp } from '$lib/utils/helpers';
 
 	let { data } = $props();
@@ -57,21 +58,6 @@
 		return response;
 	}
 
-	async function saveFaqs(faqs: FaqItem[]) {
-		const response = await businessApi.replaceFaqs(faqs);
-
-		if (response.ok) await refresh();
-
-		return response;
-	}
-
-	async function saveHighlights(highlights: HighlightItem[]) {
-		const response = await businessApi.replaceHighlights(highlights);
-
-		if (response.ok) await refresh();
-
-		return response;
-	}
 
 	// Start the upload, send the file straight to storage, then have the
 	// server check it and use it.
@@ -117,15 +103,18 @@
 </script>
 
 <Page width="wide">
-	<PageHeader title="Your site" description="How your home page and every centre's pages look, your questions and answers, and your policies." />
+	<PageHeader title="Your site" description="How your home page and every centre's pages look, and your policies." />
+
+	<Notice>
+		Your headline, highlights, about text and questions are edited on your site itself: open
+		<HyperTextLink href="/" inline>your home page</HyperTextLink> on a computer and use the pencil beside each part.
+	</Notice>
 
 	{#if site}
-		<SectionHeading title="Headline and colours" description="The top of your home page and every centre's page." />
+		<SectionHeading title="Colours" description="Every page of your site uses them." />
 
 		<SiteForm
 			initial={{
-				tagline: site.tagline,
-				hero_text: site.hero_text,
 				primary_color: site.primary_color,
 				secondary_color: site.secondary_color,
 				accent_color: site.accent_color
@@ -178,16 +167,5 @@
 				/>
 			</div>
 		</Card>
-
-		<SectionHeading
-			title="Highlights"
-			description="Short points under your headline, on your home page and every centre's page. Up to 4."
-		/>
-
-		<HighlightEditor initial={site.highlights} onsubmit={saveHighlights} />
-
-		<SectionHeading title="Questions and answers" description="Shown on your home page, in this order. Up to 20." />
-
-		<FaqEditor initial={site.faqs} onsubmit={saveFaqs} />
 	{/if}
 </Page>

@@ -1,6 +1,6 @@
 <!--
-    Business settings › Business details: what families and your landing
-    page show about the business.
+    Business settings › Business details: who the business is and how to
+    reach it. Its about text is edited on /about itself.
 -->
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
@@ -26,8 +26,7 @@
 			legal_name: settings.legal_name,
 			abn: settings.abn,
 			email: settings.email,
-			phone: settings.phone,
-			about: settings.about
+			phone: settings.phone
 		};
 	});
 

@@ -1,6 +1,6 @@
 # Public site: new look, centre pages and programs
 
-**Status: agreed 27 October 2026; stages 1 to 5 built.** Build in the stages below, stopping after each for a rebuild, tests and a look in the browser.
+**Status: agreed 27 October 2026; stages 1 to 6 built.** Build in the stages below, stopping after each for a rebuild, tests and a look in the browser.
 
 Every business gets the same public site layout, styled from its own logo, colours, text and photos. The starting point was After 3's mockup (`docs/reference-imgs/`), adapted to the platform: its brief is After 3's (high-school students, its imagery rules) and isn't followed where it doesn't fit other businesses.
 
@@ -27,6 +27,7 @@ The header is fixed to the top on every page; the families' bottom bar is fixed 
 | Family, logged in | Logo · About · Programs · bell; the sidebar as today | Logo · bell · menu (About, Programs, Log out) | Bottom bar unchanged: Home, Bookings, Account |
 | Business settings (`/business`) | The same header: Logo · Locations · About · Business; its sidebar below | Logo + menu (its sidebar's drawer) | |
 
+- **Home** (`/{location}/home`) is in the header for everyone logged in at the centre: families, staff, admins and the owner (user decision, 27 October 2026). The centre's own page has no sidebar even when logged in; Home leads back to the rest.
 - **Business** (`/business`) is added after the other links for the business's owner, wherever they are (user decision, 27 October 2026). Shown from the session's tenant permissions; `/business` and its API refuse anyone else themselves.
 
 - **Programs, Log in and Enrol now** belong to a centre, so they're only on a centre's pages (user decision, 27 October 2026); on business pages each centre is reached from `/locations`.
@@ -93,8 +94,8 @@ Each ends with something to look at; **DB** stages need a dev rebuild.
 3. **`/locations` and `/about`** from existing data; `/` links to them.
 4. **Business content (DB):** hero headline (the existing `tagline`) and paragraph (`tenants.hero_text`), up to four highlights (`tenancy.tenant_highlights`: an icon from 8, a title and a line; the editor suggests wording per icon and starts with four suggestions, but nothing shows until saved), their editors in Business settings › Site, shown on `/`.
 5. **Centre page data (DB):** `age_label` and `is_featured` on each service's config (one featured per location; Admin › Service settings, superadmins, like the rest of those settings), and `GET /location-services/v1/public/{location}/featured`: the featured (else first offered) service, its next session and its weekdays over four weeks, from `public.service_upcoming_sessions` (service days aren't public, so only those facts leave the database).
-5b. **Inline editing of business content:** the header's Business link (done 27 October), then the pencils and in-place forms (section 6) for the hero, highlights, About and FAQs on `/` and `/about`; those editors leave Business settings › Your site (and About leaves Business details). Frontend only: the same API calls.
-6. **The centre page** (section 3), without photos and map; its hero and highlights editable inline like `/`.
+5b. **Inline editing of business content:** the header's Business link, then `EditableSection` (a pencil, the section's form in place, Save and Cancel) for the hero, highlights, About and FAQs on `/` and `/about`; those editors left Business settings › Your site (now colours, logo, icon, policies) and About left Business details. `PUT /business/v1/site` now changes only the fields sent (so the hero's words and the colours are saved apart) and carries `about`.
+6. **The centre page** (section 3), without photos and map; its hero, highlights, about and FAQs editable inline like `/` (the owner counts as the owner anywhere on the site, logged in at any centre or Business settings). Until stage 8, "View program" and the program links go to its services band (with prices). The main button is Enrol now, Book a session for a family logged in here.
 7. **Program content (DB):** the program fields, edited inline on `/{location}/programs` (built with stage 8).
 8. **The programs page** `/{location}/programs`, linked from the centre page, header and `/locations`.
 9. **Photos (DB):** the four kinds, stored like the logo, their editors (with a note that photos of children need the family's consent), shown on the pages; every slot optional.

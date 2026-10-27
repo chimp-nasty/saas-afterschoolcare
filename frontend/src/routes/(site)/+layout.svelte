@@ -2,12 +2,13 @@
     The business's pages (/, /locations, /about; docs/public-site.md): its
     colours, the header and the footer with its policies. The header has no
     Programs, Log in or Enrol now: those belong to a centre, so they're on
-    its pages. On the platform's own site, just the page.
+    its pages. On the platform's own site, the platform's header instead.
 -->
 <script lang="ts">
 	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
+	import PlatformHeader from '$lib/components/layout/PlatformHeader.svelte';
 
 	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import { ABOUT_LINK, BUSINESS_LINK, LOCATIONS_LINK } from '$lib/navigation/siteLinks';
@@ -21,7 +22,14 @@
 </script>
 
 {#if data.platform}
-	{@render children()}
+	<!-- The platform's own home page: its own header, no business. -->
+	<Layout>
+		{#snippet header()}
+			<PlatformHeader />
+		{/snippet}
+
+		{@render children()}
+	</Layout>
 {:else}
 	<Layout
 		flush

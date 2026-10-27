@@ -44,6 +44,7 @@ class BusinessSettingsRequest(BaseModel):
     """
     The business's details, all at once (the settings form sends every
     field). The ABN's check digits are the database's (ck_tenants_abn).
+    The about text is page text, edited on /about (SiteRequest).
     """
 
     name: Name
@@ -51,9 +52,8 @@ class BusinessSettingsRequest(BaseModel):
     abn: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
-    about: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = None
 
-    @field_validator("legal_name", "about")
+    @field_validator("legal_name")
     @classmethod
     def empty_is_none(cls, value: str | None) -> str | None:
         return value or None
@@ -89,7 +89,6 @@ class BusinessSettingsResponse(BaseModel):
     abn: str | None
     email: str | None
     phone: str | None
-    about: str | None
 
 
 class BusinessLocationRequest(BaseModel):

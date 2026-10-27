@@ -12,6 +12,8 @@ import type { LayoutLoad } from './$types';
 // gets a placeholder.
 export const load: LayoutLoad = async ({ depends, fetch, url }) => {
 	depends('app:session');
+	// Saving a section inline (docs/public-site.md, section 6) refreshes this.
+	depends('app:business-site');
 
 	if (isPlatformSite(url)) {
 		return { platform: true, business: null, locations: [], isOwner: false };

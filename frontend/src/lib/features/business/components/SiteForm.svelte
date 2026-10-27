@@ -1,7 +1,7 @@
 <!--
-    The hero's headline and paragraph (the landing page and every centre's
-    page) and the business's colours (Business settings › Your site). Colours are the app's own until the owner
-    chooses theirs; every page of the business uses them.
+    The business's colours (Business settings › Your site). They're the
+    app's own until the owner chooses theirs; every page of the business
+    uses them. Sends only the colours: the pages' words are edited inline.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -28,8 +28,6 @@
 	const DEFAULT_ACCENT = '#f59e0b';
 
 	// The saved values when the form opens; it then owns its edits.
-	let tagline = $state(untrack(() => initial.tagline ?? ''));
-	let heroText = $state(untrack(() => initial.hero_text ?? ''));
 	let ownColours = $state(
 		untrack(() => Boolean(initial.primary_color || initial.secondary_color || initial.accent_color))
 	);
@@ -46,8 +44,6 @@
 
 		try {
 			const response = await onsubmit({
-				tagline: tagline || null,
-				hero_text: heroText || null,
 				primary_color: ownColours ? primary : null,
 				secondary_color: ownColours ? secondary : null,
 				accent_color: ownColours ? accent : null
@@ -61,18 +57,6 @@
 </script>
 
 <Form {isLoading} handleSubmit={submit} submitLabel="Save">
-	<Field label="Headline (e.g. A welcoming place after school)" error={errors.tagline}>
-		{#snippet children(id)}
-			<input {id} type="text" maxlength="120" bind:value={tagline} />
-		{/snippet}
-	</Field>
-
-	<Field label="Under the headline: a sentence or two about what you offer" error={errors.hero_text}>
-		{#snippet children(id)}
-			<textarea {id} rows="3" maxlength="300" bind:value={heroText}></textarea>
-		{/snippet}
-	</Field>
-
 	<CheckboxRow bind:checked={ownColours} title="Use our own colours" help="Otherwise your pages use the app's colours." />
 
 	{#if ownColours}

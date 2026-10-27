@@ -10,6 +10,8 @@
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
+	import PlatformHeader from '$lib/components/layout/PlatformHeader.svelte';
+	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Notice from '$lib/components/text/Notice.svelte';
 	import RegisterBusinessForm from '$lib/features/platform/components/RegisterBusinessForm.svelte';
 
@@ -37,7 +39,11 @@
 	}
 </script>
 
-<main class="p-4">
+<Layout>
+	{#snippet header()}
+		<PlatformHeader />
+	{/snippet}
+
 	<Page>
 		<PageHeader title="Register your business" />
 
@@ -54,4 +60,4 @@
 			<Notice tone="warning">This invite link can't be used any more. Ask for a new one.</Notice>
 		{/if}
 	</Page>
-</main>
+</Layout>

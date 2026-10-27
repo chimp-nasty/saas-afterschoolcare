@@ -71,10 +71,4 @@
 			{/snippet}
 		</Field>
 	</div>
-
-	<Field label="About your business (optional)" error={errors.about}>
-		{#snippet children(id)}
-			<textarea {id} rows="4" maxlength="1000" bind:value={body.about}></textarea>
-		{/snippet}
-	</Field>
 </Form>

@@ -3,6 +3,7 @@ import { error } from '@sveltejs/kit';
 import { createAuthApi } from '$lib/api/auth/adapters/auth';
 import { createActionsApi } from '$lib/api/public/adapters/actions';
 import { createLocationBrandingApi } from '$lib/api/tenancy/adapters/location-branding';
+import { isBusinessOwner } from '$lib/navigation/siteLinks';
 
 import type { LayoutLoad } from './$types';
 
@@ -88,6 +89,11 @@ export const load: LayoutLoad = async ({
 		location: locationResponse.data,
 		session,
 		signedInElsewhere,
-		uncitedActionCount
+		uncitedActionCount,
+		// The business's owner, logged in anywhere on this site (here, another
+		// centre or Business settings): their permissions are the business's,
+		// not a centre's. For the Business link and editing the pages' words
+		// inline (docs/public-site.md); the API decides what they may do.
+		isOwner: isBusinessOwner(loggedIn?.tenantPermissions)
 	};
 };

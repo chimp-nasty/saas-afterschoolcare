@@ -41,7 +41,7 @@ def site_restored(api: Api):
         s=branding.secondary_color,
         a=branding.accent_color,
     )
-    api.sql("UPDATE tenancy.tenants SET tagline = NULL, hero_text = NULL WHERE code = 'tenant2'")
+    api.sql("UPDATE tenancy.tenants SET tagline = NULL, hero_text = NULL, about = NULL WHERE code = 'tenant2'")
     api.sql("DELETE FROM tenancy.tenant_faqs WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')")
     api.sql("DELETE FROM tenancy.tenant_highlights WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')")
 
@@ -105,6 +105,28 @@ def test_hero_and_highlights(api: Api, tenant2_owner, site_restored):
     assert tenant2_owner.put("/business/v1/site/highlights", json={"highlights": [shield]}).status_code == 200
 
     assert [highlight["title"] for highlight in _public(api)["highlights"]] == ["Safe"]
+
+
+# Each editor saves only its own fields: the hero's words (inline on the
+# page) leave the colours alone and the colours (Your site) leave the words;
+# the about text saves the same way, and sent empty is cleared.
+def test_site_saves_only_what_is_sent(api: Api, tenant2_owner, site_restored):
+    tenant2_owner.put("/business/v1/site", json={"primary_color": "#123456"})
+    tenant2_owner.put("/business/v1/site", json={"tagline": "Care made easy", "hero_text": "After school."})
+    tenant2_owner.put("/business/v1/site", json={"about": "Since 2010."})
+
+    page = _public(api)
+
+    assert page["primary_color"] == "#123456"
+    assert (page["tagline"], page["hero_text"], page["about"]) == ("Care made easy", "After school.", "Since 2010.")
+
+    tenant2_owner.put("/business/v1/site", json={"accent_color": "#654321", "about": ""})
+
+    page = _public(api)
+
+    assert (page["primary_color"], page["accent_color"]) == ("#123456", "#654321")
+    assert page["tagline"] == "Care made easy"
+    assert page["about"] is None
 
 
 # At most 4 highlights, each with a known icon and some text; the database
