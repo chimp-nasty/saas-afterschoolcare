@@ -469,6 +469,33 @@ def up(conn: Connection) -> None:
             },
         )
 
+    # Tenant 1's hero and highlights (docs/public-site.md), the mockup's
+    # wording; tenant 2 has none, to see the pages without them.
+    conn.execute(
+        text("""
+            UPDATE tenancy.tenants
+            SET tagline = 'A welcoming place after school.',
+                hero_text = 'A safe, supportive and engaging space to relax, make friends and take part in activities after school.'
+            WHERE id = :tenant_id;
+        """),
+        {"tenant_id": tenant_1_id},
+    )
+
+    for position, (icon, title, body) in enumerate((
+        ("shield", "Safe and supervised", "Qualified staff and a safe environment."),
+        ("community", "A welcoming community", "Somewhere to make friends and belong."),
+        ("activities", "Activities and programs", "Sport, creative, study and social activities."),
+        ("location", "Convenient location", "On or near school grounds, easy to reach."),
+    )):
+        conn.execute(
+            text("""
+                INSERT INTO tenancy.tenant_highlights (tenant_id, position, icon, title, description)
+                VALUES (:tenant_id, :position, :icon, :title, :description)
+                ON CONFLICT (tenant_id, position) DO NOTHING;
+            """),
+            {"tenant_id": tenant_1_id, "position": position, "icon": icon, "title": title, "description": body},
+        )
+
     # =========================
     # TENANT OWNERS
     # =========================

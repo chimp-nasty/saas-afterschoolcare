@@ -19,6 +19,7 @@ from app.tenancy.repositories.tenant import TenantRepository
 from app.tenancy.repositories.tenant_site import TenantSiteRepository
 from app.tenancy.schemas.site import (
     FaqItem,
+    HighlightItem,
     PublicBusinessResponse,
     PublicFaqResponse,
     SiteDocumentResponse,
@@ -95,6 +96,7 @@ class SiteService:
 
         return SiteResponse(
             tagline=tenant.tagline,
+            hero_text=tenant.hero_text,
             primary_color=branding.primary_color if branding else None,
             secondary_color=branding.secondary_color if branding else None,
             accent_color=branding.accent_color if branding else None,
@@ -105,7 +107,14 @@ class SiteService:
                 FaqItem(question=faq.question, answer=faq.answer)
                 for faq in self.site_repository.list_faqs(tenant_id=tenant_id)
             ],
+            highlights=self._highlights(tenant_id),
         )
+
+    def _highlights(self, tenant_id: UUID) -> list[HighlightItem]:
+        return [
+            HighlightItem(icon=highlight.icon, title=highlight.title, text=highlight.description)
+            for highlight in self.site_repository.list_highlights(tenant_id=tenant_id)
+        ]
 
     @transactional
     def update_site(
@@ -116,7 +125,7 @@ class SiteService:
     ) -> SiteResponse:
         tenant = self.tenant_repository.get_by_id(id=tenant_id)
 
-        self.tenant_repository.update(tenant=tenant, values={"tagline": body.tagline})
+        self.tenant_repository.update(tenant=tenant, values={"tagline": body.tagline, "hero_text": body.hero_text})
         self.site_repository.save_branding(
             tenant_id=tenant_id,
             values={
@@ -142,6 +151,21 @@ class SiteService:
             faqs=[(faq.question, faq.answer) for faq in faqs],
         )
         self._log("faqs_updated", tenant_id)
+
+        return self.get_site(tenant_id=tenant_id)
+
+    @transactional
+    def replace_highlights(
+        self,
+        *,
+        tenant_id: UUID,
+        highlights: list[HighlightItem],
+    ) -> SiteResponse:
+        self.site_repository.replace_highlights(
+            tenant_id=tenant_id,
+            highlights=[(highlight.icon, highlight.title, highlight.text) for highlight in highlights],
+        )
+        self._log("highlights_updated", tenant_id)
 
         return self.get_site(tenant_id=tenant_id)
 
@@ -281,6 +305,7 @@ class SiteService:
         return PublicBusinessResponse(
             name=tenant.name,
             tagline=tenant.tagline,
+            hero_text=tenant.hero_text,
             about=tenant.about,
             email=tenant.email,
             phone=tenant.phone,
@@ -294,6 +319,7 @@ class SiteService:
                 PublicFaqResponse(question=faq.question, answer=faq.answer)
                 for faq in self.site_repository.list_faqs(tenant_id=tenant_id)
             ],
+            highlights=self._highlights(tenant_id),
         )
 
     def public_file_url(

@@ -250,6 +250,7 @@ class Tenant(Base):
     phone: Mapped[Optional[str]] = mapped_column(String(50))
     about: Mapped[Optional[str]] = mapped_column(String(1000))
     tagline: Mapped[Optional[str]] = mapped_column(String(120))
+    hero_text: Mapped[Optional[str]] = mapped_column(String(300))
 
 
 
@@ -511,6 +512,26 @@ class TenantFaq(Base):
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     question: Mapped[str] = mapped_column(String(200), nullable=False)
     answer: Mapped[str] = mapped_column(String(2000), nullable=False)
+
+
+
+class TenantHighlight(Base):
+    __tablename__ = 'tenant_highlights'
+    __table_args__ = (
+        CheckConstraint("btrim(title::text) <> ''::text AND btrim(description::text) <> ''::text", name='ck_tenant_highlights_text'),
+        CheckConstraint("icon::text = ANY (ARRAY['shield'::character varying, 'community'::character varying, 'activities'::character varying, 'location'::character varying, 'homework'::character varying, 'food'::character varying, 'staff'::character varying, 'booking'::character varying]::text[])", name='ck_tenant_highlights_icon'),
+        ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_highlights_tenant'),
+        PrimaryKeyConstraint('id', name='tenant_highlights_pkey'),
+        UniqueConstraint('tenant_id', 'position', name='uq_tenant_highlights_position'),
+        {'schema': 'tenancy'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    tenant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    icon: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(60), nullable=False)
+    description: Mapped[str] = mapped_column(String(160), nullable=False)
 
 
 
@@ -905,6 +926,7 @@ class LocationServiceConfig(Base):
         ForeignKeyConstraint(['location_service_id', 'location_id'], ['public.location_services.id', 'public.location_services.location_id'], ondelete='CASCADE', name='fk_location_service_config_service'),
         ForeignKeyConstraint(['updated_by_user_id'], ['auth.users.id'], name='fk_location_service_config_updated_by'),
         PrimaryKeyConstraint('location_service_id', name='location_service_config_pkey'),
+        Index('uq_location_service_config_featured', 'location_id', postgresql_where='is_featured', unique=True),
         {'schema': 'public'}
     )
 
@@ -918,10 +940,12 @@ class LocationServiceConfig(Base):
     refund_cutoff_days: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('2'))
     min_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('8'))
     max_child_age: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('17'))
+    is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('false'))
     late_fee_cents: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('0'))
     late_fee_grace_minutes: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text('0'))
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     description: Mapped[Optional[str]] = mapped_column(Text)
+    age_label: Mapped[Optional[str]] = mapped_column(String(40))
     updated_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 

@@ -5,6 +5,7 @@ page; only admins change the config.
 """
 
 from contextlib import contextmanager
+from datetime import timedelta
 
 from tests.factories import Api
 
@@ -20,7 +21,7 @@ def _restored_config(api: Api, service_id: str):
     """Put a service's config back after a test (every test shares it)."""
     [row] = api.sql(
         "SELECT is_active, current_price_cents, start_time, end_time, description, late_fee_cents, "
-        "refund_cutoff_days, min_child_age, max_child_age, late_fee_grace_minutes "
+        "refund_cutoff_days, min_child_age, max_child_age, late_fee_grace_minutes, age_label, is_featured "
         "FROM public.location_service_config WHERE location_service_id = :id",
         id=service_id,
     )
@@ -32,8 +33,10 @@ def _restored_config(api: Api, service_id: str):
             "current_price_cents = :price, start_time = :start_time, end_time = :end_time, "
             "description = :description, late_fee_cents = :late_fee, "
             "refund_cutoff_days = :cutoff, min_child_age = :min_age, max_child_age = :max_age, "
-            "late_fee_grace_minutes = :grace "
+            "late_fee_grace_minutes = :grace, age_label = :age_label, is_featured = :is_featured "
             "WHERE location_service_id = :id",
+            age_label=row.age_label,
+            is_featured=row.is_featured,
             is_active=row.is_active,
             price=row.current_price_cents,
             start_time=row.start_time,
@@ -271,6 +274,80 @@ def test_superadmin_changes_every_setting(api: Api, superadmin):
         assert data["description"] == "Excursions most days"
         assert (data["refund_cutoff_days"], data["min_child_age"], data["max_child_age"]) == (5, 5, 12)
         assert (data["late_fee_cents"], data["late_fee_grace_minutes"]) == (1500, 10)
+
+
+# A superadmin can give a service its own age wording (blank goes back to
+# "Ages X–Y"), and feature one service: featuring another moves it.
+def test_age_label_and_featured_service(api: Api, superadmin):
+    after_school = _service(superadmin, "After School Care")
+    weekend = _service(superadmin, "Weekend Care")
+
+    with _restored_config(api, after_school["id"]), _restored_config(api, weekend["id"]):
+        response = superadmin.patch(
+            f"/location-services/v1/{after_school['id']}/config",
+            json={"age_label": "  Years 7 to 12  ", "is_featured": True},
+        )
+        assert response.status_code == 200, response.text
+
+        public = {s["id"]: s for s in api.client().get("/location-services/v1/public/location1").json()["data"]}
+        assert public[after_school["id"]]["age_label"] == "Years 7 to 12"
+        assert public[after_school["id"]]["is_featured"] is True
+
+        superadmin.patch(f"/location-services/v1/{weekend['id']}/config", json={"is_featured": True})
+
+        assert _service(superadmin, "Weekend Care")["is_featured"] is True
+        assert _service(superadmin, "After School Care")["is_featured"] is False
+
+        superadmin.patch(f"/location-services/v1/{after_school['id']}/config", json={"age_label": " "})
+
+        assert _service(superadmin, "After School Care")["age_label"] is None
+
+
+# The centre's page leads with the featured service, else the first offered,
+# with its next open session that hasn't finished (closed and past days
+# skipped) and the weekdays it runs over the next four weeks; nothing when
+# the centre offers nothing.
+def test_featured_service_and_next_session(api: Api):
+    [(location_id, today)] = api.sql(
+        "INSERT INTO tenancy.locations (tenant_id, code, name, address_line_1, suburb, state, postcode) "
+        "SELECT id, 'featured-test', 'Featured test', '9 Test Street', 'Brisbane City', 'QLD', '4000' "
+        "FROM tenancy.tenants WHERE code = 'tenant2' "
+        "RETURNING id, (now() AT TIME ZONE timezone)::date"
+    )
+    client = api.client(tenant="tenant2")
+
+    assert client.get("/location-services/v1/public/featured-test/featured").json()["data"] is None
+
+    # After School Care only, 00:00 to 00:01: today's session has finished.
+    [(service_id,)] = api.sql(
+        "UPDATE public.location_service_config c "
+        "SET is_active = TRUE, current_price_cents = 1000, start_time = '00:00', end_time = '00:01' "
+        "FROM public.location_services ls JOIN public.service_types st ON st.id = ls.service_type_id "
+        "WHERE ls.id = c.location_service_id AND ls.location_id = :location_id "
+        "AND st.code = 'after_school_care' RETURNING c.location_service_id",
+        location_id=location_id,
+    )
+
+    for offset, is_open in ((-1, True), (0, True), (1, False), (2, True), (3, True), (40, True)):
+        api.sql(
+            "INSERT INTO public.location_service_days "
+            "(location_service_id, location_id, service_date, is_open, capacity, closed_reason) "
+            "VALUES (:service_id, :location_id, CAST(:today AS date) + :offset, :is_open, 10, "
+            "CASE WHEN :is_open THEN NULL ELSE 'Closed' END)",
+            service_id=service_id,
+            location_id=location_id,
+            today=today,
+            offset=offset,
+            is_open=is_open,
+        )
+
+    featured = client.get("/location-services/v1/public/featured-test/featured").json()["data"]
+
+    assert featured["location_service_id"] == str(service_id)
+    assert featured["next_session_date"] == (today + timedelta(days=2)).isoformat()
+    assert featured["weekdays"] == sorted(
+        {(today + timedelta(days=offset)).isoweekday() for offset in (2, 3)}
+    )
 
 
 # Service settings are the business's: a centre admin can't see or change

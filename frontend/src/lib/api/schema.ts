@@ -744,6 +744,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/business/v1/site/highlights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Highlights */
+        put: operations["replace_highlights_api_business_v1_site_highlights_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/business/v1/site/uploads": {
         parameters: {
             query?: never;
@@ -1356,6 +1373,23 @@ export interface paths {
         };
         /** List Public Location Services */
         get: operations["list_public_location_services_api_location_services_v1_public__location_code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/location-services/v1/public/{location_code}/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Featured Location Service */
+        get: operations["get_featured_location_service_api_location_services_v1_public__location_code__featured_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2841,6 +2875,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["StripeOnboardingResponse"] | null;
+        };
+        /** ApiResponse[Union[FeaturedServiceResponse, NoneType]] */
+        ApiResponse_Union_FeaturedServiceResponse__NoneType__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["FeaturedServiceResponse"] | null;
         };
         /** ApiResponse[bool] */
         ApiResponse_bool_: {
@@ -4365,6 +4407,23 @@ export interface components {
             /** Faqs */
             faqs: components["schemas"]["FaqItem"][];
         };
+        /**
+         * FeaturedServiceResponse
+         * @description The service a centre's page leads with (docs/public-site.md): the
+         *     featured one, else the first offered. Its details are in the services
+         *     list (same id). Public: the page shows it before login.
+         */
+        FeaturedServiceResponse: {
+            /**
+             * Location Service Id
+             * Format: uuid
+             */
+            location_service_id: string;
+            /** Next Session Date */
+            next_session_date: string | null;
+            /** Weekdays */
+            weekdays: number[];
+        };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /** Email */
@@ -4374,6 +4433,26 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HighlightItem */
+        HighlightItem: {
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "shield" | "community" | "activities" | "location" | "homework" | "food" | "staff" | "booking";
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * HighlightsRequest
+         * @description The whole list, in order (at most 4: ck_tenant_highlights_limit).
+         */
+        HighlightsRequest: {
+            /** Highlights */
+            highlights: components["schemas"]["HighlightItem"][];
         };
         /**
          * InviteDetailsResponse
@@ -4644,6 +4723,10 @@ export interface components {
             min_child_age: number;
             /** Max Child Age */
             max_child_age: number;
+            /** Age Label */
+            age_label: string | null;
+            /** Is Featured */
+            is_featured: boolean;
             /** Refund Cutoff Days */
             refund_cutoff_days: number;
             /** Late Fee Cents */
@@ -4686,6 +4769,10 @@ export interface components {
             min_child_age: number;
             /** Max Child Age */
             max_child_age: number;
+            /** Age Label */
+            age_label: string | null;
+            /** Is Featured */
+            is_featured: boolean;
             /** Refund Cutoff Days */
             refund_cutoff_days: number;
             /** Late Fee Cents */
@@ -4927,6 +5014,8 @@ export interface components {
             name: string;
             /** Tagline */
             tagline: string | null;
+            /** Hero Text */
+            hero_text: string | null;
             /** About */
             about: string | null;
             /** Email */
@@ -4947,6 +5036,8 @@ export interface components {
             has_terms: boolean;
             /** Faqs */
             faqs: components["schemas"]["PublicFaqResponse"][];
+            /** Highlights */
+            highlights: components["schemas"]["HighlightItem"][];
         };
         /** PublicFaqResponse */
         PublicFaqResponse: {
@@ -5483,11 +5574,14 @@ export interface components {
         };
         /**
          * SiteRequest
-         * @description The landing page's headline and the business's colours (empty: the app's defaults).
+         * @description The hero's headline (tagline) and paragraph, and the business's colours
+         *     (empty: the app's defaults).
          */
         SiteRequest: {
             /** Tagline */
             tagline?: string | null;
+            /** Hero Text */
+            hero_text?: string | null;
             /** Primary Color */
             primary_color?: string | null;
             /** Secondary Color */
@@ -5499,6 +5593,8 @@ export interface components {
         SiteResponse: {
             /** Tagline */
             tagline: string | null;
+            /** Hero Text */
+            hero_text: string | null;
             /** Primary Color */
             primary_color: string | null;
             /** Secondary Color */
@@ -5513,6 +5609,8 @@ export interface components {
             documents: components["schemas"]["SiteDocumentResponse"][];
             /** Faqs */
             faqs: components["schemas"]["FaqItem"][];
+            /** Highlights */
+            highlights: components["schemas"]["HighlightItem"][];
         };
         /** SiteUploadResponse */
         SiteUploadResponse: {
@@ -5841,6 +5939,10 @@ export interface components {
             min_child_age?: number | null;
             /** Max Child Age */
             max_child_age?: number | null;
+            /** Age Label */
+            age_label?: string | null;
+            /** Is Featured */
+            is_featured?: boolean | null;
             /** Late Fee Cents */
             late_fee_cents?: number | null;
             /** Late Fee Grace Minutes */
@@ -5961,6 +6063,7 @@ export type ApiResponseStaffPinStatusResponse = components['schemas']['ApiRespon
 export type ApiResponseStaffShiftResponse = components['schemas']['ApiResponse_StaffShiftResponse_'];
 export type ApiResponseStripeAccountStatusResponse = components['schemas']['ApiResponse_StripeAccountStatusResponse_'];
 export type ApiResponseStripeOnboardingResponse = components['schemas']['ApiResponse_StripeOnboardingResponse_'];
+export type ApiResponseUnionFeaturedServiceResponseNoneType = components['schemas']['ApiResponse_Union_FeaturedServiceResponse__NoneType__'];
 export type ApiResponseBool = components['schemas']['ApiResponse_bool_'];
 export type ApiResponseInt = components['schemas']['ApiResponse_int_'];
 export type ApiResponseListActionPlanResponse = components['schemas']['ApiResponse_list_ActionPlanResponse__'];
@@ -6051,8 +6154,11 @@ export type FamilyResponse = components['schemas']['FamilyResponse'];
 export type FamilySearchResultResponse = components['schemas']['FamilySearchResultResponse'];
 export type FaqItem = components['schemas']['FaqItem'];
 export type FaqsRequest = components['schemas']['FaqsRequest'];
+export type FeaturedServiceResponse = components['schemas']['FeaturedServiceResponse'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
 export type HttpValidationError = components['schemas']['HTTPValidationError'];
+export type HighlightItem = components['schemas']['HighlightItem'];
+export type HighlightsRequest = components['schemas']['HighlightsRequest'];
 export type InviteDetailsResponse = components['schemas']['InviteDetailsResponse'];
 export type InviteResponse = components['schemas']['InviteResponse'];
 export type KioskBookingResponse = components['schemas']['KioskBookingResponse'];
@@ -7828,6 +7934,41 @@ export interface operations {
             };
         };
     };
+    replace_highlights_api_business_v1_site_highlights_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HighlightsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_site_upload_api_business_v1_site_uploads_post: {
         parameters: {
             query?: never;
@@ -9282,6 +9423,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_list_LocationServiceSelectionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_featured_location_service_api_location_services_v1_public__location_code__featured_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Union_FeaturedServiceResponse__NoneType__"];
                 };
             };
             /** @description Validation Error */
@@ -11311,6 +11483,7 @@ export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>
 export const dnsRecordResponseTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DnsRecordResponse"]["type"]> = ["TXT", "CNAME", "A"];
 export const domainResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DomainResponse"]["state"]> = ["pending_dns", "verified", "active", "suspended", "failed", "removing"];
 export const emergencyRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EmergencyRelation"]> = ["parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
+export const highlightItemIconValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["HighlightItem"]["icon"]> = ["shield", "community", "activities", "location", "homework", "food", "staff", "booking"];
 export const kioskDeviceResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskDeviceResponse"]["kind"]> = ["family", "staff"];
 export const kioskInfoResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskInfoResponse"]["kind"]> = ["family", "staff"];
 export const kioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskSignRequest"]["action"]> = ["in", "out"];

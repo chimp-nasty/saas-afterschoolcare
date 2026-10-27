@@ -1,6 +1,6 @@
 # Public site: new look, centre pages and programs
 
-**Status: agreed 27 October 2026; stages 1 and 2 built.** Build in the stages below, stopping after each for a rebuild, tests and a look in the browser.
+**Status: agreed 27 October 2026; stages 1 to 5 built.** Build in the stages below, stopping after each for a rebuild, tests and a look in the browser.
 
 Every business gets the same public site layout, styled from its own logo, colours, text and photos. The starting point was After 3's mockup (`docs/reference-imgs/`), adapted to the platform: its brief is After 3's (high-school students, its imagery rules) and isn't followed where it doesn't fit other businesses.
 
@@ -9,7 +9,7 @@ Every business gets the same public site layout, styled from its own logo, colou
 | Page | What it is | Built from |
 |---|---|---|
 | `/` | The business's landing page | Business content (hero, highlights, about, FAQs) and its centres |
-| `/locations` | Every centre: name, address, the services it runs with times, its programs (linked), a map link, **Go to centre** | Centres and their service settings |
+| `/locations` | Every centre: name, address, the services it runs with times and ages (no prices), its programs (linked), a map link, **Go to centre** | Centres and their service settings |
 | `/about` | The business's about text (as today). A fuller page may come later | Business content |
 | `/{location}` | The centre page: service first (see 3) | Business content plus the centre's own |
 | `/{location}/programs` | One section per service the centre offers (see 4) | The centre's service settings |
@@ -22,12 +22,16 @@ The header is fixed to the top on every page; the families' bottom bar is fixed 
 
 | Who, where | Desktop header | Mobile header | Below |
 |---|---|---|---|
-| Logged out, business pages (`/`, `/locations`, `/about`) | Logo · Locations · About · **Enrol now** · Log in | Logo + menu (the same links) | |
+| Business pages (`/`, `/locations`, `/about`) | Logo · Locations · About | Logo + menu (the same links) | |
 | Logged out, a centre's pages | Logo · Programs · Locations · About · **Enrol now** · Log in | Logo + menu | |
 | Family, logged in | Logo · About · Programs · bell; the sidebar as today | Logo · bell · menu (About, Programs, Log out) | Bottom bar unchanged: Home, Bookings, Account |
+| Business settings (`/business`) | The same header: Logo · Locations · About · Business; its sidebar below | Logo + menu (its sidebar's drawer) | |
 
-- **Programs** only appears where there's a centre to show programs for; on business pages each centre's programs are reached from `/locations`.
-- **Enrol now** replaces "Create an account": the centre's registration, or a new booking when logged in. On business pages it goes to `/locations` (a centre has to be chosen first).
+- **Business** (`/business`) is added after the other links for the business's owner, wherever they are (user decision, 27 October 2026). Shown from the session's tenant permissions; `/business` and its API refuse anyone else themselves.
+
+- **Programs, Log in and Enrol now** belong to a centre, so they're only on a centre's pages (user decision, 27 October 2026); on business pages each centre is reached from `/locations`.
+- **Enrol now** replaces "Create an account": the centre's registration, or a new booking when logged in.
+- **Prices** are only on a centre's own pages, not the business pages (`/locations` shows times and ages).
 - Logging in goes to the family's `/home`, as today. Account features stay in the bottom bar.
 - Staff, admins, owners and the platform keep their current navigation. No public link leads to them.
 
@@ -52,7 +56,7 @@ Dropped from the mockup: "Today at..." (a daily activity list someone would have
 
 ## 4. Programs `/{location}/programs`
 
-One section per service the centre offers, written by the centre's admin in Admin › Service settings, next to the settings already there. Per service:
+One section per service the centre offers, written inline on the page by a superadmin there (section 6). Per service:
 
 - description (the existing `description`)
 - what's included
@@ -73,10 +77,12 @@ Centres write their own text, even when it's the same as another centre's: copyi
 
 ## 6. Who edits what
 
-| Who | Where | What |
+Page text is edited **inline**, on the page itself (user decision, 27 October 2026): a pencil on each editable section, always visible to whoever may edit it, turns that section into its form in place, with Save and Cancel. Saving publishes at once (no drafts). For them, an empty section shows a prompt to add it; for everyone else it stays hidden. **Desktop only** (from `md`): on a phone the pages show as everyone sees them. The API and its permission checks are unchanged; only where the forms live moves.
+
+| Who | Inline, on the page | Elsewhere |
 |---|---|---|
-| The business owner | Business settings › Site | Hero headline and paragraph, the four highlights (each from a small preset set, with editable text), the three colours, the hero and about photos, about text, FAQs (as today) |
-| The centre's admin | Admin › Service settings, Admin › centre details | Programs, drop-off and pickup, age labels, the featured service, the centre's photo |
+| The business owner (tenant permission `tenant_settings`) | Hero headline and paragraph and the highlights (`/` and the centre pages), About (`/about`, previewed on `/`), FAQs (`/`) | Business settings › Your site: colours, logo, site icon, policies, the hero and about photos |
+| A superadmin at the centre (the owner is one at every centre) | Program text (`/{location}/programs`) | Admin › Service settings: price, times, ages and age label, the featured service; the centre's photo |
 
 ## 7. Stages
 
@@ -85,10 +91,11 @@ Each ends with something to look at; **DB** stages need a dev rebuild.
 1. **Foundation (DB):** `accent_color` and its picker in Business settings › Site; `locations` and `about` reserved; the public look (`SiteSection` bands, `SiteHeading`, `display-text`/`headline-text`, softened secondary and accent) on `/` and the centre page, with today's content. Staff and admin screens unchanged.
 2. **Header and navigation:** the fixed header and its menus for each case in section 2; the bottom bar fixed and otherwise unchanged. Links point at `/` sections until stage 3.
 3. **`/locations` and `/about`** from existing data; `/` links to them.
-4. **Business content (DB):** hero headline and paragraph, the four highlights (preset icons, editable text), their editor in Business settings › Site, shown on `/`.
-5. **Centre page data (DB):** the featured service and age labels (Admin › Service settings), and the API's next session.
-6. **The centre page** (section 3), without photos and map.
-7. **Program content (DB):** the program fields and their editor in Admin › Service settings.
+4. **Business content (DB):** hero headline (the existing `tagline`) and paragraph (`tenants.hero_text`), up to four highlights (`tenancy.tenant_highlights`: an icon from 8, a title and a line; the editor suggests wording per icon and starts with four suggestions, but nothing shows until saved), their editors in Business settings › Site, shown on `/`.
+5. **Centre page data (DB):** `age_label` and `is_featured` on each service's config (one featured per location; Admin › Service settings, superadmins, like the rest of those settings), and `GET /location-services/v1/public/{location}/featured`: the featured (else first offered) service, its next session and its weekdays over four weeks, from `public.service_upcoming_sessions` (service days aren't public, so only those facts leave the database).
+5b. **Inline editing of business content:** the header's Business link (done 27 October), then the pencils and in-place forms (section 6) for the hero, highlights, About and FAQs on `/` and `/about`; those editors leave Business settings › Your site (and About leaves Business details). Frontend only: the same API calls.
+6. **The centre page** (section 3), without photos and map; its hero and highlights editable inline like `/`.
+7. **Program content (DB):** the program fields, edited inline on `/{location}/programs` (built with stage 8).
 8. **The programs page** `/{location}/programs`, linked from the centre page, header and `/locations`.
 9. **Photos (DB):** the four kinds, stored like the logo, their editors (with a note that photos of children need the family's consent), shown on the pages; every slot optional.
 10. **Embedded map:** turn each centre's address into coordinates when it's saved (the `latitude`, `longitude` and `google_place_id` columns already exist), and embed Google Maps in Find us and on `/locations`. Needs a Maps key; how to restrict it with businesses on their own domains is decided then.

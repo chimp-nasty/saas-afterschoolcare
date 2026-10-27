@@ -3,6 +3,7 @@ import { API_BASE } from '$lib/api/base';
 import { apiWrapper } from '$lib/api/wrapper';
 
 import type {
+    FeaturedServiceResponse,
     UpdateLocationServiceConfigRequest,
     LocationServiceSelectionResponse,
     LocationServiceSettingsResponse,
@@ -30,6 +31,18 @@ export function createLocationServicesApi(
         listPublic(locationCode: string) {
             return apiWrapper<LocationServiceSelectionResponse[]>(
                 `${baseUrl}/public/${locationCode}`,
+                {
+                    method: 'GET',
+                    fetcher
+                }
+            );
+        },
+
+        // The service the centre's page leads with, and its next session
+        // (null when the location offers nothing).
+        getFeatured(locationCode: string) {
+            return apiWrapper<FeaturedServiceResponse | null>(
+                `${baseUrl}/public/${locationCode}/featured`,
                 {
                     method: 'GET',
                     fetcher

@@ -14,16 +14,23 @@ ImageKind = Literal["logo", "icon"]
 
 Colour = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^#[0-9A-Fa-f]{6}$")]
 
+# The icons a highlight can have (ck_tenant_highlights_icon).
+HighlightIcon = Literal["shield", "community", "activities", "location", "homework", "food", "staff", "booking"]
+
 
 class SiteRequest(BaseModel):
-    """The landing page's headline and the business's colours (empty: the app's defaults)."""
+    """
+    The hero's headline (tagline) and paragraph, and the business's colours
+    (empty: the app's defaults).
+    """
 
     tagline: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] | None = None
+    hero_text: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] | None = None
     primary_color: Colour | None = None
     secondary_color: Colour | None = None
     accent_color: Colour | None = None
 
-    @field_validator("tagline", "primary_color", "secondary_color", "accent_color", mode="before")
+    @field_validator("tagline", "hero_text", "primary_color", "secondary_color", "accent_color", mode="before")
     @classmethod
     def empty_is_none(cls, value: str | None) -> str | None:
         return value or None
@@ -39,8 +46,21 @@ class FaqItem(BaseModel):
     answer: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 
 
+class HighlightItem(BaseModel):
+    icon: HighlightIcon
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=160)]
+
+
+class HighlightsRequest(BaseModel):
+    """The whole list, in order (at most 4: ck_tenant_highlights_limit)."""
+
+    highlights: list[HighlightItem] = Field(max_length=4)
+
+
 class SiteResponse(BaseModel):
     tagline: str | None
+    hero_text: str | None
     primary_color: str | None
     secondary_color: str | None
     accent_color: str | None
@@ -49,6 +69,7 @@ class SiteResponse(BaseModel):
     # The current version of each policy uploaded so far.
     documents: list[SiteDocumentResponse]
     faqs: list[FaqItem]
+    highlights: list[HighlightItem]
 
 
 class FaqsRequest(BaseModel):
@@ -85,6 +106,7 @@ class PublicBusinessResponse(BaseModel):
 
     name: str
     tagline: str | None
+    hero_text: str | None
     about: str | None
     email: str | None
     phone: str | None
@@ -95,3 +117,4 @@ class PublicBusinessResponse(BaseModel):
     has_privacy: bool
     has_terms: bool
     faqs: list[PublicFaqResponse]
+    highlights: list[HighlightItem]

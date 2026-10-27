@@ -13,6 +13,7 @@ import type {
 	DomainResponse,
 	DomainsResponse,
 	FaqItem,
+	HighlightItem,
 	SiteRequest,
 	SiteResponse,
 	SiteUploadResponse,
@@ -64,6 +65,14 @@ export function createBusinessApi(
 
 		replaceFaqs(faqs: FaqItem[]) {
 			return apiWrapper<SiteResponse>(`${baseUrl}/site/faqs`, { method: 'PUT', body: { faqs }, fetcher });
+		},
+
+		replaceHighlights(highlights: HighlightItem[]) {
+			return apiWrapper<SiteResponse>(`${baseUrl}/site/highlights`, {
+				method: 'PUT',
+				body: { highlights },
+				fetcher
+			});
 		},
 
 		// A signed upload straight to storage (then uploadToStorage, then confirm).

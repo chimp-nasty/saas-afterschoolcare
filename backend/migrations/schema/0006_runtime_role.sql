@@ -81,6 +81,7 @@ GRANT INSERT, UPDATE ON tenancy.locations TO app_user;
 -- documents (added, never changed).
 GRANT INSERT, UPDATE ON tenancy.tenant_branding TO app_user;
 GRANT INSERT, UPDATE, DELETE ON tenancy.tenant_faqs TO app_user;
+GRANT INSERT, UPDATE, DELETE ON tenancy.tenant_highlights TO app_user;
 GRANT INSERT ON tenancy.tenant_documents TO app_user;
 
 -- Custom domains: the owner adds and removes domains; the domain check

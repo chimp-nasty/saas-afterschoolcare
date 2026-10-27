@@ -72,6 +72,12 @@ class FaqLimitError(ApplicationError):
     result = "failed"
 
 
+class HighlightLimitError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "You can have at most 4 highlights"
+    result = "failed"
+
+
 # Custom domains (Business settings › Domains, schema/0002), mapped in
 # app/errors/database.py where the database decides.
 class DomainsNotAvailableError(ApplicationError):

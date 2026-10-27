@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import Date, Row, cast, func
+from sqlalchemy import Date, Row, cast, func, text
 
 from app.db.repository import Repository
 from app.db.models import (
@@ -47,6 +47,42 @@ class LocationServiceRepository(Repository):
         self.db.flush()
 
         return config
+
+    def unfeature_others(
+        self,
+        *,
+        location_service_id: UUID,
+        location_id: UUID,
+        updated_by_user_id: UUID,
+    ) -> None:
+        """Before featuring a service: the location's others stop being featured."""
+        (
+            self.db.query(LocationServiceConfig)
+            .filter(
+                LocationServiceConfig.location_id == location_id,
+                LocationServiceConfig.location_service_id != location_service_id,
+                LocationServiceConfig.is_featured,
+            )
+            .update(
+                {"is_featured": False, "updated_by_user_id": updated_by_user_id},
+                synchronize_session="fetch",
+            )
+        )
+        self.db.flush()
+
+    def upcoming_sessions(
+        self,
+        *,
+        location_service_id: UUID,
+    ) -> Row:
+        """(next_session_date, weekdays): public.service_upcoming_sessions."""
+        return self.db.execute(
+            text(
+                "SELECT next_session_date, weekdays "
+                "FROM public.service_upcoming_sessions(:location_service_id)"
+            ),
+            {"location_service_id": location_service_id},
+        ).one()
 
     def get_child_age_limits(
         self,
@@ -95,6 +131,8 @@ class LocationServiceRepository(Repository):
                 LocationServiceConfig.end_time,
                 LocationServiceConfig.min_child_age,
                 LocationServiceConfig.max_child_age,
+                LocationServiceConfig.age_label,
+                LocationServiceConfig.is_featured,
                 LocationServiceConfig.refund_cutoff_days,
                 LocationServiceConfig.late_fee_cents,
                 LocationServiceConfig.late_fee_grace_minutes,

@@ -337,3 +337,16 @@ def up(conn: Connection) -> None:
                 service_date=day,
                 capacity=config["capacity"],
             )
+
+        # Tenant 1's first centre leads with After School Care (the
+        # centre page, docs/public-site.md); the others use the first
+        # offered service.
+        if (tenant_code, location_code) == ("tenant1", "location1"):
+            conn.execute(
+                text("""
+                    UPDATE public.location_service_config
+                    SET is_featured = TRUE
+                    WHERE location_service_id = :location_service_id;
+                """),
+                {"location_service_id": location_services["after_school_care"]},
+            )

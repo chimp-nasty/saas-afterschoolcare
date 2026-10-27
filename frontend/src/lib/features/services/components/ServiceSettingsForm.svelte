@@ -1,6 +1,7 @@
 <!--
     One service's settings in Admin › Service settings: whether it's
-    offered, its price, session times, description and policies. Saving a
+    offered, its price, session times, description, policies, how its ages
+    read and whether the centre's page leads with it. Saving a
     new price or new times asks first, because they reach families
     differently: a price applies to new bookings only (bookings keep the
     price they were paid at), new times apply to every booking.
@@ -23,6 +24,8 @@
 		refund_cutoff_days: string;
 		min_child_age: string;
 		max_child_age: string;
+		age_label: string;
+		is_featured: boolean;
 		late_fee: string;
 		late_fee_grace_minutes: string;
 	};
@@ -49,6 +52,8 @@
 			refund_cutoff_days: String(service.refund_cutoff_days),
 			min_child_age: String(service.min_child_age),
 			max_child_age: String(service.max_child_age),
+			age_label: service.age_label ?? '',
+			is_featured: service.is_featured,
 			late_fee: dollars(service.late_fee_cents),
 			late_fee_grace_minutes: String(service.late_fee_grace_minutes)
 		};
@@ -57,6 +62,12 @@
 	let body = $state<ServiceSettingsForm>(toForm());
 	let errors = $state<FormErrors<ServiceSettingsForm>>({});
 	let isLoading = $state(false);
+
+	// Featuring another service unfeatures this one (one per location): keep
+	// the box in step, or saving this form would take the feature back.
+	$effect(() => {
+		body.is_featured = service.is_featured;
+	});
 
 	async function submit() {
 		errors = {};
@@ -92,6 +103,8 @@
 				refund_cutoff_days: Number(body.refund_cutoff_days),
 				min_child_age: Number(body.min_child_age),
 				max_child_age: Number(body.max_child_age),
+				age_label: body.age_label,
+				is_featured: body.is_featured,
 				late_fee_cents: cents(body.late_fee),
 				late_fee_grace_minutes: Number(body.late_fee_grace_minutes)
 			});
@@ -153,6 +166,21 @@
 			{/snippet}
 		</Field>
 	</div>
+
+	<Field
+		label={`Ages as families see them (blank: "Ages ${body.min_child_age}–${body.max_child_age}")`}
+		error={errors.age_label}
+	>
+		{#snippet children(id)}
+			<input {id} type="text" maxlength="40" placeholder="e.g. Years 7 to 12" bind:value={body.age_label} />
+		{/snippet}
+	</Field>
+
+	<CheckboxRow
+		bind:checked={body.is_featured}
+		title="Lead with this service on the centre's page"
+		help="Its times, ages and next session go at the top. Only one service can; ticking this replaces any other."
+	/>
 
 	<div class="grid grid-cols-2 gap-4">
 		<Field label="Late fee ($, 0 for none)" error={errors.late_fee}>

@@ -1,6 +1,6 @@
 <!--
-    The landing page's headline and the business's colours (Business
-    settings › Your site). Colours are the app's own until the owner
+    The hero's headline and paragraph (the landing page and every centre's
+    page) and the business's colours (Business settings › Your site). Colours are the app's own until the owner
     chooses theirs; every page of the business uses them.
 -->
 <script lang="ts">
@@ -29,6 +29,7 @@
 
 	// The saved values when the form opens; it then owns its edits.
 	let tagline = $state(untrack(() => initial.tagline ?? ''));
+	let heroText = $state(untrack(() => initial.hero_text ?? ''));
 	let ownColours = $state(
 		untrack(() => Boolean(initial.primary_color || initial.secondary_color || initial.accent_color))
 	);
@@ -46,6 +47,7 @@
 		try {
 			const response = await onsubmit({
 				tagline: tagline || null,
+				hero_text: heroText || null,
 				primary_color: ownColours ? primary : null,
 				secondary_color: ownColours ? secondary : null,
 				accent_color: ownColours ? accent : null
@@ -59,9 +61,15 @@
 </script>
 
 <Form {isLoading} handleSubmit={submit} submitLabel="Save">
-	<Field label="Headline (e.g. After school care, made easy)" error={errors.tagline}>
+	<Field label="Headline (e.g. A welcoming place after school)" error={errors.tagline}>
 		{#snippet children(id)}
 			<input {id} type="text" maxlength="120" bind:value={tagline} />
+		{/snippet}
+	</Field>
+
+	<Field label="Under the headline: a sentence or two about what you offer" error={errors.hero_text}>
+		{#snippet children(id)}
+			<textarea {id} rows="3" maxlength="300" bind:value={heroText}></textarea>
 		{/snippet}
 	</Field>
 

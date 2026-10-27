@@ -96,6 +96,13 @@ CREATE TABLE public.location_service_config (
     -- location's widest range) and on every booking (schema/0009).
     min_child_age SMALLINT NOT NULL DEFAULT 8,
     max_child_age SMALLINT NOT NULL DEFAULT 17,
+    -- Shown instead of "Ages X–Y" (e.g. "Years 7 to 12"); the limits above
+    -- still decide who can book.
+    age_label VARCHAR(40),
+    -- The service the centre's page leads with (docs/public-site.md): its
+    -- times, ages and next session. At most one per location
+    -- (uq_location_service_config_featured); none means the first offered.
+    is_featured BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- A flat fee for collection after end_time plus the grace period; 0 means
     -- no late fee. Shown to families; charging it isn't built yet.
@@ -137,6 +144,10 @@ CREATE TABLE public.location_service_config (
 CREATE TRIGGER trg_location_service_config_updated_at
     BEFORE UPDATE ON public.location_service_config
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE UNIQUE INDEX uq_location_service_config_featured
+    ON public.location_service_config (location_id)
+    WHERE is_featured;
 
 -- A new location gets every service type, each with its config.
 -- SECURITY DEFINER: writes past the read-only RLS on these tables.
@@ -240,6 +251,45 @@ BEGIN
           AND NOT public.booking_hold_lapsed(b.booking_status, b.created_at)
     );
 END;
+$$;
+
+-- What the centre's page shows about a service's coming sessions before
+-- login (docs/public-site.md): the date of the next open day that hasn't
+-- finished (in the location's time), and the weekdays its open days fall on
+-- over the next four weeks (ISO: 1 Monday to 7 Sunday). Service days are
+-- only readable by the location's people (RLS), so nothing else about them
+-- (capacity, closures, reasons) leaves this function.
+CREATE FUNCTION public.service_upcoming_sessions(p_location_service_id UUID)
+RETURNS TABLE (next_session_date DATE, weekdays SMALLINT[])
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public, tenancy
+AS $$
+    WITH here AS (
+        SELECT (now() AT TIME ZONE l.timezone) AS local_now, c.end_time
+        FROM public.location_service_config c
+        JOIN tenancy.locations l ON l.id = c.location_id
+        WHERE c.location_service_id = p_location_service_id
+    ),
+    coming AS (
+        SELECT d.service_date
+        FROM public.location_service_days d, here
+        WHERE d.location_service_id = p_location_service_id
+          AND d.is_open
+          AND (
+              d.service_date > here.local_now::date
+              OR (d.service_date = here.local_now::date AND here.end_time > here.local_now::time)
+          )
+    )
+    SELECT
+        (SELECT min(service_date) FROM coming),
+        ARRAY(
+            SELECT DISTINCT extract(isodow FROM coming.service_date)::smallint
+            FROM coming, here
+            WHERE coming.service_date < here.local_now::date + 28
+            ORDER BY 1
+        );
 $$;
 
 -- Changing service days never strands a booking. From a user session:

@@ -4,6 +4,7 @@
 
 	import { setSession, clearSession, auth } from '$lib/auth/state.svelte';
 	import { logout as logoutAndLeave } from '$lib/auth/logout';
+	import { ABOUT_LINK, BUSINESS_LINK, LOCATIONS_LINK, isBusinessOwner } from '$lib/navigation/siteLinks';
 
 	import { CalendarDays, House, User } from 'lucide-svelte';
 
@@ -63,7 +64,7 @@
 		['admin', 'superadmin'].some((role) => $auth.roles.includes(role))
 	);
 
-	const isOwner = $derived(Object.keys($auth.tenantPermissions).length > 0);
+	const isOwner = $derived(isBusinessOwner($auth.tenantPermissions));
 
 	function link(label: string, path: string): SidebarItem {
 		return { label, onclick: () => navigate(path), isActive: isActive(path) };
@@ -161,22 +162,21 @@
 		{ label: 'Account', href: route('/account'), icon: User, isActive: isActive('/account') }
 	]);
 
-	// The public site's pages (docs/public-site.md, section 2). Until they're
-	// built, Programs is the centre page's services and Locations and About
-	// are the business page's sections (stages 3 and 8).
+	// The public site's pages (docs/public-site.md, section 2). Until its
+	// own page is built (stage 8), Programs is the centre page's services.
 	const programsLink = $derived({ label: 'Programs', href: `${route('')}#services` });
-	const locationsLink = { label: 'Locations', href: '/#centres' };
-	const aboutLink = { label: 'About', href: '/#about' };
 
 	// Logged out: the whole site. Families: About and Programs (their own
-	// pages are in the bottom bar and sidebar). Staff: none.
-	const headerLinks = $derived(
-		!$auth.authenticated
-			? [programsLink, locationsLink, aboutLink]
+	// pages are in the bottom bar and sidebar). Staff: none. The business's
+	// owner: Business as well, after the rest.
+	const headerLinks = $derived([
+		...(!$auth.authenticated
+			? [programsLink, LOCATIONS_LINK, ABOUT_LINK]
 			: isCustomerOnly
-				? [aboutLink, programsLink]
-				: []
-	);
+				? [ABOUT_LINK, programsLink]
+				: []),
+		...(isOwner ? [BUSINESS_LINK] : [])
+	]);
 
 	async function logout() {
 		isLoggingOut = true;

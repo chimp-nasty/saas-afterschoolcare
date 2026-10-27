@@ -10,6 +10,7 @@ from app.dependencies.rls import get_rls_db
 from app.dependencies.service import get_service
 from app.public.services.location_service import LocationServiceService
 from app.public.schemas.location_service import (
+    FeaturedServiceResponse,
     LocationServiceSelectionResponse,
     LocationServiceSettingsResponse,
     UpdateLocationServiceConfigRequest,
@@ -44,6 +45,16 @@ def list_public_location_services(
         msg="Fetched services",
         data=result,
     )
+
+
+# The centre page's leading service and its next session (docs/public-site.md).
+# Public, like the services list.
+@router.get("/public/{location_code}/featured")
+def get_featured_location_service(
+    location_id: UUID = Depends(resolve_location_id),
+    service: LocationServiceService = Depends(get_service(LocationServiceService, db_dependency=get_db)),
+) -> ApiResponse[FeaturedServiceResponse | None]:
+    return ApiResponse(ok=True, msg="Fetched the featured service", data=service.featured(location_id=location_id))
 
 
 # Every service the location has, offered or not, for the superadmin's settings

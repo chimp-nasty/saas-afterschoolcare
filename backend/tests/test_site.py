@@ -8,6 +8,7 @@ from io import BytesIO
 
 import pytest
 from PIL import Image
+from sqlalchemy.exc import IntegrityError
 
 from tests.factories import Api, FakeStorage
 
@@ -40,8 +41,9 @@ def site_restored(api: Api):
         s=branding.secondary_color,
         a=branding.accent_color,
     )
-    api.sql("UPDATE tenancy.tenants SET tagline = NULL WHERE code = 'tenant2'")
+    api.sql("UPDATE tenancy.tenants SET tagline = NULL, hero_text = NULL WHERE code = 'tenant2'")
     api.sql("DELETE FROM tenancy.tenant_faqs WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')")
+    api.sql("DELETE FROM tenancy.tenant_highlights WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')")
 
 
 def _upload(client, kind: str, content: bytes, content_type: str):
@@ -82,8 +84,49 @@ def test_landing_page_content(api: Api, tenant2_owner, site_restored):
     assert page["primary_color"] == "#112233"
     assert page["accent_color"] == "#F59E0B"
     assert [faq["question"] for faq in page["faqs"]] == ["When?", "Where?"]
-    assert _public(api, "tenant1")["tagline"] is None
+    assert _public(api, "tenant1")["tagline"] != "Care made easy"
     assert _public(api, "tenant1")["faqs"] == []
+
+
+# The hero's paragraph and the highlights show on the landing page, the
+# highlights in the owner's order; saving the list again replaces it.
+def test_hero_and_highlights(api: Api, tenant2_owner, site_restored):
+    shield = {"icon": "shield", "title": "Safe", "text": "Qualified staff."}
+    food = {"icon": "food", "title": "Afternoon tea", "text": "Healthy food."}
+
+    assert tenant2_owner.put("/business/v1/site", json={"hero_text": "Somewhere to be after school."}).status_code == 200
+    assert tenant2_owner.put("/business/v1/site/highlights", json={"highlights": [food, shield]}).status_code == 200
+
+    page = _public(api)
+
+    assert page["hero_text"] == "Somewhere to be after school."
+    assert [highlight["icon"] for highlight in page["highlights"]] == ["food", "shield"]
+
+    assert tenant2_owner.put("/business/v1/site/highlights", json={"highlights": [shield]}).status_code == 200
+
+    assert [highlight["title"] for highlight in _public(api)["highlights"]] == ["Safe"]
+
+
+# At most 4 highlights, each with a known icon and some text; the database
+# holds the limit too.
+def test_highlights_are_checked(api: Api, tenant2_owner, site_restored):
+    highlight = {"icon": "shield", "title": "Safe", "text": "Qualified staff."}
+
+    assert tenant2_owner.put("/business/v1/site/highlights", json={"highlights": [highlight] * 5}).status_code == 422
+    assert tenant2_owner.put(
+        "/business/v1/site/highlights", json={"highlights": [{**highlight, "icon": "sun"}]}
+    ).status_code == 422
+    assert tenant2_owner.put(
+        "/business/v1/site/highlights", json={"highlights": [{**highlight, "text": "  "}]}
+    ).status_code == 422
+
+    # The trigger names ck_tenant_highlights_limit apart from its message.
+    with pytest.raises(IntegrityError, match="at most 4 highlights"):
+        api.sql(
+            "INSERT INTO tenancy.tenant_highlights (tenant_id, position, icon, title, description) "
+            "SELECT t.id, p, 'shield', 'Safe', 'Staff.' FROM tenancy.tenants t, generate_series(0, 4) p "
+            "WHERE t.code = 'tenant2'"
+        )
 
 
 # Every centre's pages use the business's colours.
@@ -100,6 +143,7 @@ def test_centres_use_the_business_colours(api: Api, tenant2_owner, site_restored
 def test_only_the_owner_changes_the_site(tenant2_admin):
     assert tenant2_admin.put("/business/v1/site", json={"tagline": "Taken over"}).status_code == 403
     assert tenant2_admin.put("/business/v1/site/faqs", json={"faqs": []}).status_code == 403
+    assert tenant2_admin.put("/business/v1/site/highlights", json={"highlights": []}).status_code == 403
     assert tenant2_admin.post(
         "/business/v1/site/uploads", json={"kind": "logo", "content_type": "image/png"}
     ).status_code == 403

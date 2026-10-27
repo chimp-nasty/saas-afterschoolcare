@@ -197,6 +197,8 @@ ALTER TABLE tenancy.tenant_branding ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_branding FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_faqs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_faqs FORCE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_highlights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenancy.tenant_highlights FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_documents FORCE ROW LEVEL SECURITY;
 ALTER TABLE tenancy.tenant_stripe_accounts ENABLE ROW LEVEL SECURITY;
@@ -231,6 +233,15 @@ CREATE POLICY tenant_faqs_read_policy
 
 CREATE POLICY tenant_faqs_write_policy
     ON tenancy.tenant_faqs FOR ALL
+    USING (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'))
+    WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'));
+
+CREATE POLICY tenant_highlights_read_policy
+    ON tenancy.tenant_highlights FOR SELECT
+    USING (true);
+
+CREATE POLICY tenant_highlights_write_policy
+    ON tenancy.tenant_highlights FOR ALL
     USING (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'))
     WITH CHECK (auth.has_tenant_permission(tenant_id, 'tenant_settings', 'u'));
 

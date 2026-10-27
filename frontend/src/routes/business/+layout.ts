@@ -16,8 +16,11 @@ export const load: LayoutLoad = async ({ depends, fetch }) => {
 	]);
 	const data = response.ok ? response.data : null;
 
-	// The business's colours, like every other page of its site.
+	// The business's name, logo and colours, like every other page of its
+	// site (the same header too).
 	const branding = {
+		name: businessResponse.data?.name ?? 'Business settings',
+		hasLogo: Boolean(businessResponse.data?.has_logo),
 		primaryColor: businessResponse.data?.primary_color ?? null,
 		secondaryColor: businessResponse.data?.secondary_color ?? null,
 		accentColor: businessResponse.data?.accent_color ?? null

@@ -12,7 +12,7 @@
         tone = "plain",
         children,
     }: {
-        // For in-page links (#centres).
+        // For in-page links (#services).
         id?: string;
         tone?: "plain" | "muted" | "tint";
         children: Snippet;

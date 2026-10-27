@@ -6,9 +6,9 @@ import { formatMoney, formatTime } from '$lib/utils/helpers';
 
 type Service = LocationServiceSelectionResponse;
 
-// "Ages 8–17"
-export function agesLabel(service: Pick<Service, 'min_child_age' | 'max_child_age'>): string {
-    return `Ages ${service.min_child_age}–${service.max_child_age}`;
+// "Ages 8–17", or the service's own wording when it has one ("Years 7 to 12").
+export function agesLabel(service: Pick<Service, 'min_child_age' | 'max_child_age' | 'age_label'>): string {
+    return service.age_label ?? `Ages ${service.min_child_age}–${service.max_child_age}`;
 }
 
 // The family's refund window (staff can refund later, until the session day).

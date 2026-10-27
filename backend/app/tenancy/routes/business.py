@@ -19,6 +19,7 @@ from app.tenancy.schemas.domain import AddDomainRequest, DomainResponse, Domains
 from app.tenancy.schemas.site import (
     ConfirmSiteUploadRequest,
     FaqsRequest,
+    HighlightsRequest,
     SiteRequest,
     SiteResponse,
     SiteUploadResponse,
@@ -139,6 +140,20 @@ def replace_faqs(
     service: SiteService = Depends(_site_service),
 ) -> ApiResponse[SiteResponse]:
     return ApiResponse(ok=True, msg="Questions saved", data=service.replace_faqs(tenant_id=ctx.tenant_id, faqs=body.faqs))
+
+
+# The highlights under the hero (docs/public-site.md), as a whole list.
+@router.put("/site/highlights")
+def replace_highlights(
+    body: HighlightsRequest,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_settings", action="u")),
+    service: SiteService = Depends(_site_service),
+) -> ApiResponse[SiteResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Highlights saved",
+        data=service.replace_highlights(tenant_id=ctx.tenant_id, highlights=body.highlights),
+    )
 
 
 # A signed upload straight to storage, then confirm it.

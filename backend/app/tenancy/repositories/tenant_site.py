@@ -2,7 +2,7 @@ from typing import Any
 from uuid import UUID
 
 from app.db.repository import Repository
-from app.db.models import Location, TenantBranding, TenantDocument, TenantFaq
+from app.db.models import Location, TenantBranding, TenantDocument, TenantFaq, TenantHighlight
 
 
 class TenantSiteRepository(Repository):
@@ -68,6 +68,38 @@ class TenantSiteRepository(Repository):
         records = [
             TenantFaq(tenant_id=tenant_id, position=position, question=question, answer=answer)
             for position, (question, answer) in enumerate(faqs)
+        ]
+
+        self.db.add_all(records)
+        self.db.flush()
+
+        return records
+
+    def list_highlights(
+        self,
+        *,
+        tenant_id: UUID,
+    ) -> list[TenantHighlight]:
+        return (
+            self.db.query(TenantHighlight)
+            .filter(TenantHighlight.tenant_id == tenant_id)
+            .order_by(TenantHighlight.position)
+            .all()
+        )
+
+    def replace_highlights(
+        self,
+        *,
+        tenant_id: UUID,
+        highlights: list[tuple[str, str, str]],
+    ) -> list[TenantHighlight]:
+        """The whole list, in this order (icon, title, description)."""
+        self.db.query(TenantHighlight).filter(TenantHighlight.tenant_id == tenant_id).delete()
+        self.db.flush()
+
+        records = [
+            TenantHighlight(tenant_id=tenant_id, position=position, icon=icon, title=title, description=description)
+            for position, (icon, title, description) in enumerate(highlights)
         ]
 
         self.db.add_all(records)

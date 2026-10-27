@@ -1,16 +1,14 @@
 <!--
     Business settings (/business): the whole business, run by its owner
-    (docs/tenant-administration.md). Its own shell, outside any centre:
-    sidebar (a drawer on mobile), its own confirmations, and the login page
-    for anyone without a session.
+    (docs/tenant-administration.md). Outside any centre, under the site's
+    own header (docs/public-site.md): sidebar (a drawer on mobile), its own
+    confirmations, and the login page for anyone without a session.
 -->
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto, invalidate } from '$app/navigation';
 
-	import { Menu } from 'lucide-svelte';
-
-	import Button from '$lib/components/actions/Button.svelte';
+	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Sidebar, { type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
 	import Drawer from '$lib/components/overlays/Drawer.svelte';
@@ -18,6 +16,7 @@
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 	import { auth, clearSession, setSession } from '$lib/auth/state.svelte';
+	import { BUSINESS_HEADER_LINKS } from '$lib/navigation/siteLinks';
 
 	let { data, children } = $props();
 
@@ -103,21 +102,14 @@
 		accentColor={data.branding.accentColor}
 	>
 		{#snippet header()}
-			<header class="sticky top-0 z-40 mb-6 w-full border-b border-(--border) bg-(--surface)/90 p-4 backdrop-blur-md">
-				<div class="flex min-h-12 w-full items-center gap-4">
-					<p class="mr-auto text-sm font-semibold text-(--text)">Business settings</p>
-
-					<p class="hidden text-sm text-(--text-muted) md:block">
-						Logged in as {$auth.firstName ?? $auth.email}
-					</p>
-
-					<div class="md:hidden">
-						<Button variant="ghost" onclick={() => (sidebarOpen = true)} aria-label="Menu">
-							<Menu size={20} />
-						</Button>
-					</div>
-				</div>
-			</header>
+			<Header
+				homeHref="/"
+				title={data.branding.name}
+				hasLogo={data.branding.hasLogo}
+				links={BUSINESS_HEADER_LINKS}
+				note={`Logged in as ${$auth.firstName ?? $auth.email}`}
+				onMenu={() => (sidebarOpen = true)}
+			/>
 		{/snippet}
 
 		{@render children()}

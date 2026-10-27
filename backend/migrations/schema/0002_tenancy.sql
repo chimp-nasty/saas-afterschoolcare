@@ -36,6 +36,9 @@ CREATE TABLE tenancy.tenants (
     about VARCHAR(1000),
     -- The landing page's headline ("After school care, made easy").
     tagline VARCHAR(120),
+    -- The paragraph under the headline (tagline) in the public site's hero,
+    -- on its landing page and every centre's (docs/public-site.md).
+    hero_text VARCHAR(300),
 
     terms_accepted_at TIMESTAMPTZ NOT NULL,
     terms_version VARCHAR(50) NOT NULL DEFAULT 'v1',
@@ -248,6 +251,66 @@ $$;
 CREATE TRIGGER trg_tenant_faqs_limit
     AFTER INSERT ON tenancy.tenant_faqs
     FOR EACH ROW EXECUTE FUNCTION tenancy.enforce_tenant_faq_limit();
+
+-- =====================================================
+-- TENANT HIGHLIGHTS
+-- =====================================================
+
+-- The short points under the public site's hero (docs/public-site.md):
+-- an icon from a fixed set, a title and a line, in the owner's order.
+-- Saved as a whole list (Business settings › Your site); at most 4. The
+-- editor offers preset wording, which the owner may change.
+CREATE TABLE tenancy.tenant_highlights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    tenant_id UUID NOT NULL,
+
+    position INTEGER NOT NULL,
+    icon VARCHAR(20) NOT NULL,
+    title VARCHAR(60) NOT NULL,
+    -- The line under the title ("text" in the API; not named so here, as
+    -- the generated model would rename it).
+    description VARCHAR(160) NOT NULL,
+
+    CONSTRAINT fk_tenant_highlights_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenancy.tenants (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_tenant_highlights_position
+        UNIQUE (tenant_id, position),
+
+    CONSTRAINT ck_tenant_highlights_text
+        CHECK (btrim(title) <> '' AND btrim(description) <> ''),
+
+    -- The icons the site can draw (frontend features/business/highlights.ts).
+    CONSTRAINT ck_tenant_highlights_icon
+        CHECK (icon IN (
+            'shield', 'community', 'activities', 'location',
+            'homework', 'food', 'staff', 'booking'
+        ))
+);
+
+CREATE FUNCTION tenancy.enforce_tenant_highlight_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF (SELECT count(*) FROM tenancy.tenant_highlights WHERE tenant_id = NEW.tenant_id) > 4 THEN
+        RAISE EXCEPTION 'A business has at most 4 highlights'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_tenant_highlights_limit',
+                  TABLE = 'tenant_highlights',
+                  SCHEMA = 'tenancy';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_tenant_highlights_limit
+    AFTER INSERT ON tenancy.tenant_highlights
+    FOR EACH ROW EXECUTE FUNCTION tenancy.enforce_tenant_highlight_limit();
 
 -- =====================================================
 -- TENANT STRIPE ACCOUNTS (Stripe Connect)

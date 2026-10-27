@@ -67,7 +67,7 @@ These keep features looking like one app. They're written for the customer-facin
 
 ### Public site pages
 
-The business's pages (`/`, and later `/locations`, `/about`) and a centre's own page (`/{location}`, later `/{location}/programs`) are the public site (`docs/public-site.md`), laid out differently from customer pages:
+The business's pages (`/`, `/locations`, `/about`: the `routes/(site)` group, whose layout holds the header, footer and colours) and a centre's own page (`/{location}`, later `/{location}/programs`) are the public site (`docs/public-site.md`), laid out differently from customer pages:
 
 - The tenant `Layout` gets `flush` (no padding) and the page is a stack of `SiteSection` bands: full width, content in a `max-w-6xl` column, alternating `tone` (`plain`, `muted`, `tint`). No `Page`/`PageHeader`.
 - Each band's heading is `SiteHeading`; the hero's headline is an `h1` with `display-text`. Both text roles are defined in `layout.css`.

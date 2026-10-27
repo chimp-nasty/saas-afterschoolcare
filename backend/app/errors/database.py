@@ -41,6 +41,7 @@ from app.errors.tenancy import (
     DomainRedirectsFirstError,
     DomainServerOnlyError,
     FaqLimitError,
+    HighlightLimitError,
     SiteColourError,
     LocationCodeReservedError,
     LocationCodeTakenError,
@@ -225,6 +226,7 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     # The business's site (stage 5).
     "ck_tenant_branding_colors": SiteColourError,
     "ck_tenant_faqs_limit": FaqLimitError,
+    "ck_tenant_highlights_limit": HighlightLimitError,
     # Custom domains (schema/0002).
     "ck_tenant_domains_hostname": DomainHostnameInvalidError,
     "ck_tenant_domains_www": DomainHostnameInvalidError,

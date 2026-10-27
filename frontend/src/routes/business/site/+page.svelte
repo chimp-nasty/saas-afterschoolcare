@@ -13,13 +13,14 @@
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 	import FaqEditor from '$lib/features/business/components/FaqEditor.svelte';
+	import HighlightEditor from '$lib/features/business/components/HighlightEditor.svelte';
 	import SiteFileUpload from '$lib/features/business/components/SiteFileUpload.svelte';
 	import SiteForm from '$lib/features/business/components/SiteForm.svelte';
 
 	import { uploadToStorage } from '$lib/api/storage';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
 	import { siteFileUrl, type SiteFileKind } from '$lib/api/tenancy/adapters/location-branding';
-	import type { FaqItem, SiteRequest, StartSiteUploadRequest } from '$lib/api/schema';
+	import type { FaqItem, HighlightItem, SiteRequest, StartSiteUploadRequest } from '$lib/api/schema';
 	import { formatTimestamp } from '$lib/utils/helpers';
 
 	let { data } = $props();
@@ -58,6 +59,14 @@
 
 	async function saveFaqs(faqs: FaqItem[]) {
 		const response = await businessApi.replaceFaqs(faqs);
+
+		if (response.ok) await refresh();
+
+		return response;
+	}
+
+	async function saveHighlights(highlights: HighlightItem[]) {
+		const response = await businessApi.replaceHighlights(highlights);
 
 		if (response.ok) await refresh();
 
@@ -111,11 +120,12 @@
 	<PageHeader title="Your site" description="How your home page and every centre's pages look, your questions and answers, and your policies." />
 
 	{#if site}
-		<SectionHeading title="Headline and colours" />
+		<SectionHeading title="Headline and colours" description="The top of your home page and every centre's page." />
 
 		<SiteForm
 			initial={{
 				tagline: site.tagline,
+				hero_text: site.hero_text,
 				primary_color: site.primary_color,
 				secondary_color: site.secondary_color,
 				accent_color: site.accent_color
@@ -168,6 +178,13 @@
 				/>
 			</div>
 		</Card>
+
+		<SectionHeading
+			title="Highlights"
+			description="Short points under your headline, on your home page and every centre's page. Up to 4."
+		/>
+
+		<HighlightEditor initial={site.highlights} onsubmit={saveHighlights} />
 
 		<SectionHeading title="Questions and answers" description="Shown on your home page, in this order. Up to 20." />
 
