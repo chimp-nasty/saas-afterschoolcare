@@ -97,6 +97,7 @@ class SiteService:
             tagline=tenant.tagline,
             primary_color=branding.primary_color if branding else None,
             secondary_color=branding.secondary_color if branding else None,
+            accent_color=branding.accent_color if branding else None,
             has_logo=bool(branding and branding.logo_key),
             has_icon=bool(branding and branding.icon_key),
             documents=documents,
@@ -118,7 +119,11 @@ class SiteService:
         self.tenant_repository.update(tenant=tenant, values={"tagline": body.tagline})
         self.site_repository.save_branding(
             tenant_id=tenant_id,
-            values={"primary_color": body.primary_color, "secondary_color": body.secondary_color},
+            values={
+                "primary_color": body.primary_color,
+                "secondary_color": body.secondary_color,
+                "accent_color": body.accent_color,
+            },
         )
         self._log("site_updated", tenant_id)
         self._branding_changed()
@@ -281,6 +286,7 @@ class SiteService:
             phone=tenant.phone,
             primary_color=branding.primary_color if branding else None,
             secondary_color=branding.secondary_color if branding else None,
+            accent_color=branding.accent_color if branding else None,
             has_logo=bool(branding and branding.logo_key),
             has_privacy=self.site_repository.current_document(tenant_id=tenant_id, kind="privacy") is not None,
             has_terms=self.site_repository.current_document(tenant_id=tenant_id, kind="terms") is not None,

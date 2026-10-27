@@ -122,11 +122,13 @@ CREATE TABLE tenancy.locations (
         CHECK (code ~ '^[a-z][a-z0-9-]*$'),
 
     -- The code is the first part of the location's address (/varsity),
-    -- where the site's own pages also live (/business, /api).
+    -- where the site's own pages also live (/business, /api, and the
+    -- public site's /locations and /about: docs/public-site.md).
     CONSTRAINT ck_locations_code_reserved
         CHECK (code NOT IN (
             'business', 'api', 'platform', 'register',
-            'kiosk', 'staff', 'login', 'demo'
+            'kiosk', 'staff', 'login', 'demo',
+            'locations', 'about'
         )),
 
     CONSTRAINT ck_locations_name_not_blank
@@ -172,8 +174,12 @@ CREATE TABLE tenancy.tenant_branding (
     -- logo is used, then the platform's icon.
     icon_key TEXT,
 
+    -- The public site's three colours (docs/public-site.md): main actions
+    -- and headings, supporting elements, and highlights. Backgrounds and
+    -- neutrals are the app's.
     primary_color VARCHAR(7),
     secondary_color VARCHAR(7),
+    accent_color VARCHAR(7),
 
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -186,6 +192,7 @@ CREATE TABLE tenancy.tenant_branding (
         CHECK (
             (primary_color IS NULL OR primary_color ~ '^#[0-9A-Fa-f]{6}$')
             AND (secondary_color IS NULL OR secondary_color ~ '^#[0-9A-Fa-f]{6}$')
+            AND (accent_color IS NULL OR accent_color ~ '^#[0-9A-Fa-f]{6}$')
         )
 );
 

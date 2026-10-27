@@ -359,7 +359,7 @@ class Location(Base):
     __table_args__ = (
         CheckConstraint("btrim(address_line_1::text) <> ''::text AND btrim(suburb::text) <> ''::text", name='ck_locations_address_not_blank'),
         CheckConstraint("btrim(name::text) <> ''::text", name='ck_locations_name_not_blank'),
-        CheckConstraint("code::text <> ALL (ARRAY['business'::character varying, 'api'::character varying, 'platform'::character varying, 'register'::character varying, 'kiosk'::character varying, 'staff'::character varying, 'login'::character varying, 'demo'::character varying]::text[])", name='ck_locations_code_reserved'),
+        CheckConstraint("code::text <> ALL (ARRAY['business'::character varying, 'api'::character varying, 'platform'::character varying, 'register'::character varying, 'kiosk'::character varying, 'staff'::character varying, 'login'::character varying, 'demo'::character varying, 'locations'::character varying, 'about'::character varying]::text[])", name='ck_locations_code_reserved'),
         CheckConstraint("code::text ~ '^[a-z][a-z0-9-]*$'::text", name='ck_locations_code_format'),
         CheckConstraint('latitude IS NULL) = (longitude IS NULL', name='ck_locations_coordinates'),
         CheckConstraint("postcode ~ '^[0-9]{4}$'::text", name='ck_locations_postcode'),
@@ -396,7 +396,7 @@ class Location(Base):
 class TenantBranding(Base):
     __tablename__ = 'tenant_branding'
     __table_args__ = (
-        CheckConstraint("primary_color IS NULL OR primary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text) AND (secondary_color IS NULL OR secondary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name='ck_tenant_branding_colors'),
+        CheckConstraint("primary_color IS NULL OR primary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text) AND (secondary_color IS NULL OR secondary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text) AND (accent_color IS NULL OR accent_color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name='ck_tenant_branding_colors'),
         ForeignKeyConstraint(['tenant_id'], ['tenancy.tenants.id'], ondelete='CASCADE', name='fk_tenant_branding_tenant'),
         PrimaryKeyConstraint('tenant_id', name='tenant_branding_pkey'),
         {'schema': 'tenancy'}
@@ -408,6 +408,7 @@ class TenantBranding(Base):
     icon_key: Mapped[Optional[str]] = mapped_column(Text)
     primary_color: Mapped[Optional[str]] = mapped_column(String(7))
     secondary_color: Mapped[Optional[str]] = mapped_column(String(7))
+    accent_color: Mapped[Optional[str]] = mapped_column(String(7))
 
 
 

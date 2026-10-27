@@ -21,8 +21,9 @@ class SiteRequest(BaseModel):
     tagline: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] | None = None
     primary_color: Colour | None = None
     secondary_color: Colour | None = None
+    accent_color: Colour | None = None
 
-    @field_validator("tagline", "primary_color", "secondary_color", mode="before")
+    @field_validator("tagline", "primary_color", "secondary_color", "accent_color", mode="before")
     @classmethod
     def empty_is_none(cls, value: str | None) -> str | None:
         return value or None
@@ -42,6 +43,7 @@ class SiteResponse(BaseModel):
     tagline: str | None
     primary_color: str | None
     secondary_color: str | None
+    accent_color: str | None
     has_logo: bool
     has_icon: bool
     # The current version of each policy uploaded so far.
@@ -88,6 +90,7 @@ class PublicBusinessResponse(BaseModel):
     phone: str | None
     primary_color: str | None
     secondary_color: str | None
+    accent_color: str | None
     has_logo: bool
     has_privacy: bool
     has_terms: bool

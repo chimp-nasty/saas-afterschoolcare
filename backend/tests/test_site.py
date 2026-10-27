@@ -26,17 +26,19 @@ def _image(width: int, height: int, image_format: str = "PNG") -> bytes:
 def site_restored(api: Api):
     """Tenant2's site is shared: put its branding, tagline and FAQs back afterwards."""
     [branding] = api.sql(
-        "SELECT b.primary_color, b.secondary_color FROM tenancy.tenant_branding b "
+        "SELECT b.primary_color, b.secondary_color, b.accent_color FROM tenancy.tenant_branding b "
         "JOIN tenancy.tenants t ON t.id = b.tenant_id WHERE t.code = 'tenant2'"
     )
 
     yield
 
     api.sql(
-        "UPDATE tenancy.tenant_branding SET primary_color = :p, secondary_color = :s, logo_key = NULL, icon_key = NULL "
+        "UPDATE tenancy.tenant_branding SET primary_color = :p, secondary_color = :s, accent_color = :a, "
+        "logo_key = NULL, icon_key = NULL "
         "WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')",
         p=branding.primary_color,
         s=branding.secondary_color,
+        a=branding.accent_color,
     )
     api.sql("UPDATE tenancy.tenants SET tagline = NULL WHERE code = 'tenant2'")
     api.sql("DELETE FROM tenancy.tenant_faqs WHERE tenant_id = (SELECT id FROM tenancy.tenants WHERE code = 'tenant2')")
@@ -62,7 +64,12 @@ def _public(api: Api, tenant: str = "tenant2"):
 def test_landing_page_content(api: Api, tenant2_owner, site_restored):
     assert tenant2_owner.put(
         "/business/v1/site",
-        json={"tagline": "Care made easy", "primary_color": "#112233", "secondary_color": "#AABBCC"},
+        json={
+            "tagline": "Care made easy",
+            "primary_color": "#112233",
+            "secondary_color": "#AABBCC",
+            "accent_color": "#F59E0B",
+        },
     ).status_code == 200
     assert tenant2_owner.put(
         "/business/v1/site/faqs",
@@ -73,6 +80,7 @@ def test_landing_page_content(api: Api, tenant2_owner, site_restored):
 
     assert page["tagline"] == "Care made easy"
     assert page["primary_color"] == "#112233"
+    assert page["accent_color"] == "#F59E0B"
     assert [faq["question"] for faq in page["faqs"]] == ["When?", "Where?"]
     assert _public(api, "tenant1")["tagline"] is None
     assert _public(api, "tenant1")["faqs"] == []
@@ -80,11 +88,12 @@ def test_landing_page_content(api: Api, tenant2_owner, site_restored):
 
 # Every centre's pages use the business's colours.
 def test_centres_use_the_business_colours(api: Api, tenant2_owner, site_restored):
-    tenant2_owner.put("/business/v1/site", json={"primary_color": "#123456"})
+    tenant2_owner.put("/business/v1/site", json={"primary_color": "#123456", "accent_color": "#654321"})
 
     location = api.client(tenant="tenant2").get("/location-branding/v1/public/location2").json()["data"]
 
     assert location["primary_color"] == "#123456"
+    assert location["accent_color"] == "#654321"
 
 
 # Only the owner changes the site: an admin gets 403.
@@ -101,6 +110,7 @@ def test_site_values_are_checked(tenant2_owner):
     faq = {"question": "Q?", "answer": "A."}
 
     assert tenant2_owner.put("/business/v1/site", json={"primary_color": "purple"}).status_code == 422
+    assert tenant2_owner.put("/business/v1/site", json={"accent_color": "#FFF"}).status_code == 422
     assert tenant2_owner.put("/business/v1/site/faqs", json={"faqs": [faq] * 21}).status_code == 422
     assert tenant2_owner.post(
         "/business/v1/site/uploads", json={"kind": "logo", "content_type": "image/svg+xml"}

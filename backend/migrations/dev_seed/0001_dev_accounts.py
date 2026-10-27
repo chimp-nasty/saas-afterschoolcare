@@ -445,23 +445,27 @@ def up(conn: Connection) -> None:
     # BRANDING (one per business)
     # =========================
 
-    for tenant_id, primary_color, secondary_color in (
-        (tenant_1_id, "#5E2BFF", "#E8FFC2"),
-        (tenant_2_id, "#0369A1", "#FDBA74"),
+    # Tenant 1 has the mockup's colours (docs/reference-imgs): navy, blue
+    # and amber.
+    for tenant_id, primary_color, secondary_color, accent_color in (
+        (tenant_1_id, "#0F172A", "#2563EB", "#F59E0B"),
+        (tenant_2_id, "#0369A1", "#FDBA74", "#16A34A"),
     ):
         conn.execute(
             text("""
-                INSERT INTO tenancy.tenant_branding (tenant_id, primary_color, secondary_color)
-                VALUES (:tenant_id, :primary_color, :secondary_color)
+                INSERT INTO tenancy.tenant_branding (tenant_id, primary_color, secondary_color, accent_color)
+                VALUES (:tenant_id, :primary_color, :secondary_color, :accent_color)
                 ON CONFLICT (tenant_id)
                 DO UPDATE SET
                     primary_color = EXCLUDED.primary_color,
-                    secondary_color = EXCLUDED.secondary_color;
+                    secondary_color = EXCLUDED.secondary_color,
+                    accent_color = EXCLUDED.accent_color;
             """),
             {
                 "tenant_id": tenant_id,
                 "primary_color": primary_color,
                 "secondary_color": secondary_color,
+                "accent_color": accent_color,
             },
         )
 

@@ -30,3 +30,4 @@ class PublicLocationResponse(BaseModel):
     has_logo: bool
     primary_color: str | None
     secondary_color: str | None
+    accent_color: str | None

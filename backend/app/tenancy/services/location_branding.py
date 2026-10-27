@@ -32,6 +32,7 @@ def _to_public_location(location, tenant, branding) -> PublicLocationResponse:
         has_logo=bool(branding and branding.logo_key),
         primary_color=branding.primary_color if branding else None,
         secondary_color=branding.secondary_color if branding else None,
+        accent_color=branding.accent_color if branding else None,
     )
 
 

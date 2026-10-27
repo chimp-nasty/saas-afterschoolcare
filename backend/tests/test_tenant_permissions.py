@@ -166,7 +166,7 @@ def test_tenant_and_location_permissions_are_separate():
 
 
 # Location codes can't take the names of the site's own pages.
-@pytest.mark.parametrize("code", ["business", "api", "kiosk"])
+@pytest.mark.parametrize("code", ["business", "api", "kiosk", "locations", "about"])
 def test_reserved_location_codes(api: Api, code):
     with pytest.raises(IntegrityError, match="ck_locations_code_reserved"):
         api.sql(NEW_LOCATION.replace("RETURNING id", ""), code=code)
