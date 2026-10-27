@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 
 	import {
 		australianStateValues,
@@ -99,12 +100,7 @@
 
 	<Field label="State" error={errors.state}>
 		{#snippet children(id)}
-			<select {id} bind:value={body.state} required>
-				<option value="">Select an option</option>
-				{#each australianStateValues as state (state)}
-					<option value={state}>{state}</option>
-				{/each}
-			</select>
+			<Select {id} bind:value={body.state} required options={australianStateValues.map((state) => ({ value: state, label: state }))} />
 		{/snippet}
 	</Field>
 

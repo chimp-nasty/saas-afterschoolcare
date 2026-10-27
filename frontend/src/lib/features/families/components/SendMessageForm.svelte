@@ -13,6 +13,7 @@
 	import ExpandableSection from '$lib/components/controls/ExpandableSection.svelte';
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 
 	import type { FamilyChildResponse, SendFamilyMessageRequest } from '$lib/api/schema';
 	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
@@ -163,23 +164,26 @@
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<Field label="About" error={errors.child_id}>
 			{#snippet children(id)}
-				<select {id} value={childId} onchange={(event) => chooseChild(event.currentTarget.value)}>
-					<option value="">The whole family</option>
-					{#each kids as child (child.id)}
-						<option value={child.id}>{child.first_name} {child.last_name}</option>
-					{/each}
-				</select>
+				<Select
+					{id}
+					value={childId}
+					onchange={chooseChild}
+					options={[
+						{ value: '', label: 'The whole family' },
+						...kids.map((child) => ({ value: child.id, label: `${child.first_name} ${child.last_name}` }))
+					]}
+				/>
 			{/snippet}
 		</Field>
 
 		<Field label="Link to" error={errors.target}>
 			{#snippet children(id)}
-				<select {id} value={target} onchange={(event) => chooseLink(event.currentTarget.value as Link | '')}>
-					<option value="">No link</option>
-					{#each links as link (link.value)}
-						<option value={link.value}>{link.label}</option>
-					{/each}
-				</select>
+				<Select
+					{id}
+					value={target}
+					onchange={(value) => chooseLink(value as Link | '')}
+					options={[{ value: '', label: 'No link' }, ...links]}
+				/>
 			{/snippet}
 		</Field>
 	</div>

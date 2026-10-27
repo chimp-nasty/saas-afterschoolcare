@@ -176,6 +176,10 @@
         });
     }
 
+    // Refund, Cancel and Put back are the same width, so a line's action
+    // doesn't change size between states.
+    const LINE_ACTION_WIDTH = "w-32";
+
     // --- Cancelling without a refund, and putting back ----------------------
 
     async function cancelDay(booking: BookingGroupLineResponse) {
@@ -264,6 +268,7 @@
             {:else if booking?.is_refundable}
                 <Button
                     variant="ghost"
+                    width={LINE_ACTION_WIDTH}
                     onclick={() => refund(booking)}
                 >
                     Refund
@@ -277,6 +282,7 @@
             {:else if booking?.is_cancellable}
                 <Button
                     variant="ghost"
+                    width={LINE_ACTION_WIDTH}
                     onclick={() => cancelDay(booking)}
                 >
                     Cancel
@@ -288,6 +294,7 @@
             {:else if booking?.is_reinstatable}
                 <Button
                     variant="ghost"
+                    width={LINE_ACTION_WIDTH}
                     onclick={() => reinstateDay(booking)}
                 >
                     Put back
@@ -331,8 +338,8 @@
             </Button>
         </ActionBar>
     {:else}
-        <HyperTextLink href={`/${data.locationCode}/bookings`}>
-            Back to bookings
-        </HyperTextLink>
+        <ActionBar start>
+            <Button variant="ghost" onclick={() => goto(`/${data.locationCode}/bookings`)}>Back to bookings</Button>
+        </ActionBar>
     {/if}
 </Page>

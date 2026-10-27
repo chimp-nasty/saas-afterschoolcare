@@ -8,6 +8,7 @@
 	import ExpandableSection from '$lib/components/controls/ExpandableSection.svelte';
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 
 	import type { CreateChildNoteRequest, FamilyChildResponse } from '$lib/api/schema';
 	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
@@ -72,12 +73,13 @@
 
 	<Field label="About" error={errors.child_id}>
 		{#snippet children(id)}
-			<select {id} bind:value={body.child_id} required>
-				<option value="" disabled>Choose a child</option>
-				{#each kids as child (child.id)}
-					<option value={child.id}>{child.first_name} {child.last_name}</option>
-				{/each}
-			</select>
+			<Select
+				{id}
+				bind:value={body.child_id}
+				required
+				placeholder="Choose a child"
+				options={kids.map((child) => ({ value: child.id, label: `${child.first_name} ${child.last_name}` }))}
+			/>
 		{/snippet}
 	</Field>
 

@@ -56,12 +56,12 @@
 		<span class="text-base text-(--text)" role="cell">{formatMoney(booking.price_snapshot_cents, booking.currency)}</span>
 		<span class="flex gap-2" role="cell">
 			{#if refundable(booking)}
-				<Button variant="ghost" onclick={() => onrefund(booking)}>Refund</Button>
+				<Button variant="ghost" width="w-32" onclick={() => onrefund(booking)}>Refund</Button>
 			{/if}
 			{#if booking.is_cancellable}
-				<Button variant="ghost" onclick={() => oncancel(booking)}>Cancel</Button>
+				<Button variant="ghost" width="w-32" onclick={() => oncancel(booking)}>Cancel</Button>
 			{:else if booking.is_reinstatable}
-				<Button variant="ghost" onclick={() => onreinstate(booking)}>Put back</Button>
+				<Button variant="ghost" width="w-32" onclick={() => onreinstate(booking)}>Put back</Button>
 			{/if}
 		</span>
 	{/snippet}

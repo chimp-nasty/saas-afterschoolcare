@@ -11,6 +11,8 @@
 
 	import type { Snippet } from 'svelte';
 
+	import Select from '$lib/components/forms/fields/Select.svelte';
+
 	export type Tab = {
 		id: string;
 		label: string;
@@ -94,16 +96,13 @@
 
 <div class="flex flex-col gap-4">
 	{#if useSelectOnMobile}
-		<select
+		<Select
 			class="md:hidden"
 			aria-label="Section"
 			value={activeTab}
-			onchange={(event) => selectTab(event.currentTarget.value)}
-		>
-			{#each tabs as tab (tab.id)}
-				<option value={tab.id}>{tab.label}</option>
-			{/each}
-		</select>
+			onchange={selectTab}
+			options={tabs.map((tab) => ({ value: tab.id, label: tab.label }))}
+		/>
 	{/if}
 
 	<div

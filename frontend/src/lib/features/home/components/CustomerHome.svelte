@@ -5,10 +5,10 @@
     import Card from "$lib/components/layout/Card.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import CentreCard from "$lib/features/location/components/CentreCard.svelte";
+    import CentreMap from "$lib/features/location/components/CentreMap.svelte";
     import CustomerBookings from "./CustomerBookings.svelte";
 
     import { auth } from "$lib/auth/state.svelte";
-    import { logout } from "$lib/auth/logout";
     import type { BookingTableResponse, PublicLocationResponse } from "$lib/api/schema";
 
     let {
@@ -88,14 +88,8 @@
     Book now
 </Button>
 
-<!-- The "running late" number, one tap from the main screen. -->
+<!-- The "running late" number, one tap from the main screen, and where
+     the centre is. -->
 <CentreCard {location} />
 
-<!-- Same as Account: customers have no sidebar on mobile. -->
-<Button
-    variant="ghost"
-    fullWidth
-    onclick={() => logout(locationCode)}
->
-    Log out
-</Button>
+<CentreMap {location} compact />

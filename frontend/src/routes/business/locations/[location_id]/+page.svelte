@@ -4,9 +4,10 @@
     site's home page, where families choose the centre again.
 -->
 <script lang="ts">
+	import Button from '$lib/components/actions/Button.svelte';
+	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import { goto, invalidate } from '$app/navigation';
 
-	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import { confirmAction } from '$lib/components/overlays/confirm.svelte';
@@ -72,5 +73,7 @@
 		<LocationForm {initial} submitLabel="Save centre" onsubmit={save} />
 	{/if}
 
-	<HyperTextLink href="/business/locations">Back to centres</HyperTextLink>
+	<ActionBar start>
+		<Button variant="ghost" onclick={() => goto('/business/locations')}>Back to centres</Button>
+	</ActionBar>
 </Page>

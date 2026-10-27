@@ -4,9 +4,10 @@
     the login can't carry over from this site to theirs.
 -->
 <script lang="ts">
+	import Button from '$lib/components/actions/Button.svelte';
+	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import { page } from '$app/state';
 
-	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
@@ -51,7 +52,10 @@
 			<Card border>
 				<div class="flex flex-col gap-4">
 					<Notice tone="success">Your business is set up. Log in to Business settings to add your centres and connect payments.</Notice>
-					<HyperTextLink href={loginUrl}>Go to Business settings</HyperTextLink>
+					<ActionBar start>
+						<!-- The business's own site, another host: a full page load. -->
+						<Button variant="ghost" onclick={() => loginUrl && window.location.assign(loginUrl)}>Go to Business settings</Button>
+					</ActionBar>
 				</div>
 			</Card>
 		{:else if data.token && data.email}

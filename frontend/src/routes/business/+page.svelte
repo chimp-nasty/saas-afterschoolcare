@@ -4,7 +4,9 @@
     centre's own admin pages (Manage centre).
 -->
 <script lang="ts">
-	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
+	import { goto } from '$app/navigation';
+	import Button from '$lib/components/actions/Button.svelte';
+	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
@@ -32,7 +34,9 @@
 					<Notice tone="success">Your business details are filled in.</Notice>
 				{:else}
 					<Notice tone="warning">Add your legal name, ABN, email and phone.</Notice>
-					<HyperTextLink href="/business/settings">Business details</HyperTextLink>
+					<ActionBar start>
+						<Button variant="ghost" onclick={() => goto('/business/settings')}>Business details</Button>
+					</ActionBar>
 				{/if}
 
 				{#if overview.takes_payments}
@@ -41,12 +45,16 @@
 					<Notice tone="warning">
 						{overview.payments_connected ? "Payments aren't ready yet, so families can't book." : "Connect Stripe so families can book and pay."}
 					</Notice>
-					<HyperTextLink href="/business/payments">Payments</HyperTextLink>
+					<ActionBar start>
+						<Button variant="ghost" onclick={() => goto('/business/payments')}>Payments</Button>
+					</ActionBar>
 				{/if}
 
 				{#if overview.locations.length === 0}
 					<Notice tone="warning">Add your first centre.</Notice>
-					<HyperTextLink href="/business/locations/new">Add a centre</HyperTextLink>
+					<ActionBar start>
+						<Button variant="ghost" onclick={() => goto('/business/locations/new')}>Add a centre</Button>
+					</ActionBar>
 				{:else if noServices.length > 0}
 					<Notice tone="warning">
 						No services offered yet at {noServices.map((location) => location.name).join(', ')}. Set them up from Manage centre › Service settings.

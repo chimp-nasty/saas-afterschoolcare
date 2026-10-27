@@ -8,6 +8,7 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 
 	import {
 		emergencyRelationValues,
@@ -82,12 +83,12 @@
 
 	<Field label="Relationship" error={errors.emergency_contact_relation}>
 		{#snippet children(id)}
-			<select {id} bind:value={body.emergency_contact_relation} required>
-				<option value="">Select an option</option>
-				{#each emergencyRelationValues as relation (relation)}
-					<option value={relation}>{EMERGENCY_RELATION_LABELS[relation]}</option>
-				{/each}
-			</select>
+			<Select
+				{id}
+				bind:value={body.emergency_contact_relation}
+				required
+				options={emergencyRelationValues.map((relation) => ({ value: relation, label: EMERGENCY_RELATION_LABELS[relation] }))}
+			/>
 		{/snippet}
 	</Field>
 

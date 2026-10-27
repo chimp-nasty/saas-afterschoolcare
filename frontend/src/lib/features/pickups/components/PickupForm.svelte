@@ -21,6 +21,7 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 
 	import { pickupRelationValues, type PickupResponse } from '$lib/api/schema';
 	import type { FormErrors, SubmitHandler } from '$lib/types/forms';
@@ -133,12 +134,13 @@
 
 	<Field label="Relationship" error={errors.relation}>
 		{#snippet children(id)}
-			<select {id} bind:value={body.relation} required>
-				<option value="" disabled>Select a relationship</option>
-				{#each relationOptions as relation (relation)}
-					<option value={relation}>{PICKUP_RELATION_LABELS[relation]}</option>
-				{/each}
-			</select>
+			<Select
+				{id}
+				bind:value={body.relation}
+				required
+				placeholder="Select a relationship"
+				options={relationOptions.map((relation) => ({ value: relation, label: PICKUP_RELATION_LABELS[relation] }))}
+			/>
 		{/snippet}
 	</Field>
 

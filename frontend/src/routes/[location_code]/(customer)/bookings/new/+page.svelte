@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { invalidate } from "$app/navigation";
+    import Button from "$lib/components/actions/Button.svelte";
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
+    import { invalidate, goto } from "$app/navigation";
 
-    import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import Notice from "$lib/components/text/Notice.svelte";
@@ -61,6 +62,8 @@
 
         <Notice tone="warning">Add {listed(missing)} before booking.</Notice>
 
-        <HyperTextLink href={`/${data.locationCode}/account?state=profile`}>Go to your profile</HyperTextLink>
+        <ActionBar start>
+            <Button variant="ghost" onclick={() => goto(`/${data.locationCode}/account?state=profile`)}>Go to your profile</Button>
+        </ActionBar>
     {/if}
 </Page>

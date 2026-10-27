@@ -35,7 +35,7 @@ Dates stay as ISO strings end to end: `YYYY-MM-DD` for dates, ISO datetimes for 
 
 One component per form, taking `onsubmit: SubmitHandler<T>` (`$lib/types/forms`). The page calls the API, handles success (redirect, refresh) and returns the response. The form owns `body`, `errors` and `isLoading`, sets `errors = response.fieldErrors`, and resets `body` when `response.ok`. Reference pair: `features/auth/components/LoginForm.svelte` + `routes/[location_code]/(public)/login/+page.svelte`.
 
-Each input is `<Field label error>` wrapping a native element that takes the snippet's `id`. `routes/layout.css` already styles native inputs, selects and textareas.
+Each input is `<Field label error>` wrapping a native element that takes the snippet's `id`. `routes/layout.css` already styles native inputs and textareas. A single choice is `Select` (`components/forms/fields/`), never a native `<select>`: it takes the `id`, `options` (`{ value, label }[]`), `bind:value` or `onchange`, and `required`/`placeholder`; `MultiSelect` for several.
 
 ### Tabs
 
@@ -126,9 +126,10 @@ Each text role has one look, set by a component, never by hand-written classes (
 
 - In features and routes, every action is a `Button`. Raw `<button>` only for selectable tiles (service cards, child chips) and calendar cells and their prev/next arrows, styled with tokens and at least 44px. Components in `components/` may use raw elements internally (e.g. `MultiSelect`'s options); that's what they're for.
 - `default` for the main action (one per view), `ghost` for secondary (Back, Cancel). Buttons are uppercase (applied by `Button`).
+- A button whose label changes between states (Refund / Cancel / Put back on a booking line, a label that swaps while saving) or that shows a loading spinner beside a short label gets a fixed width, `Button width="w-32"`, sized for its longest label, so it never changes size. Buttons in the same spot share one width constant. Don't set the width through `class`: `Button`'s own width wins.
 - A row of actions goes in `ActionBar`, secondary first and main action last. On mobile the buttons stack full width with the main action at the bottom, nearest the thumb; from `md:` they sit in one row, secondary left and main right. Buttons inside it size themselves; don't pass `fullWidth`.
 - In multi-step flows (booking), use `<ActionBar sticky>` so Continue stays reachable on long pages.
-- Links use `HyperTextLink`: 44px tall by default ("Back to bookings", "Forgot your password?"); `inline` only inside running text. `Button variant="hyperlink"` is for a button that looks like a link (e.g. "Show more"), not for navigation.
+- A way on that's the next thing to do on the page ("Go to your profile", "Back to bookings", "Back to families") is a `ghost` `Button` in `<ActionBar start>` (full width on a phone), calling `goto`; another host needs a full page load (`window.location.assign`). Text links (`HyperTextLink`, 44px tall by default) are only for outside links (receipts, maps, phone, email, terms), small helpers in a form ("Forgot your password?", "Already have an account? Log in") and links inside running text (`inline`). `Button variant="hyperlink"` is for a button that looks like a link (e.g. "Show more"), not for navigation.
 - Yes/no questions use `confirmAction()` (see Confirmations below). `Modal` (a bottom sheet on mobile) is only for small forms or extra content over a page, with its buttons in `actions`. Navigation menus use `Drawer` (staff and admin only).
 
 ### Confirmations

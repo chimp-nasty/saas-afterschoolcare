@@ -3,10 +3,12 @@
     landing page). Anything else: say so, rather than hiding it.
 -->
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import Button from '$lib/components/actions/Button.svelte';
+	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 
-	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
@@ -32,9 +34,9 @@
 				Try again in a moment. If it keeps happening, contact the centre.
 			</p>
 
-			<HyperTextLink href={isLoggedIn ? `/${locationCode}/home` : `/${locationCode}`}>
-				Back to home
-			</HyperTextLink>
+			<ActionBar start>
+				<Button variant="ghost" onclick={() => goto(isLoggedIn ? `/${locationCode}/home` : `/${locationCode}`)}>Back to home</Button>
+			</ActionBar>
 		</Card>
 	</Page>
 {/if}

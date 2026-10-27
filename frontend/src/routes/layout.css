@@ -171,6 +171,28 @@ body {
 	}
 }
 
+/* The bell with unseen messages: a short ring every 30 seconds (the first
+   half second of each cycle), then still. */
+@keyframes bell-nudge {
+	0%,
+	1.6%,
+	100% {
+		transform: rotate(0deg);
+	}
+
+	0.4% {
+		transform: rotate(15deg);
+	}
+
+	0.8% {
+		transform: rotate(-12deg);
+	}
+
+	1.2% {
+		transform: rotate(8deg);
+	}
+}
+
 /* Printing: only a printable sheet (e.g. the run sheet, features/attendance/
    components/PrintableRunSheet.svelte, which moves itself to the end of
    <body>) prints. Everything else is left out entirely, so it can't add

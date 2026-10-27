@@ -5,13 +5,15 @@
     stays pending, so poll briefly.
 -->
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import Button from "$lib/components/actions/Button.svelte";
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import { onMount } from "svelte";
     import { page } from "$app/state";
 
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
-    import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
     import type { CheckoutStatusResponse } from "$lib/api/schema";
@@ -110,7 +112,7 @@
         </div>
     {/if}
 
-    <HyperTextLink href={`/${data.locationCode}/bookings`}>
-        View all bookings
-    </HyperTextLink>
+    <ActionBar start>
+        <Button variant="ghost" onclick={() => goto(`/${data.locationCode}/bookings`)}>View all bookings</Button>
+    </ActionBar>
 </Page>

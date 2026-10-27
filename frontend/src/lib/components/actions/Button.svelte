@@ -15,6 +15,10 @@
 		isActive?: boolean;
 		variant?: Variant;
 		fullWidth?: boolean;
+		// A fixed width (a Tailwind class, e.g. 'w-28') in place of fitting
+		// the label: for a button whose label or spinner changes, so it
+		// doesn't change size between states.
+		width?: string;
 		textSize?: TextSize;
 		class?: string;
 		children?: () => any;
@@ -30,6 +34,7 @@
 		isActive = false,
 		variant = 'default',
 		fullWidth = false,
+		width,
 		textSize = 'xs',
 		class: className = '',
 		children,
@@ -59,7 +64,7 @@
 	const inActionBar = getContext<boolean>(ACTION_BAR) ?? false;
 
 	const widthClass = $derived(
-		fullWidth ? 'w-full' : inActionBar ? 'w-full md:w-fit' : 'w-fit'
+		width ? `${width} shrink-0` : fullWidth ? 'w-full' : inActionBar ? 'w-full md:w-fit' : 'w-fit'
 	);
 
 	// The hyperlink variant takes the size of the text around it.

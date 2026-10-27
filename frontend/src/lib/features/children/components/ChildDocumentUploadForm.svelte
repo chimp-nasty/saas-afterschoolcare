@@ -6,6 +6,7 @@
 <script lang="ts">
 	import Form from '$lib/components/forms/Form.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 
 	import { childDocumentTypeValues, type ChildDocumentType } from '$lib/api/schema';
 	import { DOCUMENT_ACCEPT, DOCUMENT_TYPE_LABELS } from '$lib/features/children/documents';
@@ -66,13 +67,13 @@
 >
 	<Field label="Document" error={errors.document_type}>
 		{#snippet children(id)}
-			<select {id} bind:value={documentType} required>
-				<option value="" disabled>Document type</option>
-
-				{#each childDocumentTypeValues as value}
-					<option {value}>{DOCUMENT_TYPE_LABELS[value]}</option>
-				{/each}
-			</select>
+			<Select
+				{id}
+				bind:value={documentType}
+				required
+				placeholder="Document type"
+				options={childDocumentTypeValues.map((value) => ({ value, label: DOCUMENT_TYPE_LABELS[value] }))}
+			/>
 		{/snippet}
 	</Field>
 

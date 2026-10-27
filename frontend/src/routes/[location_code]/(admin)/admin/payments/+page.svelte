@@ -5,7 +5,9 @@
     settings › Payments (/business/payments).
 -->
 <script lang="ts">
-    import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
+    import { goto } from "$app/navigation";
+    import Button from "$lib/components/actions/Button.svelte";
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Card from "$lib/components/layout/Card.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
@@ -29,7 +31,9 @@
             <StripeAccountSummary account={data.account} />
 
             {#if isOwner}
-                <HyperTextLink href="/business/payments">Manage in Business settings</HyperTextLink>
+                <ActionBar start>
+                    <Button variant="ghost" onclick={() => goto("/business/payments")}>Manage in Business settings</Button>
+                </ActionBar>
             {:else}
                 <p class="text-sm text-(--text-muted)">The business's owner manages this in Business settings.</p>
             {/if}

@@ -17,6 +17,7 @@
 	import PrintableRunSheet, { type PrintSession } from '$lib/features/attendance/components/PrintableRunSheet.svelte';
 	import TabbedPanels from '$lib/components/controls/TabbedPanels.svelte';
 	import Field from '$lib/components/forms/Field.svelte';
+	import Select from '$lib/components/forms/fields/Select.svelte';
 	import Modal from '$lib/components/overlays/Modal.svelte';
 	import { confirmAction } from '$lib/components/overlays/confirm.svelte';
 	import EmptyState from '$lib/components/text/EmptyState.svelte';
@@ -1010,14 +1011,16 @@
 			<div class="flex flex-col gap-5">
 				<Field label="Who are you?">
 					{#snippet children(id)}
-						<select {id} bind:value={shiftMemberId}>
-							<option value="" disabled>Choose your name</option>
-							{#each clockable as member (member.user_id)}
-								<option value={member.user_id}>
-									{member.first_name} {member.last_name}{member.on_shift ? ' (on shift)' : ''}
-								</option>
-							{/each}
-						</select>
+						<Select
+							{id}
+							bind:value={shiftMemberId}
+							size="kiosk"
+							placeholder="Choose your name"
+							options={clockable.map((member) => ({
+								value: member.user_id,
+								label: `${member.first_name} ${member.last_name}${member.on_shift ? ' (on shift)' : ''}`
+							}))}
+						/>
 					{/snippet}
 				</Field>
 

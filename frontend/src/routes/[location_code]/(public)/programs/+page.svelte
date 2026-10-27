@@ -96,13 +96,15 @@
 		</p>
 
 		{#if data.services.length > 1}
-			<nav class="flex flex-wrap gap-x-6 gap-y-2" aria-label="Programs">
+			<!-- One pill per program, all the same size, each jumping to its
+			     section. -->
+			<nav class="grid grid-cols-2 gap-3 md:grid-cols-3" aria-label="Programs">
 				{#each data.services as service (service.id)}
 					<a
 						href={`#${service.id}`}
-						class="flex min-h-11 items-center text-base font-semibold text-(--primary) hover:text-(--primary-hover)"
+						class="flex min-h-12 min-w-0 items-center justify-center rounded-full border border-(--primary) bg-(--primary-soft) px-4 text-sm font-extrabold text-(--primary) transition hover:bg-(--primary) hover:text-white focus-visible:bg-(--primary) focus-visible:text-white"
 					>
-						{service.service_name}
+						<span class="truncate">{service.service_name}</span>
 					</a>
 				{/each}
 			</nav>

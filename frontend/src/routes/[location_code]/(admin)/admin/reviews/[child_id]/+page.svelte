@@ -4,7 +4,6 @@
 
     import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Button from "$lib/components/actions/Button.svelte";
-    import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
     import Card from "$lib/components/layout/Card.svelte";
     import DataCard from "$lib/components/layout/DataCard.svelte";
     import Page from "$lib/components/layout/Page.svelte";
@@ -99,7 +98,9 @@
 </script>
 
 <Page width="wide">
-    <HyperTextLink href={listHref}>Back to medical reviews</HyperTextLink>
+    <ActionBar start>
+        <Button variant="ghost" onclick={() => goto(listHref)}>Back to medical reviews</Button>
+    </ActionBar>
 
     <PageHeader
         eyebrow="Medical review"

@@ -83,24 +83,30 @@
 
             <div class="divide-y divide-(--border)">
                 {#each child.lines as line (line.bookingId ?? line.date)}
-                    <div class="flex items-start justify-between gap-4 px-5 py-4">
-                        <div>
-                            <p class="text-base font-semibold text-(--text)">
-                                {formatDate(line.date)}
-                            </p>
+                    <div class="flex flex-col gap-3 px-5 py-4">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-base font-semibold text-(--text)">
+                                    {formatDate(line.date)}
+                                </p>
 
-                            <p class="text-sm text-(--text-muted)">
-                                {line.serviceName}{line.time ? ` · ${line.time}` : ""}
-                            </p>
-                        </div>
+                                <p class="text-sm text-(--text-muted)">
+                                    {line.serviceName}{line.time ? ` · ${line.time}` : ""}
+                                </p>
+                            </div>
 
-                        <div class="flex flex-col items-end gap-2">
                             <p class="text-base font-semibold text-(--text)">
                                 {formatPrice(line.priceCents)}
                             </p>
-
-                            {@render lineActions?.(line)}
                         </div>
+
+                        <!-- The line's action and where it stands, on the left
+                             under the date (hidden when there's neither). -->
+                        {#if lineActions}
+                            <div class="flex items-center gap-3 empty:hidden">
+                                {@render lineActions(line)}
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             </div>

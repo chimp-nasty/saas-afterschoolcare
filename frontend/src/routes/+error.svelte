@@ -6,12 +6,13 @@
     platform's own site, the platform's.
 -->
 <script lang="ts">
+	import Button from '$lib/components/actions/Button.svelte';
+	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
 
-	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
@@ -77,7 +78,9 @@
 				</p>
 
 				{#if page.url.pathname !== '/'}
-					<HyperTextLink href="/">Choose your centre</HyperTextLink>
+					<ActionBar start>
+						<Button variant="ghost" onclick={() => goto('/')}>Choose your centre</Button>
+					</ActionBar>
 				{/if}
 			</Card>
 		</Page>

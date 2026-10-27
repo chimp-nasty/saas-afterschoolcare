@@ -20,7 +20,13 @@
 	aria-label="Notifications"
 	onclick={() => goto(`/${page.params.location_code}/actions`)}
 >
-	<span class="inline-flex origin-top group-hover:animate-[bell-ring_0.5s_ease-in-out]">
+	<!-- Unseen messages: it rings now and then (not with reduced motion). -->
+	<span
+		class={[
+			'inline-flex origin-top group-hover:animate-[bell-ring_0.5s_ease-in-out]',
+			count > 0 && 'motion-safe:animate-[bell-nudge_30s_ease-in-out_1s_infinite]'
+		]}
+	>
 		<Bell size={20} />
 	</span>
 

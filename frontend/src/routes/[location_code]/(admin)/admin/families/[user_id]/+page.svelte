@@ -5,10 +5,11 @@
     messages to the family, in tabs.
 -->
 <script lang="ts">
+    import Button from "$lib/components/actions/Button.svelte";
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import { goto, invalidate } from "$app/navigation";
     import { page } from "$app/state";
 
-    import HyperTextLink from "$lib/components/actions/HyperTextLink.svelte";
     import TabbedPanels from "$lib/components/controls/TabbedPanels.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
@@ -190,7 +191,9 @@
 {/snippet}
 
 <Page width="wide">
-    <HyperTextLink href={`/${data.locationCode}/admin/families`}>Back to families</HyperTextLink>
+    <ActionBar start>
+        <Button variant="ghost" onclick={() => goto(`/${data.locationCode}/admin/families`)}>Back to families</Button>
+    </ActionBar>
 
     <PageHeader
         title={`${data.family.first_name} ${data.family.last_name}`}

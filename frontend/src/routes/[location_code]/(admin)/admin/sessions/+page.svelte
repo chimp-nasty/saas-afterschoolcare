@@ -9,6 +9,7 @@
     import { toast } from "svelte-sonner";
 
     import Button from "$lib/components/actions/Button.svelte";
+    import Select from "$lib/components/forms/fields/Select.svelte";
     import GridTable from "$lib/components/layout/GridTable.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
@@ -136,11 +137,12 @@
         <div class="flex flex-wrap items-end gap-3">
             <label class="flex flex-col gap-1">
                 <span class="label-text">Service</span>
-                <select value={data.serviceId} onchange={(event) => show({ service: event.currentTarget.value })}>
-                    {#each data.services as option (option.id)}
-                        <option value={option.id}>{option.service_name}</option>
-                    {/each}
-                </select>
+                <Select
+                    class="min-w-48"
+                    value={data.serviceId}
+                    onchange={(service) => show({ service })}
+                    options={data.services.map((option) => ({ value: option.id, label: option.service_name }))}
+                />
             </label>
 
             <Button variant="ghost" onclick={() => show({ month: shiftMonth(-1) })}>Previous month</Button>
