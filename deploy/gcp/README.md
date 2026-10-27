@@ -221,7 +221,7 @@ Put-Secret STRIPE_WEBHOOK_SECRET unset
 Put-Secret STRIPE_CONNECT_WEBHOOK_SECRET unset
 ```
 
-To change one later, run the same line again, then release the API (step 8) so new instances read it.
+To change one later, run the same line again, then release the API (step 8's deploy command). Running instances keep the values they started with until then.
 
 ## 7. Database (Neon)
 
@@ -417,7 +417,7 @@ Deployed dev gets **its own Stripe sandbox**, with webhook endpoints registered 
 
 1. In the Stripe dashboard, create a sandbox (e.g. "Deployed dev"). Turn on Connect there as in `deploy/stripe/README.md` section 1, because Connect settings are per sandbox. Put its secret key in with `Put-Secret STRIPE_SECRET_KEY (Read-Secret "STRIPE_SECRET_KEY")` if step 6 used another one.
 2. **Webhooks**, in that sandbox: two endpoints, `https://dev.sessionpilot.com.au/api/v1/webhooks/stripe` (your account) and `…/stripe/connect` (connected accounts), with the events listed in `deploy/stripe/README.md` section 2.
-3. Put their signing secrets in, then release the API again (step 8's deploy command, same `$TAG`):
+3. Put their signing secrets in, then release the API again (step 8's deploy command, same `$TAG`). The release is what makes it read them: a running instance keeps the values it started with, so until then every delivery fails with 400 "No signatures found matching the expected signature":
 
    ```powershell
    Put-Secret STRIPE_WEBHOOK_SECRET (Read-Secret "STRIPE_WEBHOOK_SECRET (your account endpoint)")
@@ -441,7 +441,7 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" `
   --member="serviceAccount:$API_SA" --role=roles/compute.loadBalancerAdmin
 ```
 
-**12.2 Settings:** in `env/api.dev.yaml`, set `DOMAINS_TARGET_IP` to the load balancer's address (`$IP`, step 10.1), then release the API (step 8's deploy command). Until it's set, Business settings › Domains says custom domains aren't available.
+**12.2 Settings:** in `env/api.dev.yaml`, set `DOMAINS_TARGET_IP` to the load balancer's address (`$IP`, step 10.1), then release the API (all of step 8, the build too, so the image has the current code). Until it's set, Business settings › Domains says custom domains aren't available.
 
 **12.3 The check every 5 minutes** (Cloud Scheduler, calling the API on the platform's site with the secret from step 6):
 
@@ -453,7 +453,7 @@ gcloud scheduler jobs create http domain-check `
   --schedule="*/5 * * * *" --time-zone="Australia/Sydney" `
   --uri="https://$BASE_DOMAIN/api/internal/v1/domain-check" --http-method=POST `
   --headers="X-Domain-Check-Secret=$CHECK_SECRET" `
-  --attempt-deadline=300s --location="$REGION" --project="$PROJECT_ID"
+  --attempt-deadline=300s --location="$REGION" --project="$PROJECT_ID" --format="value(name)"
 Remove-Variable CHECK_SECRET
 ```
 
@@ -465,6 +465,6 @@ Check: `gcloud scheduler jobs run domain-check --location="$REGION" --project="$
 
 ## Later
 
-- **Email:** dev logs emails (`EMAIL_PROVIDER: log`), and in dev the log includes their text. To send for real, follow `deploy/email/ses/README.md`, subscribe the SNS topic to `https://dev.sessionpilot.com.au/api/v1/webhooks/ses`, add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` with `Put-Secret` and to `--set-secrets`, and the `SES_*` settings to `env/api.dev.yaml`.
+- **Email:** dev logs emails (`EMAIL_PROVIDER: log`), and in dev the log includes their text. **Not before a recipient allow-list exists** (not built): the SES account has production access and is shared with the live After3 stack, so dev sending to the seeded `@test.com` addresses would bounce and put that account at risk. Then, to send for real, follow `deploy/email/ses/README.md`, subscribe the SNS topic to `https://dev.sessionpilot.com.au/api/v1/webhooks/ses`, add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` with `Put-Secret` and to `--set-secrets`, and the `SES_*` settings to `env/api.dev.yaml`.
 - **Limiting who can reach dev:** not decided yet.
 - **Production:** `env/prod.env` and `env/api.prod.yaml`, the root domain's own zone records (`sessionpilot.com.au`, `*.sessionpilot.com.au`), live Stripe keys.
