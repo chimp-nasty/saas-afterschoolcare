@@ -312,7 +312,7 @@ class FakeStripe:
     def __init__(self, *, account_id: str | None = None):
         self.account_id = account_id
 
-    def create_checkout_session(self, *, line_items, currency, metadata, success_url, cancel_url, idempotency_key):
+    def create_checkout_session(self, *, line_items, currency, description, metadata, success_url, cancel_url, idempotency_key):
         session_id = f"cs_test_{uuid.uuid4().hex}"
 
         checkout = StripeCheckout(
@@ -332,6 +332,8 @@ class FakeStripe:
                 "account_id": self.account_id,
                 "line_items": line_items,
                 "currency": currency,
+                "description": description,
+                "metadata": metadata,
                 "success_url": success_url,
                 "cancel_url": cancel_url,
                 "idempotency_key": idempotency_key,

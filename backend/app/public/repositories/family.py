@@ -74,6 +74,14 @@ class FamilyRepository(Repository):
                       OR (u.first_name || ' ' || u.last_name) ILIKE :words
                       OR u.email ILIKE :words
                       OR (:digits <> '' AND regexp_replace(COALESCE(cp.phone, ''), '[^0-9]', '', 'g') LIKE '%' || :digits || '%')
+                      -- A booking's reference, as the family quotes it.
+                      OR EXISTS (
+                          SELECT 1
+                          FROM public.booking_groups bg
+                          WHERE bg.user_id = u.id
+                            AND bg.location_id = l.id
+                            AND bg.reference ILIKE :words
+                      )
                       OR EXISTS (
                           SELECT 1
                           FROM public.child_profile c
@@ -201,7 +209,7 @@ class FamilyRepository(Repository):
         return self.db.execute(
             text("""
                 SELECT
-                    pa.id, pa.created_at, pa.paid_at, pa.total_cents, pa.currency,
+                    pa.id, bg.reference, pa.created_at, pa.paid_at, pa.total_cents, pa.currency,
                     pa.stripe_status::text AS stripe_status,
                     pa.stripe_receipt_url AS receipt_url,
                     (SELECT count(*) FROM public.bookings b WHERE b.booking_group_id = pa.booking_group_id) AS bookings,
@@ -211,6 +219,7 @@ class FamilyRepository(Repository):
                         WHERE r.payment_attempt_id = pa.id AND r.status = 'SUCCEEDED'
                     ) AS refunded_cents
                 FROM public.payment_attempts pa
+                JOIN public.booking_groups bg ON bg.id = pa.booking_group_id
                 WHERE pa.user_id = :user_id AND pa.location_id = :location_id
                 ORDER BY pa.created_at DESC
                 LIMIT :limit

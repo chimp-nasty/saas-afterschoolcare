@@ -1847,6 +1847,12 @@ CREATE TABLE public.booking_groups (
 
     source VARCHAR(32),
 
+    -- What the family quotes and staff search for ("BK-7K3Q9P"): on the
+    -- confirmation email, every booking screen and the Stripe payment
+    -- (description and metadata), so a payment can be found on Stripe by
+    -- it. Set by trg_booking_groups_reference; never changes.
+    reference VARCHAR(12) NOT NULL,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     CONSTRAINT fk_booking_groups_user
@@ -1862,8 +1868,51 @@ CREATE TABLE public.booking_groups (
 
     -- Target for the composite foreign keys from bookings and payment_attempts.
     CONSTRAINT uq_booking_groups_id_user_location
-        UNIQUE (id, user_id, location_id)
+        UNIQUE (id, user_id, location_id),
+
+    CONSTRAINT uq_booking_groups_reference
+        UNIQUE (reference)
 );
+
+-- A short code people can read out and type: a prefix and 6 characters
+-- with no lookalikes (no 0/O, 1/I/L), e.g. "BK-7K3Q9P". About a billion
+-- per prefix; trg_*_reference retries the rare repeat.
+CREATE FUNCTION public.new_reference(p_prefix TEXT)
+RETURNS TEXT
+LANGUAGE sql
+VOLATILE
+AS $$
+    SELECT p_prefix || '-' || string_agg(
+        substr('23456789ABCDEFGHJKMNPQRSTUVWXYZ', 1 + floor(random() * 31)::int, 1),
+        ''
+    )
+    FROM generate_series(1, 6);
+$$;
+
+-- Gives a new booking group its reference, unique across every business.
+-- SECURITY DEFINER: the check for a repeat has to see every group, not
+-- only the family's own.
+CREATE FUNCTION public.set_booking_group_reference()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    LOOP
+        NEW.reference := public.new_reference('BK');
+        EXIT WHEN NOT EXISTS (
+            SELECT 1 FROM public.booking_groups WHERE reference = NEW.reference
+        );
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_booking_groups_reference
+    BEFORE INSERT ON public.booking_groups
+    FOR EACH ROW EXECUTE FUNCTION public.set_booking_group_reference();
 
 
 -- =====================================================
@@ -2059,6 +2108,10 @@ CREATE TABLE public.refunds (
     user_id UUID NOT NULL,
     requested_by_user_id UUID NOT NULL,
 
+    -- What the family and staff quote ("RF-…"): on the refund email and
+    -- the Stripe refund's metadata. Set by trg_refunds_reference.
+    reference VARCHAR(12) NOT NULL,
+
     -- Set from the booking by trg_refunds_rules: its group's successful
     -- payment, and its price.
     payment_attempt_id UUID NOT NULL,
@@ -2090,9 +2143,36 @@ CREATE TABLE public.refunds (
     CONSTRAINT uq_refunds_stripe_refund
         UNIQUE (stripe_refund_id),
 
+    CONSTRAINT uq_refunds_reference
+        UNIQUE (reference),
+
     CONSTRAINT ck_refunds_amount_positive
         CHECK (amount_cents > 0)
 );
+
+-- A new refund's reference ("RF-…", on its email and its Stripe refund's
+-- metadata), as for booking groups.
+CREATE FUNCTION public.set_refund_reference()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    LOOP
+        NEW.reference := public.new_reference('RF');
+        EXIT WHEN NOT EXISTS (
+            SELECT 1 FROM public.refunds WHERE reference = NEW.reference
+        );
+    END LOOP;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_refunds_reference
+    BEFORE INSERT ON public.refunds
+    FOR EACH ROW EXECUTE FUNCTION public.set_refund_reference();
 
 CREATE UNIQUE INDEX uq_refunds_active_booking
     ON public.refunds (booking_id)

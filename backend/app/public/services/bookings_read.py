@@ -13,6 +13,7 @@ from app.errors.bookings import (
 from app.errors.payments import PaymentProviderError
 from app.integrations.payments.stripe.settlement import confirm_with_stripe
 from app.public.repositories.booking import BookingRepository
+from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.schemas.booking import (
     FamilyBookingResponse,
@@ -62,10 +63,12 @@ class ReadBookingService:
         db: Session,
         booking_repository: BookingRepository,
         payment_attempt_repository: PaymentAttemptRepository,
+        booking_group_repository: BookingGroupRepository,
     ):
         self.db = db
         self.booking_repository = booking_repository
         self.payment_attempt_repository = payment_attempt_repository
+        self.booking_group_repository = booking_group_repository
 
     def list_groups(
         self,
@@ -80,6 +83,7 @@ class ReadBookingService:
         return [
             BookingGroupSummaryResponse(
                 booking_group_id=row.booking_group_id,
+                reference=row.reference,
                 created_at=row.created_at,
                 status=resolve_group_status(
                     {BookingStatus(status) for status in row.statuses}
@@ -122,6 +126,7 @@ class ReadBookingService:
 
         return BookingGroupResponse(
             booking_group_id=booking_group_id,
+            reference=self._reference(booking_group_id),
             status=resolve_group_status(
                 {booking.booking_status for booking in bookings}
             ),
@@ -134,6 +139,15 @@ class ReadBookingService:
             currency=bookings[0].currency,
             bookings=bookings,
         )
+
+    def _reference(self, booking_group_id: UUID) -> str:
+        """The group's reference ("BK-7K3Q9P"); RLS: the family's own, or staff's location's."""
+        group = self.booking_group_repository.get_by_id(id=booking_group_id)
+
+        if not group:
+            raise BookingGroupNotFoundError()
+
+        return group.reference
 
     def get_checkout_status(
         self,
@@ -175,6 +189,7 @@ class ReadBookingService:
 
         return CheckoutStatusResponse(
             booking_group_id=attempt.booking_group_id,
+            reference=self._reference(attempt.booking_group_id),
             payment_status=attempt.stripe_status,
             total_cents=attempt.total_cents,
             currency=attempt.currency,

@@ -98,6 +98,9 @@ class BookingTableResponse(BaseModel):
 
 class CheckoutStatusResponse(BaseModel):
     booking_group_id: UUID
+    # What the family quotes and staff search for ("BK-7K3Q9P"); also on
+    # the Stripe payment.
+    reference: str
 
     # PENDING until the Stripe webhook lands, then SUCCEEDED or FAILED.
     payment_status: StripeStatus
@@ -127,6 +130,9 @@ class BookingGroupResponse(BaseModel):
     """A booking group for the review screen (pay or cancel a pending one)."""
 
     booking_group_id: UUID
+    # What the family quotes and staff search for ("BK-7K3Q9P"); also on
+    # the Stripe payment.
+    reference: str
 
     # PENDING while it can still be paid or cancelled; a lapsed hold reads
     # as EXPIRED.
@@ -161,6 +167,9 @@ class BookingGroupSummaryResponse(BaseModel):
     """One card in "My bookings": a checkout and what it covers."""
 
     booking_group_id: UUID
+    # What the family quotes and staff search for ("BK-7K3Q9P"); also on
+    # the Stripe payment.
+    reference: str
     created_at: datetime
 
     status: BookingStatus

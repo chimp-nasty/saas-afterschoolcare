@@ -95,7 +95,11 @@
 </script>
 
 <Page>
-    <PageHeader title={result.title} description={result.description} />
+    <PageHeader
+        eyebrow={checkout ? `Reference ${checkout.reference}` : undefined}
+        title={result.title}
+        description={result.description}
+    />
 
     {#if checkout}
         <div class="flex flex-col gap-4">

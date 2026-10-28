@@ -8,7 +8,8 @@ from app.public.schemas.enums import AustralianState, CurrencyCode, EmergencyRel
 
 
 class FamilySearchFilterRequest(BaseModel):
-    # A child's or parent's name, an email or a phone number.
+    # A child's or parent's name, an email, a phone number or a booking
+    # reference ("BK-7K3Q9P").
     q: str = Field(min_length=2, max_length=100)
 
 
@@ -109,6 +110,9 @@ class FamilyPaymentResponse(BaseModel):
     """One payment (a checkout) and what's been refunded from it."""
 
     id: UUID
+    # Its booking's reference ("BK-7K3Q9P"), as on the family's email and
+    # the Stripe payment.
+    reference: str
     created_at: datetime
     paid_at: datetime | None
     total_cents: int

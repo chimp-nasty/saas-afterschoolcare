@@ -195,6 +195,13 @@ CREATE POLICY booking_groups_scope_policy
         AND location_id = auth.current_location_id()
     );
 
+-- The centre's staff read its families' booking groups (their reference,
+-- for the family's payments and finding a family by it), as they read the
+-- bookings and payments in them. Only the family writes them (above).
+CREATE POLICY booking_groups_staff_read_policy
+    ON public.booking_groups FOR SELECT
+    USING (auth.can_access_location_row(location_id, user_id));
+
 
 -- Staff start and end their own shifts, only at the staff kiosk (here
 -- rather than schema/0005: it needs auth.current_channel()).

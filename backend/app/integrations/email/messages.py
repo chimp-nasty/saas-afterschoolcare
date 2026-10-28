@@ -243,11 +243,6 @@ class EnquiryNoticeEmail(EmailMessage):
         return {"enquiry_url": links.url(f"admin/enquiries/{self.enquiry_id}")}
 
 
-def short_reference(prefix: str, id: UUID) -> str:
-    """"BK-3F9A21C0": a short code a family can quote to the centre."""
-    return f"{prefix}-{str(id)[:8].upper()}"
-
-
 def format_amount(cents: int, currency: str) -> str:
     """"$30.00", or "$30.00 NZD" for anything but Australian dollars."""
     code = getattr(currency, "value", currency)

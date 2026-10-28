@@ -315,11 +315,17 @@ class CreateBookingService:
 
         # In the tenant's Stripe account (the attempt's, set by the database).
         # The webhook acts as this user at this location (for RLS) and finds
-        # the attempt from this metadata.
+        # the attempt from this metadata. The booking's reference is the
+        # payment's description and in its metadata, so it can be found on
+        # Stripe by what the family quotes.
+        location = self.location_repository.get_by_id(id=booking_group.location_id)
+
         checkout = StripeClient(account_id=attempt.stripe_account_id).create_checkout_session(
             line_items=line_items,
             currency=currency,
+            description=f"Booking {booking_group.reference} at {location.name}",
             metadata={
+                "reference": booking_group.reference,
                 "booking_group_id": str(booking_group.id),
                 "payment_attempt_id": str(attempt.id),
                 "user_id": str(booking_group.user_id),

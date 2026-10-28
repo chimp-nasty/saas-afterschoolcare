@@ -20,6 +20,7 @@ logger = logging.getLogger("app.payments")
 @dataclass
 class _OpenedRefund:
     refund_id: UUID
+    reference: str
     booking_id: UUID
     family_user_id: UUID
     location_id: UUID
@@ -78,6 +79,7 @@ class CreateRefundService:
                 amount_cents=opened.amount_cents,
                 # The webhook acts as the booking's family, at its location.
                 metadata={
+                    "reference": opened.reference,
                     "refund_id": str(opened.refund_id),
                     "booking_id": str(opened.booking_id),
                     "user_id": str(opened.family_user_id),
@@ -143,6 +145,7 @@ class CreateRefundService:
 
         return _OpenedRefund(
             refund_id=refund.id,
+            reference=refund.reference,
             booking_id=booking.id,
             family_user_id=booking.user_id,
             location_id=booking.location_id,

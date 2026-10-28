@@ -44,6 +44,7 @@
             title={group.service_name}
             href={`/${locationCode}/bookings/${group.booking_group_id}/review`}
             data={[
+                { label: "Reference", value: group.reference },
                 { label: "Status", value: formatStatus(group) },
                 { label: "Children", value: group.child_names.join(", ") },
                 { label: "Dates", value: formatDateRange(group.first_date, group.last_date) },

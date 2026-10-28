@@ -10,10 +10,11 @@ from app.db.models import PaymentAttempt
 from app.db.session import SessionLocal
 from app.db.transaction import transactional
 from app.errors.payments import PaymentProviderError
-from app.integrations.email.messages import BookingConfirmationEmail, short_reference
+from app.integrations.email.messages import BookingConfirmationEmail
 from app.integrations.email.outbox import EmailOutbox
 from app.integrations.payments.stripe.client import StripeCheckout, StripeClient
 from app.public.repositories.booking import BookingRepository
+from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.schemas.enums import BookingStatus, PaymentStatus, StripeStatus
 
@@ -47,12 +48,14 @@ class PaymentSettlementService:
         payment_attempt_repository: PaymentAttemptRepository,
         booking_repository: BookingRepository,
         user_repository: UserRepository,
+        booking_group_repository: BookingGroupRepository,
     ):
         self.db = db
         self.rls_context = rls_context
         self.payment_attempt_repository = payment_attempt_repository
         self.booking_repository = booking_repository
         self.user_repository = user_repository
+        self.booking_group_repository = booking_group_repository
         self.emails = EmailOutbox(db)
 
     @classmethod
@@ -63,6 +66,7 @@ class PaymentSettlementService:
             payment_attempt_repository=PaymentAttemptRepository(db=db),
             booking_repository=BookingRepository(db=db),
             user_repository=UserRepository(db=db),
+            booking_group_repository=BookingGroupRepository(db=db),
         )
 
     def lock_pending(
@@ -202,7 +206,7 @@ class PaymentSettlementService:
                 user_id=family.id,
                 to_email=family.email,
                 first_name=family.first_name,
-                reference=short_reference("BK", attempt.booking_group_id),
+                reference=self.booking_group_repository.get_by_id(id=attempt.booking_group_id).reference,
                 total_cents=attempt.total_cents,
                 currency=attempt.currency,
             ))

@@ -3651,6 +3651,8 @@ export interface components {
              * Format: uuid
              */
             booking_group_id: string;
+            /** Reference */
+            reference: string;
             status: components["schemas"]["BookingStatus"];
             /** Paid At */
             paid_at: string | null;
@@ -3677,6 +3679,8 @@ export interface components {
              * Format: uuid
              */
             booking_group_id: string;
+            /** Reference */
+            reference: string;
             /**
              * Created At
              * Format: date-time
@@ -3972,6 +3976,8 @@ export interface components {
              * Format: uuid
              */
             booking_group_id: string;
+            /** Reference */
+            reference: string;
             payment_status: components["schemas"]["StripeStatus"];
             /** Total Cents */
             total_cents: number;
@@ -4787,6 +4793,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Reference */
+            reference: string;
             /**
              * Created At
              * Format: date-time

@@ -117,6 +117,7 @@ class StripeClient:
         *,
         line_items: list[CheckoutLineItem],
         currency: str,
+        description: str,
         metadata: dict[str, str],
         success_url: str,
         cancel_url: str,
@@ -126,6 +127,8 @@ class StripeClient:
         A hosted Checkout page for a one-off payment. Prices come from our
         booking snapshots (price_data): our database is the only source of
         prices, so there's no Stripe catalogue to keep in step.
+        `description` ("Booking BK-7K3Q9P at Varsity") is the payment's, as
+        the Stripe dashboard lists and searches it and its receipt shows.
         """
         try:
             session = stripe.checkout.Session.create(
@@ -142,7 +145,7 @@ class StripeClient:
                     for item in line_items
                 ],
                 metadata=metadata,
-                payment_intent_data={"metadata": metadata},
+                payment_intent_data={"metadata": metadata, "description": description},
                 client_reference_id=metadata.get("booking_group_id"),
                 success_url=success_url,
                 cancel_url=cancel_url,

@@ -284,6 +284,7 @@ class BookingRepository(Repository):
         query = (
             self.db.query(
                 BookingGroup.id.label("booking_group_id"),
+                BookingGroup.reference,
                 BookingGroup.created_at,
                 paid_at.label("paid_at"),
                 func.min(ServiceType.name).label("service_name"),
@@ -326,6 +327,7 @@ class BookingRepository(Repository):
             )
             .group_by(
                 BookingGroup.id,
+                BookingGroup.reference,
                 BookingGroup.created_at,
                 Location.timezone,
             )

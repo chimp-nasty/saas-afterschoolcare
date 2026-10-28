@@ -22,6 +22,8 @@ class BookingGroupRepository(Repository):
 
         self.db.add(record)
         self.db.flush()
+        # The reference is the database's (trg_booking_groups_reference).
+        self.db.refresh(record)
 
         return record
 

@@ -27,6 +27,9 @@
     import ChildProfileForm from "$lib/features/children/components/ChildProfileForm.svelte";
     import PickupForm, { type PickupFormValues } from "$lib/features/pickups/components/PickupForm.svelte";
     import WelcomeModal from "$lib/features/customer/components/WelcomeModal.svelte";
+    import Modal from "$lib/components/overlays/Modal.svelte";
+
+    import { KeyRound, Users } from "lucide-svelte";
 
     import { createCustomerApi } from "$lib/api/public/adapters/customer";
     import { createChildrenApi } from "$lib/api/public/adapters/children";
@@ -69,11 +72,21 @@
     let addingChild = $state(false);
     let addingPickup = $state(false);
 
-    function go(next: SetupStep) {
+    // What happens next, as it happens: the kiosk PIN once the first child
+    // is added (that's what emails it), and who can collect on the way to
+    // the pickup step.
+    let pinModal: Modal;
+    let pickupsModal: Modal;
+
+    async function go(next: SetupStep) {
+        const from = step;
+
         addingChild = false;
         addingPickup = false;
 
-        void goto(setupHref(data.locationCode, next));
+        await goto(setupHref(data.locationCode, next));
+
+        if (from === "children" && next === "pickups") pickupsModal.open();
     }
 
     function previous(current: (typeof SETUP_STEPS)[number]): () => void {
@@ -94,11 +107,15 @@
     }
 
     async function addChild(body: CreateChildRequest) {
+        // Their first child gets them a kiosk PIN, emailed now.
+        const first = data.children.length === 0;
         const response = await childrenApi.create(body);
 
         if (response.ok) {
             addingChild = false;
             await invalidate("app:customer-account");
+
+            if (first) pinModal.open();
         }
 
         return response;
@@ -123,6 +140,56 @@
 
 <!-- Straight after registering only. -->
 <WelcomeModal businessName={data.location.tenant_name} />
+
+{#snippet modalIcon(Icon: typeof KeyRound)}
+    <div class="flex justify-center py-2">
+        <span class="flex size-16 items-center justify-center rounded-full bg-(--primary-soft) text-(--primary)">
+            <Icon size={28} />
+        </span>
+    </div>
+{/snippet}
+
+<!-- After the first child: their kiosk PIN is on its way. -->
+<Modal
+    bind:this={pinModal}
+    title="Your kiosk PIN is on its way"
+    description={`We've emailed a kiosk PIN to ${data.session?.email ?? "your email address"}.`}
+>
+    {@render modalIcon(KeyRound)}
+
+    <ul class="flex list-disc flex-col gap-2 pl-5 text-base text-(--text)">
+        <li>You'll use it with your mobile number at the kiosk in {data.location.location_name} to sign your children in and out.</li>
+        <li>The first time you use the kiosk, you'll choose your own 4-digit PIN. The emailed one works for 30 days.</li>
+        <li>Lost it? Tap <span class="font-semibold">Forgot PIN</span> at the kiosk and we'll email a new one.</li>
+    </ul>
+
+    {#snippet actions()}
+        <Button onclick={() => pinModal.close()}>Got it</Button>
+    {/snippet}
+</Modal>
+
+<!-- On the way to the pickup step: who can collect, and why add people. -->
+<Modal
+    bind:this={pickupsModal}
+    title="Who can collect your children"
+    description="Only people on your pickup list can collect your children. You're on it already."
+>
+    {@render modalIcon(Users)}
+
+    <ul class="flex list-disc flex-col gap-2 pl-5 text-base text-(--text)">
+        <li>Add anyone else who may collect them, like a partner, grandparent or nanny.</li>
+        <li>Each person gets their own kiosk PIN by email, and staff check their photo ID the first time they collect.</li>
+        <li>
+            {data.profile.emergency_contact_name
+                ? `Your emergency contact, ${data.profile.emergency_contact_name}, can't collect unless you add them here too.`
+                : "Your emergency contact can't collect unless you add them here too."}
+        </li>
+    </ul>
+
+    {#snippet actions()}
+        <Button onclick={() => pickupsModal.close()}>Got it</Button>
+    {/snippet}
+</Modal>
 
 <Page>
     {#if step === "done"}

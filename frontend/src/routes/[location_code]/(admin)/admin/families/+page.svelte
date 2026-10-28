@@ -1,6 +1,6 @@
 <!--
     Admin › Families: find a family at this centre by a child's or parent's
-    name, an email or a phone number, and open its page.
+    name, an email, a phone number or a booking reference, and open its page.
 -->
 <script lang="ts">
     import { goto } from "$app/navigation";
@@ -32,7 +32,7 @@
 
     <form class="flex flex-wrap items-end gap-3" onsubmit={search}>
         <label class="flex min-w-72 flex-1 flex-col gap-1">
-            <span class="label-text">Child or parent name, email or phone</span>
+            <span class="label-text">Child or parent name, email, phone or booking reference</span>
             <input type="search" minlength="2" autocomplete="off" bind:value={text} />
         </label>
         <Button type="submit" isDisabled={text.trim().length < 2}>Search</Button>

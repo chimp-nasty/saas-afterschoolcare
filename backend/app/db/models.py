@@ -692,6 +692,7 @@ class BookingGroup(Base):
         ForeignKeyConstraint(['user_id'], ['auth.users.id'], name='fk_booking_groups_user'),
         PrimaryKeyConstraint('id', name='booking_groups_pkey'),
         UniqueConstraint('id', 'user_id', 'location_id', name='uq_booking_groups_id_user_location'),
+        UniqueConstraint('reference', name='uq_booking_groups_reference'),
         UniqueConstraint('user_id', 'idempotency_key', name='uq_booking_groups_user_idempotency'),
         {'schema': 'public'}
     )
@@ -700,6 +701,7 @@ class BookingGroup(Base):
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    reference: Mapped[str] = mapped_column(String(12), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     source: Mapped[Optional[str]] = mapped_column(String(32))
 
@@ -1194,6 +1196,7 @@ class Refund(Base):
         ForeignKeyConstraint(['payment_attempt_id'], ['public.payment_attempts.id'], name='fk_refunds_payment_attempt'),
         ForeignKeyConstraint(['requested_by_user_id'], ['auth.users.id'], name='fk_refunds_requested_by'),
         PrimaryKeyConstraint('id', name='refunds_pkey'),
+        UniqueConstraint('reference', name='uq_refunds_reference'),
         UniqueConstraint('stripe_refund_id', name='uq_refunds_stripe_refund'),
         Index('uq_refunds_active_booking', 'booking_id', postgresql_where="(status = ANY (ARRAY['PENDING'::refund_status_enum, 'SUCCEEDED'::refund_status_enum]))", unique=True),
         {'schema': 'public'}
@@ -1204,6 +1207,7 @@ class Refund(Base):
     location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     requested_by_user_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    reference: Mapped[str] = mapped_column(String(12), nullable=False)
     payment_attempt_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     currency: Mapped[CurrencyCodeEnum] = mapped_column(Enum(CurrencyCodeEnum, values_callable=lambda cls: [member.value for member in cls], name='currency_code_enum'), nullable=False)

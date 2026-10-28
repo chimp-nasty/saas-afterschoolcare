@@ -319,6 +319,7 @@ def test_stripe_failures_become_a_502(api: Api, customer, fake_stripe, monkeypat
         StripeClient().create_checkout_session(
             line_items=[CheckoutLineItem(description="Test", amount_cents=100)],
             currency="AUD",
+            description="Booking BK-TEST01 at Test",
             metadata={},
             success_url="https://example.test/success",
             cancel_url="https://example.test/cancel",

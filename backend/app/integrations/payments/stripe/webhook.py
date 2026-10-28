@@ -8,11 +8,12 @@ from app.auth.repositories.rls_context import RlsContextRepository
 from app.auth.repositories.user import UserRepository
 from app.db.transaction import transactional
 from app.errors.payments import InvalidWebhookError
-from app.integrations.email.messages import RefundConfirmationEmail, short_reference
+from app.integrations.email.messages import RefundConfirmationEmail
 from app.integrations.email.outbox import EmailOutbox
 from app.integrations.payments.stripe.client import StripeClient
 from app.integrations.payments.stripe.settlement import PaymentSettlementService
 from app.public.repositories.booking import BookingRepository
+from app.public.repositories.booking_group import BookingGroupRepository
 from app.public.repositories.payment_attempt import PaymentAttemptRepository
 from app.public.repositories.refund import RefundRepository
 from app.public.schemas.enums import RefundStatus
@@ -46,6 +47,7 @@ class StripeWebhookService:
         refund_repository: RefundRepository,
         user_repository: UserRepository,
         stripe_account_repository: TenantStripeAccountRepository,
+        booking_group_repository: BookingGroupRepository,
     ):
         self.db = db
         self.rls_context = rls_context
@@ -62,6 +64,7 @@ class StripeWebhookService:
             payment_attempt_repository=payment_attempt_repository,
             booking_repository=booking_repository,
             user_repository=user_repository,
+            booking_group_repository=booking_group_repository,
         )
 
     def handle(
@@ -289,7 +292,7 @@ class StripeWebhookService:
                 user_id=family.id,
                 to_email=family.email,
                 first_name=family.first_name,
-                reference=short_reference("RF", refund.id),
+                reference=refund.reference,
                 amount_cents=refund.amount_cents,
                 currency=refund.currency,
             ))

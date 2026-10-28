@@ -229,7 +229,9 @@
 </script>
 
 <Page>
+    <!-- The reference is what the family quotes to the centre. -->
     <PageHeader
+        eyebrow={`Reference ${group.reference}`}
         title={group.status === "PENDING" ? "Review your booking" : "Your booking"}
     />
 
