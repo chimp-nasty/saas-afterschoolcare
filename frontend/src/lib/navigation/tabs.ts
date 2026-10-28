@@ -54,6 +54,13 @@ export const reviewTabs = {
 	APPROVED: 'approved'
 } as const;
 
+// Admin › Enquiries (docs/enquiries.md): open is new and replied.
+export const enquiryTabs = {
+	OPEN: 'open',
+	CLOSED: 'closed',
+	ALL: 'all'
+} as const;
+
 export type AccountTab =
 	typeof accountTabs[keyof typeof accountTabs];
 

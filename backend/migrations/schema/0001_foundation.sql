@@ -101,7 +101,28 @@ CREATE TYPE public.email_type_enum AS ENUM (
     'child_approved',
     'kiosk_pin',
     'staff_invite',
-    'new_message'
+    'new_message',
+    -- Contact form enquiries (docs/enquiries.md): the receipt to the
+    -- person who asked, an admin's reply, and the notice to the centre's
+    -- optional enquiries address.
+    'enquiry_received',
+    'enquiry_reply',
+    'enquiry_notice'
+);
+
+-- What a contact form enquiry is about (docs/enquiries.md).
+CREATE TYPE public.enquiry_topic_enum AS ENUM (
+    'enrolment',
+    'bookings',
+    'general'
+);
+
+-- new: not answered yet. replied: an admin has replied (it can be replied
+-- to again). closed: dealt with, no reply needed or no more to say.
+CREATE TYPE public.enquiry_status_enum AS ENUM (
+    'new',
+    'replied',
+    'closed'
 );
 
 -- queued: logged, not yet handed to the provider. sent: accepted by the

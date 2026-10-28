@@ -182,6 +182,67 @@ class KioskPinEmail(EmailMessage):
         return {"pin": self.pin}
 
 
+@dataclass(frozen=True, kw_only=True)
+class EnquiryReceivedEmail(EmailMessage):
+    """The receipt for a contact form enquiry (docs/enquiries.md): only that
+    it arrived. The person may have no account, so it's logged against
+    nobody; what they wrote isn't repeated."""
+
+    email_type = EmailType.ENQUIRY_RECEIVED
+
+    def recipient(self):
+        return {}
+
+    def block(self, links):
+        return {"centre_url": links.url()}
+
+
+@dataclass(frozen=True, kw_only=True)
+class EnquiryReplyEmail(EmailMessage):
+    """
+    An admin's reply to an enquiry, as they wrote it: the one email that
+    carries a staff member's own words (docs/email-policy.md, the exception
+    to rule 3). The reply box reminds them what not to include; the
+    person's original message isn't quoted back.
+    """
+
+    email_type = EmailType.ENQUIRY_REPLY
+
+    reply: str
+
+    def recipient(self):
+        return {}
+
+    def block(self, links):
+        return {"reply": self.reply}
+
+
+@dataclass(frozen=True, kw_only=True)
+class EnquiryNoticeEmail(EmailMessage):
+    """A new enquiry, to the centre's own enquiries address: who it's from
+    (first name) and the topic, and a link to read it in the app. Never the
+    message or how to contact them."""
+
+    email_type = EmailType.ENQUIRY_NOTICE
+
+    enquiry_id: UUID
+    enquirer_first_name: str
+    topic: str
+
+    def recipient(self):
+        return {}
+
+    def values(self):
+        return {
+            "first_name": self.first_name,
+            "enquirer_first_name": self.enquirer_first_name,
+            "topic": self.topic,
+        }
+
+    def block(self, links):
+        return {"enquiry_url": links.url(f"admin/enquiries/{self.enquiry_id}")}
+
+
 def short_reference(prefix: str, id: UUID) -> str:
     """"BK-3F9A21C0": a short code a family can quote to the centre."""
     return f"{prefix}-{str(id)[:8].upper()}"
@@ -206,6 +267,9 @@ MESSAGE_TYPES: tuple[type[EmailMessage], ...] = (
     NewMessageEmail,
     KioskPinEmail,
     StaffInviteEmail,
+    EnquiryReceivedEmail,
+    EnquiryReplyEmail,
+    EnquiryNoticeEmail,
 )
 
 assert {m.email_type for m in MESSAGE_TYPES} == set(EmailType), "every email type needs a message"

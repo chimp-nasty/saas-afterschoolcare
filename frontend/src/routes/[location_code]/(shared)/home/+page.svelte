@@ -24,6 +24,7 @@
             reviewsRequested={data.reviewsRequested ?? 0}
             latePickups={data.latePickups ?? 0}
             reactivationRequests={data.reactivationRequests ?? []}
+            newEnquiries={data.newEnquiries ?? 0}
         />
     </Page>
 </Authorize>

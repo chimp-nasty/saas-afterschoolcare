@@ -22,6 +22,7 @@ class LocationRepository(Repository):
         phone: str | None = None,
         email: str | None = None,
         timezone: str = "Australia/Brisbane",
+        enquiry_notice_email: str | None = None,
         is_active: bool = True,
     ) -> Location:
         record = Location(
@@ -36,6 +37,7 @@ class LocationRepository(Repository):
             phone=phone,
             email=email,
             timezone=timezone,
+            enquiry_notice_email=enquiry_notice_email,
             is_active=is_active,
         )
 

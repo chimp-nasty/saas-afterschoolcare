@@ -50,8 +50,13 @@ Rules for every email:
 | Child approved | Your child's profile has been approved | "{child first name} can now be booked." | Any medical detail |
 | New message | You have a new message | "{centre} has sent you a message. Log in to read it." Link to their messages | The message's title and text, which child it's about |
 | Kiosk PIN | Your kiosk PIN | "Your kiosk PIN for {centre} is {PIN}. You'll choose your own the first time you use the kiosk." | Children, phone number, centre address |
+| Enquiry received | We've received your message | "Thanks {first name}, {centre} has your message and will be in touch." To the person who used the contact form | What they wrote |
+| Enquiry reply | Re: your message to {centre} | The admin's reply, as written (the exception to rule 3, below). Reply-To the centre's contact email | Their original message (not quoted back) |
+| Enquiry notice | New enquiry for {centre} | "New enquiry from {first name} about {topic}. Log in to read and reply." To the centre's optional enquiries address | The message, the person's email and phone |
 
 New emails are added to this table, with each item checked against section 2, before they're built.
+
+**Enquiry replies are the one exception to rule 3** (docs/enquiries.md): the person may have no account, so "log in to read it" can't work, and they chose to contact the centre. The reply box tells staff not to include health details or children's surnames, and the person's own message isn't quoted back. Everything else about enquiries stays in the app: the notice to the centre's enquiries address carries only who it's from and the topic.
 
 ## 4. Secrets by email
 

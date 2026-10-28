@@ -84,3 +84,9 @@ class AccountNotDeactivatedError(ApplicationError):
     status_code = status.HTTP_409_CONFLICT
     message = "This account isn't deactivated."
     result = "denied"
+
+
+class EnquiryNotFoundError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Enquiry not found"
+    result = "failed"

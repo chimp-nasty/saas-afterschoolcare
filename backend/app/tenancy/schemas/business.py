@@ -108,6 +108,9 @@ class BusinessLocationRequest(BaseModel):
     phone: str | None = None
     email: EmailStr | None = None
     timezone: AustralianTimezone = "Australia/Brisbane"
+    # Also told by email of each new contact form enquiry (a notice only;
+    # docs/enquiries.md). None: the admins' inbox in the app only.
+    enquiry_notice_email: EmailStr | None = None
 
     @field_validator("address_line_2")
     @classmethod
@@ -142,6 +145,7 @@ class BusinessLocationResponse(BaseModel):
     phone: str | None
     email: str | None
     timezone: str
+    enquiry_notice_email: str | None
     # How many of its services families can book (none for a new location
     # until its superadmin sets them up).
     services_offered: int

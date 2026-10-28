@@ -15,7 +15,8 @@
 		reviewsWaiting,
 		reviewsRequested,
 		latePickups,
-		reactivationRequests
+		reactivationRequests,
+		newEnquiries
 	}: {
 		locationCode: string;
 		// Children waiting for staff, and waiting on their family.
@@ -26,6 +27,8 @@
 		// Deactivated families asking to come back, longest waiting first
 		// (docs/account-deactivation.md).
 		reactivationRequests: ReactivationRequestResponse[];
+		// Contact form enquiries not replied to yet (docs/enquiries.md).
+		newEnquiries: number;
 	} = $props();
 
 	// The card leads to the family who's waited longest.
@@ -37,7 +40,7 @@
 <section class="flex flex-col gap-4">
 	<SectionHeading title="Needs attention" />
 
-	<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
 		<Card border href={`/${locationCode}/admin/run-sheet`}>
 			<div class="flex flex-col gap-1">
 				<p class="label-text">
@@ -68,6 +71,22 @@
 					{reviewsWaiting === 1 ? 'child' : 'children'} waiting for review{reviewsRequested
 						? ` · ${reviewsRequested} waiting on documents`
 						: ''}
+				</p>
+			</div>
+		</Card>
+
+		<Card border href={`/${locationCode}/admin/enquiries`}>
+			<div class="flex flex-col gap-1">
+				<p class="label-text">
+					Enquiries
+				</p>
+
+				<p class="text-2xl font-extrabold text-(--text)">
+					{newEnquiries}
+				</p>
+
+				<p class="text-sm text-(--text-muted)">
+					{newEnquiries === 1 ? 'message' : 'messages'} from your contact form waiting for a reply
 				</p>
 			</div>
 		</Card>

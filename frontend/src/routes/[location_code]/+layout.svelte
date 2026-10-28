@@ -87,6 +87,7 @@
 				{
 					heading: 'Families',
 					items: [
+						link('Enquiries', '/admin/enquiries'),
 						link('Families', '/admin/families'),
 						link('Medical reviews', '/admin/reviews')
 					]

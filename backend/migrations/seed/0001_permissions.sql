@@ -44,6 +44,8 @@ VALUES
     ('customer_profile', 'd', 'Delete customer profile'),
     ('families', 'r', 'Find families and see their details, bookings, attendance and payments'),
     ('families', 'u', 'Correct a family''s phone and address, and reactivate their account'),
+    ('enquiries', 'r', 'Read the centre''s contact form enquiries'),
+    ('enquiries', 'u', 'Reply to, close and reopen the centre''s enquiries'),
     ('location_kiosk_devices', 'c', 'Create location kiosk devices'),
     ('location_kiosk_devices', 'r', 'Read location kiosk devices'),
     ('location_kiosk_devices', 'u', 'Update location kiosk devices'),

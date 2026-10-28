@@ -35,6 +35,7 @@ def _to_location(location, services_offered: int) -> BusinessLocationResponse:
         phone=location.phone,
         email=location.email,
         timezone=location.timezone,
+        enquiry_notice_email=location.enquiry_notice_email,
         services_offered=services_offered,
     )
 

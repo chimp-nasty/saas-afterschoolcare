@@ -2000,6 +2000,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/enquiries/v1/{location_code}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Enquiry */
+        post: operations["submit_enquiry_api_enquiries_v1__location_code__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enquiries/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Enquiries */
+        get: operations["list_enquiries_api_enquiries_v1__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enquiries/v1/{enquiry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Enquiry */
+        get: operations["get_enquiry_api_enquiries_v1__enquiry_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enquiries/v1/{enquiry_id}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reply To Enquiry */
+        post: operations["reply_to_enquiry_api_enquiries_v1__enquiry_id__reply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enquiries/v1/{enquiry_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Enquiry */
+        post: operations["close_enquiry_api_enquiries_v1__enquiry_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enquiries/v1/{enquiry_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Enquiry */
+        post: operations["reopen_enquiry_api_enquiries_v1__enquiry_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/kiosk/v1/{location_code}/pair": {
         parameters: {
             query?: never;
@@ -2825,6 +2927,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["DomainsResponse"] | null;
         };
+        /** ApiResponse[EnquiryResponse] */
+        ApiResponse_EnquiryResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["EnquiryResponse"] | null;
+        };
         /** ApiResponse[FamilyMessageResponse] */
         ApiResponse_FamilyMessageResponse_: {
             /** Ok */
@@ -3238,6 +3348,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["ChildTableResponse"][] | null;
+        };
+        /** ApiResponse[list[EnquirySummaryResponse]] */
+        ApiResponse_list_EnquirySummaryResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["EnquirySummaryResponse"][] | null;
         };
         /** ApiResponse[list[FamilyAttendanceResponse]] */
         ApiResponse_list_FamilyAttendanceResponse__: {
@@ -3747,6 +3866,8 @@ export interface components {
              * @enum {string}
              */
             timezone: "Australia/Brisbane" | "Australia/Sydney" | "Australia/Melbourne" | "Australia/Hobart" | "Australia/Adelaide" | "Australia/Darwin" | "Australia/Perth" | "Australia/Broken_Hill" | "Australia/Lord_Howe" | "Australia/Eucla";
+            /** Enquiry Notice Email */
+            enquiry_notice_email?: string | null;
         };
         /** BusinessLocationResponse */
         BusinessLocationResponse: {
@@ -3775,6 +3896,8 @@ export interface components {
             email: string | null;
             /** Timezone */
             timezone: string;
+            /** Enquiry Notice Email */
+            enquiry_notice_email: string | null;
             /** Services Offered */
             services_offered: number;
         };
@@ -4395,6 +4518,104 @@ export interface components {
          * @enum {string}
          */
         EmergencyRelation: "parent_guardian" | "grandparent" | "aunt_uncle" | "family_friend" | "neighbour" | "nanny_babysitter" | "other";
+        /** EnquiryReplyRequest */
+        EnquiryReplyRequest: {
+            /** Body */
+            body: string;
+        };
+        /** EnquiryReplyResponse */
+        EnquiryReplyResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Staff Name */
+            staff_name: string | null;
+        };
+        /**
+         * EnquiryResponse
+         * @description An enquiry with what was sent and every reply, oldest first.
+         */
+        EnquiryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Phone */
+            phone: string | null;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "enrolment" | "bookings" | "general";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "replied" | "closed";
+            /** Message */
+            message: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Replied At */
+            replied_at: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Replies */
+            replies: components["schemas"]["EnquiryReplyResponse"][];
+        };
+        /**
+         * EnquirySummaryResponse
+         * @description An enquiry in the admins' inbox.
+         */
+        EnquirySummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Phone */
+            phone: string | null;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "enrolment" | "bookings" | "general";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "replied" | "closed";
+            /** Preview */
+            preview: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Replied At */
+            replied_at: string | null;
+        };
         /**
          * FamilyAttendanceResponse
          * @description One child's session in the attendance history.
@@ -6239,6 +6460,30 @@ export interface components {
          */
         StripeStatus: "PENDING" | "SUCCEEDED" | "FAILED";
         /**
+         * SubmitEnquiryRequest
+         * @description The centre page's contact form (docs/enquiries.md). Anyone can send one.
+         */
+        SubmitEnquiryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "enrolment" | "bookings" | "general";
+            /** Message */
+            message: string;
+            /** Website */
+            website?: string | null;
+        };
+        /**
          * UpdateChildRequest
          * @description What a family can change about a child. Only the fields sent are
          *     updated. The date of birth isn't editable (staff correct it); changing
@@ -6427,6 +6672,7 @@ export type ApiResponseCustomerProfileResponse = components['schemas']['ApiRespo
 export type ApiResponseDomainCheckResponse = components['schemas']['ApiResponse_DomainCheckResponse_'];
 export type ApiResponseDomainResponse = components['schemas']['ApiResponse_DomainResponse_'];
 export type ApiResponseDomainsResponse = components['schemas']['ApiResponse_DomainsResponse_'];
+export type ApiResponseEnquiryResponse = components['schemas']['ApiResponse_EnquiryResponse_'];
 export type ApiResponseFamilyMessageResponse = components['schemas']['ApiResponse_FamilyMessageResponse_'];
 export type ApiResponseFamilyResponse = components['schemas']['ApiResponse_FamilyResponse_'];
 export type ApiResponseInviteDetailsResponse = components['schemas']['ApiResponse_InviteDetailsResponse_'];
@@ -6477,6 +6723,7 @@ export type ApiResponseListChildDocumentResponse = components['schemas']['ApiRes
 export type ApiResponseListChildNoteResponse = components['schemas']['ApiResponse_list_ChildNoteResponse__'];
 export type ApiResponseListChildSearchResultResponse = components['schemas']['ApiResponse_list_ChildSearchResultResponse__'];
 export type ApiResponseListChildTableResponse = components['schemas']['ApiResponse_list_ChildTableResponse__'];
+export type ApiResponseListEnquirySummaryResponse = components['schemas']['ApiResponse_list_EnquirySummaryResponse__'];
 export type ApiResponseListFamilyAttendanceResponse = components['schemas']['ApiResponse_list_FamilyAttendanceResponse__'];
 export type ApiResponseListFamilyBookingResponse = components['schemas']['ApiResponse_list_FamilyBookingResponse__'];
 export type ApiResponseListFamilyMessageResponse = components['schemas']['ApiResponse_list_FamilyMessageResponse__'];
@@ -6548,6 +6795,10 @@ export type DomainCheckResponse = components['schemas']['DomainCheckResponse'];
 export type DomainResponse = components['schemas']['DomainResponse'];
 export type DomainsResponse = components['schemas']['DomainsResponse'];
 export type EmergencyRelation = components['schemas']['EmergencyRelation'];
+export type EnquiryReplyRequest = components['schemas']['EnquiryReplyRequest'];
+export type EnquiryReplyResponse = components['schemas']['EnquiryReplyResponse'];
+export type EnquiryResponse = components['schemas']['EnquiryResponse'];
+export type EnquirySummaryResponse = components['schemas']['EnquirySummaryResponse'];
 export type FamilyAttendanceResponse = components['schemas']['FamilyAttendanceResponse'];
 export type FamilyBookingResponse = components['schemas']['FamilyBookingResponse'];
 export type FamilyChildResponse = components['schemas']['FamilyChildResponse'];
@@ -6642,6 +6893,7 @@ export type StartSiteUploadRequest = components['schemas']['StartSiteUploadReque
 export type StripeAccountStatusResponse = components['schemas']['StripeAccountStatusResponse'];
 export type StripeOnboardingResponse = components['schemas']['StripeOnboardingResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
+export type SubmitEnquiryRequest = components['schemas']['SubmitEnquiryRequest'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateContactDetailsRequest = components['schemas']['UpdateContactDetailsRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
@@ -11290,6 +11542,210 @@ export interface operations {
             };
         };
     };
+    submit_enquiry_api_enquiries_v1__location_code__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                location_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitEnquiryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_enquiries_api_enquiries_v1__get: {
+        parameters: {
+            query?: {
+                status?: "open" | "new" | "replied" | "closed" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_EnquirySummaryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_enquiry_api_enquiries_v1__enquiry_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enquiry_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_EnquiryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_enquiry_api_enquiries_v1__enquiry_id__reply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enquiry_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnquiryReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_EnquiryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_enquiry_api_enquiries_v1__enquiry_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enquiry_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_EnquiryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_enquiry_api_enquiries_v1__enquiry_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enquiry_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_EnquiryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     pair_kiosk_api_kiosk_v1__location_code__pair_post: {
         parameters: {
             query?: never;
@@ -12353,6 +12809,7 @@ type ReadonlyArray<T> = [
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const pathsApiLocationBrandingV1SiteFilesKindGetParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/location-branding/v1/site-files/{kind}"]["get"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const pathsApiBusinessV1SiteKindDeleteParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/business/v1/site/{kind}"]["delete"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
+export const pathsApiEnquiriesV1GetParametersQueryStatusValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/enquiries/v1/"]["get"]["parameters"]["query"]["status"]> = ["open", "new", "replied", "closed", "all"];
 export const addStaffRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AddStaffRequest"]["role"]> = ["staff", "admin"];
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const bookingGroupScopeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BookingGroupScope"]> = ["upcoming", "history"];
@@ -12367,6 +12824,10 @@ export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>
 export const dnsRecordResponseTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DnsRecordResponse"]["type"]> = ["TXT", "CNAME", "A"];
 export const domainResponseStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DomainResponse"]["state"]> = ["pending_dns", "verified", "active", "suspended", "failed", "removing"];
 export const emergencyRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EmergencyRelation"]> = ["parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
+export const enquiryResponseTopicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EnquiryResponse"]["topic"]> = ["enrolment", "bookings", "general"];
+export const enquiryResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EnquiryResponse"]["status"]> = ["new", "replied", "closed"];
+export const enquirySummaryResponseTopicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EnquirySummaryResponse"]["topic"]> = ["enrolment", "bookings", "general"];
+export const enquirySummaryResponseStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["EnquirySummaryResponse"]["status"]> = ["new", "replied", "closed"];
 export const highlightItemIconValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["HighlightItem"]["icon"]> = ["shield", "community", "activities", "location", "homework", "food", "staff", "booking"];
 export const kioskDeviceResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskDeviceResponse"]["kind"]> = ["family", "staff"];
 export const kioskInfoResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["KioskInfoResponse"]["kind"]> = ["family", "staff"];
@@ -12386,3 +12847,4 @@ export const startPhotoUploadRequestContent_typeValues: ReadonlyArray<FlattenedD
 export const startSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const startSiteUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
+export const submitEnquiryRequestTopicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SubmitEnquiryRequest"]["topic"]> = ["enrolment", "bookings", "general"];

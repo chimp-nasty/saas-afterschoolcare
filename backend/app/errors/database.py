@@ -45,6 +45,7 @@ from app.errors.tenancy import (
     SiteColourError,
     LocationCodeReservedError,
     LocationCodeTakenError,
+    LocationNotFoundError,
     LocationTimezoneError,
 )
 from app.errors.base import ApplicationError
@@ -154,6 +155,8 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_bookings_payments_enabled": PaymentsNotEnabledError,
     "ck_payment_attempts_payments_enabled": PaymentsNotEnabledError,
     "uq_tenant_stripe_accounts_account": StripeAccountTakenError,
+    # Enquiries (schema/0004, docs/enquiries.md): a centre that's closed.
+    "ck_enquiries_location_active": LocationNotFoundError,
     # Deactivating an account (schema/0004, docs/account-deactivation.md).
     "ck_family_deactivations_family_only": DeactivationFamilyOnlyError,
     "ck_family_deactivations_no_upcoming_bookings": DeactivationUpcomingBookingsError,

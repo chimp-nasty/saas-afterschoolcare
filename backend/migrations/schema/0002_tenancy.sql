@@ -113,6 +113,12 @@ CREATE TABLE tenancy.locations (
     -- with in person. Admins switch it off and on (/admin/kiosks).
     kiosk_enforce_service_times BOOLEAN NOT NULL DEFAULT TRUE,
 
+    -- Where to send a notice of each new contact form enquiry, besides the
+    -- admins' inbox in the app (docs/enquiries.md). Only a notice: the
+    -- enquiry itself stays in the app. None: the app only. Set by the
+    -- business's owner with the centre's details.
+    enquiry_notice_email VARCHAR(255),
+
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 

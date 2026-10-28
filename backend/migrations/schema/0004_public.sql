@@ -4312,6 +4312,188 @@ CREATE TRIGGER trg_email_template_overrides_updated_at
 
 
 -- =====================================================
+-- ENQUIRIES
+-- =====================================================
+
+-- A message to a centre from its contact form (docs/enquiries.md):
+-- anyone can send one from the centre's page, logged in or not. It's kept
+-- here, not emailed: the centre's admins read and reply to it in the app
+-- (admin only, RLS schema/0005). The person gets a receipt by email, and
+-- an admin's reply by email; the centre's optional enquiries address only
+-- gets a notice. Sent through public.submit_enquiry, the only way in.
+CREATE TABLE public.enquiries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    location_id UUID NOT NULL,
+
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(30),
+    topic public.enquiry_topic_enum NOT NULL,
+    message TEXT NOT NULL,
+
+    status public.enquiry_status_enum NOT NULL DEFAULT 'new',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- The last reply, and when it was closed (None while open).
+    replied_at TIMESTAMPTZ,
+    closed_at TIMESTAMPTZ,
+
+    CONSTRAINT fk_enquiries_location
+        FOREIGN KEY (location_id)
+        REFERENCES tenancy.locations (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT ck_enquiries_name_present
+        CHECK (length(btrim(name)) > 0),
+
+    CONSTRAINT ck_enquiries_message_length
+        CHECK (length(btrim(message)) BETWEEN 1 AND 3000)
+);
+
+CREATE INDEX idx_enquiries_location_status_created
+    ON public.enquiries (location_id, status, created_at DESC);
+
+-- An admin's reply to an enquiry, kept with it, as emailed to the person.
+CREATE TABLE public.enquiry_replies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    enquiry_id UUID NOT NULL,
+    location_id UUID NOT NULL,
+    -- Who replied (None once their account is gone).
+    staff_user_id UUID,
+
+    body TEXT NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_enquiry_replies_enquiry
+        FOREIGN KEY (enquiry_id)
+        REFERENCES public.enquiries (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_enquiry_replies_location
+        FOREIGN KEY (location_id)
+        REFERENCES tenancy.locations (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_enquiry_replies_staff_user
+        FOREIGN KEY (staff_user_id)
+        REFERENCES auth.users (id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT ck_enquiry_replies_body_length
+        CHECK (length(btrim(body)) BETWEEN 1 AND 3000)
+);
+
+CREATE INDEX idx_enquiry_replies_enquiry_created
+    ON public.enquiry_replies (enquiry_id, created_at);
+
+-- A reply is at its enquiry's location, by whoever's logged in, and marks
+-- the enquiry replied (reopening it if it was closed). Stamped with the
+-- database's clock.
+CREATE FUNCTION public.enforce_enquiry_reply()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    SELECT e.location_id
+    INTO NEW.location_id
+    FROM public.enquiries e
+    WHERE e.id = NEW.enquiry_id;
+
+    NEW.staff_user_id := auth.current_user_id();
+    NEW.created_at := now();
+
+    UPDATE public.enquiries
+    SET status = 'replied',
+        replied_at = now(),
+        closed_at = NULL
+    WHERE id = NEW.enquiry_id;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_enquiry_replies_rules
+    BEFORE INSERT ON public.enquiry_replies
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_enquiry_reply();
+
+-- Closing and reopening: only the status changes (and when it closed);
+-- what the person sent never does.
+CREATE FUNCTION public.keep_enquiry()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    NEW.location_id := OLD.location_id;
+    NEW.name := OLD.name;
+    NEW.email := OLD.email;
+    NEW.phone := OLD.phone;
+    NEW.topic := OLD.topic;
+    NEW.message := OLD.message;
+    NEW.created_at := OLD.created_at;
+
+    IF NEW.status = 'closed' AND OLD.status <> 'closed' THEN
+        NEW.closed_at := now();
+    ELSIF NEW.status <> 'closed' THEN
+        NEW.closed_at := NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_enquiries_keep
+    BEFORE UPDATE ON public.enquiries
+    FOR EACH ROW EXECUTE FUNCTION public.keep_enquiry();
+
+-- Sending an enquiry from the centre's page: there may be no one logged
+-- in, so this is the only way in (SECURITY DEFINER; no insert policy).
+-- Only to an active centre. Returns the new enquiry's id.
+CREATE FUNCTION public.submit_enquiry(
+    p_location_id UUID,
+    p_name TEXT,
+    p_email TEXT,
+    p_phone TEXT,
+    p_topic public.enquiry_topic_enum,
+    p_message TEXT
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+    v_id UUID;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM tenancy.locations l
+        JOIN tenancy.tenants t
+            ON t.id = l.tenant_id
+        WHERE l.id = p_location_id
+          AND l.is_active
+          AND t.is_active
+    ) THEN
+        RAISE EXCEPTION 'Location % isn''t taking enquiries', p_location_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_enquiries_location_active',
+                  TABLE = 'enquiries',
+                  SCHEMA = 'public';
+    END IF;
+
+    INSERT INTO public.enquiries (location_id, name, email, phone, topic, message)
+    VALUES (p_location_id, btrim(p_name), lower(btrim(p_email)), NULLIF(btrim(p_phone), ''), p_topic, btrim(p_message))
+    RETURNING id INTO v_id;
+
+    RETURN v_id;
+END;
+$$;
+
+-- =====================================================
 -- REPORTING: EMAIL USAGE
 -- =====================================================
 

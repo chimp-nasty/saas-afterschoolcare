@@ -36,7 +36,8 @@
 		postcode: '',
 		phone: null,
 		email: null,
-		timezone: 'Australia/Brisbane'
+		timezone: 'Australia/Brisbane',
+		enquiry_notice_email: null
 	};
 
 	// The saved details when the form opens; it then owns its edits.
@@ -51,7 +52,8 @@
 		isLoading = true;
 
 		try {
-			const response = await onsubmit({ ...body });
+			// An emptied address means "the app only".
+			const response = await onsubmit({ ...body, enquiry_notice_email: body.enquiry_notice_email || null });
 
 			errors = response.fieldErrors;
 
@@ -129,4 +131,16 @@
 			<Select {id} bind:value={body.timezone} options={businessLocationRequestTimezoneValues.map((zone) => ({ value: zone, label: timezoneLabel(zone) }))} />
 		{/snippet}
 	</Field>
+
+	<!-- docs/enquiries.md: a notice of each contact form enquiry, besides
+	     the admins' inbox; the message itself stays in the app. -->
+	<Field label="Email enquiry notices to (optional)" error={errors.enquiry_notice_email}>
+		{#snippet children(id)}
+			<input {id} type="email" inputmode="email" autocomplete="off" maxlength="255" bind:value={body.enquiry_notice_email} />
+		{/snippet}
+	</Field>
+	<p class="-mt-2 text-sm text-(--text-muted)">
+		Each new message from the centre's contact form is in Admin › Enquiries. Add an address to also be emailed a notice
+		when one arrives (who it's from and the topic, not the message).
+	</p>
 </Form>

@@ -708,3 +708,30 @@ CREATE POLICY staff_shifts_read_policy
         (user_id = auth.current_user_id() AND auth.has_location_role(location_id))
         OR auth.is_location_admin(location_id)
     );
+
+
+-- Enquiries (docs/enquiries.md): the centre's admins and superadmins read
+-- them, close and reopen them, and reply. They arrive only through
+-- public.submit_enquiry (no insert policy); nothing is deleted.
+ALTER TABLE public.enquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enquiries FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY enquiries_admin_read_policy
+    ON public.enquiries FOR SELECT
+    USING (auth.is_location_admin(location_id));
+
+CREATE POLICY enquiries_admin_update_policy
+    ON public.enquiries FOR UPDATE
+    USING (auth.is_location_admin(location_id))
+    WITH CHECK (auth.is_location_admin(location_id));
+
+ALTER TABLE public.enquiry_replies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.enquiry_replies FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY enquiry_replies_admin_read_policy
+    ON public.enquiry_replies FOR SELECT
+    USING (auth.is_location_admin(location_id));
+
+CREATE POLICY enquiry_replies_admin_write_policy
+    ON public.enquiry_replies FOR INSERT
+    WITH CHECK (auth.is_location_admin(location_id));

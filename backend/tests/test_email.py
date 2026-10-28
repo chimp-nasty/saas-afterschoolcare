@@ -32,7 +32,7 @@ from tests.factories import Api
 
 CENTRE = Centre(name="Sunshine OSHC", email="hello@sunshine.test", phone="0400 000 000", primary_color="#0a7")
 
-VALUES = {"first_name": "Jordan", "child_first_name": "Sam"}
+VALUES = {"first_name": "Jordan", "child_first_name": "Sam", "enquirer_first_name": "Alex", "topic": "enrolment"}
 
 # What each email's locked block needs, with recognisable values.
 BLOCKS = {
@@ -47,6 +47,9 @@ BLOCKS = {
     EmailType.KIOSK_PIN: {"pin": "4821"},
     # One query value: the HTML escapes "&" between values (correctly).
     EmailType.STAFF_INVITE: {"invite_url": "https://t.test/l/reset-password?invite=TOKEN123"},
+    EmailType.ENQUIRY_RECEIVED: {"centre_url": "https://t.test/l"},
+    EmailType.ENQUIRY_REPLY: {"reply": "Thanks for asking. We have places on Tuesdays."},
+    EmailType.ENQUIRY_NOTICE: {"enquiry_url": "https://t.test/l/admin/enquiries/x"},
 }
 
 # Never in an email (docs/email-policy.md, section 2).

@@ -49,6 +49,7 @@ class EmailDefinition:
 
 _ACCOUNT_HOLDER = "You're receiving this because you have an account with {centre_name}."
 _SIGN_OFF = "The {centre_name} team"
+_CONTACTED = "You're receiving this because you contacted {centre_name}."
 
 
 CATALOGUE: dict[EmailType, EmailDefinition] = {
@@ -183,6 +184,42 @@ CATALOGUE: dict[EmailType, EmailDefinition] = {
             sign_off=_SIGN_OFF,
             footer_reason="You're receiving this because you've been added as a pickup person at {centre_name}.",
             requires_tls=True,
+        ),
+        EmailDefinition(
+            type=EmailType.ENQUIRY_RECEIVED,
+            placeholders=frozenset(),
+            subject="We've received your message",
+            heading="Thanks for getting in touch",
+            body=(
+                "Hi {first_name},\n\n"
+                "{centre_name} has your message and will be in touch soon."
+            ),
+            sign_off=_SIGN_OFF,
+            footer_reason=_CONTACTED,
+        ),
+        EmailDefinition(
+            type=EmailType.ENQUIRY_REPLY,
+            placeholders=frozenset(),
+            subject="Re: your message to {centre_name}",
+            heading="A reply from {centre_name}",
+            body=(
+                "Hi {first_name},\n\n"
+                "{centre_name} has replied to your message. You can reply to this email to answer."
+            ),
+            sign_off=_SIGN_OFF,
+            footer_reason=_CONTACTED,
+        ),
+        EmailDefinition(
+            type=EmailType.ENQUIRY_NOTICE,
+            placeholders=frozenset({"enquirer_first_name", "topic"}),
+            subject="New enquiry for {centre_name}",
+            heading="New enquiry",
+            body=(
+                "There's a new enquiry from {enquirer_first_name} about {topic}. "
+                "Log in to read and reply."
+            ),
+            sign_off=_SIGN_OFF,
+            footer_reason="You're receiving this because this address gets {centre_name}'s enquiry notices.",
         ),
     )
 }

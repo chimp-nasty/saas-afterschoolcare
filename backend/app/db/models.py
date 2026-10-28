@@ -60,6 +60,9 @@ class EmailTypeEnum(str, enum.Enum):
     KIOSK_PIN = 'kiosk_pin'
     STAFF_INVITE = 'staff_invite'
     NEW_MESSAGE = 'new_message'
+    ENQUIRY_RECEIVED = 'enquiry_received'
+    ENQUIRY_REPLY = 'enquiry_reply'
+    ENQUIRY_NOTICE = 'enquiry_notice'
 
 
 class EmergencyRelationEnum(str, enum.Enum):
@@ -70,6 +73,18 @@ class EmergencyRelationEnum(str, enum.Enum):
     NEIGHBOUR = 'neighbour'
     NANNY_BABYSITTER = 'nanny_babysitter'
     OTHER = 'other'
+
+
+class EnquiryStatusEnum(str, enum.Enum):
+    NEW = 'new'
+    REPLIED = 'replied'
+    CLOSED = 'closed'
+
+
+class EnquiryTopicEnum(str, enum.Enum):
+    ENROLMENT = 'enrolment'
+    BOOKINGS = 'bookings'
+    GENERAL = 'general'
 
 
 class KioskKindEnum(str, enum.Enum):
@@ -393,6 +408,7 @@ class Location(Base):
     email: Mapped[Optional[str]] = mapped_column(String(255))
     photo_key: Mapped[Optional[str]] = mapped_column(Text)
     photo_alt: Mapped[Optional[str]] = mapped_column(String(200))
+    enquiry_notice_email: Mapped[Optional[str]] = mapped_column(String(255))
 
 
 
@@ -748,6 +764,31 @@ class CustomerProfile(Base):
 
 
 
+class Enquiry(Base):
+    __tablename__ = 'enquiries'
+    __table_args__ = (
+        CheckConstraint('length(btrim(message)) >= 1 AND length(btrim(message)) <= 3000', name='ck_enquiries_message_length'),
+        CheckConstraint('length(btrim(name::text)) > 0', name='ck_enquiries_name_present'),
+        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_enquiries_location'),
+        PrimaryKeyConstraint('id', name='enquiries_pkey'),
+        Index('idx_enquiries_location_status_created', 'location_id', 'status', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    topic: Mapped[EnquiryTopicEnum] = mapped_column(Enum(EnquiryTopicEnum, values_callable=lambda cls: [member.value for member in cls], name='enquiry_topic_enum'), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[EnquiryStatusEnum] = mapped_column(Enum(EnquiryStatusEnum, values_callable=lambda cls: [member.value for member in cls], name='enquiry_status_enum'), nullable=False, server_default=text("'new'::enquiry_status_enum"))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    phone: Mapped[Optional[str]] = mapped_column(String(30))
+    replied_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+    closed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+
 class FamilyDeactivation(Base):
     __tablename__ = 'family_deactivations'
     __table_args__ = (
@@ -934,6 +975,27 @@ class EmailMessage(Base):
     error_code: Mapped[Optional[str]] = mapped_column(String(100))
     sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
     status_updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+
+class EnquiryReply(Base):
+    __tablename__ = 'enquiry_replies'
+    __table_args__ = (
+        CheckConstraint('length(btrim(body)) >= 1 AND length(btrim(body)) <= 3000', name='ck_enquiry_replies_body_length'),
+        ForeignKeyConstraint(['enquiry_id'], ['public.enquiries.id'], ondelete='CASCADE', name='fk_enquiry_replies_enquiry'),
+        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_enquiry_replies_location'),
+        ForeignKeyConstraint(['staff_user_id'], ['auth.users.id'], ondelete='SET NULL', name='fk_enquiry_replies_staff_user'),
+        PrimaryKeyConstraint('id', name='enquiry_replies_pkey'),
+        Index('idx_enquiry_replies_enquiry_created', 'enquiry_id', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    enquiry_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    staff_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid)
 
 
 

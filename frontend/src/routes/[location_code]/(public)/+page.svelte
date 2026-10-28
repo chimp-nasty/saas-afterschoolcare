@@ -28,12 +28,15 @@
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
 	import CentreFacts from '$lib/features/location/components/CentreFacts.svelte';
 	import CentreMap from '$lib/features/location/components/CentreMap.svelte';
+	import EnquiryForm from '$lib/features/enquiries/components/EnquiryForm.svelte';
 	import NextSessionCard from '$lib/features/services/components/NextSessionCard.svelte';
 	import ServiceCard from '$lib/features/services/components/ServiceCard.svelte';
 
 	import { auth } from '$lib/auth/state.svelte';
 	import { logout } from '$lib/auth/logout';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
+	import { createEnquiriesApi } from '$lib/api/public/adapters/enquiries';
+	import type { SubmitEnquiryRequest } from '$lib/api/schema';
 	import { centrePhotoUrl, siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { ApiResponse } from '$lib/api/wrapper';
 	import EditablePhoto from '$lib/features/business/components/EditablePhoto.svelte';
@@ -42,6 +45,19 @@
 	let { data } = $props();
 
 	const businessApi = createBusinessApi();
+	const enquiriesApi = createEnquiriesApi();
+
+	// The contact form (docs/enquiries.md): kept in the app for the
+	// centre's admins; the sender gets a receipt by email.
+	let enquirySent = $state(false);
+
+	async function sendEnquiry(body: SubmitEnquiryRequest) {
+		const response = await enquiriesApi.submit(data.locationCode, body);
+
+		if (response.ok) enquirySent = true;
+
+		return response;
+	}
 
 	// About this long here, then "More about us".
 	const ABOUT_TASTE = 280;
@@ -336,6 +352,28 @@
 		</div>
 
 		<CentreMap location={data.location} />
+	</div>
+</SiteSection>
+
+<!-- Get in touch: the contact form. What's sent stays in the app, for the
+     centre's admins to read and reply to. -->
+<SiteSection id="contact" tone="muted">
+	<div class="flex max-w-3xl flex-col gap-6">
+		<SiteHeading title="Get in touch" />
+
+		<p class="text-base text-(--text-muted) md:text-lg">
+			Questions about enrolling, bookings or anything else? Send {name} a message and they'll get back to you by email.
+		</p>
+
+		{#if enquirySent}
+			<Notice tone="success">Thanks, your message is on its way to {name}. We've emailed you to confirm it arrived.</Notice>
+		{/if}
+
+		<EnquiryForm
+			name={isFamily ? ($auth.firstName ?? '') : ''}
+			email={isFamily ? ($auth.email ?? '') : ''}
+			onsubmit={sendEnquiry}
+		/>
 	</div>
 </SiteSection>
 
