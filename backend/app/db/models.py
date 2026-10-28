@@ -127,6 +127,11 @@ class PickupRelationEnum(str, enum.Enum):
     OTHER = 'other'
 
 
+class PlatformEnquiryTopicEnum(str, enum.Enum):
+    OWN_BUSINESS = 'own_business'
+    BUILD_SOFTWARE = 'build_software'
+
+
 class RefundStatusEnum(str, enum.Enum):
     PENDING = 'PENDING'
     SUCCEEDED = 'SUCCEEDED'
@@ -219,6 +224,70 @@ class User(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
     last_login: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
+
+
+class PlatformEnquiry(Base):
+    __tablename__ = 'platform_enquiries'
+    __table_args__ = (
+        CheckConstraint('length(btrim(message)) >= 1 AND length(btrim(message)) <= 3000', name='ck_platform_enquiries_message_length'),
+        CheckConstraint('length(btrim(name::text)) > 0', name='ck_platform_enquiries_name_present'),
+        PrimaryKeyConstraint('id', name='platform_enquiries_pkey'),
+        Index('idx_platform_enquiries_created', 'created_at'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    topic: Mapped[PlatformEnquiryTopicEnum] = mapped_column(Enum(PlatformEnquiryTopicEnum, values_callable=lambda cls: [member.value for member in cls], name='platform_enquiry_topic_enum'), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    phone: Mapped[Optional[str]] = mapped_column(String(30))
+    business_name: Mapped[Optional[str]] = mapped_column(String(200))
+    closed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+class PlatformFeature(Base):
+    __tablename__ = 'platform_features'
+    __table_args__ = (
+        CheckConstraint("btrim(title::text) <> ''::text AND btrim(description::text) <> ''::text", name='ck_platform_features_text'),
+        CheckConstraint("icon::text = ANY (ARRAY['location'::character varying, 'privacy'::character varying, 'lock'::character varying, 'staff'::character varying, 'family'::character varying, 'medical'::character varying, 'booking'::character varying, 'payment'::character varying, 'kiosk'::character varying, 'email'::character varying, 'dashboard'::character varying, 'document'::character varying]::text[])", name='ck_platform_features_icon'),
+        PrimaryKeyConstraint('id', name='platform_features_pkey'),
+        UniqueConstraint('position', name='uq_platform_features_position'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, server_default=text('gen_random_uuid()'))
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    icon: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(60), nullable=False)
+    description: Mapped[str] = mapped_column(String(200), nullable=False)
+
+
+class PlatformSite(Base):
+    __tablename__ = 'platform_site'
+    __table_args__ = (
+        CheckConstraint('id', name='ck_platform_site_one_row'),
+        CheckConstraint("primary_color IS NULL OR primary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text) AND (secondary_color IS NULL OR secondary_color::text ~ '^#[0-9A-Fa-f]{6}$'::text) AND (accent_color IS NULL OR accent_color::text ~ '^#[0-9A-Fa-f]{6}$'::text", name='ck_platform_site_colors'),
+        PrimaryKeyConstraint('id', name='platform_site_pkey'),
+        {'schema': 'public'}
+    )
+
+    id: Mapped[bool] = mapped_column(Boolean, primary_key=True, server_default=text('true'))
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    headline: Mapped[Optional[str]] = mapped_column(String(120))
+    hero_text: Mapped[Optional[str]] = mapped_column(String(300))
+    about_title: Mapped[Optional[str]] = mapped_column(String(120))
+    about: Mapped[Optional[str]] = mapped_column(String(1000))
+    logo_key: Mapped[Optional[str]] = mapped_column(Text)
+    icon_key: Mapped[Optional[str]] = mapped_column(Text)
+    hero_photo_key: Mapped[Optional[str]] = mapped_column(Text)
+    hero_photo_alt: Mapped[Optional[str]] = mapped_column(String(200))
+    about_photo_key: Mapped[Optional[str]] = mapped_column(Text)
+    about_photo_alt: Mapped[Optional[str]] = mapped_column(String(200))
+    primary_color: Mapped[Optional[str]] = mapped_column(String(7))
+    secondary_color: Mapped[Optional[str]] = mapped_column(String(7))
+    accent_color: Mapped[Optional[str]] = mapped_column(String(7))
 
 
 class ServiceType(Base):

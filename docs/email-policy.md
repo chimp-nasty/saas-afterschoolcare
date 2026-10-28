@@ -53,6 +53,7 @@ Rules for every email:
 | Enquiry received | We've received your message | "Thanks {first name}, {centre} has your message and will be in touch." To the person who used the contact form | What they wrote |
 | Enquiry reply | Re: your message to {centre} | The admin's reply, as written (the exception to rule 3, below). Reply-To the centre's contact email | Their original message (not quoted back) |
 | Enquiry notice | New enquiry for {centre} | "New enquiry from {first name} about {topic}. Log in to read and reply." To the centre's optional enquiries address | The message, the person's email and phone |
+| Platform enquiry notice | New enquiry: {topic} | The whole enquiry as typed (name, email, phone, business, topic, message), from Session Pilot with Reply-To the person. Only to the platform's own contact address (docs/platform-site.md), never a tenant or family | — (nothing a centre holds: only what the person typed) |
 
 New emails are added to this table, with each item checked against section 2, before they're built.
 

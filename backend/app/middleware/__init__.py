@@ -38,6 +38,8 @@ def configure_middleware(app: FastAPI) -> None:
             r"/api/auth/v1/business/login/?": (10, 60),
             r"/api/platform/v1/login/?": (10, 60),
             r"/api/registration/v1/.*": (10, 60),
+            # The platform's public contact page.
+            r"/api/platform-enquiries/v1/?": (10, 60),
             r"/api/customer/v1/onboard/[^/]+/?": (5, 60),
             # The public contact form: a few messages a minute per address.
             r"/api/enquiries/v1/[^/]+/submit/?": (5, 60),

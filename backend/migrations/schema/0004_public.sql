@@ -4574,6 +4574,172 @@ END;
 $$;
 
 -- =====================================================
+-- PLATFORM ENQUIRIES
+-- =====================================================
+
+-- A message to the platform from its own contact page
+-- (docs/platform-site.md): someone interested in the software for their
+-- business, or in having software like it built. No business or centre:
+-- the platform's admins read them in the platform console (RLS schema/0005),
+-- and each is also emailed in full to the platform's contact address,
+-- replied to from there. Sent through public.submit_platform_enquiry, the
+-- only way in.
+CREATE TABLE public.platform_enquiries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    name VARCHAR(200) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(30),
+    business_name VARCHAR(200),
+    topic public.platform_enquiry_topic_enum NOT NULL,
+    message TEXT NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Dealt with (None while open).
+    closed_at TIMESTAMPTZ,
+
+    CONSTRAINT ck_platform_enquiries_name_present
+        CHECK (length(btrim(name)) > 0),
+
+    CONSTRAINT ck_platform_enquiries_message_length
+        CHECK (length(btrim(message)) BETWEEN 1 AND 3000)
+);
+
+CREATE INDEX idx_platform_enquiries_created
+    ON public.platform_enquiries (created_at DESC);
+
+-- Sending one from the platform's contact page: no one is logged in, so
+-- this is the only way in (SECURITY DEFINER; no insert policy).
+CREATE FUNCTION public.submit_platform_enquiry(
+    p_name TEXT,
+    p_email TEXT,
+    p_phone TEXT,
+    p_business_name TEXT,
+    p_topic public.platform_enquiry_topic_enum,
+    p_message TEXT
+)
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    INSERT INTO public.platform_enquiries (name, email, phone, business_name, topic, message)
+    VALUES (
+        btrim(p_name),
+        lower(btrim(p_email)),
+        NULLIF(btrim(p_phone), ''),
+        NULLIF(btrim(p_business_name), ''),
+        p_topic,
+        btrim(p_message)
+    )
+    RETURNING id;
+$$;
+
+
+-- =====================================================
+-- PLATFORM SITE
+-- =====================================================
+
+-- The platform's own landing page (docs/platform-site.md): its words,
+-- branding and photos, like a business's (tenancy.tenants and
+-- tenancy.tenant_branding). One row, made by the seeds; the platform's
+-- admins change it in place on the page (RLS schema/0005), anyone reads
+-- it. Files live in the document bucket under branding/platform/{kind}/
+-- (keys hold only IDs). An empty field means the app's defaults.
+CREATE TABLE public.platform_site (
+    -- Always true: there's only ever one row.
+    id BOOLEAN PRIMARY KEY DEFAULT TRUE,
+
+    -- The hero: headline and the paragraph under it.
+    headline VARCHAR(120),
+    hero_text VARCHAR(300),
+    -- The band beside the about photo.
+    about_title VARCHAR(120),
+    about VARCHAR(1000),
+
+    -- Any shape: the header. Square: the browser tab (else the logo, then
+    -- the app's icon).
+    logo_key TEXT,
+    icon_key TEXT,
+
+    -- Re-saved as JPEGs without their metadata; each with an optional
+    -- description for screen readers.
+    hero_photo_key TEXT,
+    hero_photo_alt VARCHAR(200),
+    about_photo_key TEXT,
+    about_photo_alt VARCHAR(200),
+
+    -- Main actions and headings, supporting elements, highlights; on every
+    -- page of the platform's site (the console too).
+    primary_color VARCHAR(7),
+    secondary_color VARCHAR(7),
+    accent_color VARCHAR(7),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT ck_platform_site_one_row
+        CHECK (id),
+
+    CONSTRAINT ck_platform_site_colors
+        CHECK (
+            (primary_color IS NULL OR primary_color ~ '^#[0-9A-Fa-f]{6}$')
+            AND (secondary_color IS NULL OR secondary_color ~ '^#[0-9A-Fa-f]{6}$')
+            AND (accent_color IS NULL OR accent_color ~ '^#[0-9A-Fa-f]{6}$')
+        )
+);
+
+CREATE TRIGGER trg_platform_site_updated_at
+    BEFORE UPDATE ON public.platform_site
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- The landing page's feature cards: an icon from a fixed set, a title and
+-- a line, in order. Saved as a whole list; at most 9 (three rows of three).
+CREATE TABLE public.platform_features (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    position INTEGER NOT NULL,
+    icon VARCHAR(20) NOT NULL,
+    title VARCHAR(60) NOT NULL,
+    -- The line under the title ("text" in the API, as for highlights).
+    description VARCHAR(200) NOT NULL,
+
+    CONSTRAINT uq_platform_features_position
+        UNIQUE (position),
+
+    CONSTRAINT ck_platform_features_text
+        CHECK (btrim(title) <> '' AND btrim(description) <> ''),
+
+    -- The icons the page can draw (frontend features/platform/features.ts).
+    CONSTRAINT ck_platform_features_icon
+        CHECK (icon IN (
+            'location', 'privacy', 'lock', 'staff', 'family', 'medical',
+            'booking', 'payment', 'kiosk', 'email', 'dashboard', 'document'
+        ))
+);
+
+CREATE FUNCTION public.enforce_platform_feature_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF (SELECT count(*) FROM public.platform_features) > 9 THEN
+        RAISE EXCEPTION 'The landing page has at most 9 features'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_platform_features_limit',
+                  TABLE = 'platform_features',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_platform_features_limit
+    AFTER INSERT ON public.platform_features
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_platform_feature_limit();
+
+
+-- =====================================================
 -- OWNER DASHBOARD
 -- =====================================================
 

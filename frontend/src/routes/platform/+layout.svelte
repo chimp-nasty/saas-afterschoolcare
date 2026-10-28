@@ -42,7 +42,9 @@
 		{
 			items: [
 				{ label: 'Businesses', onclick: () => navigate(''), isActive: isActive('') },
-				{ label: 'Invites', onclick: () => navigate('/invites'), isActive: isActive('/invites') }
+				{ label: 'Enquiries', onclick: () => navigate('/enquiries'), isActive: isActive('/enquiries') },
+				{ label: 'Invites', onclick: () => navigate('/invites'), isActive: isActive('/invites') },
+				{ label: 'Site', onclick: () => navigate('/site'), isActive: isActive('/site') }
 			]
 		},
 		{ items: [{ label: 'Logout', onclick: logout }] }

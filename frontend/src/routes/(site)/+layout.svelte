@@ -12,6 +12,7 @@
 
 	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import { ABOUT_LINK, BUSINESS_LINK, LOCATIONS_LINK } from '$lib/navigation/siteLinks';
+	import { PLATFORM_LINKS } from '$lib/platform/site';
 
 	let { data, children } = $props();
 
@@ -22,12 +23,13 @@
 </script>
 
 {#if data.platform}
-	<!-- The platform's own home page: its own header, no business. -->
-	<Layout>
+	<!-- The platform's own home page: its own header, no business, its
+	     landing page in full-width bands. -->
+	<Layout flush>
 		{#snippet header()}
 			<!-- Log in is a stub: business logins only work on a business's own
 			     site ({tenant}.{base domain}/business/login) for now. -->
-			<PlatformHeader menuLead={[{ label: 'Log in', href: '/business/login' }]} />
+			<PlatformHeader links={PLATFORM_LINKS} menuLead={[{ label: 'Log in', href: '/business/login' }]} />
 		{/snippet}
 
 		{@render children()}

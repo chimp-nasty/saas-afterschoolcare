@@ -27,9 +27,10 @@
     import ChildProfileForm from "$lib/features/children/components/ChildProfileForm.svelte";
     import PickupForm, { type PickupFormValues } from "$lib/features/pickups/components/PickupForm.svelte";
     import WelcomeModal from "$lib/features/customer/components/WelcomeModal.svelte";
+    import KioskPinModal from "$lib/features/customer/components/KioskPinModal.svelte";
     import Modal from "$lib/components/overlays/Modal.svelte";
 
-    import { KeyRound, Users } from "lucide-svelte";
+    import { Users } from "lucide-svelte";
 
     import { createCustomerApi } from "$lib/api/public/adapters/customer";
     import { createChildrenApi } from "$lib/api/public/adapters/children";
@@ -75,7 +76,7 @@
     // What happens next, as it happens: the kiosk PIN once the first child
     // is added (that's what emails it), and who can collect on the way to
     // the pickup step.
-    let pinModal: Modal;
+    let pinModal: KioskPinModal;
     let pickupsModal: Modal;
 
     async function go(next: SetupStep) {
@@ -141,7 +142,7 @@
 <!-- Straight after registering only. -->
 <WelcomeModal businessName={data.location.tenant_name} />
 
-{#snippet modalIcon(Icon: typeof KeyRound)}
+{#snippet modalIcon(Icon: typeof Users)}
     <div class="flex justify-center py-2">
         <span class="flex size-16 items-center justify-center rounded-full bg-(--primary-soft) text-(--primary)">
             <Icon size={28} />
@@ -150,23 +151,7 @@
 {/snippet}
 
 <!-- After the first child: their kiosk PIN is on its way. -->
-<Modal
-    bind:this={pinModal}
-    title="Your kiosk PIN is on its way"
-    description={`We've emailed a kiosk PIN to ${data.session?.email ?? "your email address"}.`}
->
-    {@render modalIcon(KeyRound)}
-
-    <ul class="flex list-disc flex-col gap-2 pl-5 text-base text-(--text)">
-        <li>You'll use it with your mobile number at the kiosk in {data.location.location_name} to sign your children in and out.</li>
-        <li>The first time you use the kiosk, you'll choose your own 4-digit PIN. The emailed one works for 30 days.</li>
-        <li>Lost it? Tap <span class="font-semibold">Forgot PIN</span> at the kiosk and we'll email a new one.</li>
-    </ul>
-
-    {#snippet actions()}
-        <Button onclick={() => pinModal.close()}>Got it</Button>
-    {/snippet}
-</Modal>
+<KioskPinModal bind:this={pinModal} email={data.session?.email ?? null} centreName={data.location.location_name} />
 
 <!-- On the way to the pickup step: who can collect, and why add people. -->
 <Modal

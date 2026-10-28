@@ -1189,6 +1189,145 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform-enquiries/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Platform Enquiries */
+        get: operations["list_platform_enquiries_api_platform_enquiries_v1__get"];
+        put?: never;
+        /** Submit Platform Enquiry */
+        post: operations["submit_platform_enquiry_api_platform_enquiries_v1__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-enquiries/v1/{enquiry_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Platform Enquiry */
+        post: operations["close_platform_enquiry_api_platform_enquiries_v1__enquiry_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-enquiries/v1/{enquiry_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Platform Enquiry */
+        post: operations["reopen_platform_enquiry_api_platform_enquiries_v1__enquiry_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-site/v1/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Platform Site */
+        get: operations["get_platform_site_api_platform_site_v1__get"];
+        /** Update Platform Site */
+        put: operations["update_platform_site_api_platform_site_v1__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-site/v1/files/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Platform File */
+        get: operations["get_platform_file_api_platform_site_v1_files__kind__get"];
+        put?: never;
+        post?: never;
+        /** Remove Platform File */
+        delete: operations["remove_platform_file_api_platform_site_v1_files__kind__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-site/v1/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Platform Features */
+        put: operations["replace_platform_features_api_platform_site_v1_features_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-site/v1/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Platform Upload */
+        post: operations["start_platform_upload_api_platform_site_v1_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform-site/v1/uploads/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Platform Upload */
+        post: operations["confirm_platform_upload_api_platform_site_v1_uploads_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/customer/v1/onboard/{location_code}": {
         parameters: {
             query?: never;
@@ -3089,6 +3228,14 @@ export interface components {
             msg: string;
             data?: components["schemas"]["PickupResponse"] | null;
         };
+        /** ApiResponse[PlatformEnquiryResponse] */
+        ApiResponse_PlatformEnquiryResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PlatformEnquiryResponse"] | null;
+        };
         /** ApiResponse[PlatformSessionResponse] */
         ApiResponse_PlatformSessionResponse_: {
             /** Ok */
@@ -3096,6 +3243,14 @@ export interface components {
             /** Msg */
             msg: string;
             data?: components["schemas"]["PlatformSessionResponse"] | null;
+        };
+        /** ApiResponse[PlatformSiteResponse] */
+        ApiResponse_PlatformSiteResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["PlatformSiteResponse"] | null;
         };
         /** ApiResponse[PublicBusinessResponse] */
         ApiResponse_PublicBusinessResponse_: {
@@ -3490,6 +3645,15 @@ export interface components {
             msg: string;
             /** Data */
             data?: components["schemas"]["PickupResponse"][] | null;
+        };
+        /** ApiResponse[list[PlatformEnquiryResponse]] */
+        ApiResponse_list_PlatformEnquiryResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["PlatformEnquiryResponse"][] | null;
         };
         /** ApiResponse[list[PlatformTenantResponse]] */
         ApiResponse_list_PlatformTenantResponse__: {
@@ -4236,6 +4400,16 @@ export interface components {
         };
         /** ConfirmPhotoUploadRequest */
         ConfirmPhotoUploadRequest: {
+            /** Key */
+            key: string;
+        };
+        /** ConfirmPlatformUploadRequest */
+        ConfirmPlatformUploadRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "logo" | "icon" | "hero_photo" | "about_photo";
             /** Key */
             key: string;
         };
@@ -5605,6 +5779,59 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * PlatformEnquiryResponse
+         * @description An enquiry in the platform console.
+         */
+        PlatformEnquiryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Phone */
+            phone: string | null;
+            /** Business Name */
+            business_name: string | null;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "own_business" | "build_software";
+            /** Message */
+            message: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Closed At */
+            closed_at: string | null;
+        };
+        /** PlatformFeatureItem */
+        PlatformFeatureItem: {
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "location" | "privacy" | "lock" | "staff" | "family" | "medical" | "booking" | "payment" | "kiosk" | "email" | "dashboard" | "document";
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PlatformFeaturesRequest
+         * @description The whole list, in order (at most 9: ck_platform_features_limit).
+         */
+        PlatformFeaturesRequest: {
+            /** Features */
+            features: components["schemas"]["PlatformFeatureItem"][];
+        };
         /** PlatformSessionResponse */
         PlatformSessionResponse: {
             /**
@@ -5614,6 +5841,60 @@ export interface components {
             platform_admin_id: string;
             /** Email */
             email: string;
+        };
+        /**
+         * PlatformSiteRequest
+         * @description The page's words and colours. Only the fields sent are changed, so each
+         *     editor on the page sends its own. A field sent empty is cleared
+         *     (colours: back to the app's defaults).
+         */
+        PlatformSiteRequest: {
+            /** Headline */
+            headline?: string | null;
+            /** Hero Text */
+            hero_text?: string | null;
+            /** About Title */
+            about_title?: string | null;
+            /** About */
+            about?: string | null;
+            /** Primary Color */
+            primary_color?: string | null;
+            /** Secondary Color */
+            secondary_color?: string | null;
+            /** Accent Color */
+            accent_color?: string | null;
+            /** Hero Photo Alt */
+            hero_photo_alt?: string | null;
+            /** About Photo Alt */
+            about_photo_alt?: string | null;
+        };
+        /**
+         * PlatformSiteResponse
+         * @description The landing page and the platform's branding: what anyone may see.
+         */
+        PlatformSiteResponse: {
+            /** Headline */
+            headline: string | null;
+            /** Hero Text */
+            hero_text: string | null;
+            /** About Title */
+            about_title: string | null;
+            /** About */
+            about: string | null;
+            hero_photo: components["schemas"]["PhotoResponse"] | null;
+            about_photo: components["schemas"]["PhotoResponse"] | null;
+            /** Primary Color */
+            primary_color: string | null;
+            /** Secondary Color */
+            secondary_color: string | null;
+            /** Accent Color */
+            accent_color: string | null;
+            /** Has Logo */
+            has_logo: boolean;
+            /** Has Icon */
+            has_icon: boolean;
+            /** Features */
+            features: components["schemas"]["PlatformFeatureItem"][];
         };
         /**
          * PlatformTenantResponse
@@ -6496,6 +6777,19 @@ export interface components {
              */
             content_type: "image/png" | "image/jpeg" | "image/webp";
         };
+        /** StartPlatformUploadRequest */
+        StartPlatformUploadRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "logo" | "icon" | "hero_photo" | "about_photo";
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "image/png" | "image/jpeg" | "image/webp";
+        };
         /** StartSiteUploadRequest */
         StartSiteUploadRequest: {
             /**
@@ -6569,6 +6863,32 @@ export interface components {
              * @enum {string}
              */
             topic: "enrolment" | "bookings" | "general";
+            /** Message */
+            message: string;
+            /** Website */
+            website?: string | null;
+        };
+        /**
+         * SubmitPlatformEnquiryRequest
+         * @description The platform's contact page (docs/platform-site.md). Anyone can send one.
+         */
+        SubmitPlatformEnquiryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Phone */
+            phone?: string | null;
+            /** Business Name */
+            business_name?: string | null;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "own_business" | "build_software";
             /** Message */
             message: string;
             /** Website */
@@ -6797,7 +7117,9 @@ export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_']
 export type ApiResponseOwnerDashboardResponse = components['schemas']['ApiResponse_OwnerDashboardResponse_'];
 export type ApiResponsePaymentCheckResponse = components['schemas']['ApiResponse_PaymentCheckResponse_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
+export type ApiResponsePlatformEnquiryResponse = components['schemas']['ApiResponse_PlatformEnquiryResponse_'];
 export type ApiResponsePlatformSessionResponse = components['schemas']['ApiResponse_PlatformSessionResponse_'];
+export type ApiResponsePlatformSiteResponse = components['schemas']['ApiResponse_PlatformSiteResponse_'];
 export type ApiResponsePublicBusinessResponse = components['schemas']['ApiResponse_PublicBusinessResponse_'];
 export type ApiResponsePublicLocationResponse = components['schemas']['ApiResponse_PublicLocationResponse_'];
 export type ApiResponseRefundResponse = components['schemas']['ApiResponse_RefundResponse_'];
@@ -6844,6 +7166,7 @@ export type ApiResponseListLocationServiceSelectionResponse = components['schema
 export type ApiResponseListLocationServiceSettingsResponse = components['schemas']['ApiResponse_list_LocationServiceSettingsResponse__'];
 export type ApiResponseListMedicalReviewSummaryResponse = components['schemas']['ApiResponse_list_MedicalReviewSummaryResponse__'];
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
+export type ApiResponseListPlatformEnquiryResponse = components['schemas']['ApiResponse_list_PlatformEnquiryResponse__'];
 export type ApiResponseListPlatformTenantResponse = components['schemas']['ApiResponse_list_PlatformTenantResponse__'];
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
 export type ApiResponseListReactivationRequestResponse = components['schemas']['ApiResponse_list_ReactivationRequestResponse__'];
@@ -6882,6 +7205,7 @@ export type ChildResponse = components['schemas']['ChildResponse'];
 export type ChildSearchResultResponse = components['schemas']['ChildSearchResultResponse'];
 export type ChildTableResponse = components['schemas']['ChildTableResponse'];
 export type ConfirmPhotoUploadRequest = components['schemas']['ConfirmPhotoUploadRequest'];
+export type ConfirmPlatformUploadRequest = components['schemas']['ConfirmPlatformUploadRequest'];
 export type ConfirmSiteUploadRequest = components['schemas']['ConfirmSiteUploadRequest'];
 export type CreateBookingRequest = components['schemas']['CreateBookingRequest'];
 export type CreateBookingResponse = components['schemas']['CreateBookingResponse'];
@@ -6956,7 +7280,12 @@ export type PhotoAltRequest = components['schemas']['PhotoAltRequest'];
 export type PhotoResponse = components['schemas']['PhotoResponse'];
 export type PickupRelation = components['schemas']['PickupRelation'];
 export type PickupResponse = components['schemas']['PickupResponse'];
+export type PlatformEnquiryResponse = components['schemas']['PlatformEnquiryResponse'];
+export type PlatformFeatureItem = components['schemas']['PlatformFeatureItem'];
+export type PlatformFeaturesRequest = components['schemas']['PlatformFeaturesRequest'];
 export type PlatformSessionResponse = components['schemas']['PlatformSessionResponse'];
+export type PlatformSiteRequest = components['schemas']['PlatformSiteRequest'];
+export type PlatformSiteResponse = components['schemas']['PlatformSiteResponse'];
 export type PlatformTenantResponse = components['schemas']['PlatformTenantResponse'];
 export type PublicBusinessResponse = components['schemas']['PublicBusinessResponse'];
 export type PublicFaqResponse = components['schemas']['PublicFaqResponse'];
@@ -7000,11 +7329,13 @@ export type StaffKioskVerifyResponse = components['schemas']['StaffKioskVerifyRe
 export type StaffPinStatusResponse = components['schemas']['StaffPinStatusResponse'];
 export type StaffShiftResponse = components['schemas']['StaffShiftResponse'];
 export type StartPhotoUploadRequest = components['schemas']['StartPhotoUploadRequest'];
+export type StartPlatformUploadRequest = components['schemas']['StartPlatformUploadRequest'];
 export type StartSiteUploadRequest = components['schemas']['StartSiteUploadRequest'];
 export type StripeAccountStatusResponse = components['schemas']['StripeAccountStatusResponse'];
 export type StripeOnboardingResponse = components['schemas']['StripeOnboardingResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type SubmitEnquiryRequest = components['schemas']['SubmitEnquiryRequest'];
+export type SubmitPlatformEnquiryRequest = components['schemas']['SubmitPlatformEnquiryRequest'];
 export type UnrefundedPaymentResponse = components['schemas']['UnrefundedPaymentResponse'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateContactDetailsRequest = components['schemas']['UpdateContactDetailsRequest'];
@@ -9648,6 +9979,362 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_RegisteredTenantResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_platform_enquiries_api_platform_enquiries_v1__get: {
+        parameters: {
+            query?: {
+                closed?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_PlatformEnquiryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_platform_enquiry_api_platform_enquiries_v1__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitPlatformEnquiryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_platform_enquiry_api_platform_enquiries_v1__enquiry_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enquiry_id: string;
+            };
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformEnquiryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_platform_enquiry_api_platform_enquiries_v1__enquiry_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enquiry_id: string;
+            };
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformEnquiryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_platform_site_api_platform_site_v1__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformSiteResponse_"];
+                };
+            };
+        };
+    };
+    update_platform_site_api_platform_site_v1__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformSiteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformSiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_platform_file_api_platform_site_v1_files__kind__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "logo" | "icon" | "hero_photo" | "about_photo";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_platform_file_api_platform_site_v1_files__kind__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "logo" | "icon" | "hero_photo" | "about_photo";
+            };
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformSiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_platform_features_api_platform_site_v1_features_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformFeaturesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformSiteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_platform_upload_api_platform_site_v1_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartPlatformUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SiteUploadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_platform_upload_api_platform_site_v1_uploads_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                platform_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPlatformUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PlatformSiteResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -12956,6 +13643,8 @@ type ReadonlyArray<T> = [
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const pathsApiLocationBrandingV1SiteFilesKindGetParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/location-branding/v1/site-files/{kind}"]["get"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const pathsApiBusinessV1SiteKindDeleteParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/business/v1/site/{kind}"]["delete"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
+export const pathsApiPlatformSiteV1FilesKindGetParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/platform-site/v1/files/{kind}"]["get"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
+export const pathsApiPlatformSiteV1FilesKindDeleteParametersPathKindValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/platform-site/v1/files/{kind}"]["delete"]["parameters"]["path"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
 export const pathsApiEnquiriesV1GetParametersQueryStatusValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/enquiries/v1/"]["get"]["parameters"]["query"]["status"]> = ["open", "new", "replied", "closed", "all"];
 export const addStaffRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AddStaffRequest"]["role"]> = ["staff", "admin"];
 export const australianStateValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AustralianState"]> = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
@@ -12965,6 +13654,7 @@ export const businessLocationRequestTimezoneValues: ReadonlyArray<FlattenedDeepR
 export const changeStaffRoleRequestRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChangeStaffRoleRequest"]["role"]> = ["staff", "admin"];
 export const childDocumentTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentType"]> = ["medical_action_plan", "asthma_action_plan", "allergy_anaphylaxis_plan", "other"];
 export const childDocumentUploadStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ChildDocumentUploadStatus"]> = ["pending", "uploaded", "failed"];
+export const confirmPlatformUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConfirmPlatformUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
 export const confirmSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ConfirmSiteUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const createKioskDeviceRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreateKioskDeviceRequest"]["kind"]> = ["family", "staff"];
 export const currencyCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CurrencyCode"]> = ["AUD", "NZD", "USD"];
@@ -12983,6 +13673,8 @@ export const medicalReviewDecisionValues: ReadonlyArray<FlattenedDeepRequired<co
 export const medicalReviewStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["MedicalReviewStatus"]> = ["not_required", "pending", "documentation_requested", "approved"];
 export const paymentStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PaymentStatus"]> = ["PENDING", "PAID", "REFUNDED", "FAILED"];
 export const pickupRelationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PickupRelation"]> = ["account_holder", "parent_guardian", "grandparent", "aunt_uncle", "family_friend", "neighbour", "nanny_babysitter", "other"];
+export const platformEnquiryResponseTopicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PlatformEnquiryResponse"]["topic"]> = ["own_business", "build_software"];
+export const platformFeatureItemIconValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PlatformFeatureItem"]["icon"]> = ["location", "privacy", "lock", "staff", "family", "medical", "booking", "payment", "kiosk", "email", "dashboard", "document"];
 export const refundStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RefundStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
 export const sendFamilyMessageRequestTargetAnyOf0Values: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SendFamilyMessageRequest"]["target"]> = ["profile", "children", "pickups", "manage-documents"];
 export const siteDocumentResponseKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SiteDocumentResponse"]["kind"]> = ["privacy", "terms"];
@@ -12991,7 +13683,10 @@ export const staffKioskShiftRequestActionValues: ReadonlyArray<FlattenedDeepRequ
 export const staffKioskSignRequestActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskSignRequest"]["action"]> = ["in", "out"];
 export const staffKioskUndoRequestStepValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StaffKioskUndoRequest"]["step"]> = ["sign_in", "sign_out"];
 export const startPhotoUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartPhotoUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp"];
+export const startPlatformUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartPlatformUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo"];
+export const startPlatformUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartPlatformUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp"];
 export const startSiteUploadRequestKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["kind"]> = ["logo", "icon", "hero_photo", "about_photo", "privacy", "terms"];
 export const startSiteUploadRequestContent_typeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StartSiteUploadRequest"]["content_type"]> = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 export const stripeStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["StripeStatus"]> = ["PENDING", "SUCCEEDED", "FAILED"];
 export const submitEnquiryRequestTopicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SubmitEnquiryRequest"]["topic"]> = ["enrolment", "bookings", "general"];
+export const submitPlatformEnquiryRequestTopicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SubmitPlatformEnquiryRequest"]["topic"]> = ["own_business", "build_software"];

@@ -35,6 +35,8 @@
 		homeHref,
 		title,
 		hasLogo,
+		logoSrc = siteFileUrl('logo'),
+		logoIsName = false,
 		links = [],
 		menuLead = [],
 		menuItems = [],
@@ -48,6 +50,11 @@
 		homeHref: string;
 		title: string;
 		hasLogo: boolean;
+		// The business's logo unless given (the platform's own).
+		logoSrc?: string;
+		// The logo already says the name (a wordmark): the name isn't
+		// written beside it, only read out.
+		logoIsName?: boolean;
 		links?: HeaderLink[];
 		// The phone drawer only: before the links, and after them.
 		menuLead?: HeaderMenuItem[];
@@ -149,10 +156,16 @@
 	<div class="mx-auto flex min-h-16 w-full max-w-6xl items-center gap-4 px-4 py-2">
 		<a href={homeHref} class="mr-auto flex min-h-11 min-w-0 items-center gap-3 rounded-lg">
 			{#if hasLogo}
-				<img src={siteFileUrl('logo')} alt="" class="h-9 w-auto max-w-32 object-contain" />
+				<img
+					src={logoSrc}
+					alt={logoIsName ? title : ''}
+					class={['h-9 w-auto object-contain', logoIsName ? 'max-w-48' : 'max-w-32']}
+				/>
 			{/if}
 
-			<span class="truncate text-sm font-semibold text-(--text)">{title}</span>
+			{#if !(hasLogo && logoIsName)}
+				<span class="truncate text-sm font-semibold text-(--text)">{title}</span>
+			{/if}
 		</a>
 
 		{#if links.length > 0}

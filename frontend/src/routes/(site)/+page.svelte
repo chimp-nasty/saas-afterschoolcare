@@ -4,7 +4,7 @@
     text (the rest on /about) and its FAQs. A section with nothing to show is
     left out. Its owner edits the words where they are, on desktop
     (EditableSection; section 6). The header and footer are the layout's.
-    On the platform's own site, a placeholder.
+    On the platform's own site, Session Pilot's landing page instead.
 -->
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
@@ -14,8 +14,6 @@
 	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Card from '$lib/components/layout/Card.svelte';
 	import EditableSection from '$lib/components/layout/EditableSection.svelte';
-	import Page from '$lib/components/layout/Page.svelte';
-	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import SiteSection from '$lib/components/layout/SiteSection.svelte';
 	import EmptyState from '$lib/components/text/EmptyState.svelte';
 	import SiteHeading from '$lib/components/text/SiteHeading.svelte';
@@ -26,9 +24,11 @@
 	import HighlightEditor from '$lib/features/business/components/HighlightEditor.svelte';
 	import Highlights from '$lib/features/business/components/Highlights.svelte';
 	import CentreCard from '$lib/features/location/components/CentreCard.svelte';
+	import PlatformLanding from '$lib/features/platform/components/PlatformLanding.svelte';
 	import EditablePhoto from '$lib/features/business/components/EditablePhoto.svelte';
-	import { uploadSiteFile } from '$lib/features/business/siteFiles';
+	import { uploadPhoto as uploadPhotoFile, uploadSiteFile } from '$lib/features/business/siteFiles';
 
+	import { createPlatformSiteApi } from '$lib/api/platform/adapters/platformSite';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
 	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { ApiResponse } from '$lib/api/wrapper';
@@ -92,22 +92,55 @@
 		return response;
 	}
 
+	// The platform's own landing page (docs/platform-site.md), edited in
+	// place by its admins: the same as a business's sections.
+	const platformSiteApi = createPlatformSiteApi();
+
+	async function savePlatform<T>(response: Promise<ApiResponse<T>>, done: () => void) {
+		const result = await response;
+
+		if (result.ok) {
+			await invalidate('app:platform-site');
+			done();
+		}
+
+		return result;
+	}
+
+	async function uploadPlatformPhoto(kind: PhotoKind, file: File) {
+		const ok = await uploadPhotoFile(
+			file,
+			(contentType) => platformSiteApi.startUpload({ kind, content_type: contentType }),
+			(key) => platformSiteApi.confirmUpload({ kind, key })
+		);
+
+		if (ok) await invalidate('app:platform-site');
+
+		return ok;
+	}
+
+	async function removePlatformPhoto(kind: PhotoKind) {
+		const response = await platformSiteApi.removeFile(kind);
+
+		if (response.ok) await invalidate('app:platform-site');
+	}
+
 	// Room for a photo when there is one, or its owner may add one.
 	const heroPhotoColumn = $derived(Boolean(business?.hero_photo) || canEdit);
 	const aboutPhotoColumn = $derived(Boolean(business?.about_photo) || canEdit);
 </script>
 
 {#if data.platform}
-	<!-- The platform's own site: no business here (the layout gives it a
-	     padded page and the platform's header). -->
-	<Page>
-		<PageHeader
-			title="After school care bookings"
-			description="Businesses sign up by invitation."
-		/>
-
-		<HyperTextLink href="/platform/login">Platform login</HyperTextLink>
-	</Page>
+	<!-- The platform's own site: Session Pilot's landing page
+	     (docs/platform-site.md). -->
+	<PlatformLanding
+		site={data.platformSite}
+		canEdit={data.isPlatformAdmin}
+		onsave={(body, done) => savePlatform(platformSiteApi.update(body), done)}
+		onsavefeatures={(features, done) => savePlatform(platformSiteApi.replaceFeatures(features), done)}
+		onupload={uploadPlatformPhoto}
+		onremove={removePlatformPhoto}
+	/>
 {:else}
 	<!-- The hero: the business's headline and paragraph beside its photo,
 	     then its highlights. -->
@@ -161,6 +194,7 @@
 						src={business?.hero_photo ? siteFileUrl('hero_photo', business.hero_photo.version) : null}
 						photo={business?.hero_photo ?? null}
 						emptyPrompt="Add a photo beside your headline"
+						shape="wave"
 						onupload={(file) => uploadPhoto('hero_photo', file)}
 						onremove={() => removePhoto('hero_photo')}
 						onsavealt={(alt) => savePhotoAlt('hero_photo', alt)}

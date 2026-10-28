@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     # environment: '["test.com","example.com"]'.
     EMAIL_SIMULATOR_DOMAINS: list[str] = []
     EMAIL_SIMULATOR_ADDRESS: str = "success@simulator.amazonses.com"
+    # Where the platform's own contact page sends each enquiry, in full
+    # (docs/platform-site.md); replies go straight back to the person. None:
+    # the platform console only.
+    PLATFORM_CONTACT_EMAIL: str | None = None
     SES_REGION: str = "ap-southeast-2"
     SES_FROM_ADDRESS: str = "no-reply@sessionpilot.com.au"
     # Both without open/click tracking; the TLS one requires an encrypted

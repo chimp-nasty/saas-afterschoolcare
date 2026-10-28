@@ -16,6 +16,8 @@ from app.tenancy.routes.domain_check import router as domain_check_router
 # platform
 from app.platform.routes.platform import router as platform_router
 from app.platform.routes.registration import router as registration_router
+from app.platform.routes.enquiries import router as platform_enquiries_router
+from app.platform.routes.site import router as platform_site_router
 
 # public
 from app.public.routes.customer import router as customer_router
@@ -60,6 +62,8 @@ api_router.include_router(domain_check_router)
 # platform
 api_router.include_router(platform_router)
 api_router.include_router(registration_router)
+api_router.include_router(platform_enquiries_router)
+api_router.include_router(platform_site_router)
 
 # public
 api_router.include_router(customer_router)

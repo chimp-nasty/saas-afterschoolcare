@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from dataclasses import replace
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -69,8 +70,17 @@ class EmailClient:
         self._sender = sender or _sender()
         self._session_factory = session_factory
 
-    def send(self, message: EmailMessage) -> UUID | None:
-        """Log, render, send and record one email. Returns its log row's id."""
+    def send(self, message: EmailMessage | OutgoingEmail) -> UUID | None:
+        """
+        Log, render, send and record one email. Returns its log row's id.
+        An OutgoingEmail is already finished and isn't a business's, so it
+        has no catalogue entry or log row: the platform's own notices to
+        itself (docs/platform-site.md).
+        """
+        if isinstance(message, OutgoingEmail):
+            self._send_finished(message)
+            return None
+
         email_type = message.email_type
         definition = CATALOGUE[email_type]
         location_id = message.location_id
@@ -156,6 +166,22 @@ class EmailClient:
         self._record(message_id=message_id, email_type=email_type, result=result)
 
         return message_id
+
+    def _send_finished(self, email: OutgoingEmail) -> None:
+        try:
+            result = self._sender.send(replace(email, to_email=delivery_address(email.to_email)))
+        except Exception as exc:
+            result = SendResult(error_code=type(exc).__name__)
+
+        logger.log(
+            logging.ERROR if result.error_code else logging.INFO,
+            "Platform email sent" if not result.error_code else "Platform email not sent",
+            extra={
+                "event": "platform_email",
+                "result": "failed" if result.error_code else "success",
+                "reason": result.error_code or f"type={email.tags.get('email_type', '-')}",
+            },
+        )
 
     def _record(
         self,

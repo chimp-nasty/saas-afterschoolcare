@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 
 	import ActionBar from '$lib/components/actions/ActionBar.svelte';
 	import Button from '$lib/components/actions/Button.svelte';
@@ -33,6 +34,7 @@
 	import ServiceCard from '$lib/features/services/components/ServiceCard.svelte';
 
 	import { auth } from '$lib/auth/state.svelte';
+	import { platformUrl } from '$lib/platform/site';
 	import { logout } from '$lib/auth/logout';
 	import { createBusinessApi } from '$lib/api/tenancy/adapters/business';
 	import { createEnquiriesApi } from '$lib/api/public/adapters/enquiries';
@@ -205,6 +207,7 @@
 			<div class={[!heroPhotoShown && 'hidden md:block']}>
 				<EditablePhoto
 					{canEdit}
+					shape="wave"
 					photo={data.location.photo ?? null}
 					src={data.location.photo
 						? centrePhotoUrl(data.locationCode, data.location.photo.version)
@@ -374,6 +377,12 @@
 			email={isFamily ? ($auth.email ?? '') : ''}
 			onsubmit={sendEnquiry}
 		/>
+
+		<!-- The only mention of the platform on a business's site
+		     (docs/platform-site.md): it stays the business's own. -->
+		<p class="text-sm text-(--text-muted)">
+			<HyperTextLink inline href={platformUrl(page.url, '/contact?topic=own_business')}>Interested in this software?</HyperTextLink>
+		</p>
 	</div>
 </SiteSection>
 

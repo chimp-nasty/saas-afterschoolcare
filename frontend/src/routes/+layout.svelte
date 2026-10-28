@@ -9,14 +9,33 @@
 
 	import Spinner from '$lib/components/feedback/Spinner.svelte';
 
+	import { platformFileUrl } from '$lib/api/platform/adapters/platformSite';
 	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import { isPlatformSite } from '$lib/platform/site';
 
-	let { children } = $props();
+	let { data, children } = $props();
 
 	// The tab icon: the business's site icon on its site (its logo, else the
-	// platform's, when it has none), the platform's own on the platform's.
-	const icon = $derived(isPlatformSite(page.url) ? '/favicon.svg' : siteFileUrl('icon'));
+	// platform's, when it has none), the platform's own on the platform's
+	// (its uploaded icon or logo, else the app's).
+	const icon = $derived(isPlatformSite(page.url) ? platformFileUrl('icon') : siteFileUrl('icon'));
+
+	// The platform's colours on every page of its own site
+	// (docs/platform-site.md): set on the document, so every Layout there
+	// inherits them (a business's Layout sets its own instead).
+	$effect(() => {
+		const site = data.platformSite;
+		const style = document.documentElement.style;
+
+		for (const [token, colour] of [
+			['--primary', site?.primary_color],
+			['--secondary', site?.secondary_color],
+			['--accent', site?.accent_color]
+		] as const) {
+			if (colour) style.setProperty(token, colour);
+			else style.removeProperty(token);
+		}
+	});
 
 	// A page that takes a while to load shows a spinner; quick ones don't
 	// flash one.

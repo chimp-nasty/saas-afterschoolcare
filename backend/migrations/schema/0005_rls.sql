@@ -735,3 +735,47 @@ CREATE POLICY enquiry_replies_admin_read_policy
 CREATE POLICY enquiry_replies_admin_write_policy
     ON public.enquiry_replies FOR INSERT
     WITH CHECK (auth.is_location_admin(location_id));
+
+
+-- Enquiries to the platform itself (docs/platform-site.md): only the
+-- platform's admins read them and mark them dealt with. They arrive only
+-- through public.submit_platform_enquiry (no insert policy).
+ALTER TABLE public.platform_enquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_enquiries FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY platform_enquiries_read_policy
+    ON public.platform_enquiries FOR SELECT
+    USING (auth.is_platform_admin());
+
+CREATE POLICY platform_enquiries_close_policy
+    ON public.platform_enquiries FOR UPDATE
+    USING (auth.is_platform_admin())
+    WITH CHECK (auth.is_platform_admin());
+
+
+-- The platform's landing page (docs/platform-site.md): anyone reads it;
+-- only the platform's admins change it. Its one row is made by the seeds,
+-- and features are saved as a whole list (delete, then insert).
+ALTER TABLE public.platform_site ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_site FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY platform_site_read_policy
+    ON public.platform_site FOR SELECT
+    USING (true);
+
+CREATE POLICY platform_site_update_policy
+    ON public.platform_site FOR UPDATE
+    USING (auth.is_platform_admin())
+    WITH CHECK (auth.is_platform_admin());
+
+ALTER TABLE public.platform_features ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_features FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY platform_features_read_policy
+    ON public.platform_features FOR SELECT
+    USING (true);
+
+CREATE POLICY platform_features_write_policy
+    ON public.platform_features FOR ALL
+    USING (auth.is_platform_admin())
+    WITH CHECK (auth.is_platform_admin());

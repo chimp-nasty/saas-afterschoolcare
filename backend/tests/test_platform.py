@@ -202,7 +202,7 @@ def test_register_with_an_invite(api: Api, platform):
 
     owner, login = _business_login(api, code, invite["email"])
     assert login.status_code == 200, login.text
-    assert len(owner.get("/auth/v1/session").json()["data"]["tenant_permissions"]) == 4
+    assert len(owner.get("/auth/v1/session").json()["data"]["tenant_permissions"]) == 5
 
     location = owner.post(
         "/business/v1/locations",

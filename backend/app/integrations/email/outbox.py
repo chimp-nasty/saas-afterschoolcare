@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from app.integrations.email.client import EmailClient
 from app.integrations.email.messages import EmailMessage
+from app.integrations.email.senders import OutgoingEmail
 
 
 logger = logging.getLogger("app.email")
@@ -35,7 +36,7 @@ class EmailOutbox:
     def __init__(self, db: Session):
         self.db = db
 
-    def queue(self, message: EmailMessage) -> None:
+    def queue(self, message: EmailMessage | OutgoingEmail) -> None:
         self.db.info.setdefault(_KEY, []).append(message)
 
 
@@ -58,7 +59,7 @@ def _send_queued(session: Session) -> None:
                 extra={
                     "event": "email_outbox_failed",
                     "result": "failed",
-                    "reason": f"type={message.email_type.value}; {type(exc).__name__}",
+                    "reason": f"type={getattr(getattr(message, 'email_type', None), 'value', 'platform')}; {type(exc).__name__}",
                 },
             )
 

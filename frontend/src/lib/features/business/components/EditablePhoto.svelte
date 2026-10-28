@@ -22,7 +22,8 @@
 		emptyPrompt,
 		onupload,
 		onremove,
-		onsavealt
+		onsavealt,
+		shape = 'rounded'
 	}: {
 		canEdit: boolean;
 		photo: PhotoResponse | null;
@@ -35,6 +36,8 @@
 		onremove: () => Promise<void>;
 		// Resolves once saved; the editor then closes.
 		onsavealt: (alt: string | null) => Promise<ApiResponse<unknown>>;
+		// How the photo is cut (SitePhoto).
+		shape?: 'rounded' | 'wave';
 	} = $props();
 
 	const shown = $derived(photo && src ? { src, alt: photo.alt } : fallback);
@@ -42,7 +45,7 @@
 
 <EditableSection {canEdit} label="the photo" isEmpty={!shown} {emptyPrompt}>
 	{#if shown}
-		<SitePhoto src={shown.src} alt={shown.alt} />
+		<SitePhoto src={shown.src} alt={shown.alt} {shape} />
 	{/if}
 
 	{#snippet editor(done)}

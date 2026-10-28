@@ -110,6 +110,14 @@ CREATE TYPE public.email_type_enum AS ENUM (
     'enquiry_notice'
 );
 
+-- What an enquiry to the platform itself is about (its contact page,
+-- docs/platform-site.md): using the software for your own business, or
+-- having software like it built.
+CREATE TYPE public.platform_enquiry_topic_enum AS ENUM (
+    'own_business',
+    'build_software'
+);
+
 -- What a contact form enquiry is about (docs/enquiries.md).
 CREATE TYPE public.enquiry_topic_enum AS ENUM (
     'enrolment',
