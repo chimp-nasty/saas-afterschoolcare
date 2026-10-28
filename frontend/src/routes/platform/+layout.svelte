@@ -10,14 +10,11 @@
 	import PlatformHeader from '$lib/components/layout/PlatformHeader.svelte';
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Sidebar, { type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
-	import Drawer from '$lib/components/overlays/Drawer.svelte';
 	import ConfirmDialog from '$lib/components/overlays/ConfirmDialog.svelte';
 
 	import { createPlatformApi } from '$lib/api/platform/adapters/platform';
 
 	let { data, children } = $props();
-
-	let sidebarOpen = $state(false);
 
 	const isLogin = $derived(page.url.pathname === '/platform/login');
 
@@ -32,14 +29,10 @@
 	}
 
 	function navigate(path: string) {
-		sidebarOpen = false;
-
 		void goto(`/platform${path}`);
 	}
 
 	async function logout() {
-		sidebarOpen = false;
-
 		await createPlatformApi().logout();
 		await invalidate('app:platform-session');
 		await goto('/platform/login');
@@ -74,13 +67,9 @@
 {:else if data.session}
 	<Layout sidebar={sidebar}>
 		{#snippet header()}
-			<PlatformHeader note={`Logged in as ${data.session?.email}`} onMenu={() => (sidebarOpen = true)} />
+			<PlatformHeader note={`Logged in as ${data.session?.email}`} menuSections={sections} />
 		{/snippet}
 
 		{@render children()}
 	</Layout>
-
-	<Drawer open={sidebarOpen} onclose={() => (sidebarOpen = false)}>
-		<Sidebar {sections} drawer />
-	</Drawer>
 {/if}

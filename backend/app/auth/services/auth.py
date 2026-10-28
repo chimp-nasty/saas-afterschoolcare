@@ -18,6 +18,7 @@ from app.auth.repositories.password_reset_token import PasswordResetTokenReposit
 from app.auth.repositories.rls_context import RlsContextRepository
 from app.auth.jwt.context import TokenContext
 from app.tenancy.repositories.location import LocationRepository
+from app.public.repositories.family_deactivation import FamilyDeactivationRepository
 from app.auth.schemas.auth import (
     LoginRequest,
     ResetPasswordRequest,
@@ -44,6 +45,7 @@ class AuthService:
         password_reset_tokens: PasswordResetTokenRepository,
         rls_context: RlsContextRepository,
         locations: LocationRepository,
+        deactivations: FamilyDeactivationRepository,
     ):
         self.db = db
         self.users = users
@@ -53,6 +55,7 @@ class AuthService:
         self.password_reset_tokens = password_reset_tokens
         self.rls_context = rls_context
         self.locations = locations
+        self.deactivations = deactivations
         self.emails = EmailOutbox(db)
 
     def get_session(
@@ -72,6 +75,16 @@ class AuthService:
             if not location:
                 raise JwtInvalidError()
 
+        # A family deactivated here (docs/account-deactivation.md): the
+        # website shows why, and whether they've asked to come back; the
+        # API refuses the rest. Asked through the SECURITY DEFINER check,
+        # since this request has no RLS settings.
+        is_deactivated = bool(
+            location
+            and "customer" in ctx.roles
+            and self.deactivations.is_deactivated(user_id=ctx.user_id, location_id=location.id)
+        )
+
         return SessionResponse(
             user_id=ctx.user_id,
             email=ctx.email,
@@ -80,6 +93,9 @@ class AuthService:
             location_id=location.id if location else None,
             location_code=location.code if location else None,
             location_name=location.name if location else None,
+            is_deactivated=is_deactivated,
+            reactivation_requested=is_deactivated
+            and self.deactivations.reactivation_requested(user_id=ctx.user_id, location_id=location.id),
             tenant_permissions={
                 resource: sorted(actions)
                 for resource, actions in ctx.tenant_permissions.items()

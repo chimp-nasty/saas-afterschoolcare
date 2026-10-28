@@ -12,6 +12,8 @@ from app.auth.jwt.context import (
 )
 from app.auth.jwt.tokens import TokenService
 from app.errors.auth import PermissionNotFoundError, JwtInvalidError
+from app.errors.customer import AccountDeactivatedError
+from app.public.repositories.family_deactivation import FamilyDeactivationRepository
 from app.errors.tenancy import LocationNotFoundError
 from app.tenancy.repositories.location import LocationRepository
 from app.tenancy.repositories.tenant import TenantRepository
@@ -48,11 +50,20 @@ def require_permission(
     *,
     resource: str,
     action: str,
+    allow_deactivated: bool = False,
 ) -> Callable[..., TokenContext]:
+    """
+    The token's permission at its location. A family deactivated there
+    (docs/account-deactivation.md) is refused everything, checked live on
+    every request so it applies to logins already open, except the few
+    endpoints that pass `allow_deactivated` (reading their own account and
+    asking to be reactivated). RLS hides their rows as well.
+    """
     def dependency(
         ctx: TokenContext = Depends(
             get_current_token_context,
         ),
+        db: Session = Depends(get_db),
     ) -> TokenContext:
         actions = ctx.permissions.get(
             resource,
@@ -66,6 +77,14 @@ def require_permission(
             or action not in actions
         ):
             raise PermissionNotFoundError()
+
+        # Only families can be deactivated (the database refuses anyone else).
+        if (
+            not allow_deactivated
+            and "customer" in ctx.roles
+            and FamilyDeactivationRepository(db=db).is_deactivated(user_id=ctx.user_id, location_id=ctx.location_id)
+        ):
+            raise AccountDeactivatedError()
 
         return ctx
 

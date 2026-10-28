@@ -244,6 +244,8 @@ class StripeWebhookService:
 
         self.rls_context.set_user_id(user_id=UUID(metadata["user_id"]))
         self.rls_context.set_location_id(location_id=UUID(metadata["location_id"]))
+        # Still reaches a family who has deactivated since asking.
+        self.rls_context.set_payments_channel()
 
         refund = self.refund_repository.get_by_id(id=UUID(metadata["refund_id"]))
 

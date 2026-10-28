@@ -15,12 +15,10 @@
 	import Footer from '$lib/components/layout/tenant/Footer.svelte';
 	import Sidebar, { type SidebarItem, type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
 	import BottomNav, { type BottomNavItem } from '$lib/components/controls/BottomNav.svelte';
-	import Drawer from '$lib/components/overlays/Drawer.svelte';
 	import ConfirmDialog from '$lib/components/overlays/ConfirmDialog.svelte';
 
 	let { data, children } = $props();
 
-	let sidebarOpen = $state(false);
 	let isLoggingOut = $state(false);
 
 	$effect(() => {
@@ -49,8 +47,6 @@
 	}
 
 	function navigate(path: string) {
-		sidebarOpen = false;
-
 		void goto(route(path));
 	}
 
@@ -100,7 +96,7 @@
 					items: [
 						// The business's owner: its details, centres and payments.
 						...(isOwner
-							? [{ label: 'Business settings', onclick: () => { sidebarOpen = false; void goto('/business'); } }]
+							? [{ label: 'Business settings', onclick: () => void goto('/business') }]
 							: []),
 						// Admins see whether payments are on; the owner manages
 						// them in Business settings.
@@ -119,7 +115,7 @@
 		}
 
 		if ($auth.roles.includes('customer')) {
-			const familyItems = [link('Account', '/account'), link('Bookings', '/bookings'), link('Messages', '/actions')];
+			const familyItems = [link('Account', '/account'), link('Bookings', '/bookings'), link('Messages', '/actions'), link('Settings', '/settings')];
 
 			// Families only: no headings. Staff who are also a family here get
 			// their family's links as a group like the rest.
@@ -160,6 +156,10 @@
 		$auth.roles.includes('customer') && !isStaff
 	);
 
+	// Deactivated here (docs/account-deactivation.md): only the deactivated
+	// page, so no navigation, bell or Home, just Log out.
+	const isDeactivated = $derived(data.session?.isDeactivated ?? false);
+
 	const bottomNavItems = $derived.by((): BottomNavItem[] => [
 		{ label: 'Home', href: route('/home'), icon: House, isActive: isActive('/home') },
 		{ label: 'Bookings', href: route('/bookings'), icon: CalendarDays, isActive: isActive('/bookings') },
@@ -170,15 +170,16 @@
 	const programsLink = $derived({ label: 'Programs', href: route('/programs') });
 
 	// Logged out: the whole site. Everyone logged in here: About, Programs
-	// and Home (/home: the admin home, a family's bookings; staff go on to
-	// their account). The business's owner: Business as well, last.
-	const homeLink = $derived({ label: 'Home', href: route('/home') });
+	// and Home (/home: the admin home, a family's bookings; a staff-role
+	// login has no home, so theirs is the centre's own page). The business's
+	// owner: Business as well, last.
+	const homeLink = $derived({ label: 'Home', href: isStaff && !isAdmin ? route('') : route('/home') });
 
 	// Staff included: the owner and superadmins edit those pages' words there.
 	const headerLinks = $derived([
 		...(!$auth.authenticated
 			? [programsLink, LOCATIONS_LINK, ABOUT_LINK]
-			: [ABOUT_LINK, programsLink, homeLink]),
+			: [ABOUT_LINK, programsLink, ...(isDeactivated ? [] : [homeLink])]),
 		...(isOwner ? [BUSINESS_LINK] : [])
 	]);
 
@@ -190,22 +191,29 @@
 					{ label: 'Log in', href: route('/login') },
 					{ label: 'Enrol now', href: route('/register') }
 				]
-			: isCustomerOnly
+			: isCustomerOnly && !isDeactivated
 				? [
 						homeLink,
 						{ label: 'Bookings', href: route('/bookings') },
 						{ label: 'Account', href: route('/account') },
-						{ label: 'Messages', href: route('/actions') }
+						{ label: 'Messages', href: route('/actions') },
+						{ label: 'Settings', href: route('/settings') }
 					]
 				: []
 	);
+
+	// Staff and admins on a phone: the sidebar's groups in the header's
+	// drawer, with the site's own pages before Logout.
+	const staffMenu = $derived([
+		...sections.slice(0, -1),
+		{ heading: 'Website', items: headerLinks },
+		...sections.slice(-1)
+	]);
 
 	async function logout() {
 		isLoggingOut = true;
 
 		try {
-			sidebarOpen = false;
-
 			await logoutAndLeave(data.locationCode);
 		} finally {
 			isLoggingOut = false;
@@ -250,8 +258,8 @@
 	secondaryColor={data.location.secondary_color}
 	accentColor={data.location.accent_color}
 	flush={isCentrePage}
-	sidebar={$auth.authenticated && !isCentrePage ? sidebar : undefined}
-	bottomNav={$auth.authenticated && isCustomerOnly ? bottomNav : undefined}
+	sidebar={$auth.authenticated && !isCentrePage && !isDeactivated ? sidebar : undefined}
+	bottomNav={$auth.authenticated && isCustomerOnly && !isDeactivated ? bottomNav : undefined}
 >
 	{#snippet header()}
 		<Header
@@ -262,9 +270,9 @@
 			{menuLead}
 			menuItems={isCustomerOnly ? [{ label: 'Log out', onclick: logout }] : []}
 			note={$auth.authenticated && !isCustomerOnly ? `Logged in as ${$auth.firstName ?? $auth.email}` : null}
-			onMenu={$auth.authenticated && !isCustomerOnly ? () => (sidebarOpen = true) : undefined}
+			menuSections={$auth.authenticated && !isCustomerOnly ? staffMenu : undefined}
 			flush={isCentrePage}
-			actions={$auth.roles.includes('customer') ? bell : undefined}
+			actions={$auth.roles.includes('customer') && !isDeactivated ? bell : undefined}
 			desktopActions={$auth.authenticated ? undefined : getStarted}
 		/>
 	{/snippet}
@@ -278,14 +286,3 @@
 
 {/if}
 
-{#if $auth.authenticated && !isCustomerOnly && !isKiosk}
-	<Drawer
-		open={sidebarOpen}
-		onclose={() => sidebarOpen = false}
-	>
-		<Sidebar
-			{sections}
-			drawer
-		/>
-	</Drawer>
-{/if}

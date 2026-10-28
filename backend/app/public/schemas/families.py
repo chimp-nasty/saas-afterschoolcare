@@ -61,6 +61,22 @@ class FamilyResponse(BaseModel):
     children: list[FamilyChildResponse]
     pickups: list[RollPickupPersonResponse]
 
+    # Deactivated at this centre (docs/account-deactivation.md), and when
+    # they asked to be reactivated; both None while active.
+    deactivated_at: datetime | None
+    reactivation_requested_at: datetime | None
+
+
+class ReactivationRequestResponse(BaseModel):
+    """A deactivated family at this centre who's asked to be reactivated."""
+
+    user_id: UUID
+    first_name: str
+    last_name: str
+    email: str
+    deactivated_at: datetime
+    reactivation_requested_at: datetime
+
 
 class FamilyDateRangeRequest(BaseModel):
     date_from: date | None = None

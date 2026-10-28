@@ -17,6 +17,7 @@ from app.public.schemas.families import (
     FamilyResponse,
     FamilySearchFilterRequest,
     FamilySearchResultResponse,
+    ReactivationRequestResponse,
 )
 from app.public.schemas.family_notes import (
     ChildNoteResponse,
@@ -33,6 +34,10 @@ from app.public.services.family_notes import ChildNoteService, FamilyMessageServ
 # and address. Admins and superadmins only: families hold customer_profile
 # and bookings permissions for their own records, so these use their own.
 # Refunds go through POST /refunds/v1/ (refunds c).
+#
+# Deactivated accounts (docs/account-deactivation.md): families r lists the
+# families asking to be reactivated (the admin home counts them); families u
+# reactivates one.
 #
 # Notes and messages (slice 4-5), admins and superadmins:
 #   child_notes r/c/d: staff's notes about the children, never shown to
@@ -57,6 +62,24 @@ def search_families(
     service: FamilyService = Depends(_service),
 ) -> ApiResponse[list[FamilySearchResultResponse]]:
     return ApiResponse(ok=True, msg="Found families", data=service.search(location_id=ctx.location_id, text=filters.q))
+
+
+# Before /{user_id}, which would take "reactivation-requests" as an id.
+@router.get("/reactivation-requests")
+def list_reactivation_requests(
+    ctx: TokenContext = Depends(require_permission(resource="families", action="r")),
+    service: FamilyService = Depends(_service),
+) -> ApiResponse[list[ReactivationRequestResponse]]:
+    return ApiResponse(ok=True, msg="Fetched reactivation requests", data=service.reactivation_requests(location_id=ctx.location_id))
+
+
+@router.post("/{user_id}/reactivate")
+def reactivate_family(
+    user_id: UUID,
+    ctx: TokenContext = Depends(require_permission(resource="families", action="u")),
+    service: FamilyService = Depends(_service),
+) -> ApiResponse[FamilyResponse]:
+    return ApiResponse(ok=True, msg="Family reactivated", data=service.reactivate(location_id=ctx.location_id, user_id=user_id))
 
 
 @router.get("/{user_id}")

@@ -175,6 +175,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/account/v1/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deactivate Account */
+        post: operations["deactivate_account_api_account_v1_deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/account/v1/reactivation-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Reactivation */
+        post: operations["request_reactivation_api_account_v1_reactivation_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/staff-accounts/v1/": {
         parameters: {
             query?: never;
@@ -273,6 +307,40 @@ export interface paths {
         get: operations["search_families_api_families_v1__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/families/v1/reactivation-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reactivation Requests */
+        get: operations["list_reactivation_requests_api_families_v1_reactivation_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/families/v1/{user_id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reactivate Family */
+        post: operations["reactivate_family_api_families_v1__user_id__reactivate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3297,6 +3365,15 @@ export interface components {
             /** Data */
             data?: components["schemas"]["PublicLocationResponse"][] | null;
         };
+        /** ApiResponse[list[ReactivationRequestResponse]] */
+        ApiResponse_list_ReactivationRequestResponse__: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            /** Data */
+            data?: components["schemas"]["ReactivationRequestResponse"][] | null;
+        };
         /** ApiResponse[list[RollPickupPersonResponse]] */
         ApiResponse_list_RollPickupPersonResponse__: {
             /** Ok */
@@ -4241,6 +4318,14 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * DeactivateAccountRequest
+         * @description Re-entered, so nobody at a logged-in browser can deactivate the account.
+         */
+        DeactivateAccountRequest: {
+            /** Password */
+            password: string;
+        };
         /** DnsRecordResponse */
         DnsRecordResponse: {
             /**
@@ -4538,6 +4623,10 @@ export interface components {
             children: components["schemas"]["FamilyChildResponse"][];
             /** Pickups */
             pickups: components["schemas"]["RollPickupPersonResponse"][];
+            /** Deactivated At */
+            deactivated_at: string | null;
+            /** Reactivation Requested At */
+            reactivation_requested_at: string | null;
         };
         /**
          * FamilySearchResultResponse
@@ -4731,7 +4820,8 @@ export interface components {
         };
         /**
          * KioskInfoResponse
-         * @description What a paired tablet is: which kind, at which centre.
+         * @description What a paired tablet is: which kind, at which centre, and (the family
+         *     kiosk's welcome screen) the centre's sessions today.
          */
         KioskInfoResponse: {
             /**
@@ -4741,6 +4831,11 @@ export interface components {
             kind: "family" | "staff";
             /** Location Name */
             location_name: string;
+            /**
+             * Sessions Today
+             * @default []
+             */
+            sessions_today: components["schemas"]["KioskServiceTodayResponse"][];
         };
         /** KioskLoginRequest */
         KioskLoginRequest: {
@@ -4761,6 +4856,28 @@ export interface components {
         KioskPairRequest: {
             /** Code */
             code: string;
+        };
+        /**
+         * KioskServiceTodayResponse
+         * @description One of the centre's sessions today, for the family kiosk's welcome screen.
+         */
+        KioskServiceTodayResponse: {
+            /** Service Name */
+            service_name: string;
+            /**
+             * Start Time
+             * Format: time
+             */
+            start_time: string;
+            /**
+             * End Time
+             * Format: time
+             */
+            end_time: string;
+            /** Signing Opens At */
+            signing_opens_at: string | null;
+            /** Signing Closes At */
+            signing_closes_at: string | null;
         };
         /**
          * KioskSessionResponse
@@ -5309,6 +5426,33 @@ export interface components {
             accent_color: string | null;
         };
         /**
+         * ReactivationRequestResponse
+         * @description A deactivated family at this centre who's asked to be reactivated.
+         */
+        ReactivationRequestResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Email */
+            email: string;
+            /**
+             * Deactivated At
+             * Format: date-time
+             */
+            deactivated_at: string;
+            /**
+             * Reactivation Requested At
+             * Format: date-time
+             */
+            reactivation_requested_at: string;
+        };
+        /**
          * RefundResponse
          * @description A refund once it's been sent to Stripe. PENDING until the webhook
          *     confirms it; the booking is cancelled and its place released then.
@@ -5705,6 +5849,10 @@ export interface components {
             location_code: string | null;
             /** Location Name */
             location_name: string | null;
+            /** Is Deactivated */
+            is_deactivated: boolean;
+            /** Reactivation Requested */
+            reactivation_requested: boolean;
             /** Tenant Permissions */
             tenant_permissions: {
                 [key: string]: string[];
@@ -6343,6 +6491,7 @@ export type ApiResponseListMedicalReviewSummaryResponse = components['schemas'][
 export type ApiResponseListPickupResponse = components['schemas']['ApiResponse_list_PickupResponse__'];
 export type ApiResponseListPlatformTenantResponse = components['schemas']['ApiResponse_list_PlatformTenantResponse__'];
 export type ApiResponseListPublicLocationResponse = components['schemas']['ApiResponse_list_PublicLocationResponse__'];
+export type ApiResponseListReactivationRequestResponse = components['schemas']['ApiResponse_list_ReactivationRequestResponse__'];
 export type ApiResponseListRollPickupPersonResponse = components['schemas']['ApiResponse_list_RollPickupPersonResponse__'];
 export type ApiResponseListServiceDayOverviewResponse = components['schemas']['ApiResponse_list_ServiceDayOverviewResponse__'];
 export type ApiResponseListStaffAccountResponse = components['schemas']['ApiResponse_list_StaffAccountResponse__'];
@@ -6393,6 +6542,7 @@ export type CreateServiceDaysResponse = components['schemas']['CreateServiceDays
 export type CreatedInviteResponse = components['schemas']['CreatedInviteResponse'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
+export type DeactivateAccountRequest = components['schemas']['DeactivateAccountRequest'];
 export type DnsRecordResponse = components['schemas']['DnsRecordResponse'];
 export type DomainCheckResponse = components['schemas']['DomainCheckResponse'];
 export type DomainResponse = components['schemas']['DomainResponse'];
@@ -6422,6 +6572,7 @@ export type KioskInfoResponse = components['schemas']['KioskInfoResponse'];
 export type KioskLoginRequest = components['schemas']['KioskLoginRequest'];
 export type KioskLoginResponse = components['schemas']['KioskLoginResponse'];
 export type KioskPairRequest = components['schemas']['KioskPairRequest'];
+export type KioskServiceTodayResponse = components['schemas']['KioskServiceTodayResponse'];
 export type KioskSessionResponse = components['schemas']['KioskSessionResponse'];
 export type KioskSettingsResponse = components['schemas']['KioskSettingsResponse'];
 export type KioskSetupCodeResponse = components['schemas']['KioskSetupCodeResponse'];
@@ -6448,6 +6599,7 @@ export type PlatformTenantResponse = components['schemas']['PlatformTenantRespon
 export type PublicBusinessResponse = components['schemas']['PublicBusinessResponse'];
 export type PublicFaqResponse = components['schemas']['PublicFaqResponse'];
 export type PublicLocationResponse = components['schemas']['PublicLocationResponse'];
+export type ReactivationRequestResponse = components['schemas']['ReactivationRequestResponse'];
 export type RefundResponse = components['schemas']['RefundResponse'];
 export type RefundStatus = components['schemas']['RefundStatus'];
 export type RegisterTenantRequest = components['schemas']['RegisterTenantRequest'];
@@ -6852,6 +7004,72 @@ export interface operations {
             };
         };
     };
+    deactivate_account_api_account_v1_deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_reactivation_api_account_v1_reactivation_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_NoneType_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_staff_api_staff_accounts_v1__get: {
         parameters: {
             query?: never;
@@ -7111,6 +7329,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_list_FamilySearchResultResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reactivation_requests_api_families_v1_reactivation_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_list_ReactivationRequestResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reactivate_family_api_families_v1__user_id__reactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_FamilyResponse_"];
                 };
             };
             /** @description Validation Error */

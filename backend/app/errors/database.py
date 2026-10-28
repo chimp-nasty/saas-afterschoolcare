@@ -74,6 +74,8 @@ from app.errors.child_documents import (
 from app.errors.action import MessageAlreadyReadError
 from app.errors.payments import PaymentsNotEnabledError, StripeAccountTakenError
 from app.errors.customer import (
+    DeactivationFamilyOnlyError,
+    DeactivationUpcomingBookingsError,
     EmergencyContactFamilyOnlyError,
     EmergencyContactPhoneError,
     EmergencyContactRelationError,
@@ -152,6 +154,9 @@ CONSTRAINT_ERRORS: dict[str, type[ApplicationError]] = {
     "ck_bookings_payments_enabled": PaymentsNotEnabledError,
     "ck_payment_attempts_payments_enabled": PaymentsNotEnabledError,
     "uq_tenant_stripe_accounts_account": StripeAccountTakenError,
+    # Deactivating an account (schema/0004, docs/account-deactivation.md).
+    "ck_family_deactivations_family_only": DeactivationFamilyOnlyError,
+    "ck_family_deactivations_no_upcoming_bookings": DeactivationUpcomingBookingsError,
     "ck_bookings_cancel_window": BookingNotCancellableError,
     "ck_bookings_reinstate_window": BookingNotReinstatableError,
     "ck_bookings_child_medically_cleared": ChildNotMedicallyClearedError,

@@ -63,7 +63,7 @@ These keep features looking like one app. They're written for the customer-facin
 - Every customer page is `<Page>` → `<PageHeader>` → content (`components/layout/`).
 - `Page` is centred. Customer pages are always `narrow` (`max-w-xl`): one column on every screen, so desktop sees the same layout centred. `wide` is for admin pages only.
 - `PageHeader` takes `title` (sentence case), optional `eyebrow` (e.g. "Step 2 of 3"), `description` and an `actions` snippet.
-- Customers navigate with `BottomNav` on mobile and the sidebar on desktop; staff and admin use the sidebar (drawer on mobile).
+- Customers navigate with `BottomNav` on mobile and the sidebar on desktop; staff and admin use the sidebar. On a phone everyone's menu is the header's drawer (`Header`): a family's rows, or the sidebar's sections under their category labels (`menuSections`).
 - Every page has the site's header (`Header` in the tenant `Layout`'s `header` snippet; `PlatformHeader` on the platform's own site), logins and error pages included. The one exception is the kiosk tablet (`/{location}/kiosk`), which families and staff use in person and mustn't navigate away from.
 
 ### Public site pages
@@ -120,7 +120,7 @@ Each text role has one look, set by a component, never by hand-written classes (
 | A compact data card's title | `TitleCard` (the label role); cards a page is built from use `SectionHeading` |
 
 - Form labels are `Field`'s (`.field-label`, the label role). A plain `<label>` wrapping a checkbox or filter has no styling of its own, so the text inside it keeps its role.
-- The kiosk tablet is read at arm's length: these components take `size="kiosk"` (one size up; empty states centred) instead of kiosk copies. Kiosk screen titles are `text-3xl`, section titles `text-xl`, subtitles `text-lg` muted, body `text-lg`. A kiosk component also shown on the website (e.g. `StaffRoll` on the admin run sheet) takes a `size` prop and passes it down.
+- The kiosk tablet is read at arm's length: these components take `size="kiosk"` (one size up; empty states centred) instead of kiosk copies. Kiosk screen titles are `text-3xl`, section titles `text-xl`, subtitles `text-lg` muted, body `text-lg`. Kiosk toasts use `kioskToast` (`features/kiosk/kiosk.ts`: larger, wider, 4 seconds), never `toast` directly. A kiosk component also shown on the website (e.g. `StaffRoll` on the admin run sheet) takes a `size` prop and passes it down.
 
 ### Actions
 
@@ -130,7 +130,7 @@ Each text role has one look, set by a component, never by hand-written classes (
 - A row of actions goes in `ActionBar`, secondary first and main action last. On mobile the buttons stack full width with the main action at the bottom, nearest the thumb; from `md:` they sit in one row, secondary left and main right. Buttons inside it size themselves; don't pass `fullWidth`.
 - In multi-step flows (booking), use `<ActionBar sticky>` so Continue stays reachable on long pages.
 - A way on that's the next thing to do on the page ("Go to your profile", "Back to bookings", "Back to families") is a `ghost` `Button` in `<ActionBar start>` (full width on a phone), calling `goto`; another host needs a full page load (`window.location.assign`). Text links (`HyperTextLink`, 44px tall by default) are only for outside links (receipts, maps, phone, email, terms), small helpers in a form ("Forgot your password?", "Already have an account? Log in") and links inside running text (`inline`). `Button variant="hyperlink"` is for a button that looks like a link (e.g. "Show more"), not for navigation.
-- Yes/no questions use `confirmAction()` (see Confirmations below). `Modal` (a bottom sheet on mobile) is only for small forms or extra content over a page, with its buttons in `actions`. Navigation menus use `Drawer` (staff and admin only).
+- Yes/no questions use `confirmAction()` (see Confirmations below). `Modal` (a bottom sheet on mobile) is only for small forms or extra content over a page, with its buttons in `actions`. Navigation menus are the header's drawer (`Header`'s `menuLead`/`menuItems`, or `menuSections` for grouped links).
 
 ### Confirmations
 

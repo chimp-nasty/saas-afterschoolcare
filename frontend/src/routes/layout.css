@@ -171,6 +171,25 @@ body {
 	}
 }
 
+/* Kiosk toasts (kioskToast in features/kiosk/kiosk.ts): bigger text and
+   padding, and a wider toaster while one is showing. !important beats
+   the website's toast classes (root layout) and sonner's inline width. */
+[data-sonner-toaster]:has([data-sonner-toast].kiosk-toast) {
+	--width: min(34rem, calc(100vw - 2rem)) !important;
+}
+
+[data-sonner-toast].kiosk-toast {
+	padding: 1.25rem 1.5rem !important;
+	font-size: 1.25rem !important;
+	line-height: 1.75rem !important;
+}
+
+[data-sonner-toast].kiosk-toast [data-icon],
+[data-sonner-toast].kiosk-toast [data-icon] svg {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
 /* Moving between pages (the root layout's onNavigate): a quick crossfade.
    Parts that look the same on both pages, like the header, don't seem to
    move. */

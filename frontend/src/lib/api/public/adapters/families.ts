@@ -12,6 +12,7 @@ import type {
 	FamilyPaymentResponse,
 	FamilyResponse,
 	FamilySearchResultResponse,
+	ReactivationRequestResponse,
 	SendFamilyMessageRequest,
 	UpdateContactDetailsRequest
 } from '$lib/api/schema';
@@ -46,6 +47,16 @@ export function createFamiliesApi(
 		// Phone and address.
 		update(userId: string, body: UpdateContactDetailsRequest) {
 			return apiWrapper<FamilyResponse>(`${baseUrl}/${userId}`, { method: 'PATCH', body, fetcher });
+		},
+
+		// Families who deactivated their account here and asked to come back
+		// (docs/account-deactivation.md).
+		reactivationRequests() {
+			return apiWrapper<ReactivationRequestResponse[]>(`${baseUrl}/reactivation-requests`, { method: 'GET', fetcher });
+		},
+
+		reactivate(userId: string) {
+			return apiWrapper<FamilyResponse>(`${baseUrl}/${userId}/reactivate`, { method: 'POST', fetcher });
 		},
 
 		// Default: a month back to three ahead, plus anything unpaid.

@@ -5,7 +5,7 @@ children in and out for today's sessions. The device cookie says which
 tablet it is; a 60-second session token says who is using it.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -78,6 +78,37 @@ def test_paired_tablet_describes_itself(tablet):
 
     assert response.status_code == 200, response.text
     assert response.json()["data"]["kind"] == "family"
+
+
+# The tablet also gets the centre's sessions today for its welcome screen:
+# the timetable only, nothing about families or children (it's shown before
+# anyone logs in). With service times not enforced (the tests' default),
+# signing is open all day, so there are no opening and closing times.
+def test_tablet_shows_todays_sessions(tablet, family):
+    sessions = tablet.get(f"{BASE}/device").json()["data"]["sessions_today"]
+
+    assert sessions, "today's session should be listed"
+    assert all(
+        set(session) == {"service_name", "start_time", "end_time", "signing_opens_at", "signing_closes_at"}
+        for session in sessions
+    )
+    assert all(session["signing_opens_at"] is None and session["signing_closes_at"] is None for session in sessions)
+
+
+# When the centre enforces service times, each of today's sessions on the
+# welcome screen says when signing opens and closes: 2 hours either side.
+def test_todays_sessions_show_signing_times(api: Api, tablet, family, service_times):
+    service_times(1)
+    [(after_school,)] = api.sql("SELECT name FROM public.service_types WHERE code = 'after_school_care'")
+
+    sessions = tablet.get(f"{BASE}/device").json()["data"]["sessions_today"]
+    [session] = [s for s in sessions if s["service_name"] == after_school]
+
+    opens = datetime.fromisoformat(session["signing_opens_at"])
+    closes = datetime.fromisoformat(session["signing_closes_at"])
+
+    # The (moved) one-hour session, open from 2 hours before to 2 hours after.
+    assert closes - opens == timedelta(hours=5)
 
 
 # A browser that was never paired is told to set the kiosk up.

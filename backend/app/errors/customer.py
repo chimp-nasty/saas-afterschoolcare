@@ -54,3 +54,33 @@ class EmergencyContactFamilyOnlyError(ApplicationError):
     status_code = status.HTTP_403_FORBIDDEN
     message = "Only the family can change their emergency contact"
     result = "denied"
+
+
+# Deactivated accounts (docs/account-deactivation.md).
+
+class AccountDeactivatedError(ApplicationError):
+    """Every request from a family deactivated at this centre (require_permission)."""
+
+    status_code = status.HTTP_403_FORBIDDEN
+    message = "This account is deactivated."
+    result = "denied"
+
+
+class DeactivationFamilyOnlyError(ApplicationError):
+    status_code = status.HTTP_403_FORBIDDEN
+    message = "Only family accounts can be deactivated."
+    result = "denied"
+
+
+class DeactivationUpcomingBookingsError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    message = "Cancel or refund your upcoming bookings before deactivating your account."
+    result = "denied"
+
+
+class AccountNotDeactivatedError(ApplicationError):
+    """Asking to be reactivated, or reactivating, an account that's active."""
+
+    status_code = status.HTTP_409_CONFLICT
+    message = "This account isn't deactivated."
+    result = "denied"

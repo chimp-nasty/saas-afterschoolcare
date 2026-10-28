@@ -19,11 +19,27 @@ class KioskPairRequest(BaseModel):
         return value.strip().upper()
 
 
+class KioskServiceTodayResponse(BaseModel):
+    """One of the centre's sessions today, for the family kiosk's welcome screen."""
+
+    service_name: str
+    start_time: time
+    end_time: time
+    # When signing in and out opens and closes (None: any time today).
+    signing_opens_at: datetime | None
+    signing_closes_at: datetime | None
+
+
 class KioskInfoResponse(BaseModel):
-    """What a paired tablet is: which kind, at which centre."""
+    """
+    What a paired tablet is: which kind, at which centre, and (the family
+    kiosk's welcome screen) the centre's sessions today.
+    """
 
     kind: Literal["family", "staff"]
     location_name: str
+    # Family kiosk only (the staff kiosk has its roll).
+    sessions_today: list[KioskServiceTodayResponse] = []
 
 
 class KioskSessionResponse(BaseModel):

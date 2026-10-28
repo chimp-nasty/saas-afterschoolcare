@@ -1,23 +1,30 @@
 <!--
-    The family kiosk, one step at a time: Start → mobile → PIN → (choose a
-    new PIN, twice, the first time) → today's sessions. Forgot PIN emails a
-    new one. Nothing is kept between people: the session token lives in this
-    component only, and everything resets after 60 seconds without a tap, or
-    10 seconds after a sign-in or sign-out (a tap restarts that countdown).
+    The family kiosk, one step at a time: mobile → PIN → (choose a new PIN,
+    twice, the first time) → today's sessions. The first screen is the
+    keypad itself, beside a welcome with the centre's sessions today
+    (KioskWelcome). Forgot PIN emails a new one. Nothing is kept between
+    people: the session token lives in this component only, and everything
+    resets after 60 seconds without a tap, or 10 seconds after a sign-in or
+    sign-out (a tap restarts that countdown).
 -->
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { scale } from 'svelte/transition';
+
+	import { CircleCheck } from 'lucide-svelte';
 
 	import Button from '$lib/components/actions/Button.svelte';
 	import ErrorText from '$lib/components/text/ErrorText.svelte';
 	import Notice from '$lib/components/text/Notice.svelte';
 	import FamilyToday from './FamilyToday.svelte';
+	import KioskSteps from './KioskSteps.svelte';
+	import KioskWelcome from './KioskWelcome.svelte';
 	import PhoneEntry from './PhoneEntry.svelte';
 	import PinEntry from './PinEntry.svelte';
 
 	import { createFamilyKioskApi } from '$lib/api/kiosk/adapters/familyKiosk';
-	import type { KioskBookingResponse } from '$lib/api/schema';
-	import { DONE_LOGOUT_MS, SESSION_IDLE_MS, createTimer, formatClock, messageOf } from '../kiosk';
+	import type { KioskBookingResponse, KioskServiceTodayResponse } from '$lib/api/schema';
+	import { DONE_LOGOUT_MS, SESSION_IDLE_MS, createTimer, formatClock, kioskToast, messageOf } from '../kiosk';
 
 	let {
 		locationCode
@@ -25,16 +32,21 @@
 		locationCode: string;
 	} = $props();
 
-	type Step = 'start' | 'phone' | 'pin' | 'new-pin' | 'confirm-pin' | 'today' | 'forgot' | 'forgot-sent';
+	type Step = 'phone' | 'pin' | 'new-pin' | 'confirm-pin' | 'today' | 'forgot' | 'forgot-sent';
+
+	// The centre's sessions today, for the welcome: refreshed whenever the
+	// kiosk is back at the start, and every few minutes while it waits.
+	const SESSIONS_REFRESH_MS = 5 * 60_000;
 
 	const api = $derived(createFamilyKioskApi(locationCode));
 
-	let step = $state<Step>('start');
+	let step = $state<Step>('phone');
 	let phone = $state('');
 	let token = $state<string | null>(null);
 	let firstName = $state('');
 	let newPin = $state('');
 	let bookings = $state<KioskBookingResponse[]>([]);
+	let sessionsToday = $state<KioskServiceTodayResponse[]>([]);
 
 	let error = $state<string | null>(null);
 	let notice = $state<string | null>(null);
@@ -45,14 +57,32 @@
 	let done = $state<string | null>(null);
 	let secondsLeft = $state(0);
 	let countdown: ReturnType<typeof setInterval> | null = null;
+	let sessionsTicker: ReturnType<typeof setInterval> | null = null;
 
-	const idle = createTimer(SESSION_IDLE_MS, () => reset());
+	const idle = createTimer(SESSION_IDLE_MS, () => reset('idle'));
 
-	function reset(message: string | null = null) {
+	// Why a person's turn ended, for the toast that says so.
+	type EndReason = 'done' | 'finished' | 'idle' | 'expired' | 'cancelled';
+
+	function announce(reason: EndReason, name: string, loggedIn: boolean) {
+		if (reason === 'expired') {
+			kioskToast.error('Your session ended. Please start again.');
+		} else if (!loggedIn) {
+			// Nobody had logged in yet (e.g. a half-typed number): nothing to say.
+		} else if (reason === 'idle') {
+			kioskToast.info(`${name ? `${name}, you were` : 'You were'} logged out after a minute without a tap.`);
+		} else {
+			kioskToast.success(`${name ? `Bye ${name}, you're` : "You're"} logged out.`);
+		}
+	}
+
+	function reset(reason: EndReason = 'cancelled') {
+		announce(reason, firstName, token !== null);
+
 		stopCountdown();
 		idle.stop();
 
-		step = 'start';
+		step = 'phone';
 		phone = '';
 		token = null;
 		firstName = '';
@@ -62,7 +92,15 @@
 		done = null;
 		busy = false;
 		busyBookingId = null;
-		notice = message;
+		notice = null;
+
+		void loadSessions();
+	}
+
+	async function loadSessions() {
+		const response = await api.device();
+
+		if (response.ok && response.data) sessionsToday = response.data.sessions_today;
 	}
 
 	function go(next: Step) {
@@ -75,7 +113,8 @@
 	// Any tap keeps the person's session going, and restarts the logout
 	// countdown after a sign-in or sign-out.
 	function onTap() {
-		if (step === 'start') return;
+		// The start screen with nothing typed yet: nobody's session to keep.
+		if (step === 'phone' && phone === '') return;
 
 		idle.reset();
 
@@ -89,7 +128,7 @@
 		countdown = setInterval(() => {
 			secondsLeft -= 1;
 
-			if (secondsLeft <= 0) reset();
+			if (secondsLeft <= 0) reset('finished');
 		}, 1000);
 	}
 
@@ -102,7 +141,7 @@
 	function sessionEnded(status: number): boolean {
 		if (status !== 401) return false;
 
-		reset('Your session ended. Please start again.');
+		reset('expired');
 		return true;
 	}
 
@@ -120,6 +159,8 @@
 
 			token = response.data.session.token;
 			firstName = response.data.first_name;
+
+			kioskToast.success(`Hi ${firstName}, you're logged in.`);
 
 			if (response.data.pin_change_required) {
 				go('new-pin');
@@ -233,71 +274,102 @@
 		}
 	}
 
-	onMount(() => window.addEventListener('pointerdown', onTap, true));
+	onMount(() => {
+		window.addEventListener('pointerdown', onTap, true);
+		void loadSessions();
+
+		sessionsTicker = setInterval(() => {
+			if (step === 'phone') void loadSessions();
+		}, SESSIONS_REFRESH_MS);
+	});
 
 	onDestroy(() => {
 		window.removeEventListener('pointerdown', onTap, true);
 		idle.stop();
 		stopCountdown();
+		if (sessionsTicker) clearInterval(sessionsTicker);
 	});
 </script>
 
-{#if step === 'start'}
-	<div class="flex flex-1 flex-col items-center justify-center gap-8 py-12">
-		<h1 class="text-center text-3xl font-extrabold text-(--text)">Welcome</h1>
+{#snippet steps(current: 0 | 1 | 2)}
+	<div class="pb-2">
+		<KioskSteps {current} />
+	</div>
+{/snippet}
 
-		{#if notice}
-			<p class="text-center text-lg text-(--text-muted)">{notice}</p>
-		{/if}
+{#if step === 'phone'}
+	<!-- The start: a welcome beside the keypad (landscape tablets). -->
+	<div class="grid flex-1 grid-cols-1 items-start gap-10 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
+		<KioskWelcome sessions={sessionsToday} {notice} />
 
-		<div class="w-full max-w-sm">
-			<Button fullWidth textSize="xl" class="min-h-20" onclick={() => go('phone')}>
-				Sign in or out
-			</Button>
-		</div>
+		<PhoneEntry title="Enter your mobile number" bind:phone onsubmit={() => go('pin')}>
+			{#snippet footer()}
+				<div class="flex flex-wrap justify-center gap-3">
+					<Button variant="ghost" textSize="lg" onclick={() => go('forgot')}>Forgot PIN</Button>
+					{#if phone}
+						<Button variant="ghost" textSize="lg" onclick={() => reset()}>Clear</Button>
+					{/if}
+				</div>
+			{/snippet}
+		</PhoneEntry>
 	</div>
 
-{:else if step === 'phone'}
-	<PhoneEntry title="Your mobile number" bind:phone onsubmit={() => go('pin')}>
-		{#snippet footer()}
-			<Button variant="ghost" onclick={() => reset()}>Cancel</Button>
-		{/snippet}
-	</PhoneEntry>
-
 {:else if step === 'pin'}
+	{@render steps(1)}
 	<PinEntry title="Enter your PIN" {error} {busy} oncomplete={login}>
 		{#snippet footer()}
 			<div class="flex flex-wrap justify-center gap-3">
-				<Button variant="ghost" onclick={() => go('forgot')}>Forgot PIN</Button>
-				<Button variant="ghost" onclick={() => reset()}>Cancel</Button>
+				<Button variant="ghost" textSize="lg" onclick={() => go('forgot')}>Forgot PIN</Button>
+				<Button variant="ghost" textSize="lg" onclick={() => reset()}>Cancel</Button>
 			</div>
 		{/snippet}
 	</PinEntry>
 
 {:else if step === 'new-pin'}
+	{@render steps(1)}
 	<PinEntry title={`Hi ${firstName}. Choose your own 4-digit PIN`} {error} {busy} oncomplete={chooseNewPin}>
 		{#snippet footer()}
-			<Button variant="ghost" onclick={() => reset()}>Cancel</Button>
+			<Button variant="ghost" textSize="lg" onclick={() => reset()}>Cancel</Button>
 		{/snippet}
 	</PinEntry>
 
 {:else if step === 'confirm-pin'}
+	{@render steps(1)}
 	<PinEntry title="Enter your new PIN again" {error} {busy} oncomplete={confirmNewPin}>
 		{#snippet footer()}
-			<Button variant="ghost" onclick={() => reset()}>Cancel</Button>
+			<Button variant="ghost" textSize="lg" onclick={() => reset()}>Cancel</Button>
 		{/snippet}
 	</PinEntry>
 
 {:else if step === 'today'}
-	<div class="mx-auto flex w-full max-w-3xl flex-col gap-6">
-		<div class="flex items-center justify-between gap-4">
-			<h1 class="text-3xl font-extrabold text-(--text)">Hi {firstName}</h1>
-			<Button variant="ghost" textSize="lg" onclick={() => reset()}>Done</Button>
-		</div>
+	<div class="mx-auto flex w-full max-w-4xl flex-col gap-6">
+		{@render steps(2)}
 
 		{#if done}
-			<Notice tone="success" size="kiosk">✓ {done}. Logging out in {secondsLeft}…</Notice>
+			<!-- Signed in or out: big and clear, then logging out by itself. -->
+			<div class="flex flex-col items-center gap-5 rounded-2xl border border-(--border) bg-(--success-soft) px-6 py-10 text-center" role="status">
+				<span class="text-(--success-text)" in:scale={{ duration: 300, start: 0.5 }}>
+					<CircleCheck size={88} strokeWidth={2.25} />
+				</span>
+
+				<p class="text-3xl font-extrabold text-(--success-text)">{done}</p>
+
+				<div class="flex w-full max-w-md flex-col gap-2">
+					<div class="h-2 w-full overflow-hidden rounded-full bg-(--surface)">
+						<div
+							class="h-full rounded-full bg-(--success-text) transition-[width] duration-1000 ease-linear"
+							style:width={`${(secondsLeft / (DONE_LOGOUT_MS / 1000)) * 100}%`}
+						></div>
+					</div>
+					<p class="text-lg text-(--success-text)">Logging out in {secondsLeft}…</p>
+				</div>
+			</div>
 		{/if}
+
+		<div class="flex items-center justify-between gap-4">
+			<h1 class="text-3xl font-extrabold text-(--text)">Hi {firstName}</h1>
+			<Button variant="ghost" textSize="lg" onclick={() => reset('done')}>Done</Button>
+		</div>
 
 		{#if error}
 			<div class="text-center">
@@ -314,7 +386,7 @@
 			<p class="max-w-sm text-center text-lg text-(--text-muted)">
 				We'll email a new PIN to the email address on your family's pickup list.
 			</p>
-			<Button variant="ghost" onclick={() => reset()}>Cancel</Button>
+			<Button variant="ghost" textSize="lg" onclick={() => reset()}>Cancel</Button>
 		{/snippet}
 	</PhoneEntry>
 

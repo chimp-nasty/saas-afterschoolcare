@@ -9,13 +9,17 @@
       `menuItems` (e.g. Log out) as rows; a link already in `menuLead` isn't
       repeated
 
-    Staff and admins pass `onMenu` instead, and their menu button opens the
-    sidebar's drawer.
+    Staff, admins, Business settings and the platform console pass
+    `menuSections` instead: their sidebar's links in groups, each under its
+    category label, in the same drawer (it scrolls when they're long).
 -->
 <script lang="ts" module>
 	export type HeaderLink = { label: string; href: string };
-	// A link (href) or an action (onclick, e.g. Log out).
-	export type HeaderMenuItem = { label: string; href?: string; onclick?: () => void };
+	// A link (href) or an action (onclick, e.g. Log out); isActive marks the
+	// page you're on.
+	export type HeaderMenuItem = { label: string; href?: string; onclick?: () => void; isActive?: boolean };
+	// A group of rows under a category label (none for e.g. Home, Logout).
+	export type HeaderMenuSection = { heading?: string; items: HeaderMenuItem[] };
 </script>
 
 <script lang="ts">
@@ -37,7 +41,7 @@
 		actions,
 		desktopActions,
 		note,
-		onMenu,
+		menuSections,
 		flush = false
 	}: {
 		// Where the logo and name go.
@@ -50,10 +54,12 @@
 		menuItems?: HeaderMenuItem[];
 		actions?: Snippet;
 		desktopActions?: Snippet;
-		// A line shown from md, before the actions (e.g. who's logged in).
+		// A line shown from md, before the actions (e.g. who's logged in),
+		// and at the top of the drawer.
 		note?: string | null;
-		// Opens the staff drawer instead of this one.
-		onMenu?: () => void;
+		// The drawer's rows in labelled groups, in place of the links and
+		// menu items (staff and admin navigation).
+		menuSections?: HeaderMenuSection[];
 		// Above a public site page's bands (Layout's flush): no gap below.
 		flush?: boolean;
 	} = $props();
@@ -67,18 +73,30 @@
 	// after, so the transitions have something to run on.
 	let visible = $state(false);
 
-	const rows = $derived<HeaderMenuItem[]>([
-		...menuLead,
-		...links.filter((link) => !menuLead.some((item) => item.href === link.href)),
-		...menuItems
-	]);
+	const sections = $derived<HeaderMenuSection[]>(
+		menuSections ?? [
+			{
+				items: [
+					...menuLead,
+					...links.filter((link) => !menuLead.some((item) => item.href === link.href)),
+					...menuItems
+				]
+			}
+		]
+	);
+
+	// Numbered straight through, across the groups.
+	const numbered = $derived.by(() => {
+		let n = 0;
+
+		return sections
+			.filter((section) => section.items.length > 0)
+			.map((section) => ({ ...section, items: section.items.map((item) => ({ item, n: ++n })) }));
+	});
+
+	const hasRows = $derived(numbered.length > 0);
 
 	function open() {
-		if (onMenu) {
-			onMenu();
-			return;
-		}
-
 		dialog?.showModal();
 		document.documentElement.style.overflow = 'hidden';
 
@@ -169,7 +187,7 @@
 
 		{@render actions?.()}
 
-		{#if onMenu || rows.length > 0}
+		{#if hasRows}
 			<div class="md:hidden">
 				<Button variant="ghost" onclick={open} aria-label="Menu">
 					<Menu size={20} />
@@ -179,7 +197,7 @@
 	</div>
 </header>
 
-{#if !onMenu && rows.length > 0}
+{#if hasRows}
 	<dialog
 		bind:this={dialog}
 		class={['drawer md:hidden', visible && 'visible']}
@@ -200,21 +218,43 @@
 				</button>
 			</div>
 
+			{#if note}
+				<p class="mt-2 text-sm text-(--text-muted)">{note}</p>
+			{/if}
+
 			<span class="mt-8 mb-4 h-1 w-10 rounded-full bg-(--accent)" aria-hidden="true"></span>
 
-			<nav class="grid" aria-label="Menu">
-				{#each rows as item, index (item.label)}
-					{#if item.href}
-						<a href={item.href} class="drawer-row" onclick={close}>
-							<small aria-hidden="true">{String(index + 1).padStart(2, '0')}</small>
-							<span>{item.label}</span>
-						</a>
-					{:else}
-						<button type="button" class="drawer-row" onclick={() => choose(item)}>
-							<small aria-hidden="true">{String(index + 1).padStart(2, '0')}</small>
-							<span>{item.label}</span>
-						</button>
-					{/if}
+			<nav class="flex flex-col gap-6" aria-label="Menu">
+				{#each numbered as section, sectionIndex (section.heading ?? `section-${sectionIndex}`)}
+					<div class="grid">
+						{#if section.heading}
+							<p class="label-text pb-1">{section.heading}</p>
+						{/if}
+
+						{#each section.items as { item, n } (item.label)}
+							{#if item.href}
+								<a
+									href={item.href}
+									class={['drawer-row', item.isActive && 'active']}
+									aria-current={item.isActive ? 'page' : undefined}
+									onclick={close}
+								>
+									<small aria-hidden="true">{String(n).padStart(2, '0')}</small>
+									<span>{item.label}</span>
+								</a>
+							{:else}
+								<button
+									type="button"
+									class={['drawer-row', item.isActive && 'active']}
+									aria-current={item.isActive ? 'page' : undefined}
+									onclick={() => choose(item)}
+								>
+									<small aria-hidden="true">{String(n).padStart(2, '0')}</small>
+									<span>{item.label}</span>
+								</button>
+							{/if}
+						{/each}
+					</div>
 				{/each}
 			</nav>
 		</div>
@@ -274,7 +314,8 @@
 	}
 
 	.drawer-row:hover,
-	.drawer-row:focus-visible {
+	.drawer-row:focus-visible,
+	.drawer-row.active {
 		color: var(--primary);
 	}
 

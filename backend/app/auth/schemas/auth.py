@@ -40,6 +40,13 @@ class SessionResponse(BaseModel):
     location_code: str | None
     location_name: str | None
 
+    # A family who deactivated their account at this location
+    # (docs/account-deactivation.md): the website shows only the
+    # deactivated page; the API refuses everything else.
+    is_deactivated: bool
+    # They've asked the centre to reactivate them.
+    reactivation_requested: bool
+
     # What they may do across the whole tenant: {resource: [actions]}, the
     # owner's; empty for everyone else. Shows "Business settings".
     tenant_permissions: dict[str, list[str]]

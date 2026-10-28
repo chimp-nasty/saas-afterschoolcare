@@ -13,6 +13,7 @@
     import TabbedPanels from "$lib/components/controls/TabbedPanels.svelte";
     import Page from "$lib/components/layout/Page.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
+    import Notice from "$lib/components/text/Notice.svelte";
     import { confirmAction } from "$lib/components/overlays/confirm.svelte";
     import Modal from "$lib/components/overlays/Modal.svelte";
     import AddNoteForm from "$lib/features/families/components/AddNoteForm.svelte";
@@ -37,11 +38,27 @@
     } from "$lib/api/schema";
     import { messageFrame } from "$lib/features/families/message";
     import { familyTabs } from "$lib/navigation/tabs";
-    import { formatDate, formatMoney, formatPhone } from "$lib/utils/helpers";
+    import { formatDate, formatMoney, formatPhone, formatTimestamp } from "$lib/utils/helpers";
 
     let { data } = $props();
 
     const familiesApi = createFamiliesApi();
+
+    // The family can use their account here again, as it was.
+    async function reactivate() {
+        await confirmAction({
+            title: `Reactivate ${data.family.first_name}'s account?`,
+            message: "They'll be able to log in, book and manage their family here again.",
+            confirmLabel: "Reactivate",
+            action: async () => {
+                const response = await familiesApi.reactivate(data.family.user_id);
+
+                if (response.ok) {
+                    await invalidate("app:family");
+                }
+            },
+        });
+    }
     const refundsApi = createRefundsApi();
     const bookingApi = createBookingApi();
 
@@ -199,6 +216,20 @@
         title={`${data.family.first_name} ${data.family.last_name}`}
         description={[data.family.email, data.family.phone ? formatPhone(data.family.phone) : null].filter(Boolean).join(" · ")}
     />
+
+    <!-- Deactivated their account here (docs/account-deactivation.md). -->
+    {#if data.family.deactivated_at}
+        <Notice tone="warning">
+            Deactivated their account on {formatTimestamp(data.family.deactivated_at)}.
+            {data.family.reactivation_requested_at
+                ? `Asked to be reactivated on ${formatTimestamp(data.family.reactivation_requested_at)}.`
+                : "They haven't asked to be reactivated."}
+        </Notice>
+
+        <ActionBar start>
+            <Button onclick={reactivate}>Reactivate</Button>
+        </ActionBar>
+    {/if}
 
     <TabbedPanels {tabs} bind:activeTab queryParam="state">
         {#snippet panel(id)}

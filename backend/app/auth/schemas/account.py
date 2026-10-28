@@ -23,3 +23,9 @@ class AccountResponse(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class DeactivateAccountRequest(BaseModel):
+    """Re-entered, so nobody at a logged-in browser can deactivate the account."""
+
+    password: str

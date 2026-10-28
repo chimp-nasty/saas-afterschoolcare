@@ -5,6 +5,7 @@ import { createMedicalReviewsApi } from "$lib/api/public/adapters/medicalReviews
 import { createAttendanceApi } from "$lib/api/public/adapters/attendance";
 import { createCustomerApi } from "$lib/api/public/adapters/customer";
 import { createChildrenApi } from "$lib/api/public/adapters/children";
+import { createFamiliesApi } from "$lib/api/public/adapters/families";
 import { setupProgress } from "$lib/features/customer/setup";
 
 import type { PageLoad } from "./$types";
@@ -43,9 +44,10 @@ export const load: PageLoad = async ({
     // Admins and superadmins get the admin home: what needs attention at
     // the location.
     if (["admin", "superadmin"].some((role) => roles.includes(role))) {
-        const [reviewsResponse, rollResponse] = await Promise.all([
+        const [reviewsResponse, rollResponse, reactivationResponse] = await Promise.all([
             createMedicalReviewsApi(fetch).list(),
             createAttendanceApi(fetch).roll(),
+            createFamiliesApi(fetch).reactivationRequests(),
         ]);
         const reviews = reviewsResponse.data ?? [];
 
@@ -55,6 +57,8 @@ export const load: PageLoad = async ({
             reviewsRequested: reviews.filter((review) => review.review_status === "documentation_requested").length,
             // Still signed in after their session ended today.
             latePickups: (rollResponse.data?.entries ?? []).filter((entry) => entry.is_late).length,
+            // Deactivated families asking to come back, longest waiting first.
+            reactivationRequests: reactivationResponse.data ?? [],
         };
     }
 

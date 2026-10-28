@@ -23,6 +23,7 @@
             reviewsWaiting={data.reviewsWaiting ?? 0}
             reviewsRequested={data.reviewsRequested ?? 0}
             latePickups={data.latePickups ?? 0}
+            reactivationRequests={data.reactivationRequests ?? []}
         />
     </Page>
 </Authorize>

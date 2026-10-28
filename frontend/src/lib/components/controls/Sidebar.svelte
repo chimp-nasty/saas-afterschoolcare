@@ -1,5 +1,6 @@
 <!--
-    The staff and admin navigation (a drawer on mobile). Links come in
+    The desktop navigation (on a phone the same sections are rows in the
+    header's drawer, Header's menuSections). Links come in
     sections, each with an optional heading (e.g. "Families", "Settings");
     a section without one (Home, Logout, a family's links) has none shown.
 -->
@@ -19,11 +20,9 @@
 	};
 
 	let {
-		sections,
-		drawer = false
+		sections
 	}: {
 		sections: SidebarSection[];
-		drawer?: boolean;
 	} = $props();
 </script>
 
@@ -62,17 +61,8 @@
 	</nav>
 {/snippet}
 
-<div
-	class={drawer
-		? 'h-full'
-		: 'h-full border-r border-(--border)'
-	}
->
-	{#if drawer}
+<div class="h-full border-r border-(--border)">
+	<Card padded={false}>
 		{@render nav()}
-	{:else}
-		<Card padded={false}>
-			{@render nav()}
-		</Card>
-	{/if}
+	</Card>
 </div>

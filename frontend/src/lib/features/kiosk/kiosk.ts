@@ -1,3 +1,5 @@
+import { toast } from 'svelte-sonner';
+
 import type { ApiResponse } from '$lib/api/wrapper';
 
 // docs/kiosk-procedures.md, section 1: a person's session ends after 60
@@ -81,3 +83,14 @@ export function saveClockedOut(locationCode: string, day: string, shifts: Clocke
 		// Storage unavailable: the list just won't survive a reload.
 	}
 }
+
+// The kiosk's toasts: a size up and wider than the website's (layout.css,
+// .kiosk-toast), and up for longer, since they're read standing at arm's
+// length. Use these for every toast on a kiosk.
+const KIOSK_TOAST = { duration: 4000, class: 'kiosk-toast' };
+
+export const kioskToast = {
+	success: (message: string) => toast.success(message, KIOSK_TOAST),
+	error: (message: string) => toast.error(message, KIOSK_TOAST),
+	info: (message: string) => toast(message, KIOSK_TOAST)
+};

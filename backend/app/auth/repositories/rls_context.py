@@ -81,6 +81,15 @@ class RlsContextRepository(Repository):
         """
         self.db.execute(select(func.set_config("app.channel", "payment_check", True)))
 
+    def set_payments_channel(self) -> None:
+        """
+        This transaction settles a payment or refund as its family (Stripe's
+        webhook, the payment check; server code): RLS still lets it reach a
+        family who has since deactivated their account
+        (auth.can_access_location_row).
+        """
+        self.db.execute(select(func.set_config("app.channel", "payments", True)))
+
     def set_kiosk_channel(
         self,
         *,

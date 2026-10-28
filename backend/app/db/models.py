@@ -748,6 +748,23 @@ class CustomerProfile(Base):
 
 
 
+class FamilyDeactivation(Base):
+    __tablename__ = 'family_deactivations'
+    __table_args__ = (
+        ForeignKeyConstraint(['location_id'], ['tenancy.locations.id'], ondelete='CASCADE', name='fk_family_deactivations_location'),
+        ForeignKeyConstraint(['user_id'], ['auth.users.id'], ondelete='CASCADE', name='fk_family_deactivations_user'),
+        PrimaryKeyConstraint('user_id', 'location_id', name='family_deactivations_pkey'),
+        {'schema': 'public'}
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    location_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    deactivated_at: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False, server_default=text('now()'))
+    retain_until: Mapped[datetime.datetime] = mapped_column(DateTime(True), nullable=False)
+    reactivation_requested_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
+
+
+
 class LocationKioskDevice(Base):
     __tablename__ = 'location_kiosk_devices'
     __table_args__ = (

@@ -8,11 +8,14 @@
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import SectionHeading from '$lib/components/text/SectionHeading.svelte';
 
+	import type { ReactivationRequestResponse } from '$lib/api/schema';
+
 	let {
 		locationCode,
 		reviewsWaiting,
 		reviewsRequested,
-		latePickups
+		latePickups,
+		reactivationRequests
 	}: {
 		locationCode: string;
 		// Children waiting for staff, and waiting on their family.
@@ -20,7 +23,13 @@
 		reviewsRequested: number;
 		// Children still signed in after their session ended today.
 		latePickups: number;
+		// Deactivated families asking to come back, longest waiting first
+		// (docs/account-deactivation.md).
+		reactivationRequests: ReactivationRequestResponse[];
 	} = $props();
+
+	// The card leads to the family who's waited longest.
+	const oldestRequest = $derived(reactivationRequests[0]);
 </script>
 
 <PageHeader title="Home" />
@@ -59,6 +68,29 @@
 					{reviewsWaiting === 1 ? 'child' : 'children'} waiting for review{reviewsRequested
 						? ` · ${reviewsRequested} waiting on documents`
 						: ''}
+				</p>
+			</div>
+		</Card>
+
+		<Card
+			border
+			href={oldestRequest
+				? `/${locationCode}/admin/families/${oldestRequest.user_id}`
+				: `/${locationCode}/admin/families`}
+		>
+			<div class="flex flex-col gap-1">
+				<p class="label-text">
+					Reactivation requests
+				</p>
+
+				<p class="text-2xl font-extrabold text-(--text)">
+					{reactivationRequests.length}
+				</p>
+
+				<p class="text-sm text-(--text-muted)">
+					{oldestRequest
+						? `Longest waiting: ${oldestRequest.first_name} ${oldestRequest.last_name}`
+						: 'deactivated families asking to come back'}
 				</p>
 			</div>
 		</Card>

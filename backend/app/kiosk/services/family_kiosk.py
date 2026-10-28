@@ -18,6 +18,7 @@ from app.kiosk.schemas.kiosk import (
     KioskBookingResponse,
     KioskInfoResponse,
     KioskLoginResponse,
+    KioskServiceTodayResponse,
     KioskSessionResponse,
     KioskSignResponse,
     KioskTodayResponse,
@@ -260,4 +261,8 @@ class FamilyKioskService:
         return KioskInfoResponse(
             kind=getattr(kind, "value", kind),
             location_name=location.name,
+            sessions_today=[
+                KioskServiceTodayResponse.model_validate(row, from_attributes=True)
+                for row in self.kiosk_repository.location_today(location_id=location_id)
+            ],
         )

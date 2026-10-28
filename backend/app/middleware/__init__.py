@@ -45,6 +45,8 @@ def configure_middleware(app: FastAPI) -> None:
             r"/api/staff-pin/v1/?": (10, 60),
             # Changing your password checks the current one.
             r"/api/account/v1/password/?": (10, 60),
+            # So does deactivating your account.
+            r"/api/account/v1/deactivate/?": (10, 60),
             # Setup codes: slow down guessing.
             r"/api/kiosk/v1/[^/]+/pair/?": (10, 60),
             # Everyone at a centre uses one tablet (one IP), so the kiosk

@@ -73,7 +73,7 @@
 {#if kind === 'staff'}
 	<StaffKiosk locationCode={data.locationCode} {centreName} />
 {:else}
-	<KioskScreen {centreName}>
+	<KioskScreen {centreName} hasLogo={data.location.has_logo} label={kind === 'family' ? 'Family kiosk' : undefined}>
 		{#if kind === 'loading'}
 			<div class="flex flex-1 items-center justify-center"><Spinner /></div>
 		{:else if kind === 'unpaired'}

@@ -11,8 +11,7 @@
 
     import { accountTabs } from "$lib/navigation/tabs";
 	import { createCustomerApi } from "$lib/api/public/adapters/customer";
-	import { createAccountApi } from "$lib/api/auth/adapters/account";
-	import type { ChangePasswordRequest, UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/schema";
+	import type { UpdateCustomerProfileRequest, CustomerProfileResponse } from "$lib/api/schema";
 
     let { data } = $props();
 
@@ -23,7 +22,6 @@
     let activeTab = $state<string>(accountTabs.PROFILE);
 
     const customerApi = createCustomerApi();
-    const accountApi = createAccountApi();
 
     const tabs = [
         { id: accountTabs.PROFILE, label: "Profile" },
@@ -45,10 +43,6 @@
 
         return response;
     }
-
-    function changePassword(body: ChangePasswordRequest) {
-        return accountApi.changePassword(body);
-    }
 </script>
 
 <Page>
@@ -64,7 +58,6 @@
                 <CustomerProfilePanel
                     profile={customerProfile}
                     onsubmit={updateProfile}
-                    onchangepassword={changePassword}
                 />
             {:else if id === accountTabs.CHILDREN}
                 <ChildAccountData

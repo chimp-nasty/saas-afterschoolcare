@@ -74,6 +74,17 @@ class KioskRepository(Repository):
             {"location_id": location_id, "phone": phone},
         ).first()
 
+    def location_today(
+        self,
+        *,
+        location_id: UUID,
+    ) -> list[Row]:
+        """The centre's own sessions today, for the welcome screen (no family details)."""
+        return self.db.execute(
+            text("SELECT * FROM public.kiosk_location_today(:location_id)"),
+            {"location_id": location_id},
+        ).all()
+
     def family_today(
         self,
         *,

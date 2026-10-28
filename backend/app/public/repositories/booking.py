@@ -350,20 +350,22 @@ class BookingRepository(Repository):
         booking_id: UUID,
     ) -> int:
         """
-        A refund went through: cancel the booking (releasing its place).
-        Only a confirmed, paid booking moves, so repeat webhooks are no-ops.
+        A refund went through: cancel the booking (releasing its place), or
+        for one already cancelled without a refund, mark it refunded, keeping
+        when it was cancelled. Only a paid booking moves, so repeat webhooks
+        are no-ops.
         """
         result = self.db.execute(
             update(Booking)
             .where(
                 Booking.id == booking_id,
-                Booking.booking_status == BookingStatus.CONFIRMED,
+                Booking.booking_status.in_([BookingStatus.CONFIRMED, BookingStatus.CANCELLED]),
                 Booking.payment_status == PaymentStatus.PAID,
             )
             .values(
                 booking_status=BookingStatus.CANCELLED,
                 payment_status=PaymentStatus.REFUNDED,
-                cancelled_at=func.now(),
+                cancelled_at=func.coalesce(Booking.cancelled_at, func.now()),
             )
         )
 

@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 
 import { createAuthApi } from '$lib/api/auth/adapters/auth';
 import { createActionsApi } from '$lib/api/public/adapters/actions';
@@ -12,7 +12,8 @@ export const ssr = false;
 export const load: LayoutLoad = async ({
 	params,
 	depends,
-	fetch
+	fetch,
+	url
 }) => {
 	if (!params.location_code) {
 		throw new Error('Location code is required');
@@ -49,7 +50,9 @@ export const load: LayoutLoad = async ({
 					roles: sessionResponse.data.roles,
 					locationCode: sessionResponse.data.location_code,
 					locationName: sessionResponse.data.location_name,
-					tenantPermissions: sessionResponse.data.tenant_permissions
+					tenantPermissions: sessionResponse.data.tenant_permissions,
+					isDeactivated: sessionResponse.data.is_deactivated,
+					reactivationRequested: sessionResponse.data.reactivation_requested
 				}
 			: null;
 
@@ -70,13 +73,30 @@ export const load: LayoutLoad = async ({
 				}
 			: null;
 
+	// A family who deactivated their account here sees only why, and can
+	// ask to come back (docs/account-deactivation.md). The API refuses
+	// everything else anyway; this is so they get an explanation. Kiosk
+	// tablets have no website login, so aren't affected.
+	const deactivatedPath = `/${locationCode}/deactivated`;
+	const kioskPath = `/${locationCode}/kiosk`;
+
+	if (!url.pathname.startsWith(kioskPath)) {
+		if (session?.isDeactivated && url.pathname !== deactivatedPath) {
+			redirect(307, deactivatedPath);
+		}
+
+		if (!session?.isDeactivated && url.pathname === deactivatedPath) {
+			redirect(307, session ? `/${locationCode}/home` : `/${locationCode}/login`);
+		}
+	}
+
 	// Resolve action count
 	depends('app:actions-count');
 
 	let uncitedActionCount = 0;
 
 	// Actions are messages to families; staff and admins don't get them.
-	if (session?.roles.includes('customer')) {
+	if (session?.roles.includes('customer') && !session.isDeactivated) {
 		const actionsApi = createActionsApi(fetch);
 
 		const actionCountResponse =

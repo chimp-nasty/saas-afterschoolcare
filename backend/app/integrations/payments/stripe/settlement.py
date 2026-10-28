@@ -78,6 +78,7 @@ class PaymentSettlementService:
         """
         self.rls_context.set_user_id(user_id=user_id)
         self.rls_context.set_location_id(location_id=location_id)
+        self.rls_context.set_payments_channel()
 
         attempt = self.payment_attempt_repository.lock_by_id(id=payment_attempt_id)
 

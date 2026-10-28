@@ -2,11 +2,12 @@ import { API_BASE } from '$lib/api/base';
 
 import { apiWrapper } from '$lib/api/wrapper';
 
-import type { AccountResponse, ChangePasswordRequest } from '$lib/api/schema';
+import type { AccountResponse, ChangePasswordRequest, DeactivateAccountRequest } from '$lib/api/schema';
 
 
 // Your own account, for everyone who logs in: read-only details, and
-// changing your password.
+// changing your password. Families also deactivate their account and ask to
+// be reactivated (docs/account-deactivation.md).
 export function createAccountApi(
 	fetcher?: typeof fetch
 ) {
@@ -30,6 +31,27 @@ export function createAccountApi(
 				{
 					method: 'POST',
 					body,
+					fetcher
+				}
+			);
+		},
+
+		deactivate(body: DeactivateAccountRequest) {
+			return apiWrapper<null>(
+				`${baseUrl}/deactivate`,
+				{
+					method: 'POST',
+					body,
+					fetcher
+				}
+			);
+		},
+
+		requestReactivation() {
+			return apiWrapper<null>(
+				`${baseUrl}/reactivation-request`,
+				{
+					method: 'POST',
 					fetcher
 				}
 			);

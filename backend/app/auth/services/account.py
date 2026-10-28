@@ -5,12 +5,19 @@ from sqlalchemy.orm import Session
 
 from app.auth.repositories.location_user_role import LocationUserRoleRepository
 from app.auth.repositories.user import UserRepository
-from app.auth.schemas.account import AccountResponse, AccountRoleResponse, ChangePasswordRequest
+from app.auth.schemas.account import (
+    AccountResponse,
+    AccountRoleResponse,
+    ChangePasswordRequest,
+    DeactivateAccountRequest,
+)
 from app.core.security import hash_password, verify_password
 from app.db.transaction import transactional
 from app.errors.auth import CurrentPasswordIncorrectError, JwtInvalidError
+from app.errors.customer import AccountNotDeactivatedError
 from app.integrations.email.messages import PasswordChangedEmail
 from app.integrations.email.outbox import EmailOutbox
+from app.public.repositories.family_deactivation import FamilyDeactivationRepository
 from app.tenancy.repositories.location import LocationRepository
 
 
@@ -21,7 +28,9 @@ class AccountService:
     """
     Your own account, for everyone who logs in: staff, admins and
     superadmins in their staff portal, families on their account page
-    (docs/portals.md). Read-only apart from changing your password.
+    (docs/portals.md). Read-only apart from changing your password, and
+    for families, deactivating it and asking to be reactivated
+    (docs/account-deactivation.md).
     """
 
     def __init__(
@@ -31,11 +40,13 @@ class AccountService:
         users: UserRepository,
         location_user_roles: LocationUserRoleRepository,
         locations: LocationRepository,
+        deactivations: FamilyDeactivationRepository,
     ):
         self.db = db
         self.users = users
         self.location_user_roles = location_user_roles
         self.locations = locations
+        self.deactivations = deactivations
         self.emails = EmailOutbox(db)
 
     def get(
@@ -100,4 +111,52 @@ class AccountService:
         logger.info(
             "Password changed",
             extra={"event": "password_changed", "result": "success", "reason": f"user_id={user.id}"},
+        )
+
+    @transactional
+    def deactivate(
+        self,
+        *,
+        user_id: UUID,
+        location_id: UUID,
+        body: DeactivateAccountRequest,
+    ) -> None:
+        """
+        Deactivate your family account at this centre, after re-entering your
+        password. The database refuses someone who also works here, and a
+        family with upcoming bookings; nothing is deleted.
+        """
+        user = self.users.get_by_id(id=user_id)
+
+        if not user or not verify_password(password=body.password, hashed_password=user.password_hash):
+            raise CurrentPasswordIncorrectError()
+
+        self.deactivations.create(user_id=user_id, location_id=location_id)
+
+        logger.info(
+            "Family deactivated their account",
+            extra={"event": "account_deactivated", "result": "success", "reason": f"user_id={user_id}"},
+        )
+
+    @transactional
+    def request_reactivation(
+        self,
+        *,
+        user_id: UUID,
+        location_id: UUID,
+    ) -> None:
+        """Ask the centre's admins to reactivate you (asking again changes nothing)."""
+        deactivation = self.deactivations.get(user_id=user_id, location_id=location_id)
+
+        if not deactivation:
+            raise AccountNotDeactivatedError()
+
+        if deactivation.reactivation_requested_at is not None:
+            return
+
+        self.deactivations.request_reactivation(user_id=user_id, location_id=location_id)
+
+        logger.info(
+            "Family asked to be reactivated",
+            extra={"event": "reactivation_requested", "result": "success", "reason": f"user_id={user_id}"},
         )

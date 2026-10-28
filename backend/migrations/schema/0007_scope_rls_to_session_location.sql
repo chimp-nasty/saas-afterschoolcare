@@ -104,7 +104,10 @@ $$;
 
 
 -- Staff and above at the row's location see every row there; customers
--- see only rows they own. Either way, only at the session's location.
+-- see only rows they own, and none while they're deactivated there
+-- (public.family_deactivations, docs/account-deactivation.md) unless it's
+-- the payments code settling their payment or refund. Either way, only at
+-- the session's location.
 CREATE OR REPLACE FUNCTION auth.can_access_location_row(
     p_location_id uuid,
     p_owner_user_id uuid
@@ -128,6 +131,13 @@ AS $$
                  OR (
                      r.code = 'customer'
                      AND p_owner_user_id = auth.current_user_id()
+                     AND (
+                         NOT public.family_is_deactivated(auth.current_user_id(), p_location_id)
+                         -- Stripe's webhook and the payment check, acting as
+                         -- the family, still settle their payments and
+                         -- refunds (app.channel, set only by that code).
+                         OR auth.current_channel() = 'payments'
+                     )
                  )
              )
        );
@@ -200,3 +210,41 @@ CREATE POLICY staff_shifts_kiosk_write_policy
         AND auth.current_channel() = 'kiosk'
         AND auth.is_location_staff(location_id)
     );
+
+
+-- A family's deactivation at a centre (docs/account-deactivation.md):
+-- they deactivate themselves and ask to be reactivated, at the session's
+-- location; the centre's staff and above see it; only its admins reactivate
+-- (delete it). Not can_access_location_row, which hides a deactivated
+-- family's rows from them. The triggers (schema/0004) keep what may change.
+ALTER TABLE public.family_deactivations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.family_deactivations FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY family_deactivations_read_policy
+    ON public.family_deactivations FOR SELECT
+    USING (
+        (user_id = auth.current_user_id() AND location_id = auth.current_location_id())
+        OR auth.is_location_staff(location_id)
+    );
+
+CREATE POLICY family_deactivations_deactivate_policy
+    ON public.family_deactivations FOR INSERT
+    WITH CHECK (
+        user_id = auth.current_user_id()
+        AND location_id = auth.current_location_id()
+    );
+
+CREATE POLICY family_deactivations_request_policy
+    ON public.family_deactivations FOR UPDATE
+    USING (
+        user_id = auth.current_user_id()
+        AND location_id = auth.current_location_id()
+    )
+    WITH CHECK (
+        user_id = auth.current_user_id()
+        AND location_id = auth.current_location_id()
+    );
+
+CREATE POLICY family_deactivations_reactivate_policy
+    ON public.family_deactivations FOR DELETE
+    USING (auth.is_location_admin(location_id));

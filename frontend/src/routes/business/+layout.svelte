@@ -1,7 +1,7 @@
 <!--
     Business settings (/business): the whole business, run by its owner
     (docs/tenant-administration.md). Outside any centre, under the site's
-    own header (docs/public-site.md): sidebar (a drawer on mobile), its own
+    own header (docs/public-site.md): sidebar (the header's drawer on mobile), its own
     confirmations, and the login page for anyone without a session.
 -->
 <script lang="ts">
@@ -11,7 +11,6 @@
 	import Header from '$lib/components/layout/tenant/Header.svelte';
 	import Layout from '$lib/components/layout/tenant/Layout.svelte';
 	import Sidebar, { type SidebarSection } from '$lib/components/controls/Sidebar.svelte';
-	import Drawer from '$lib/components/overlays/Drawer.svelte';
 	import ConfirmDialog from '$lib/components/overlays/ConfirmDialog.svelte';
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
@@ -19,8 +18,6 @@
 	import { ABOUT_LINK, BUSINESS_HEADER_LINKS, LOCATIONS_LINK } from '$lib/navigation/siteLinks';
 
 	let { data, children } = $props();
-
-	let sidebarOpen = $state(false);
 
 	const isLogin = $derived(page.url.pathname === '/business/login');
 
@@ -47,14 +44,10 @@
 	}
 
 	function navigate(path: string) {
-		sidebarOpen = false;
-
 		void goto(`/business${path}`);
 	}
 
 	async function logout() {
-		sidebarOpen = false;
-
 		await createAuthApi().logout();
 
 		clearSession();
@@ -117,14 +110,10 @@
 				hasLogo={data.branding.hasLogo}
 				links={BUSINESS_HEADER_LINKS}
 				note={`Logged in as ${$auth.firstName ?? $auth.email}`}
-				onMenu={() => (sidebarOpen = true)}
+				menuSections={[...sections.slice(0, -1), { heading: 'Website', items: BUSINESS_HEADER_LINKS }, ...sections.slice(-1)]}
 			/>
 		{/snippet}
 
 		{@render children()}
 	</Layout>
-
-	<Drawer open={sidebarOpen} onclose={() => (sidebarOpen = false)}>
-		<Sidebar {sections} drawer />
-	</Drawer>
 {/if}

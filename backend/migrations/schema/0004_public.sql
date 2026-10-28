@@ -524,6 +524,187 @@ CREATE TRIGGER trg_customer_profile_emergency_owner
 
 
 -- =====================================================
+-- FAMILY DEACTIVATIONS
+-- =====================================================
+
+-- A family who deactivated their account at a centre
+-- (docs/account-deactivation.md). Per centre, as logins are. Nothing is
+-- deleted: the centre's records have legal keeping periods, and
+-- retain_until is when the retention job may destroy them (stubbed as 7
+-- years, family_retention_period). While a row exists the API refuses the
+-- family's requests there and RLS hides their own rows
+-- (auth.can_access_location_row, schema/0007). An admin reactivates the
+-- family by deleting the row.
+CREATE TABLE public.family_deactivations (
+    user_id UUID NOT NULL,
+    location_id UUID NOT NULL,
+
+    deactivated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    retain_until TIMESTAMPTZ NOT NULL,
+
+    -- The family asked to be reactivated (once; asking again keeps the
+    -- first time).
+    reactivation_requested_at TIMESTAMPTZ,
+
+    PRIMARY KEY (user_id, location_id),
+
+    CONSTRAINT fk_family_deactivations_user
+        FOREIGN KEY (user_id)
+        REFERENCES auth.users (id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_family_deactivations_location
+        FOREIGN KEY (location_id)
+        REFERENCES tenancy.locations (id)
+        ON DELETE CASCADE
+);
+
+-- How long a deactivated family's records are kept: a stub until the
+-- retention work gives each record its own date (reg 183's 3 years after
+-- the last attendance, or the child turning 25; Family Assistance Law's 7
+-- years for subsidy records). The one place to change it.
+CREATE FUNCTION public.family_retention_period()
+RETURNS interval
+LANGUAGE sql
+IMMUTABLE
+AS $$
+    SELECT interval '7 years';
+$$;
+
+-- Whether a family is deactivated at a location: the API's check on every
+-- request (require_permission) and RLS's (can_access_location_row).
+-- SECURITY DEFINER: the API asks before a request's RLS settings exist,
+-- and it gives only yes or no.
+CREATE FUNCTION public.family_is_deactivated(p_user_id UUID, p_location_id UUID)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.family_deactivations
+        WHERE user_id = p_user_id
+          AND location_id = p_location_id
+    );
+$$;
+
+-- Whether a deactivated family has asked to be reactivated: for their
+-- session (the deactivated page), which has no RLS settings. Yes or no.
+CREATE FUNCTION public.family_reactivation_requested(p_user_id UUID, p_location_id UUID)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.family_deactivations
+        WHERE user_id = p_user_id
+          AND location_id = p_location_id
+          AND reactivation_requested_at IS NOT NULL
+    );
+$$;
+
+-- Deactivating: only a family-only login (not someone who also works at
+-- the centre), with no booking from today on still pending or confirmed
+-- (they cancel or refund those first). The dates are the database's.
+-- plpgsql: it reads bookings, service days and effective_booking_status
+-- (schema/0009), defined later. Server code with no session is trusted.
+CREATE FUNCTION public.enforce_family_deactivation()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    NEW.deactivated_at := now();
+    NEW.retain_until := now() + public.family_retention_period();
+    NEW.reactivation_requested_at := NULL;
+
+    IF auth.current_user_id() IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        WHERE lur.user_id = NEW.user_id
+          AND lur.location_id = NEW.location_id
+          AND r.code <> 'customer'
+    ) OR NOT EXISTS (
+        SELECT 1
+        FROM auth.location_user_roles lur
+        JOIN auth.roles r
+            ON r.id = lur.role_id
+        WHERE lur.user_id = NEW.user_id
+          AND lur.location_id = NEW.location_id
+          AND r.code = 'customer'
+    ) THEN
+        RAISE EXCEPTION 'Only family accounts can be deactivated'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_family_deactivations_family_only',
+                  TABLE = 'family_deactivations',
+                  SCHEMA = 'public';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM public.bookings b
+        JOIN public.location_service_days d
+            ON d.id = b.location_service_day_id
+        JOIN tenancy.locations l
+            ON l.id = b.location_id
+        WHERE b.user_id = NEW.user_id
+          AND b.location_id = NEW.location_id
+          AND public.effective_booking_status(b.booking_status, b.created_at) IN ('PENDING', 'CONFIRMED')
+          AND d.service_date >= (now() AT TIME ZONE l.timezone)::date
+    ) THEN
+        RAISE EXCEPTION 'Family % has upcoming bookings', NEW.user_id
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_family_deactivations_no_upcoming_bookings',
+                  TABLE = 'family_deactivations',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_family_deactivations_rules
+    BEFORE INSERT ON public.family_deactivations
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_family_deactivation();
+
+-- Only asking to be reactivated changes a row, stamped once by the
+-- database's clock; the rest stays as deactivating set it.
+CREATE FUNCTION public.keep_family_deactivation()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    NEW.user_id := OLD.user_id;
+    NEW.location_id := OLD.location_id;
+    NEW.deactivated_at := OLD.deactivated_at;
+    NEW.retain_until := OLD.retain_until;
+    NEW.reactivation_requested_at := COALESCE(
+        OLD.reactivation_requested_at,
+        CASE WHEN NEW.reactivation_requested_at IS NOT NULL THEN now() END
+    );
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_family_deactivations_keep
+    BEFORE UPDATE ON public.family_deactivations
+    FOR EACH ROW EXECUTE FUNCTION public.keep_family_deactivation();
+
+
+-- =====================================================
 -- CHILD PROFILE
 -- =====================================================
 
@@ -1941,7 +2122,13 @@ BEGIN
         JOIN tenancy.locations l
             ON l.id = b.location_id
         WHERE b.id = p_booking_id
-          AND public.effective_booking_status(b.booking_status, b.created_at) = 'CONFIRMED'
+          AND (
+              public.effective_booking_status(b.booking_status, b.created_at) = 'CONFIRMED'
+              -- Cancelled after the cutoff (kept, no refund): staff may still
+              -- refund it, e.g. as a goodwill gesture or once the family has
+              -- deactivated (docs/account-deactivation.md).
+              OR (p_by_staff AND b.booking_status = 'CANCELLED')
+          )
           AND b.payment_status = 'PAID'
           AND (now() AT TIME ZONE l.timezone)::date <= CASE
                   WHEN p_by_staff THEN d.service_date
@@ -2017,6 +2204,9 @@ BEGIN
           AND b.booking_status = 'CANCELLED'
           AND b.payment_status = 'PAID'
           AND now() < (d.service_date + lsc.start_time) AT TIME ZONE l.timezone
+          -- A family deactivated here can't be put back on the run sheet,
+          -- even by an admin; their booking can still be refunded.
+          AND NOT public.family_is_deactivated(b.user_id, b.location_id)
           AND NOT EXISTS (
               SELECT 1
               FROM public.refunds r
@@ -2808,6 +2998,46 @@ AS $$
       AND b.booking_status = 'CONFIRMED'
       AND d.service_date = (now() AT TIME ZONE l.timezone)::date
     ORDER BY lsc.start_time, cp.first_name, b.id;
+$$;
+
+-- The centre's sessions today (the location's timezone), for the family
+-- kiosk's welcome screen: what runs and when signing opens and closes for
+-- it. Only the centre's own timetable, nothing about families: shown
+-- before anyone has logged in, in a public entrance. Open days only.
+CREATE FUNCTION public.kiosk_location_today(p_location_id UUID)
+RETURNS TABLE (
+    service_name TEXT,
+    start_time TIME,
+    end_time TIME,
+    -- NULLs when the centre doesn't enforce signing times.
+    signing_opens_at TIMESTAMPTZ,
+    signing_closes_at TIMESTAMPTZ
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+    SELECT
+        st.name::text,
+        lsc.start_time,
+        lsc.end_time,
+        w.opens_at,
+        w.closes_at
+    FROM public.location_service_days d
+    JOIN public.location_services ls
+        ON ls.id = d.location_service_id
+    JOIN public.service_types st
+        ON st.id = ls.service_type_id
+    JOIN public.location_service_config lsc
+        ON lsc.location_service_id = ls.id
+    JOIN tenancy.locations l
+        ON l.id = d.location_id
+    CROSS JOIN LATERAL public.service_day_signing_window(d.id) w
+    WHERE d.location_id = p_location_id
+      AND d.is_open
+      AND d.service_date = (now() AT TIME ZONE l.timezone)::date
+    ORDER BY lsc.start_time, st.name;
 $$;
 
 -- A pickup person signing one of today's sessions in or out at the kiosk.
