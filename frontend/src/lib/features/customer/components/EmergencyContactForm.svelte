@@ -28,10 +28,17 @@
 
 	let {
 		profile,
-		onsubmit
+		onsubmit,
+		submitLabel = 'Save',
+		oncancel,
+		cancelLabel
 	}: {
 		profile: CustomerProfileResponse;
 		onsubmit: SubmitHandler<UpdateCustomerProfileRequest>;
+		// A step-by-step flow (setup) says "Continue" and offers "Back".
+		submitLabel?: string;
+		oncancel?: () => void;
+		cancelLabel?: string;
 	} = $props();
 
 	// Initial values only; after a save the inputs already hold what was saved.
@@ -68,7 +75,7 @@
 	}
 </script>
 
-<Form {isLoading} handleSubmit={submit} submitLabel="Save">
+<Form {isLoading} handleSubmit={submit} {submitLabel} {oncancel} {cancelLabel}>
 	<Field label="Name" error={errors.emergency_contact_name}>
 		{#snippet children(id)}
 			<input {id} type="text" autocomplete="off" maxlength="200" bind:value={body.emergency_contact_name} required />

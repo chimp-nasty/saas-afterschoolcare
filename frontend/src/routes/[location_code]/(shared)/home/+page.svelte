@@ -34,6 +34,6 @@
     redirect={false}
 >
     <Page>
-        <CustomerHome bookings={data.bookings} locationCode={data.locationCode} location={data.location} />
+        <CustomerHome bookings={data.bookings} locationCode={data.locationCode} location={data.location} setup={data.setup ?? null} />
     </Page>
 </Authorize>

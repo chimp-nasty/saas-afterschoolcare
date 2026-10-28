@@ -3,6 +3,7 @@
 
 	import { Toaster, toast } from 'svelte-sonner';
 
+	import { onNavigate } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import { fade } from 'svelte/transition';
 
@@ -32,6 +33,19 @@
 		const timer = setTimeout(() => (showSpinner = true), SPINNER_DELAY_MS);
 
 		return () => clearTimeout(timer);
+	});
+
+	// Pages fade from one to the next (layout.css), once the next page's
+	// data has loaded. Browsers without view transitions just switch.
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
 	});
 
 	// Tapping a toast clears it (sonner only has swiping and a close button).

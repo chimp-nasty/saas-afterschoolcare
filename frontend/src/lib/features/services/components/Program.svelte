@@ -25,7 +25,7 @@
 
 		<p class="text-base text-(--text-muted)">
 			{agesLabel(service)} · {formatTimeRange(service.start_time, service.end_time)} ·
-			{formatMoney(service.current_price_cents, service.currency)} a session
+			{formatMoney(service.current_price_cents, service.currency)} per session
 		</p>
 	</div>
 

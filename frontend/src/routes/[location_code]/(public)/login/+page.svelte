@@ -7,6 +7,7 @@
 	import LoginForm from '$lib/features/auth/components/LoginForm.svelte';
 
 	import { createAuthApi } from '$lib/api/auth/adapters/auth';
+	import { markJustLoggedIn } from '$lib/features/actions/loginNotice';
 	import type { LoginRequest } from '$lib/api/schema';
 
 	const authApi = createAuthApi();
@@ -17,6 +18,9 @@
 		if (response.ok) {
 			await invalidate('app:session');
 			await invalidate('app:actions-count');
+
+			// Home tells them about any messages they haven't seen.
+			markJustLoggedIn();
 
 			await goto(`/${page.data.locationCode}/home`);
 		}

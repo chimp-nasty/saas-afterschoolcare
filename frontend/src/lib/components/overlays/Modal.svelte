@@ -96,8 +96,52 @@
 </dialog>
 
 <style>
+	/* Fades in, rising slightly, over a backdrop that fades in too (and out
+	   again where the browser can animate a dialog closing). */
+	dialog {
+		opacity: 1;
+		transform: none;
+		transition:
+			opacity 0.25s ease-out,
+			transform 0.25s ease-out,
+			overlay 0.25s allow-discrete,
+			display 0.25s allow-discrete;
+	}
+
+	dialog:not([open]) {
+		opacity: 0;
+		transform: translateY(0.75rem);
+	}
+
 	dialog::backdrop {
 		background: var(--overlay);
 		backdrop-filter: blur(6px);
+		opacity: 1;
+		transition:
+			opacity 0.25s ease-out,
+			overlay 0.25s allow-discrete,
+			display 0.25s allow-discrete;
+	}
+
+	dialog:not([open])::backdrop {
+		opacity: 0;
+	}
+
+	@starting-style {
+		dialog[open] {
+			opacity: 0;
+			transform: translateY(0.75rem);
+		}
+
+		dialog[open]::backdrop {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		dialog,
+		dialog::backdrop {
+			transition: none;
+		}
 	}
 </style>

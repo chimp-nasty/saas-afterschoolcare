@@ -171,6 +171,22 @@ body {
 	}
 }
 
+/* Moving between pages (the root layout's onNavigate): a quick crossfade.
+   Parts that look the same on both pages, like the header, don't seem to
+   move. */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 200ms;
+	animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none;
+	}
+}
+
 /* The bell with unseen messages: a short ring every 30 seconds (the first
    half second of each cycle), then still. */
 @keyframes bell-nudge {

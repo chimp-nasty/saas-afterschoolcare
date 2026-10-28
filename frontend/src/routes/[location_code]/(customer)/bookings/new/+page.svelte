@@ -8,6 +8,7 @@
     import Notice from "$lib/components/text/Notice.svelte";
     import CreateBookingFlow from "$lib/features/bookings/components/CreateBookingFlow.svelte";
     import { missingForBooking } from "$lib/features/customer/emergency";
+    import { setupHref } from "$lib/features/customer/setup";
 
     import { createBookingApi } from "$lib/api/public/adapters/bookings";
     import type { CreateBookingRequest } from "$lib/api/schema";
@@ -63,7 +64,7 @@
         <Notice tone="warning">Add {listed(missing)} before booking.</Notice>
 
         <ActionBar start>
-            <Button variant="ghost" onclick={() => goto(`/${data.locationCode}/account?state=profile`)}>Go to your profile</Button>
+            <Button variant="ghost" onclick={() => goto(setupHref(data.locationCode))}>Finish setting up</Button>
         </ActionBar>
     {/if}
 </Page>

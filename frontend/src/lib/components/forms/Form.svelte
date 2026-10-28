@@ -14,6 +14,8 @@
 		// A Cancel beside the submit button (e.g. an inline editor going
 		// back to its section, EditableSection).
 		oncancel?: () => void;
+		// Its label, e.g. "Back" in a step-by-step flow.
+		cancelLabel?: string;
 	};
 
 	let {
@@ -22,7 +24,8 @@
 		children,
 		submitLabel = 'Submit',
 		fullWidth = true,
-		oncancel
+		oncancel,
+		cancelLabel = 'Cancel'
 	}: Props = $props();
 </script>
 
@@ -40,7 +43,7 @@
 			<div class="mt-2">
 				{#if oncancel}
 					<ActionBar>
-						<Button variant="ghost" isDisabled={isLoading} onclick={oncancel}>Cancel</Button>
+						<Button variant="ghost" isDisabled={isLoading} onclick={oncancel}>{cancelLabel}</Button>
 						<Button type="submit" {isLoading} isDisabled={isLoading}>{submitLabel}</Button>
 					</ActionBar>
 				{:else}

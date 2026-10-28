@@ -7,12 +7,19 @@
 
     let {
 		askPickupConsent = false,
-		onsubmit
+		onsubmit,
+		submitLabel = 'Add child',
+		oncancel,
+		cancelLabel
 	}: {
 		// The family has pickup people besides the account holder, who'll
 		// be able to collect this child too.
 		askPickupConsent?: boolean;
 		onsubmit: SubmitHandler<CreateChildRequest>;
+		// A step-by-step flow (setup) says "Continue" and offers "Back".
+		submitLabel?: string;
+		oncancel?: () => void;
+		cancelLabel?: string;
 	} = $props();
 
     const initialBody: CreateChildRequest = {
@@ -50,7 +57,7 @@
 <Form
     {isLoading}
     handleSubmit={submit}
-    submitLabel="Add child"
+    {submitLabel} {oncancel} {cancelLabel}
 >
     <Field label="First name" error={errors.first_name}>
         {#snippet children(id)}

@@ -40,11 +40,18 @@
 
 	let {
 		pickup,
-		onsubmit
+		onsubmit,
+		submitLabel = 'Save',
+		oncancel,
+		cancelLabel
 	}: {
 		// Set when editing.
 		pickup?: PickupResponse;
 		onsubmit: SubmitHandler<PickupFormValues>;
+		// A step-by-step flow (setup) says "Continue" and offers "Back".
+		submitLabel?: string;
+		oncancel?: () => void;
+		cancelLabel?: string;
 	} = $props();
 
 	const isEditing = $derived(pickup !== undefined);
@@ -102,7 +109,7 @@
 <Form
 	{isLoading}
 	handleSubmit={submit}
-	submitLabel="Save"
+	{submitLabel} {oncancel} {cancelLabel}
 >
 	<Field label="First name" error={errors.first_name}>
 		{#snippet children(id)}

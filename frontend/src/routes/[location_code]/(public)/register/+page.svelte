@@ -1,19 +1,23 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 
 	import HyperTextLink from '$lib/components/actions/HyperTextLink.svelte';
 	import Page from '$lib/components/layout/Page.svelte';
 	import PageHeader from '$lib/components/layout/PageHeader.svelte';
 	import OnboardForm from '$lib/features/customer/components/OnboardForm.svelte';
 
+	import { createAuthApi } from '$lib/api/auth/adapters/auth';
 	import { createCustomerApi } from '$lib/api/public/adapters/customer';
+	import { setupHref } from '$lib/features/customer/setup';
+	import { markJustRegistered } from '$lib/features/customer/welcome';
 	import { siteFileUrl } from '$lib/api/tenancy/adapters/location-branding';
 	import type { RegistrationRequest } from '$lib/api/schema';
 
 	let { data } = $props();
 
 	const customerApi = createCustomerApi();
+	const authApi = createAuthApi();
 
 	async function register(body: RegistrationRequest) {
 		const response = await customerApi.onboard(
@@ -22,12 +26,24 @@
 		);
 
 		if (response.ok) {
-			// Give the success toast time to be read before redirecting.
-			await new Promise((resolve) =>
-				setTimeout(resolve, 2500)
-			);
+			// Logged straight in with what they just typed, and on to setting
+			// up their account. If that fails, they log in themselves.
+			const login = await authApi.login(page.data.locationCode, {
+				email: body.email,
+				password: body.password
+			});
 
-			await goto(`/${page.data.locationCode}/login`);
+			if (login.ok) {
+				await invalidate('app:session');
+				await invalidate('app:actions-count');
+
+				// Setup opens with a welcome explaining the steps.
+				markJustRegistered();
+
+				await goto(setupHref(page.data.locationCode));
+			} else {
+				await goto(`/${page.data.locationCode}/login`);
+			}
 		}
 
 		return response;

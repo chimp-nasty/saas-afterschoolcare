@@ -3,6 +3,9 @@ import { redirect } from "@sveltejs/kit";
 import { createBookingApi } from "$lib/api/public/adapters/bookings";
 import { createMedicalReviewsApi } from "$lib/api/public/adapters/medicalReviews";
 import { createAttendanceApi } from "$lib/api/public/adapters/attendance";
+import { createCustomerApi } from "$lib/api/public/adapters/customer";
+import { createChildrenApi } from "$lib/api/public/adapters/children";
+import { setupProgress } from "$lib/features/customer/setup";
 
 import type { PageLoad } from "./$types";
 
@@ -68,22 +71,32 @@ export const load: PageLoad = async ({
         };
     }
 
+    depends("app:customer-account");
+
     const bookingApi =
         createBookingApi(fetch);
 
-    const bookingsResponse = await bookingApi.list(
-        {
-            booking_status: ["CONFIRMED", "PENDING"],
-            date_from: daysFromToday(-WEEKS_BACK * 7),
-            date_to: daysFromToday(WEEKS_AHEAD * 7),
-        },
-        {
-            limit: 100,
-        },
-    );
+    const [bookingsResponse, profileResponse, childrenResponse] = await Promise.all([
+        bookingApi.list(
+            {
+                booking_status: ["CONFIRMED", "PENDING"],
+                date_from: daysFromToday(-WEEKS_BACK * 7),
+                date_to: daysFromToday(WEEKS_AHEAD * 7),
+            },
+            {
+                limit: 100,
+            },
+        ),
+        createCustomerApi(fetch).getProfile(),
+        createChildrenApi(fetch).list({ is_active: true }),
+    ]);
 
     return {
         bookings:
             bookingsResponse.data ?? [],
+        // How far the family's setup has got (the "Finish setting up" card).
+        setup: profileResponse.data
+            ? setupProgress(profileResponse.data, (childrenResponse.data ?? []).length)
+            : null,
     };
 };

@@ -1,24 +1,32 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { page } from "$app/state";
 
+    import ActionBar from "$lib/components/actions/ActionBar.svelte";
     import Button from "$lib/components/actions/Button.svelte";
+    import SectionHeading from "$lib/components/text/SectionHeading.svelte";
     import Card from "$lib/components/layout/Card.svelte";
     import PageHeader from "$lib/components/layout/PageHeader.svelte";
     import CentreCard from "$lib/features/location/components/CentreCard.svelte";
     import CentreMap from "$lib/features/location/components/CentreMap.svelte";
     import CustomerBookings from "./CustomerBookings.svelte";
+    import NewMessagesModal from "$lib/features/actions/components/NewMessagesModal.svelte";
 
     import { auth } from "$lib/auth/state.svelte";
     import type { BookingTableResponse, PublicLocationResponse } from "$lib/api/schema";
+    import { setupHref, type SetupProgress } from "$lib/features/customer/setup";
 
     let {
         bookings,
         locationCode,
-        location
+        location,
+        setup
     }: {
         bookings: BookingTableResponse[];
         locationCode: string;
         location: PublicLocationResponse;
+        // Null when it couldn't be loaded: no card.
+        setup: SetupProgress | null;
     } = $props();
 
     function toDateKey(date: Date): string {
@@ -77,6 +85,23 @@
     description={weekSummary}
 />
 
+<!-- Until the family has what booking needs: back into setup where they
+     left off. -->
+{#if setup?.next}
+    <Card border>
+        <div class="flex flex-col gap-4">
+            <SectionHeading
+                title="Finish setting up"
+                description={`${setup.done} of ${setup.total} done. You'll need the rest before you can book.`}
+            />
+
+            <ActionBar start>
+                <Button onclick={() => goto(setupHref(locationCode, setup.next ?? undefined))}>Continue setup</Button>
+            </ActionBar>
+        </div>
+    </Card>
+{/if}
+
 <Card border>
     <CustomerBookings {bookings} {locationCode} />
 </Card>
@@ -93,3 +118,8 @@
 <CentreCard {location} />
 
 <CentreMap {location} compact />
+
+<NewMessagesModal
+    count={page.data.uncitedActionCount ?? 0}
+    messagesHref={`/${locationCode}/actions`}
+/>
