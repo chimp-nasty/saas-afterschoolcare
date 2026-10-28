@@ -63,8 +63,16 @@ class Settings(BaseSettings):
     # emails to the app log instead of sending (dev and tests); "ses" sends
     # through Amazon SES in Sydney.
     EMAIL_PROVIDER: Literal["log", "ses"] = "log"
+    # Test addresses that must never get real mail (deployed dev's seeded
+    # @test.com accounts, the tests' @example.com): emails to these domains
+    # go to SES's mailbox simulator instead, which accepts them, delivers
+    # nowhere and doesn't touch the account's reputation. The log keeps the
+    # real (masked) recipient. Empty in production. A JSON list in the
+    # environment: '["test.com","example.com"]'.
+    EMAIL_SIMULATOR_DOMAINS: list[str] = []
+    EMAIL_SIMULATOR_ADDRESS: str = "success@simulator.amazonses.com"
     SES_REGION: str = "ap-southeast-2"
-    SES_FROM_ADDRESS: str = "no-reply@jnb-digital.com.au"
+    SES_FROM_ADDRESS: str = "no-reply@sessionpilot.com.au"
     # Both without open/click tracking; the TLS one requires an encrypted
     # connection (password reset and kiosk PIN emails).
     SES_CONFIGURATION_SET: str | None = None

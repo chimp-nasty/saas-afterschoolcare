@@ -474,3 +474,28 @@ def test_queued_email_is_dropped_on_rollback(api: Api, sent_emails):
         db.commit()
 
     assert sent_emails() == []
+
+
+# A test address (EMAIL_SIMULATOR_DOMAINS: deployed dev's seeded @test.com
+# accounts) never gets real mail: the email goes to SES's mailbox simulator
+# instead, while the log still records the real recipient. Other addresses
+# are sent as normal, and with no test domains set (production) nothing is
+# redirected.
+def test_test_addresses_go_to_the_simulator(api: Api, customer, monkeypatch):
+    from app.core.config import settings
+
+    user_id, location_id = _ids(api, customer.email)
+    sender = RecordingSender()
+
+    def send(to_email: str):
+        EmailClient(sender=sender).send(PasswordChangedEmail(
+            location_id=location_id, user_id=user_id, to_email=to_email, first_name="Test",
+        ))
+        return sender.sent[-1].to_email
+
+    monkeypatch.setattr(settings, "EMAIL_SIMULATOR_DOMAINS", ["test.com"])
+    assert send("someone@TEST.com") == "success@simulator.amazonses.com"
+    assert send("parent@gmail.com") == "parent@gmail.com"
+
+    monkeypatch.setattr(settings, "EMAIL_SIMULATOR_DOMAINS", [])
+    assert send("someone@test.com") == "someone@test.com"

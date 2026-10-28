@@ -27,6 +27,19 @@ def _sender():
     return SesSender() if settings.EMAIL_PROVIDER == "ses" else LogSender()
 
 
+def delivery_address(to_email: str) -> str:
+    """
+    Where an email actually goes: SES's mailbox simulator for a test
+    address (EMAIL_SIMULATOR_DOMAINS, deployed dev), else the recipient.
+    """
+    domain = to_email.rsplit("@", 1)[-1].lower()
+
+    if domain in {d.lower() for d in settings.EMAIL_SIMULATOR_DOMAINS}:
+        return settings.EMAIL_SIMULATOR_ADDRESS
+
+    return to_email
+
+
 class EmailClient:
     """
     Sends the app's emails: the only way out (docs/email-policy.md). Each
@@ -34,7 +47,8 @@ class EmailClient:
 
     1. logs a row in email_messages (masked address, no body)
     2. renders our wording, or the tenant's, as the centre
-    3. sends it (SES, or the app log in dev)
+    3. sends it (SES, or the app log in dev; a test address goes to SES's
+       mailbox simulator instead, delivery_address)
     4. records the outcome on the row
 
     The log is written in its own short transactions (app.email_writer),
@@ -123,7 +137,7 @@ class EmailClient:
 
             result = self._sender.send(
                 OutgoingEmail(
-                    to_email=message.to_email,
+                    to_email=delivery_address(message.to_email),
                     from_name=centre.name,
                     reply_to=centre.email,
                     rendered=rendered,

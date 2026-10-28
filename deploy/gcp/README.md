@@ -222,7 +222,17 @@ Put-Secret STRIPE_SECRET_KEY (Read-Secret "STRIPE_SECRET_KEY (the deployed dev s
 # they're real, so nobody pays without the payment being recorded.
 Put-Secret STRIPE_WEBHOOK_SECRET unset
 Put-Secret STRIPE_CONNECT_WEBHOOK_SECRET unset
+
+# The SES sender's access key (deploy/email/ses/README.md, step 5): created
+# straight into Secret Manager, never printed. Unused while the API logs
+# emails (EMAIL_PROVIDER: log).
+$KEY = aws iam create-access-key --user-name oshc-app-sender | ConvertFrom-Json
+Put-Secret AWS_ACCESS_KEY_ID $KEY.AccessKey.AccessKeyId
+Put-Secret AWS_SECRET_ACCESS_KEY $KEY.AccessKey.SecretAccessKey
+Remove-Variable KEY
 ```
+
+To rotate the SES key: create a new one as above (an IAM user holds at most two), release the API, then deactivate the old one (`aws iam update-access-key --status Inactive`) and delete it once nothing has broken.
 
 To change one later, run the same line again, then release the API (step 8's deploy command). Running instances keep the values they started with until then.
 
@@ -252,6 +262,25 @@ Give dev its **own** Neon branch or database in **AWS Sydney (`ap-southeast-2`)*
    Later schema changes: the same commands (dev is rebuilt, not migrated).
 
 **The dev seed's logins (password `123`) are reachable by anyone who finds the site.** Until access to dev is limited (see "Later"), treat dev as public: test data only.
+
+## Releasing dev: `release.ps1`
+
+Steps 7 (rebuild), 8 and 9 are one script for the **deployed dev stack only** (it reads `env/dev.env` and `env/api.dev.yaml`; there's no option for another environment, since it can wipe things). Run from the repo root. It checks gcloud and that every secret the API needs exists and is readable by it, shows what it will do, and asks you to type `dev` before changing anything:
+
+```powershell
+.\deploy\gcp\release.ps1                         # API, then site
+.\deploy\gcp\release.ps1 -Rebuild                # rebuild the database first (wipes it; asks for "wipe")
+.\deploy\gcp\release.ps1 -Rebuild -WipeBuckets   # also delete every stored file: a clean slate
+.\deploy\gcp\release.ps1 -Only Site              # or -Only Api
+Get-Help .\deploy\gcp\release.ps1 -Full          # everything it does
+```
+
+- **Rebuild:** it reads `DATABASE_URL` from Secret Manager (and `app_user`'s password from it); only the owner's connection (`DATABASE_ADMIN_URL`) is typed. **Tenant 1's Stripe account is kept:** read from the database before the wipe (`read_stripe_account.py`) and linked again by the dev seed, so it never needs reattaching (`-StripeDevAccountId acct_...` to choose one, `none` for none).
+- **WipeBuckets** (only with `-Rebuild`, or the database would point at missing files): empties the documents bucket (uploaded documents, site photos and logos) and the build bucket's old uploads. The site bucket needs no wipe: each release replaces it. The buckets' soft delete keeps deleted files for 7 days.
+- If Windows refuses to run scripts: `powershell -ExecutionPolicy Bypass -File .\deploy\gcp\release.ps1`.
+- A new secret the API needs goes in the script's `$ApiSecrets` list as well as step 6.
+
+The steps below are what it runs, for reference and first-time setup.
 
 ## 8. Release the API
 
@@ -287,7 +316,7 @@ gcloud run deploy "$API_SERVICE" `
   --service-account="$API_SA" `
   --ingress=internal-and-cloud-load-balancing --allow-unauthenticated `
   --env-vars-file="deploy/gcp/env/api.$ENV_NAME.yaml" `
-  --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,STRIPE_CONNECT_WEBHOOK_SECRET=STRIPE_CONNECT_WEBHOOK_SECRET:latest,DOMAINS_CHECK_SECRET=DOMAINS_CHECK_SECRET:latest,PAYMENT_CHECK_SECRET=PAYMENT_CHECK_SECRET:latest" `
+  --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,STRIPE_CONNECT_WEBHOOK_SECRET=STRIPE_CONNECT_WEBHOOK_SECRET:latest,DOMAINS_CHECK_SECRET=DOMAINS_CHECK_SECRET:latest,PAYMENT_CHECK_SECRET=PAYMENT_CHECK_SECRET:latest,AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID:latest,AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY:latest" `
   --cpu=1 --memory=512Mi --min-instances=0 --max-instances=2 `
   --region="$REGION" --project="$PROJECT_ID"
 ```
@@ -523,6 +552,6 @@ Then `DOCUMENT_BUCKET=saas-afterschoolcare-local-documents` in `backend/.env`. I
 
 ## Later
 
-- **Email:** dev logs emails (`EMAIL_PROVIDER: log`), and in dev the log includes their text. **Not before a recipient allow-list exists** (not built): the SES account has production access and is shared with the live After3 stack, so dev sending to the seeded `@test.com` addresses would bounce and put that account at risk. Then, to send for real, follow `deploy/email/ses/README.md`, subscribe the SNS topic to `https://dev.sessionpilot.com.au/api/v1/webhooks/ses`, add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` with `Put-Secret` and to `--set-secrets`, and the `SES_*` settings to `env/api.dev.yaml`.
+- **Email:** dev sends through SES (`env/api.dev.yaml`, `deploy/email/ses/README.md`). The SES account has production access and is shared with the live After3 stack, so the seeded `@test.com` and test `@example.com` addresses must never be mailed (they'd bounce and put that account at risk): `EMAIL_SIMULATOR_DOMAINS` sends theirs to SES's mailbox simulator instead. Test with your own address. After releasing the API with SES on, subscribe its events once: `aws sns subscribe --topic-arn arn:aws:sns:ap-southeast-2:069102612762:oshc-ses-events --protocol https --notification-endpoint "https://dev.sessionpilot.com.au/api/v1/webhooks/ses" --region ap-southeast-2` (the API confirms it itself).
 - **Limiting who can reach dev:** not decided yet.
 - **Production:** `env/prod.env` and `env/api.prod.yaml`, the root domain's own zone records (`sessionpilot.com.au`, `*.sessionpilot.com.au`), live Stripe keys.
