@@ -724,6 +724,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/business/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard */
+        get: operations["get_dashboard_api_business_v1_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/business/v1/overview": {
         parameters: {
             query?: never;
@@ -3048,6 +3065,14 @@ export interface components {
             /** Data */
             data?: null;
         };
+        /** ApiResponse[OwnerDashboardResponse] */
+        ApiResponse_OwnerDashboardResponse_: {
+            /** Ok */
+            ok: boolean;
+            /** Msg */
+            msg: string;
+            data?: components["schemas"]["OwnerDashboardResponse"] | null;
+        };
         /** ApiResponse[PaymentCheckResponse] */
         ApiResponse_PaymentCheckResponse_: {
             /** Ok */
@@ -4448,6 +4473,52 @@ export interface components {
             updated_at: string;
         };
         /**
+         * DashboardAttentionResponse
+         * @description What needs the owner's attention now, whatever the period.
+         */
+        DashboardAttentionResponse: {
+            /** Reviews Pending */
+            reviews_pending: number;
+            /** Documents Requested */
+            documents_requested: number;
+            /** Enquiries New */
+            enquiries_new: number;
+            /** Reactivation Requests */
+            reactivation_requests: number;
+            /** Inactive Families */
+            inactive_families: number;
+            /** Unrefunded Payments */
+            unrefunded_payments: components["schemas"]["UnrefundedPaymentResponse"][];
+        };
+        /**
+         * DashboardNumbersResponse
+         * @description One period's numbers (docs/owner-dashboard.md). Sessions count by when
+         *     they take place; sign-ups, refunds and cancellations by when they
+         *     happened, so those are None for a week still to come.
+         */
+        DashboardNumbersResponse: {
+            /** Revenue Cents */
+            revenue_cents: number;
+            /** Currency */
+            currency: string | null;
+            /** Bookings */
+            bookings: number;
+            /** Active Families */
+            active_families: number;
+            /** Returning Families */
+            returning_families: number;
+            /** Average Sessions */
+            average_sessions: number | null;
+            /** Registrations */
+            registrations: number | null;
+            /** Refunds */
+            refunds: number | null;
+            /** Refunded Cents */
+            refunded_cents: number | null;
+            /** Cancelled Unrefunded */
+            cancelled_unrefunded: number | null;
+        };
+        /**
          * DeactivateAccountRequest
          * @description Re-entered, so nobody at a logged-in browser can deactivate the account.
          */
@@ -5448,6 +5519,18 @@ export interface components {
             family_phone: string | null;
             /** Document Count */
             document_count: number;
+        };
+        /** OwnerDashboardResponse */
+        OwnerDashboardResponse: {
+            /** Week */
+            week: number | null;
+            /** From Date */
+            from_date: string | null;
+            /** To Date */
+            to_date: string | null;
+            current: components["schemas"]["DashboardNumbersResponse"];
+            previous: components["schemas"]["DashboardNumbersResponse"] | null;
+            attention: components["schemas"]["DashboardAttentionResponse"];
         };
         /** PaymentCheckResponse */
         PaymentCheckResponse: {
@@ -6492,6 +6575,22 @@ export interface components {
             website?: string | null;
         };
         /**
+         * UnrefundedPaymentResponse
+         * @description A payment taken after its places were released: refund it in Stripe, found by its reference.
+         */
+        UnrefundedPaymentResponse: {
+            /** Reference */
+            reference: string;
+            /** Location Name */
+            location_name: string;
+            /** Total Cents */
+            total_cents: number;
+            /** Currency */
+            currency: string;
+            /** Paid At */
+            paid_at: string | null;
+        };
+        /**
          * UpdateChildRequest
          * @description What a family can change about a child. Only the fields sent are
          *     updated. The date of birth isn't editable (staff correct it); changing
@@ -6695,6 +6794,7 @@ export type ApiResponseKioskTodayResponse = components['schemas']['ApiResponse_K
 export type ApiResponseLocationServiceSettingsResponse = components['schemas']['ApiResponse_LocationServiceSettingsResponse_'];
 export type ApiResponseMedicalReviewResponse = components['schemas']['ApiResponse_MedicalReviewResponse_'];
 export type ApiResponseNoneType = components['schemas']['ApiResponse_NoneType_'];
+export type ApiResponseOwnerDashboardResponse = components['schemas']['ApiResponse_OwnerDashboardResponse_'];
 export type ApiResponsePaymentCheckResponse = components['schemas']['ApiResponse_PaymentCheckResponse_'];
 export type ApiResponsePickupResponse = components['schemas']['ApiResponse_PickupResponse_'];
 export type ApiResponsePlatformSessionResponse = components['schemas']['ApiResponse_PlatformSessionResponse_'];
@@ -6797,6 +6897,8 @@ export type CreateServiceDaysResponse = components['schemas']['CreateServiceDays
 export type CreatedInviteResponse = components['schemas']['CreatedInviteResponse'];
 export type CurrencyCode = components['schemas']['CurrencyCode'];
 export type CustomerProfileResponse = components['schemas']['CustomerProfileResponse'];
+export type DashboardAttentionResponse = components['schemas']['DashboardAttentionResponse'];
+export type DashboardNumbersResponse = components['schemas']['DashboardNumbersResponse'];
 export type DeactivateAccountRequest = components['schemas']['DeactivateAccountRequest'];
 export type DnsRecordResponse = components['schemas']['DnsRecordResponse'];
 export type DomainCheckResponse = components['schemas']['DomainCheckResponse'];
@@ -6847,6 +6949,7 @@ export type MedicalReviewDecisionRequest = components['schemas']['MedicalReviewD
 export type MedicalReviewResponse = components['schemas']['MedicalReviewResponse'];
 export type MedicalReviewStatus = components['schemas']['MedicalReviewStatus'];
 export type MedicalReviewSummaryResponse = components['schemas']['MedicalReviewSummaryResponse'];
+export type OwnerDashboardResponse = components['schemas']['OwnerDashboardResponse'];
 export type PaymentCheckResponse = components['schemas']['PaymentCheckResponse'];
 export type PaymentStatus = components['schemas']['PaymentStatus'];
 export type PhotoAltRequest = components['schemas']['PhotoAltRequest'];
@@ -6902,6 +7005,7 @@ export type StripeAccountStatusResponse = components['schemas']['StripeAccountSt
 export type StripeOnboardingResponse = components['schemas']['StripeOnboardingResponse'];
 export type StripeStatus = components['schemas']['StripeStatus'];
 export type SubmitEnquiryRequest = components['schemas']['SubmitEnquiryRequest'];
+export type UnrefundedPaymentResponse = components['schemas']['UnrefundedPaymentResponse'];
 export type UpdateChildRequest = components['schemas']['UpdateChildRequest'];
 export type UpdateContactDetailsRequest = components['schemas']['UpdateContactDetailsRequest'];
 export type UpdateCustomerProfileRequest = components['schemas']['UpdateCustomerProfileRequest'];
@@ -8450,6 +8554,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_StripeAccountStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_api_business_v1_dashboard_get: {
+        parameters: {
+            query?: {
+                week?: number;
+                all_time?: boolean;
+                location_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_OwnerDashboardResponse_"];
                 };
             };
             /** @description Validation Error */

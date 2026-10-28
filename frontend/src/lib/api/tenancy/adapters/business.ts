@@ -7,6 +7,7 @@ import type {
 	BusinessLocationRequest,
 	BusinessLocationResponse,
 	BusinessOverviewResponse,
+	OwnerDashboardResponse,
 	BusinessSettingsRequest,
 	BusinessSettingsResponse,
 	ConfirmSiteUploadRequest,
@@ -34,6 +35,15 @@ export function createBusinessApi(
 	return {
 		overview() {
 			return apiWrapper<BusinessOverviewResponse>(`${baseUrl}/overview`, { method: 'GET', fetcher });
+		},
+
+		// The owner's dashboard (docs/owner-dashboard.md): a week (weeks from
+		// this one: -1 last week), or all time (null); every centre, or one.
+		dashboard(week: number | null, locationId: string | null) {
+			const query = new URLSearchParams(week === null ? { all_time: 'true' } : { week: String(week) });
+			if (locationId) query.set('location_id', locationId);
+
+			return apiWrapper<OwnerDashboardResponse>(`${baseUrl}/dashboard?${query}`, { method: 'GET', fetcher });
 		},
 
 		settings() {

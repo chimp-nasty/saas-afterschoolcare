@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.api.response import ApiResponse
 from app.auth.jwt.context import TokenContext
@@ -30,6 +30,8 @@ from app.tenancy.schemas.site import (
     StartSiteUploadRequest,
 )
 from app.tenancy.services.business import BusinessService
+from app.tenancy.services.dashboard import OwnerDashboardService
+from app.tenancy.schemas.dashboard import OwnerDashboardResponse
 from app.tenancy.services.centre_photo import CentrePhotoService
 from app.tenancy.services.domains import DomainService
 from app.tenancy.services.site import SiteService
@@ -39,8 +41,8 @@ from app.tenancy.services.site import SiteService
 # owner whichever location they're logged in at, or none
 # (docs/tenant-administration.md). Tenant permissions only: tenant_settings
 # for its details and its site (Your site), tenant_locations for its
-# locations, tenant_domains for its own domains. Stripe is in
-# stripe_account.py.
+# locations, tenant_domains for its own domains, tenant_dashboard for its
+# dashboard. Stripe is in stripe_account.py.
 router = APIRouter(
     prefix="/business/v1",
     tags=["business"],
@@ -50,6 +52,25 @@ _service = get_service(BusinessService, db_dependency=get_rls_db)
 _site_service = get_service(SiteService, db_dependency=get_rls_db)
 _centre_photo_service = get_service(CentrePhotoService, db_dependency=get_rls_db)
 _domain_service = get_service(DomainService, db_dependency=get_rls_db)
+_dashboard_service = get_service(OwnerDashboardService, db_dependency=get_rls_db)
+
+
+# The owner's dashboard (docs/owner-dashboard.md): tenant_dashboard r, the
+# owner only. A week (weeks from this one: -1 last week, 1 next week; up
+# to ten years back and two ahead), or all time; all centres, or one.
+@router.get("/dashboard")
+def get_dashboard(
+    week: int = Query(0, ge=-520, le=104),
+    all_time: bool = False,
+    location_id: UUID | None = None,
+    ctx: TokenContext = Depends(require_tenant_permission(resource="tenant_dashboard", action="r")),
+    service: OwnerDashboardService = Depends(_dashboard_service),
+) -> ApiResponse[OwnerDashboardResponse]:
+    return ApiResponse(
+        ok=True,
+        msg="Fetched dashboard",
+        data=service.get(tenant_id=ctx.tenant_id, week=None if all_time else week, location_id=location_id),
+    )
 
 
 @router.get("/overview")

@@ -4574,6 +4574,283 @@ END;
 $$;
 
 -- =====================================================
+-- OWNER DASHBOARD
+-- =====================================================
+
+-- The business owner's dashboard (docs/owner-dashboard.md), worked out
+-- here so every number has one definition. SECURITY DEFINER: the owner
+-- reads it from Business settings, with no centre session for RLS to scope
+-- by, so each function checks the tenant permission itself and only
+-- counts that tenant's centres (one, or all with p_location_id NULL).
+-- plpgsql: auth.has_tenant_permission is defined in schema/0005.
+
+-- The centres counted, each with the period's dates in its own timezone:
+-- the Monday-to-Sunday week p_week_offset weeks from this one (-1 last
+-- week, 0 this week, 1 next week), or every date (NULL: all time).
+CREATE FUNCTION public.owner_dashboard_ranges(
+    p_tenant_id UUID,
+    p_location_id UUID,
+    p_week_offset INT
+)
+RETURNS TABLE (location_id UUID, timezone TEXT, from_date DATE, to_date DATE)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    IF NOT auth.has_tenant_permission(p_tenant_id, 'tenant_dashboard', 'r') THEN
+        RAISE EXCEPTION 'Only the business''s owner sees its dashboard'
+            USING ERRCODE = 'check_violation',
+                  CONSTRAINT = 'ck_owner_dashboard_owner_only',
+                  SCHEMA = 'public';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        l.id,
+        l.timezone,
+        CASE WHEN p_week_offset IS NOT NULL
+            THEN date_trunc('week', (now() AT TIME ZONE l.timezone)::date)::date + 7 * p_week_offset
+        END,
+        CASE WHEN p_week_offset IS NOT NULL
+            THEN date_trunc('week', (now() AT TIME ZONE l.timezone)::date)::date + 7 * p_week_offset + 6
+        END
+    FROM tenancy.locations l
+    WHERE l.tenant_id = p_tenant_id
+      AND (p_location_id IS NULL OR l.id = p_location_id);
+END;
+$$;
+
+-- A period's numbers. Sessions count by when they take place; sign-ups,
+-- refunds and cancellations by when they happened (the centre's date).
+-- Revenue: every booking still paid for (confirmed, or cancelled without
+-- a refund), so refunds are already off it.
+CREATE FUNCTION public.owner_dashboard_period(
+    p_tenant_id UUID,
+    p_location_id UUID,
+    p_week_offset INT
+)
+RETURNS TABLE (
+    revenue_cents BIGINT,
+    currency TEXT,
+    bookings BIGINT,
+    active_families BIGINT,
+    returning_families BIGINT,
+    registrations BIGINT,
+    refunds BIGINT,
+    refunded_cents BIGINT,
+    cancelled_unrefunded BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH r AS (
+        SELECT * FROM public.owner_dashboard_ranges(p_tenant_id, p_location_id, p_week_offset)
+    ),
+    -- Every booking at the centres counted, with its session's date.
+    b AS (
+        SELECT bk.user_id, bk.booking_group_id, bk.booking_status, bk.payment_status,
+               bk.price_snapshot_cents, bk.currency, bk.cancelled_at,
+               d.service_date, r.from_date, r.to_date, r.timezone
+        FROM public.bookings bk
+        JOIN public.location_service_days d
+            ON d.id = bk.location_service_day_id
+        JOIN r
+            ON r.location_id = bk.location_id
+    ),
+    in_period AS (
+        SELECT *
+        FROM b
+        WHERE b.from_date IS NULL OR b.service_date BETWEEN b.from_date AND b.to_date
+    ),
+    attended AS (
+        SELECT *
+        FROM in_period
+        WHERE in_period.booking_status = 'CONFIRMED' AND in_period.payment_status = 'PAID'
+    )
+    SELECT
+        COALESCE((SELECT sum(i.price_snapshot_cents) FROM in_period i WHERE i.payment_status = 'PAID'), 0)::bigint,
+        (SELECT min(b2.currency::text) FROM b b2),
+        (SELECT count(*) FROM attended)::bigint,
+        (SELECT count(DISTINCT a.user_id) FROM attended a)::bigint,
+        (
+            SELECT count(DISTINCT a.user_id)
+            FROM attended a
+            WHERE CASE
+                WHEN a.from_date IS NULL THEN (
+                    -- All time: booked more than once.
+                    SELECT count(DISTINCT p.booking_group_id)
+                    FROM b p
+                    WHERE p.user_id = a.user_id AND p.payment_status IN ('PAID', 'REFUNDED')
+                ) > 1
+                ELSE EXISTS (
+                    SELECT 1
+                    FROM b p
+                    WHERE p.user_id = a.user_id
+                      AND p.payment_status IN ('PAID', 'REFUNDED')
+                      AND p.service_date < a.from_date
+                )
+            END
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM auth.location_user_roles lur
+            JOIN auth.roles ro
+                ON ro.id = lur.role_id AND ro.code = 'customer'
+            JOIN r
+                ON r.location_id = lur.location_id
+            WHERE r.from_date IS NULL
+               OR (lur.created_at AT TIME ZONE r.timezone)::date BETWEEN r.from_date AND r.to_date
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM public.refunds rf
+            JOIN r
+                ON r.location_id = rf.location_id
+            WHERE rf.status = 'SUCCEEDED'
+              AND (r.from_date IS NULL
+                   OR (rf.processed_at AT TIME ZONE r.timezone)::date BETWEEN r.from_date AND r.to_date)
+        )::bigint,
+        COALESCE((
+            SELECT sum(rf.amount_cents)
+            FROM public.refunds rf
+            JOIN r
+                ON r.location_id = rf.location_id
+            WHERE rf.status = 'SUCCEEDED'
+              AND (r.from_date IS NULL
+                   OR (rf.processed_at AT TIME ZONE r.timezone)::date BETWEEN r.from_date AND r.to_date)
+        ), 0)::bigint,
+        (
+            SELECT count(*)
+            FROM b c
+            WHERE c.booking_status = 'CANCELLED'
+              AND c.payment_status = 'PAID'
+              AND (c.from_date IS NULL
+                   OR (c.cancelled_at AT TIME ZONE c.timezone)::date BETWEEN c.from_date AND c.to_date)
+        )::bigint;
+END;
+$$;
+
+-- Payments taken after their bookings' places were released (a hold
+-- lapsed, or the booking was cancelled, before the payment was seen): the
+-- money's in Stripe but nothing in the app is paid, so it can only be
+-- refunded in the Stripe dashboard, found by the booking's reference.
+CREATE FUNCTION public.owner_dashboard_unrefunded_payments(
+    p_tenant_id UUID,
+    p_location_id UUID
+)
+RETURNS TABLE (
+    reference TEXT,
+    location_name TEXT,
+    total_cents INT,
+    currency TEXT,
+    paid_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT bg.reference::text, l.name::text, pa.total_cents, pa.currency::text, pa.paid_at
+    FROM public.payment_attempts pa
+    JOIN public.booking_groups bg ON bg.id = pa.booking_group_id
+    JOIN tenancy.locations l ON l.id = pa.location_id
+    JOIN public.owner_dashboard_ranges(p_tenant_id, p_location_id, 0) r ON r.location_id = pa.location_id
+    WHERE pa.stripe_status = 'SUCCEEDED'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM public.bookings bk
+          WHERE bk.booking_group_id = pa.booking_group_id
+            AND bk.payment_status IN ('PAID', 'REFUNDED')
+      )
+    ORDER BY pa.paid_at DESC NULLS LAST;
+END;
+$$;
+
+-- What needs the owner's attention now (not by period), and families who
+-- haven't had a paid session in the last 30 days.
+CREATE FUNCTION public.owner_dashboard_attention(
+    p_tenant_id UUID,
+    p_location_id UUID
+)
+RETURNS TABLE (
+    reviews_pending BIGINT,
+    documents_requested BIGINT,
+    enquiries_new BIGINT,
+    reactivation_requests BIGINT,
+    unrefunded_payments BIGINT,
+    inactive_families BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH r AS (
+        SELECT * FROM public.owner_dashboard_ranges(p_tenant_id, p_location_id, 0)
+    )
+    SELECT
+        (
+            SELECT count(*)
+            FROM public.child_medical_state m
+            JOIN public.child_profile cp ON cp.id = m.child_id
+            JOIN r ON r.location_id = cp.location_id
+            WHERE cp.is_active AND m.review_status = 'pending'
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM public.child_medical_state m
+            JOIN public.child_profile cp ON cp.id = m.child_id
+            JOIN r ON r.location_id = cp.location_id
+            WHERE cp.is_active AND m.review_status = 'documentation_requested'
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM public.enquiries e
+            JOIN r ON r.location_id = e.location_id
+            WHERE e.status = 'new'
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM public.family_deactivations fd
+            JOIN r ON r.location_id = fd.location_id
+            WHERE fd.reactivation_requested_at IS NOT NULL
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM public.owner_dashboard_unrefunded_payments(p_tenant_id, p_location_id)
+        )::bigint,
+        (
+            SELECT count(*)
+            FROM auth.location_user_roles lur
+            JOIN auth.roles ro ON ro.id = lur.role_id AND ro.code = 'customer'
+            JOIN r ON r.location_id = lur.location_id
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM public.bookings bk
+                JOIN public.location_service_days d ON d.id = bk.location_service_day_id
+                WHERE bk.user_id = lur.user_id
+                  AND bk.location_id = lur.location_id
+                  AND bk.booking_status = 'CONFIRMED'
+                  AND bk.payment_status = 'PAID'
+                  AND d.service_date BETWEEN (now() AT TIME ZONE r.timezone)::date - 30
+                                         AND (now() AT TIME ZONE r.timezone)::date
+            )
+        )::bigint;
+END;
+$$;
+
+
+-- =====================================================
 -- REPORTING: EMAIL USAGE
 -- =====================================================
 

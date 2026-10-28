@@ -94,7 +94,7 @@ def test_owner_logs_in_without_a_location(business):
     assert session["location_code"] is None
     assert session["roles"] == []
     assert set(session["tenant_permissions"]) == {
-        "tenant_settings", "tenant_locations", "tenant_stripe_account", "tenant_domains",
+        "tenant_settings", "tenant_locations", "tenant_stripe_account", "tenant_domains", "tenant_dashboard",
     }
 
 

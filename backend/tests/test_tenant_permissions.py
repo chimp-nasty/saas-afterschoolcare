@@ -24,6 +24,7 @@ TENANT_PERMISSIONS = {
     "tenant_locations": ["c", "r", "u"],
     "tenant_stripe_account": ["r", "u"],
     "tenant_domains": ["r", "u"],
+    "tenant_dashboard": ["r"],
 }
 
 NEW_LOCATION = """

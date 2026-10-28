@@ -98,4 +98,5 @@ VALUES
     ('tenant_stripe_account', 'r', 'tenant', 'See the business''s Stripe account'),
     ('tenant_stripe_account', 'u', 'tenant', 'Connect or disconnect the business''s Stripe account'),
     ('tenant_domains', 'r', 'tenant', 'See the business''s web addresses'),
-    ('tenant_domains', 'u', 'tenant', 'Add or remove the business''s own domain');
+    ('tenant_domains', 'u', 'tenant', 'Add or remove the business''s own domain'),
+    ('tenant_dashboard', 'r', 'tenant', 'See the business''s dashboard: revenue, bookings, families and what needs attention');

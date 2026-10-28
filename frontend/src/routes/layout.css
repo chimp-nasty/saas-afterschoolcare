@@ -195,7 +195,7 @@ body {
    move. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-	animation-duration: 200ms;
+	animation-duration: 100ms;
 	animation-timing-function: ease-out;
 }
 
