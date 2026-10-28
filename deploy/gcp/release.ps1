@@ -142,11 +142,17 @@ try {
         throw "No $apiEnvFile (the API's settings)."
     }
 
-    # The image tag: the commit, and -dirty when the working tree has
-    # changes (the build uses the working tree, committed or not).
-    $commit = (git rev-parse --short HEAD).Trim()
-    $dirty = [bool](git status --porcelain)
-    $tag = if ($dirty) { "$commit-dirty" } else { $commit }
+    # Only committed code is released: the build uploads the working tree,
+    # so any change (staged, unstaged or a new file) would go out under a
+    # commit that doesn't contain it. The image tag is that commit.
+    $changes = @(git status --porcelain)
+    if ($changes.Count -gt 0) {
+        $shown = ($changes | Select-Object -First 15) -join "`n  "
+        $more = if ($changes.Count -gt 15) { "`n  ... and $($changes.Count - 15) more" } else { "" }
+        throw "Not releasing: there are uncommitted changes. Commit (or stash) them first, then run this again.`n  $shown$more"
+    }
+
+    $tag = (git rev-parse --short HEAD).Trim()
 
     $account = (gcloud config get-value account 2>$null | Out-String).Trim()
 
@@ -202,7 +208,7 @@ try {
     Write-Host ("  Site          https://{0}" -f $cfg.BASE_DOMAIN)
     Write-Host ("  Project       {0}  ({1})" -f $project, $region)
     Write-Host ("  gcloud as     {0}" -f $account)
-    Write-Host ("  Image tag     {0}{1}" -f $tag, $(if ($dirty) { "  (uncommitted changes included)" } else { "" }))
+    Write-Host ("  Commit        {0}  {1}" -f $tag, (git log -1 --format=%s).Trim())
     if ($doApi) {
         Write-Host ("  API           {0}, settings {1}, {2} secrets checked" -f $cfg.API_SERVICE, $apiEnvFile, $ApiSecrets.Count)
     }

@@ -277,6 +277,7 @@ Get-Help .\deploy\gcp\release.ps1 -Full          # everything it does
 
 - **Rebuild:** it reads `DATABASE_URL` from Secret Manager (and `app_user`'s password from it); only the owner's connection (`DATABASE_ADMIN_URL`) is typed. **Tenant 1's Stripe account is kept:** read from the database before the wipe (`read_stripe_account.py`) and linked again by the dev seed, so it never needs reattaching (`-StripeDevAccountId acct_...` to choose one, `none` for none).
 - **WipeBuckets** (only with `-Rebuild`, or the database would point at missing files): empties the documents bucket (uploaded documents, site photos and logos) and the build bucket's old uploads. The site bucket needs no wipe: each release replaces it. The buckets' soft delete keeps deleted files for 7 days.
+- **Committed code only:** it stops if there are any uncommitted changes (staged, unstaged or new files), listing them. The build uploads the working tree, so they'd otherwise go out under a commit that doesn't contain them. The image is tagged with the commit.
 - If Windows refuses to run scripts: `powershell -ExecutionPolicy Bypass -File .\deploy\gcp\release.ps1`.
 - A new secret the API needs goes in the script's `$ApiSecrets` list as well as step 6.
 
@@ -284,7 +285,7 @@ The steps below are what it runs, for reference and first-time setup.
 
 ## 8. Release the API
 
-Builds from your working tree; the tag says which commit, and `-dirty` if there were uncommitted changes.
+Builds from your working tree, tagged with the commit. Release committed code only: commit first (`release.ps1` refuses uncommitted changes).
 
 ```powershell
 git diff --quiet HEAD 2>$null
