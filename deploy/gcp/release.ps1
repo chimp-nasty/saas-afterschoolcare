@@ -249,6 +249,28 @@ try {
 
         $env:DATABASE_ADMIN_URL = Read-Secret "DATABASE_ADMIN_URL (the database owner's connection, step 7)"
 
+        # The owner's connection must be for the database the API uses: a
+        # pasted local or other branch's string would rebuild that one
+        # instead, leaving dev on the old schema. Host and database name
+        # only (no passwords) are compared and shown.
+        try {
+            $adminUri = [Uri]$env:DATABASE_ADMIN_URL
+            $appUri = [Uri]$databaseUrl
+        } catch {
+            Remove-Item Env:DATABASE_ADMIN_URL -ErrorAction SilentlyContinue
+            throw "That isn't a connection string (postgresql://user:password@host/database?sslmode=require)."
+        }
+
+        $adminTarget = "$($adminUri.Host)$($adminUri.AbsolutePath)"
+        $appTarget = "$($appUri.Host)$($appUri.AbsolutePath)"
+
+        if ($adminTarget -ne $appTarget) {
+            Remove-Item Env:DATABASE_ADMIN_URL -ErrorAction SilentlyContinue
+            throw "Not rebuilding: that owner connection is for $adminTarget, but dev's API uses $appTarget (Secret Manager's DATABASE_URL). Use the owner connection for $appTarget. Nothing was changed."
+        }
+
+        Write-Host "Rebuilding $appTarget"
+
         try {
             # Tenant 1's Stripe account, read before the wipe and linked
             # again by the dev seed, so it never needs reattaching. A given
